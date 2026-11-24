@@ -12,7 +12,7 @@ describe('UT-020 – Store (plan 4)', () => {
   it('1. Khởi tạo không có localStorage -> state = mock', () => {
     const state = loadInitialState(STORAGE_KEY);
     expect(state.reports).toHaveLength(64);
-    expect(state.volunteerTasks).toHaveLength(3);
+    expect(state.volunteerTasks).toHaveLength(4);
     expect(state.reports[0]?.id).toBe('TB-0001');
   });
 

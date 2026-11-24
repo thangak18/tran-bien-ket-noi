@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import prettier from 'prettier';
 import { generateMockData, DEFAULT_SEED } from '../src/domain/generator';
 
 const mockPath = path.resolve(process.cwd(), 'src/data/mock.json');
@@ -12,7 +13,8 @@ if (!fs.existsSync(mockDir)) {
 console.log(`Đang sinh dữ liệu mẫu với seed ${DEFAULT_SEED}...`);
 const data = generateMockData(DEFAULT_SEED);
 
-fs.writeFileSync(mockPath, JSON.stringify(data, null, 2), 'utf-8');
+const formatted = await prettier.format(JSON.stringify(data), { parser: 'json' });
+fs.writeFileSync(mockPath, formatted, 'utf-8');
 console.log(
   `Đã tạo thành công ${data.reports.length} phản ánh và ${data.volunteerTasks.length} nhiệm vụ TNV tại ${mockPath}`
 );

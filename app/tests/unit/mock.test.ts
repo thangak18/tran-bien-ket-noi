@@ -157,7 +157,7 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
     }
   });
 
-  it('DV-012: 40 hồ sơ dong có rating 1-5 và tags thuộc bộ chip; 7 hoan_thanh không có feedback; 3 tasks khớp 3 cho_xac_minh', () => {
+  it('DV-012: 40 hồ sơ dong có rating 1-5 và tags thuộc bộ chip; 7 hoan_thanh không có feedback; 3 tasks xac_minh; 1 task NV-004 nghiem_thu mo_lai; timeline CB trong 07:00-17:30', () => {
     const dongReports = reports.filter((r) => r.status === 'dong');
     expect(dongReports).toHaveLength(40);
     for (const r of dongReports) {
@@ -179,10 +179,37 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
 
     const choXacMinh = reports.filter((r) => r.status === 'cho_xac_minh');
     expect(choXacMinh).toHaveLength(3);
-    expect(volunteerTasks).toHaveLength(3);
-    for (const task of volunteerTasks) {
+    const xacMinhTasks = volunteerTasks.filter((t) => t.type === 'xac_minh');
+    expect(xacMinhTasks).toHaveLength(3);
+    for (const task of xacMinhTasks) {
       expect(choXacMinh.some((r) => r.id === task.reportId)).toBe(true);
-      expect(task.type).toBe('xac_minh');
+    }
+
+    // Task NV-004 nghiệm thu cho TB-0064 mo_lai
+    const moLaiReport = reports.find((r) => r.status === 'mo_lai');
+    expect(moLaiReport).toBeDefined();
+    expect(moLaiReport?.id).toBe('TB-0064');
+    expect(moLaiReport?.feedback?.resolved).toBe(false);
+
+    const nghiemThuTask = volunteerTasks.find((t) => t.id === 'NV-004');
+    expect(nghiemThuTask).toBeDefined();
+    expect(nghiemThuTask?.type).toBe('nghiem_thu');
+    expect(nghiemThuTask?.status).toBe('cho_nhan');
+    expect(nghiemThuTask?.reportId).toBe('TB-0064');
+
+    // Mọi mục timeline do cán bộ/bộ phận thực hiện có giờ trong 07:00–17:30
+    for (const r of reports) {
+      for (const t of r.timeline) {
+        if (t.actor !== 'Người dân') {
+          const d = new Date(t.at);
+          const localH = new Date(d.getTime() + 7 * 3600 * 1000).getUTCHours();
+          const localM = new Date(d.getTime() + 7 * 3600 * 1000).getUTCMinutes();
+          const inHours =
+            (localH > 7 || (localH === 7 && localM >= 0)) &&
+            (localH < 17 || (localH === 17 && localM <= 30));
+          expect(inHours).toBe(true);
+        }
+      }
     }
   });
 

@@ -254,16 +254,56 @@ const hoanThanhNoFeedback = reports
   .filter((r) => r.status === 'hoan_thanh')
   .every((r) => !r.feedback);
 const choXacMinhReports = reports.filter((r) => r.status === 'cho_xac_minh');
-const tasksMatch =
-  volunteerTasks.length === 3 &&
-  volunteerTasks.every((t) => choXacMinhReports.some((r) => r.id === t.reportId));
+const xacMinhTasks = volunteerTasks.filter((t) => t.type === 'xac_minh');
+const xacMinhTasksMatch =
+  xacMinhTasks.length === 3 &&
+  xacMinhTasks.every((t) => choXacMinhReports.some((r) => r.id === t.reportId));
+
+const moLaiReport = reports.find((r) => r.status === 'mo_lai');
+const moLaiTask = volunteerTasks.find((t) => t.id === 'NV-004');
+const moLaiTaskMatch =
+  !!moLaiReport &&
+  moLaiReport.id === 'TB-0064' &&
+  moLaiReport.feedback?.resolved === false &&
+  !!moLaiTask &&
+  moLaiTask.type === 'nghiem_thu' &&
+  moLaiTask.status === 'cho_nhan' &&
+  moLaiTask.reportId === moLaiReport.id;
+
+let officerHoursPassed = true;
+let officerHourErr = '';
+for (const r of reports) {
+  for (const t of r.timeline) {
+    if (t.actor !== 'Người dân') {
+      const d = new Date(t.at);
+      const localH = new Date(d.getTime() + 7 * 3600 * 1000).getUTCHours();
+      const localM = new Date(d.getTime() + 7 * 3600 * 1000).getUTCMinutes();
+      const inHours =
+        (localH > 7 || (localH === 7 && localM >= 0)) &&
+        (localH < 17 || (localH === 17 && localM <= 30));
+      if (!inHours) {
+        officerHoursPassed = false;
+        officerHourErr = `${r.id} entry ${t.status} at ${t.at} (${localH}:${localM}) ngoài giờ HC`;
+        break;
+      }
+    }
+  }
+  if (!officerHoursPassed) break;
+}
+
+const dv012Passed =
+  dongAllHaveRating &&
+  hoanThanhNoFeedback &&
+  xacMinhTasksMatch &&
+  moLaiTaskMatch &&
+  officerHoursPassed;
 
 checks.push({
   id: 'DV-012',
-  name: '40 hồ sơ đóng có rating 1–5 và tags thuộc bộ chip; 7 HT không feedback; 3 tasks cho_xac_minh',
+  name: '40 hồ sơ đóng rating+tags; 7 HT không feedback; 3 tasks xac_minh, 1 task NV-004 nghiem_thu mo_lai; timeline CB trong 07:00-17:30',
   expected: 'Đầy đủ điều kiện',
-  actual: dongAllHaveRating && hoanThanhNoFeedback && tasksMatch ? 'Đạt' : 'Không đạt',
-  passed: dongAllHaveRating && hoanThanhNoFeedback && tasksMatch,
+  actual: dv012Passed ? 'Đạt' : `Không đạt: ${officerHourErr || 'điều kiện chưa thoả'}`,
+  passed: dv012Passed,
 });
 
 // DV-014

@@ -25,6 +25,36 @@ export function mulberry32(seed: number) {
   };
 }
 
+function getLocalHM(ms: number) {
+  const d = new Date(ms + 7 * 3600 * 1000);
+  return { h: d.getUTCHours(), m: d.getUTCMinutes() };
+}
+
+function isOfficeHours(ms: number): boolean {
+  const { h, m } = getLocalHM(ms);
+  if (h < 7) return false;
+  if (h > 17) return false;
+  if (h === 17 && m > 30) return false;
+  return true;
+}
+
+function isCitizenHours(ms: number): boolean {
+  const { h } = getLocalHM(ms);
+  return h >= 6 && h <= 21;
+}
+
+function nextOfficeHours(ms: number): number {
+  const { h, m } = getLocalHM(ms);
+  if (h < 7) {
+    return ms + ((7 - h) * 60 + (30 - m)) * 60 * 1000;
+  }
+  if (h > 17 || (h === 17 && m > 30)) {
+    const minToMid = (23 - h) * 60 + (60 - m);
+    return ms + (minToMid + 7 * 60 + 30) * 60 * 1000;
+  }
+  return ms;
+}
+
 export interface GeneratedData {
   reports: Report[];
   volunteerTasks: VolunteerTask[];
@@ -182,25 +212,37 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       reportIdCounter++;
 
       const coord = getDispersedCoord();
-      const dayOffset = Math.floor(rand() * 14) + 1; // Ngày 1 -> 14 tháng 11
-      const hour = Math.floor(rand() * 16) + 6; // 06:00 -> 21:00
-      const minute = Math.floor(rand() * 50) + 10;
-      const createdAt = `2026-11-${dayOffset.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+07:00`;
-
       const durationDays = durations[durationIndex++]!;
-      const createdMs = new Date(createdAt).getTime();
       const durationMs = durationDays * 24 * 60 * 60 * 1000;
-      const completedMs = createdMs + durationMs;
-      const completedAt = toIsoOffset7(completedMs);
+      const dayOffset = (durationIndex % 14) + 1; // Ngày 1 -> 14 tháng 11
 
-      // Phân bổ các mốc tiến trình nằm giữa createdAt và completedAt
-      const stepDelta = Math.max(
-        15 * 60 * 1000,
-        Math.min(2 * 3600 * 1000, Math.floor(durationMs * 0.15))
-      );
-      const step2Ms = createdMs + stepDelta;
-      const step3Ms = step2Ms + stepDelta;
-      const step5Ms = completedMs + 3600 * 1000;
+      // Tìm createdAt (06:00 - 21:00) sao cho completedAt (createdAt + durationMs) rơi vào giờ hành chính (07:00 - 17:30)
+      let chosenCreatedMs = 0;
+      let chosenCompletedMs = 0;
+      for (let h = 7; h <= 20; h++) {
+        for (const m of [0, 15, 30, 45]) {
+          const cStr = `2026-11-${dayOffset.toString().padStart(2, '0')}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00+07:00`;
+          const cMs = new Date(cStr).getTime();
+          const compMs = cMs + durationMs;
+          if (isOfficeHours(compMs) && isCitizenHours(cMs)) {
+            chosenCreatedMs = cMs;
+            chosenCompletedMs = compMs;
+            break;
+          }
+        }
+        if (chosenCreatedMs) break;
+      }
+
+      const createdAt = toIsoOffset7(chosenCreatedMs);
+      const completedAt = toIsoOffset7(chosenCompletedMs);
+
+      // Mốc tiếp nhận và giao: thuộc giờ hành chính và tăng dần
+      let step2Ms = nextOfficeHours(chosenCreatedMs + 20 * 60 * 1000);
+      if (!isOfficeHours(step2Ms)) step2Ms = nextOfficeHours(step2Ms);
+      let step3Ms = nextOfficeHours(step2Ms + 30 * 60 * 1000);
+      if (!isOfficeHours(step3Ms)) step3Ms = nextOfficeHours(step3Ms);
+
+      const step5Ms = chosenCompletedMs + 3600 * 1000;
 
       const tiepNhanAt = toIsoOffset7(step2Ms);
       const giaoAt = toIsoOffset7(step3Ms);
@@ -322,7 +364,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         dayOffset = 23;
       }
 
-      const hour = Math.floor(rand() * 12) + 7; // 07:00 -> 18:00
+      const hour = Math.floor(rand() * 10) + 7; // 07:00 -> 16:00
       const minute = Math.floor(rand() * 50) + 5;
       const createdAt = `2026-11-${dayOffset.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+07:00`;
       const createdMs = new Date(createdAt).getTime();
@@ -330,6 +372,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       let department = '';
       let dueAt: string | undefined = undefined;
       let completedAt: string | undefined = undefined;
+      let feedback = undefined;
       const timeline: TimelineEntry[] = [{ at: createdAt, status: 'moi', actor: 'Người dân' }];
 
       if (openItem.status === 'moi') {
@@ -337,7 +380,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         dueAt = undefined;
       } else {
         department = suggestedDept;
-        const tiepNhanMs = createdMs + 30 * 60 * 1000;
+        const tiepNhanMs = nextOfficeHours(createdMs + 30 * 60 * 1000);
         const tiepNhanAt = toIsoOffset7(tiepNhanMs);
         dueAt = toIsoOffset7(tiepNhanMs + defaultDays * 24 * 60 * 60 * 1000);
 
@@ -348,7 +391,8 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         });
 
         if (openItem.status === 'cho_xac_minh') {
-          const xacMinhAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
+          const xacMinhMs = nextOfficeHours(tiepNhanMs + 30 * 60 * 1000);
+          const xacMinhAt = toIsoOffset7(xacMinhMs);
           timeline.push({
             at: xacMinhAt,
             status: 'cho_xac_minh',
@@ -356,7 +400,8 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
             note: 'Giao tình nguyện viên kiểm tra tại chỗ',
           });
         } else if (openItem.status === 'da_giao') {
-          const giaoAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
+          const giaoMs = nextOfficeHours(tiepNhanMs + 30 * 60 * 1000);
+          const giaoAt = toIsoOffset7(giaoMs);
           timeline.push({
             at: giaoAt,
             status: 'da_giao',
@@ -364,7 +409,8 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
             note: `Giao ${suggestedDept}`,
           });
         } else if (openItem.status === 'can_bo_sung') {
-          const boSungAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
+          const boSungMs = nextOfficeHours(tiepNhanMs + 30 * 60 * 1000);
+          const boSungAt = toIsoOffset7(boSungMs);
           timeline.push({
             at: boSungAt,
             status: 'can_bo_sung',
@@ -372,10 +418,12 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
             note: 'Vui lòng chụp thêm ảnh rõ góc nhìn từ đầu hẻm để đội thu gom dễ xác định vị trí rác',
           });
         } else if (openItem.status === 'mo_lai') {
-          const giaoAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
-          const hoanThanhMs = tiepNhanMs + 2 * 3600 * 1000;
+          const giaoMs = nextOfficeHours(tiepNhanMs + 30 * 60 * 1000);
+          const giaoAt = toIsoOffset7(giaoMs);
+          const hoanThanhMs = nextOfficeHours(giaoMs + 60 * 60 * 1000);
           const hoanThanhAt = toIsoOffset7(hoanThanhMs);
-          const moLaiAt = toIsoOffset7(hoanThanhMs + 2 * 3600 * 1000);
+          const moLaiMs = hoanThanhMs + 60 * 60 * 1000;
+          const moLaiAt = toIsoOffset7(moLaiMs);
           timeline.push(
             {
               at: giaoAt,
@@ -397,6 +445,11 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
             }
           );
           completedAt = hoanThanhAt;
+          feedback = {
+            resolved: false,
+            comment: 'Chưa xử lý dứt điểm, rác vẫn còn ở góc hẻm',
+            at: moLaiAt,
+          };
         }
       }
 
@@ -434,6 +487,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         followers,
         anonymousFollows: isAnon && !isSubscribed ? 1 : 0,
         timeline,
+        feedback,
       });
 
       // Nếu trạng thái là cho_xac_minh -> sinh VolunteerTask
@@ -443,6 +497,14 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
           id: taskId,
           reportId: idStr,
           type: 'xac_minh',
+          assignee: null,
+          status: 'cho_nhan',
+        });
+      } else if (openItem.status === 'mo_lai') {
+        volunteerTasks.push({
+          id: 'NV-004',
+          reportId: idStr,
+          type: 'nghiem_thu',
           assignee: null,
           status: 'cho_nhan',
         });
