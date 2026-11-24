@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Users, Star, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { submitFeedback } from '@/store/citizenActions';
+import { submitFeedback, followReport } from '@/store/citizenActions';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { StatusChip } from '@/components/common/StatusChip';
 import { DelayChip } from '@/components/common/DelayChip';
@@ -30,8 +30,20 @@ export function C06Detail() {
 
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [isRatingSheetOpen, setIsRatingSheetOpen] = useState<boolean>(false);
+  const [hasMeToo, setHasMeToo] = useState<boolean>(false);
 
   const report = state.reports.find((r) => r.id === id);
+
+  const handleMeToo = () => {
+    if (!report || hasMeToo) return;
+    try {
+      const newState = followReport(state, report.id, { anonymous: true });
+      dispatch({ type: 'HYDRATE', payload: newState });
+      setHasMeToo(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   if (!report) {
     return (
@@ -173,6 +185,23 @@ export function C06Detail() {
             </span>
           </div>
         </div>
+
+        {/* Nút Tôi cũng gặp (Mobile: toàn chiều ngang ngay dưới thẻ địa chỉ) */}
+        <button
+          type="button"
+          onClick={handleMeToo}
+          disabled={hasMeToo}
+          className={`w-full flex items-center justify-center gap-2 rounded-btn py-3 text-xs font-bold transition-all shadow-soft ${
+            hasMeToo
+              ? 'bg-emerald-50 border border-emerald-300 text-emerald-700 cursor-default'
+              : 'bg-primary text-white hover:bg-primary-hover active:scale-95'
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          <span>
+            {hasMeToo ? '✓ Đã ghi nhận bạn cùng gặp vấn đề này' : 'Tôi cũng gặp vấn đề này'}
+          </span>
+        </button>
 
         {/* 4. (hoan_thanh/dong) Thẻ "Ảnh Trước / Sau xử lý" */}
         {(report.status === 'hoan_thanh' || report.status === 'dong') && (
@@ -385,6 +414,23 @@ export function C06Detail() {
               )}
             </div>
           </div>
+
+          {/* Nút Tôi cũng gặp (Desktop: nằm trong cột phải sticky, dưới thẻ địa chỉ/trạng thái, trên khối đánh giá) */}
+          <button
+            type="button"
+            onClick={handleMeToo}
+            disabled={hasMeToo}
+            className={`w-full flex items-center justify-center gap-2 rounded-btn py-3 text-xs font-bold transition-all shadow-soft ${
+              hasMeToo
+                ? 'bg-emerald-50 border border-emerald-300 text-emerald-700 cursor-default'
+                : 'bg-primary text-white hover:bg-primary-hover active:scale-95'
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            <span>
+              {hasMeToo ? '✓ Đã ghi nhận bạn cùng gặp vấn đề này' : 'Tôi cũng gặp vấn đề này'}
+            </span>
+          </button>
 
           {/* Khối đánh giá nếu hoan_thanh */}
           {report.status === 'hoan_thanh' && (

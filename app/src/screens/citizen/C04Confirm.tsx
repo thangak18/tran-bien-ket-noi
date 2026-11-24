@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import { Category } from '@/domain/types';
 import { PhoneOtpSheet } from '@/components/citizen/PhoneOtpSheet';
 import { nearestStreet } from '@/data/streets';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { findDuplicates } from '@/domain/duplicates';
 
 const CATEGORY_ITEMS: { key: Category; label: string; icon: React.ReactNode }[] = [
   { key: 'den_duong', label: 'Đèn đường', icon: <Lightbulb className="h-6 w-6 text-amber-500" /> },
@@ -49,6 +50,13 @@ export function C04Confirm() {
   const [otpTargetPhone, setOtpTargetPhone] = useState<string>('');
 
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
+
+  // B2 Cảnh báo trùng (spec 3.5)
+  const duplicates = useMemo(() => {
+    if (!category || !lat || !lng) return [];
+    return findDuplicates({ category, lat, lng }, state.reports, state.settings.demoNow);
+  }, [category, lat, lng, state.reports, state.settings.demoNow]);
+  const topDup = duplicates[0];
 
   // Tự lấy GPS khi vào màn hình nếu chưa có vị trí
   useEffect(() => {
@@ -250,6 +258,26 @@ export function C04Confirm() {
               </span>
             </div>
 
+            {/* B1 AI gợi ý: Băng nằm trong sheet, ngay trên lưới 4 loại */}
+            <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-2.5 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white font-bold">
+                  ✨
+                </span>
+                <span className="font-semibold text-blue-950">
+                  AI gợi ý:{' '}
+                  <span className="text-primary font-bold">
+                    {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
+                      'Mặt đường'}
+                  </span>{' '}
+                  (94%)
+                </span>
+              </div>
+              <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                Mô phỏng
+              </span>
+            </div>
+
             {/* 2. Loại phản ánh (Lưới 2x2 tile) */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
@@ -367,6 +395,20 @@ export function C04Confirm() {
               </div>
             </div>
           </div>
+
+          {/* B2 Cảnh báo trùng: Thẻ cam nằm trong sheet, ngay trên nút Gửi */}
+          {topDup && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 shadow-soft space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>Có sự cố tương tự gần đây ({Math.round(topDup.distanceMeters)}m)</span>
+              </div>
+              <p className="text-[11px] text-amber-800 leading-snug">
+                Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý. Bạn có thể tiếp
+                tục gửi hoặc theo dõi hồ sơ này.
+              </p>
+            </div>
+          )}
 
           {/* 5. Nút "Gửi phản ánh" */}
           <div className="pt-2">
@@ -524,6 +566,26 @@ export function C04Confirm() {
                   </span>
                 </div>
 
+                {/* B1 AI gợi ý: Băng nằm đầu cột form phải (dưới thanh bước ①②③) */}
+                <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-2.5 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white font-bold">
+                      ✨
+                    </span>
+                    <span className="font-semibold text-blue-950">
+                      AI gợi ý:{' '}
+                      <span className="text-primary font-bold">
+                        {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
+                          'Mặt đường'}
+                      </span>{' '}
+                      (94%)
+                    </span>
+                  </div>
+                  <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                    Mô phỏng
+                  </span>
+                </div>
+
                 {/* 2. Loại sự cố 2x2 */}
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
@@ -621,6 +683,39 @@ export function C04Confirm() {
                   </div>
                 </div>
               </div>
+
+              {/* B2 Cảnh báo trùng: Thẻ cam nằm cuối cột form phải, ngay trên nút Gửi; ảnh nhỏ 64px bên trái */}
+              {topDup && (
+                <div className="flex items-start gap-3 rounded-card border border-amber-300 bg-amber-50 p-3 shadow-soft">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-amber-200 bg-amber-100">
+                    <img
+                      src={topDup.report.photos[0] || '/demo-photos/placeholder.jpg'}
+                      alt="Sự cố tương tự"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect fill="%23fef3c7" width="64" height="64"/><text fill="%23b45309" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Trùng</text></svg>';
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-amber-950">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span>Có sự cố tương tự cách {Math.round(topDup.distanceMeters)}m</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 line-clamp-2 mt-0.5 leading-snug">
+                      Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/phan-anh/${topDup.report.id}`)}
+                      className="text-[11px] font-semibold text-primary hover:underline mt-1 inline-block"
+                    >
+                      Xem hồ sơ #{topDup.report.id} →
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Nút gửi Desktop */}
               <div className="pt-4">

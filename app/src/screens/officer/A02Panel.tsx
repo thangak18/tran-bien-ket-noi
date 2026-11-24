@@ -1,8 +1,23 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Send, Wrench, AlertTriangle, ShieldCheck } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Send,
+  Wrench,
+  AlertTriangle,
+  ShieldCheck,
+  GitMerge,
+  Split,
+} from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { acceptReport, assignDepartment, getCategoryConfig } from '@/store/officerActions';
+import {
+  acceptReport,
+  assignDepartment,
+  getCategoryConfig,
+  mergeReports,
+  splitReportAction,
+} from '@/store/officerActions';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { formatDateShort, formatDateTime } from '@/domain/format';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -11,6 +26,7 @@ import { DelayChip } from '@/components/common/DelayChip';
 import { Timeline } from '@/components/common/Timeline';
 import { BeforeAfter } from '@/components/citizen/BeforeAfter';
 import { Button } from '@/components/ui/Button';
+import { findDuplicates } from '@/domain/duplicates';
 
 export function A02Panel() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +42,16 @@ export function A02Panel() {
   const [selectedDept, setSelectedDept] = useState(defaultDept);
   const [officerNote, setOfficerNote] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // B2 Gộp/tách hồ sơ (spec 3.5)
+  const similarReports = useMemo(() => {
+    if (!report) return [];
+    return findDuplicates(
+      { id: report.id, category: report.category, lat: report.lat, lng: report.lng },
+      state.reports,
+      state.settings.demoNow
+    );
+  }, [report, state.reports, state.settings.demoNow]);
 
   if (!report) {
     return (
@@ -75,6 +101,34 @@ export function A02Panel() {
       );
       dispatch({ type: 'HYDRATE', payload: newState });
       setSuccessMsg(`Đã giao việc cho ${selectedDept}!`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMerge = (childId: string) => {
+    try {
+      const newState = mergeReports(state, report.id, [childId], undefined, state.settings.demoNow);
+      dispatch({ type: 'HYDRATE', payload: newState });
+      setSuccessMsg(`Đã gộp phản ánh #${childId} vào hồ sơ #${report.id}!`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUnmerge = (childId: string) => {
+    try {
+      const newState = splitReportAction(
+        state,
+        report.id,
+        childId,
+        undefined,
+        state.settings.demoNow
+      );
+      dispatch({ type: 'HYDRATE', payload: newState });
+      setSuccessMsg(`Đã tách phản ánh #${childId} ra khỏi hồ sơ #${report.id}!`);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
       console.error(err);
@@ -281,6 +335,96 @@ export function A02Panel() {
               </div>
               {report.resultNote && <p className="text-gray-700 italic">"{report.resultNote}"</p>}
             </div>
+          )}
+        </div>
+
+        {/* Khối Phản ánh tương tự & Gộp hồ sơ (spec 3.5, B2) */}
+        <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <GitMerge className="h-4 w-4 text-primary" />
+              <span>Phản ánh tương tự & Gộp hồ sơ</span>
+            </h3>
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              Bán kính 50m
+            </span>
+          </div>
+
+          {/* Các hồ sơ con đã gộp */}
+          {report.mergedChildren && report.mergedChildren.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-gray-700">Hồ sơ đã gộp vào vụ này:</span>
+              <div className="space-y-1.5">
+                {report.mergedChildren.map((cId) => (
+                  <div
+                    key={cId}
+                    className="flex items-center justify-between rounded-xl bg-purple-50 p-2.5 text-xs text-purple-950 border border-purple-200"
+                  >
+                    <span className="font-mono font-bold">#{cId}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleUnmerge(cId)}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:underline"
+                    >
+                      <Split className="h-3 w-3" />
+                      <span>Tách hồ sơ</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Các hồ sơ nghi trùng phát hiện được */}
+          {similarReports.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500">
+                Phát hiện {similarReports.length} phản ánh cùng loại trong 14 ngày gần nhất:
+              </p>
+              <div className="space-y-2">
+                {similarReports.map((sim) => (
+                  <div
+                    key={sim.report.id}
+                    className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/80 p-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gray-200">
+                        <img
+                          src={sim.report.photos[0] || '/demo-photos/placeholder.jpg'}
+                          alt="Ảnh"
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect fill="%23f3f4f6" width="40" height="40"/><text fill="%239ca3af" font-size="8" dy="3" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1 text-xs">
+                        <div className="font-bold text-gray-900">
+                          #{sim.report.id}{' '}
+                          <span className="font-normal text-gray-400">
+                            · {Math.round(sim.distanceMeters)}m
+                          </span>
+                        </div>
+                        <p className="truncate text-[11px] text-gray-500">{sim.report.address}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleMerge(sim.report.id)}
+                      className="ml-2 shrink-0 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-soft hover:bg-primary-hover active:scale-95 transition-all"
+                    >
+                      Gộp vào hồ sơ này
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 italic">
+              Không có phản ánh trùng nào trong phạm vi 50m.
+            </p>
           )}
         </div>
 

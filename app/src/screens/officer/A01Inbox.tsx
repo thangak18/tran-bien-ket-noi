@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, AlertCircle, Clock, ChevronRight } from 'lucide-react';
+import { Search, AlertCircle, Clock, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { sortInbox, isOverdue, isDueSoon } from '@/domain/sorting';
 import { computeDelayDays } from '@/domain/latestUpdate';
@@ -8,15 +8,56 @@ import { formatDateShort, formatPercent } from '@/domain/format';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { StatusChip } from '@/components/common/StatusChip';
-import { Report } from '@/domain/types';
+import { Report, Category } from '@/domain/types';
+import { createOnBehalf } from '@/store/officerActions';
+import { useIsDesktop } from '@/lib/useIsDesktop';
+import { STREETS } from '@/data/streets';
+import { Modal } from '@/components/ui/Modal';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 
 export function A01Inbox() {
   const navigate = useNavigate();
-  const { state } = useAppStore();
+  const { state, dispatch } = useAppStore();
+  const isDesktop = useIsDesktop();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'resolved'>('all');
 
+  // B5 Tạo phản ánh hộ
+  const [isProxyOpen, setIsProxyOpen] = useState(false);
+  const [proxyPhone, setProxyPhone] = useState('');
+  const [proxyCategory, setProxyCategory] = useState<Category>('mat_duong');
+  const [proxyStreet, setProxyStreet] = useState(STREETS[0]!.name);
+  const [proxyDescription, setProxyDescription] = useState('');
+  const [proxySuccess, setProxySuccess] = useState('');
+
   const now = state.settings.demoNow;
+
+  const handleCreateProxy = () => {
+    if (!proxyPhone.trim()) return;
+    try {
+      const selectedStreet = STREETS.find((s) => s.name === proxyStreet) || STREETS[0]!;
+      const result = createOnBehalf(
+        state,
+        {
+          phone: proxyPhone.trim(),
+          category: proxyCategory,
+          lat: selectedStreet.lat,
+          lng: selectedStreet.lng,
+          address: `Đường ${selectedStreet.name}, Phường Trấn Biên`,
+          description: proxyDescription.trim() || undefined,
+        },
+        now
+      );
+      dispatch({ type: 'HYDRATE', payload: result.state });
+      setIsProxyOpen(false);
+      setProxyPhone('');
+      setProxyDescription('');
+      setProxySuccess(`Đã tạo phản ánh #${result.report.id} hộ người dân thành công!`);
+      setTimeout(() => setProxySuccess(''), 4000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // 4 số KPI tính từ dữ liệu
   const totalCount = state.reports.length;
@@ -86,14 +127,34 @@ export function A01Inbox() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="text-xs font-semibold text-primary hover:underline"
-          >
-            ← Cổng công dân
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="btn-create-proxy"
+              aria-label="Tạo phản ánh hộ"
+              onClick={() => setIsProxyOpen(true)}
+              className="flex items-center gap-1.5 rounded-btn bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-soft hover:bg-primary-hover active:scale-95 transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tạo phản ánh hộ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="text-xs font-semibold text-primary hover:underline ml-2"
+            >
+              ← Cổng công dân
+            </button>
+          </div>
         </div>
+
+        {/* Thông báo tạo hộ thành công */}
+        {proxySuccess && (
+          <div className="mx-auto mt-2.5 max-w-[1200px] rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-semibold text-emerald-900 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>{proxySuccess}</span>
+          </div>
+        )}
 
         {/* Thanh tìm kiếm & Tabs */}
         <div className="mx-auto mt-3 max-w-[1200px] space-y-2.5">
@@ -253,6 +314,197 @@ export function A01Inbox() {
           })
         )}
       </main>
+
+      {/* B5 Modal (Desktop: 560px giữa màn) / BottomSheet (Mobile/Tablet: toàn chiều ngang) */}
+      {isDesktop ? (
+        <Modal
+          isOpen={isProxyOpen}
+          onClose={() => setIsProxyOpen(false)}
+          title="Tạo phản ánh hộ người dân"
+          className="max-w-[560px]"
+        >
+          <div className="space-y-3.5 py-1 text-xs">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Số điện thoại người dân <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={proxyPhone}
+                onChange={(e) => setProxyPhone(e.target.value)}
+                placeholder="0909 xxx xxx"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Loại phản ánh <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={proxyCategory}
+                onChange={(e) => setProxyCategory(e.target.value as Category)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              >
+                {CATEGORY_CONFIGS.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Tuyến đường / Địa chỉ <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={proxyStreet}
+                onChange={(e) => setProxyStreet(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              >
+                {STREETS.map((s) => (
+                  <option key={s.name} value={s.name}>
+                    Đường {s.name}, Phường Trấn Biên
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Mô tả sự cố (ghi chú tiếp nhận)
+              </label>
+              <textarea
+                value={proxyDescription}
+                onChange={(e) => setProxyDescription(e.target.value)}
+                placeholder="Nội dung người dân gọi điện / báo trực tiếp..."
+                rows={2}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              />
+            </div>
+
+            <div className="rounded-xl bg-blue-50 p-2.5 text-[11px] text-blue-800 border border-blue-100 flex items-center justify-between">
+              <span>Hệ thống sẽ gửi tin nhắn SMS mô phỏng chứa mã theo dõi tới người dân.</span>
+              <span className="rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700">
+                Mô phỏng
+              </span>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsProxyOpen(false)}
+                className="rounded-lg border border-gray-200 px-3.5 py-2 font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={!proxyPhone.trim()}
+                onClick={handleCreateProxy}
+                className="rounded-lg bg-primary px-4 py-2 font-semibold text-white shadow-soft hover:bg-primary-hover disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Tạo phản ánh hộ
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : (
+        <BottomSheet
+          isOpen={isProxyOpen}
+          onClose={() => setIsProxyOpen(false)}
+          title="Tạo phản ánh hộ người dân"
+          className="max-w-none w-full p-4"
+        >
+          <div className="space-y-3.5 py-1 text-xs">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Số điện thoại người dân <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={proxyPhone}
+                onChange={(e) => setProxyPhone(e.target.value)}
+                placeholder="0909 xxx xxx"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Loại phản ánh <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={proxyCategory}
+                onChange={(e) => setProxyCategory(e.target.value as Category)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              >
+                {CATEGORY_CONFIGS.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Tuyến đường / Địa chỉ <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={proxyStreet}
+                onChange={(e) => setProxyStreet(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              >
+                {STREETS.map((s) => (
+                  <option key={s.name} value={s.name}>
+                    Đường {s.name}, Phường Trấn Biên
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">
+                Mô tả sự cố (ghi chú tiếp nhận)
+              </label>
+              <textarea
+                value={proxyDescription}
+                onChange={(e) => setProxyDescription(e.target.value)}
+                placeholder="Nội dung người dân gọi điện / báo trực tiếp..."
+                rows={2}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
+              />
+            </div>
+
+            <div className="rounded-xl bg-blue-50 p-2.5 text-[11px] text-blue-800 border border-blue-100 flex items-center justify-between">
+              <span>Hệ thống sẽ gửi tin nhắn SMS mô phỏng chứa mã theo dõi tới người dân.</span>
+              <span className="rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700">
+                Mô phỏng
+              </span>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsProxyOpen(false)}
+                className="rounded-lg border border-gray-200 px-3.5 py-2 font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={!proxyPhone.trim()}
+                onClick={handleCreateProxy}
+                className="rounded-lg bg-primary px-4 py-2 font-semibold text-white shadow-soft hover:bg-primary-hover disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Tạo phản ánh hộ
+              </button>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
     </div>
   );
 }

@@ -27,7 +27,7 @@ export function V01Tasks() {
       </header>
 
       <main className="mx-auto max-w-md px-4 py-4 space-y-4">
-        <div className="rounded-3xl bg-linear-to-r from-emerald-700 to-teal-800 p-4 text-white shadow-sm">
+        <div className="rounded-3xl bg-gradient-to-r from-emerald-700 to-teal-800 p-4 text-white shadow-sm">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-200">
             <Users className="h-4 w-4" />
             <span>Đồng hành cùng Trấn Biên</span>

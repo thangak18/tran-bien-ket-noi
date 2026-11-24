@@ -47,7 +47,7 @@ export function C08Transparency() {
 
       <main className="mx-auto max-w-md lg:max-w-[1100px] px-4 py-4 space-y-6">
         {/* Banner giới thiệu */}
-        <div className="rounded-3xl bg-linear-to-br from-primary-900 to-primary-700 p-5 text-white shadow-sm">
+        <div className="rounded-3xl bg-gradient-to-br from-blue-800 to-primary-600 p-5 text-white shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-200">
             Minh bạch & Trách nhiệm
           </p>

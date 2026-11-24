@@ -1,6 +1,8 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
+import { useAppStore } from '@/store/AppStore';
+import { applySeniorMode } from '@/lib/senior';
 
 interface DesktopHeaderProps {
   role?: 'citizen' | 'volunteer';
@@ -9,6 +11,14 @@ interface DesktopHeaderProps {
 export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ role = 'citizen' }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { state, dispatch } = useAppStore();
+  const seniorMode = state.settings.seniorMode;
+
+  const toggleSeniorMode = () => {
+    const next = !seniorMode;
+    dispatch({ type: 'SET_SETTINGS', payload: { seniorMode: next } });
+    applySeniorMode(next);
+  };
 
   const citizenNavItems = [
     { label: 'Phản ánh', path: '/' },
@@ -71,8 +81,22 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({ role = 'citizen' }
           })}
         </nav>
 
-        {/* Phải: Tìm kiếm thu gọn + Nút Gửi phản ánh */}
+        {/* Phải: Aa Chữ lớn + Tìm kiếm thu gọn + Nút Gửi phản ánh */}
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label="Chế độ chữ lớn"
+            onClick={toggleSeniorMode}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              seniorMode
+                ? 'border-primary bg-primary text-white shadow-soft'
+                : 'border-[#E5E7EB] bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <span className="font-bold text-sm">Aa</span>
+            <span>Chữ lớn</span>
+          </button>
+
           <button
             type="button"
             aria-label="Tìm kiếm phản ánh"

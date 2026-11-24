@@ -12,6 +12,7 @@ import { computeKpi } from '@/domain/kpi';
 import { MapView } from '@/components/map/MapView';
 import { Report, Category } from '@/domain/types';
 import { useIsDesktop } from '@/lib/useIsDesktop';
+import { applySeniorMode } from '@/lib/senior';
 
 function formatDaysAgo(dateStr: string, nowStr: string): string {
   const diffMs = new Date(nowStr).getTime() - new Date(dateStr).getTime();
@@ -28,10 +29,16 @@ export function C01Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { state } = useAppStore();
+  const { state, dispatch } = useAppStore();
   const isDesktop = useIsDesktop();
   const { reports, settings } = state;
   const now = settings.demoNow;
+
+  const toggleSeniorMode = () => {
+    const next = !settings.seniorMode;
+    dispatch({ type: 'SET_SETTINGS', payload: { seniorMode: next } });
+    applySeniorMode(next);
+  };
 
   // Tab: cong-dong hoặc ca-nhan
   const initialTab = searchParams.get('tab') === 'ca-nhan' ? 'ca-nhan' : 'cong-dong';
@@ -124,6 +131,18 @@ export function C01Home() {
 
         {/* Mobile controls */}
         <div className="flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            aria-label="Chế độ chữ lớn"
+            onClick={toggleSeniorMode}
+            className={`flex h-10 w-10 items-center justify-center rounded-full border text-xs font-bold transition-colors shadow-soft ${
+              settings.seniorMode
+                ? 'border-primary bg-primary text-white'
+                : 'border-[#E5E7EB] bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Aa
+          </button>
           <button
             type="button"
             aria-label="Tìm kiếm phản ánh"
