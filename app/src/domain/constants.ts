@@ -76,7 +76,7 @@ export interface StatusConfig {
 export const STATUS_CONFIGS: Record<Status, StatusConfig> = {
   moi: {
     officerLabel: 'Mới',
-    publicLabel: 'Đã gửi',
+    publicLabel: 'Chờ tiếp nhận',
     step: 1,
     color: 'gray',
     icon: 'Send',
@@ -164,3 +164,25 @@ export function officerLabel(status: Status): string {
 export function progressStep(status: Status): 1 | 2 | 3 | 4 | 'exception' {
   return STATUS_CONFIGS[status].step;
 }
+
+/**
+ * Bộ chip đánh giá (spec AC-C06-5, UT-011 mục 6)
+ */
+export const FEEDBACK_POSITIVE_TAGS: readonly string[] = [
+  'Xử lý nhanh',
+  'Sạch sẽ, gọn gàng',
+  'Làm đúng chỗ',
+  'Được báo tin đầy đủ',
+] as const;
+
+export const FEEDBACK_NEGATIVE_TAGS: readonly string[] = [
+  'Xử lý chậm',
+  'Chưa triệt để',
+  'Thiếu thông báo',
+  'Ảnh kết quả chưa rõ',
+] as const;
+
+export const ALL_FEEDBACK_TAGS: readonly string[] = [
+  ...FEEDBACK_POSITIVE_TAGS,
+  ...FEEDBACK_NEGATIVE_TAGS,
+] as const;

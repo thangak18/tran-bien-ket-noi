@@ -7,6 +7,9 @@ import {
   VOLUNTEERS,
   DEMO_NOW,
   publicLabel,
+  FEEDBACK_POSITIVE_TAGS,
+  FEEDBACK_NEGATIVE_TAGS,
+  ALL_FEEDBACK_TAGS,
 } from '@/domain/constants';
 
 describe('UT-011 – Constants', () => {
@@ -45,7 +48,8 @@ describe('UT-011 – Constants', () => {
     }
   });
 
-  it('4. publicLabel("cho_xac_minh") chứa "Đang kiểm tra tại chỗ"', () => {
+  it('4. publicLabel("moi") = "Chờ tiếp nhận"; publicLabel("cho_xac_minh") chứa "Đang kiểm tra tại chỗ"', () => {
+    expect(publicLabel('moi')).toBe('Chờ tiếp nhận');
     expect(publicLabel('cho_xac_minh')).toContain('Đang kiểm tra tại chỗ');
   });
 
@@ -54,5 +58,21 @@ describe('UT-011 – Constants', () => {
     expect(VOLUNTEERS).toHaveLength(3);
     expect(VOLUNTEERS).toEqual(['Lê Thảo Vy', 'Trần Quốc Bảo', 'Phạm Ngọc Hân']);
     expect(DEMO_NOW).toBe('2026-11-24T09:00:00+07:00');
+  });
+
+  it('6. bộ chip đánh giá: 4 chip tích cực, 4 chip chưa tốt, đúng câu chữ AC-C06-5', () => {
+    expect(FEEDBACK_POSITIVE_TAGS).toEqual([
+      'Xử lý nhanh',
+      'Sạch sẽ, gọn gàng',
+      'Làm đúng chỗ',
+      'Được báo tin đầy đủ',
+    ]);
+    expect(FEEDBACK_NEGATIVE_TAGS).toEqual([
+      'Xử lý chậm',
+      'Chưa triệt để',
+      'Thiếu thông báo',
+      'Ảnh kết quả chưa rõ',
+    ]);
+    expect(ALL_FEEDBACK_TAGS).toHaveLength(8);
   });
 });
