@@ -50,8 +50,8 @@ export function V01Tasks() {
         <div className="mx-auto flex h-14 max-w-md items-center gap-2 px-4 lg:max-w-5xl">
           <button
             type="button"
-            onClick={() => navigate('/')}
-            aria-label="Về trang chủ"
+            onClick={() => navigate('/demo')}
+            aria-label="Đổi vai trò"
             className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
           >
             <ArrowLeft className="h-5 w-5" />

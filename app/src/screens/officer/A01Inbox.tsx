@@ -88,10 +88,10 @@ export function A01Inbox() {
 
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/demo')}
             className="text-xs font-semibold text-primary hover:underline"
           >
-            ← Cổng công dân
+            ← Đổi vai trò
           </button>
         </div>
 
