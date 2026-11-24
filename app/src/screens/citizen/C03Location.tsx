@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Navigation, MapPin } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { MapView, MapMarker } from '@/components/map/MapView';
+import { formatDecimal } from '@/domain/format';
 import { STREETS, WARD_CENTER, nearestStreet } from '@/data/streets';
 
 export function C03Location() {
@@ -210,7 +211,7 @@ export function C03Location() {
             <div className="rounded-card border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 space-y-1">
               <span className="font-semibold text-gray-900">Toạ độ đã chọn:</span>
               <p className="font-mono text-[11px] text-gray-500">
-                {lat.toFixed(5)}, {lng.toFixed(5)}
+                {formatDecimal(lat, 5)}, {formatDecimal(lng, 5)}
               </p>
             </div>
           </div>

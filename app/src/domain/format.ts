@@ -8,6 +8,23 @@ export function formatDays(days: number): string {
 }
 
 /**
+ * Định dạng phần trăm: 1 chữ số thập phân, dấu phẩy (spec 7.6)
+ * Ví dụ: 73.4 -> "73,4%"
+ */
+export function formatPercent(percent: number): string {
+  const formatted = percent.toFixed(1).replace('.', ',');
+  return `${formatted}%`;
+}
+
+/**
+ * Định dạng số thập phân tiếng Việt: 1 chữ số thập phân, dấu phẩy (spec 7.6)
+ * Ví dụ: 3.2 -> "3,2"
+ */
+export function formatDecimal(num: number, decimals: number = 1): string {
+  return num.toFixed(decimals).replace('.', ',');
+}
+
+/**
  * Định dạng khoảng cách theo mét hoặc km (spec 7.6, UT-017.1)
  * < 1000m: "{n} m"; >= 1000m: "{n,n} km"
  */

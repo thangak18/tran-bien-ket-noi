@@ -4,7 +4,7 @@ import { Search, AlertCircle, Clock, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { sortInbox, isOverdue, isDueSoon } from '@/domain/sorting';
 import { computeDelayDays } from '@/domain/latestUpdate';
-import { formatDateShort } from '@/domain/format';
+import { formatDateShort, formatPercent } from '@/domain/format';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { StatusChip } from '@/components/common/StatusChip';
@@ -160,7 +160,7 @@ export function A01Inbox() {
             <span className="text-xs font-medium text-emerald-600">Đã xử lý</span>
             <div className="mt-1 text-2xl font-bold text-emerald-600">{resolvedCount}</div>
             <span className="text-[11px] text-emerald-700 font-medium">
-              {((resolvedCount / (totalCount || 1)) * 100).toFixed(1)}% hoàn tất
+              {formatPercent((resolvedCount / (totalCount || 1)) * 100)} hoàn tất
             </span>
           </div>
 

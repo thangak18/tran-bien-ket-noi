@@ -201,7 +201,7 @@ export function C04Confirm() {
             {photos.map((p, idx) => (
               <div
                 key={idx}
-                className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/20 bg-gray-800"
+                className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100"
               >
                 {p && !thumbErrors[idx] ? (
                   <img
@@ -211,12 +211,11 @@ export function C04Confirm() {
                     onError={() => setThumbErrors((prev) => ({ ...prev, [idx]: true }))}
                   />
                 ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center bg-gray-800 text-gray-400">
+                  <div className="flex h-full w-full flex-col items-center justify-center bg-gray-100 text-gray-500">
                     <CategoryIcon
                       category={category || 'mat_duong'}
-                      className="h-4 w-4 text-gray-400"
+                      className="h-5 w-5 text-gray-500"
                     />
-                    <span className="text-[7px] font-medium text-gray-400">Chưa có ảnh</span>
                   </div>
                 )}
               </div>
@@ -467,13 +466,23 @@ export function C04Confirm() {
                     {photos.map((p, idx) => (
                       <div
                         key={idx}
-                        className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-200"
+                        className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100"
                       >
-                        <img
-                          src={p}
-                          alt={`Ảnh ${idx + 1}`}
-                          className="h-full w-full object-cover"
-                        />
+                        {p && !thumbErrors[idx] ? (
+                          <img
+                            src={p}
+                            alt={`Ảnh ${idx + 1}`}
+                            className="h-full w-full object-cover"
+                            onError={() => setThumbErrors((prev) => ({ ...prev, [idx]: true }))}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full flex-col items-center justify-center bg-gray-100 text-gray-500">
+                            <CategoryIcon
+                              category={category || 'mat_duong'}
+                              className="h-6 w-6 text-gray-500"
+                            />
+                          </div>
+                        )}
                       </div>
                     ))}
 

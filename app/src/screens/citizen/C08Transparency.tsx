@@ -3,7 +3,7 @@ import { ArrowLeft, CheckCircle2, Clock, Inbox, FileText, ChevronRight } from 'l
 import { useAppStore } from '@/store/AppStore';
 import { computeKpi } from '@/domain/kpi';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
-import { formatDateShort } from '@/domain/format';
+import { formatDateShort, formatPercent, formatDecimal } from '@/domain/format';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { StatusChip } from '@/components/common/StatusChip';
 import { BeforeAfter } from '@/components/citizen/BeforeAfter';
@@ -24,10 +24,6 @@ export function C08Transparency() {
       return new Date(timeB).getTime() - new Date(timeA).getTime();
     })
     .slice(0, 6);
-
-  const formatNumberVi = (num: number, decimals: number = 1): string => {
-    return num.toFixed(decimals).replace('.', ',');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -85,7 +81,7 @@ export function C08Transparency() {
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-2xl font-black text-emerald-600">{kpi.resolved}</span>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-sm">
-                {formatNumberVi(kpi.resolvedPercent)}%
+                {formatPercent(kpi.resolvedPercent)}
               </span>
             </div>
           </div>
@@ -110,7 +106,7 @@ export function C08Transparency() {
             </div>
             <div className="mt-2 flex items-baseline gap-1">
               <span className="text-2xl font-black text-purple-700">
-                {kpi.avgDays !== null ? formatNumberVi(kpi.avgDays) : '3,2'}
+                {kpi.avgDays !== null ? formatDecimal(kpi.avgDays) : '3,2'}
               </span>
               <span className="text-xs text-gray-400">ngày / việc</span>
             </div>

@@ -32,22 +32,38 @@ export interface MapViewProps {
   className?: string;
 }
 
+// Marker color mapping according to public status:
+// - Xám: Chờ tiếp nhận (moi)
+// - Xanh dương: Đã tiếp nhận (da_tiep_nhan, cho_xac_minh)
+// - Cam: Đang xử lý (da_giao, mo_lai)
+// - Xanh lá: Đã xử lý (hoan_thanh, dong)
+function getStatusMarkerColor(status: Status): { bg: string; border: string; text: string } {
+  switch (status) {
+    case 'moi':
+      return { bg: '#64748b', border: '#475569', text: '#ffffff' }; // xám Chờ tiếp nhận
+    case 'da_tiep_nhan':
+    case 'cho_xac_minh':
+      return { bg: '#2563eb', border: '#1d4ed8', text: '#ffffff' }; // xanh dương Đã tiếp nhận
+    case 'da_giao':
+    case 'mo_lai':
+      return { bg: '#f97316', border: '#c2410c', text: '#ffffff' }; // cam Đang xử lý
+    case 'hoan_thanh':
+    case 'dong':
+      return { bg: '#16a34a', border: '#15803d', text: '#ffffff' }; // xanh lá Đã xử lý
+    case 'can_bo_sung':
+      return { bg: '#eab308', border: '#a16207', text: '#ffffff' }; // vàng Cần bổ sung
+    case 'da_gop':
+      return { bg: '#9333ea', border: '#7e22ce', text: '#ffffff' }; // tím Đã gộp
+    default:
+      return { bg: '#64748b', border: '#475569', text: '#ffffff' };
+  }
+}
+
 // Marker icon generator using L.divIcon
 function createCustomDivIcon(category: Category, status: Status, isSelected: boolean) {
   const catConfig = CATEGORY_CONFIGS.find((c) => c.key === category) || CATEGORY_CONFIGS[0]!;
   const statConfig = STATUS_CONFIGS[status] || STATUS_CONFIGS.moi;
-
-  const colorStyles: Record<string, { bg: string; border: string; text: string }> = {
-    gray: { bg: '#94a3b8', border: '#64748b', text: '#ffffff' },
-    blue: { bg: '#3b82f6', border: '#1d4ed8', text: '#ffffff' },
-    orange: { bg: '#f97316', border: '#c2410c', text: '#ffffff' },
-    green: { bg: '#10b981', border: '#047857', text: '#ffffff' },
-    purple: { bg: '#a855f7', border: '#7e22ce', text: '#ffffff' },
-    red: { bg: '#ef4444', border: '#b91c1c', text: '#ffffff' },
-    yellow: { bg: '#eab308', border: '#a16207', text: '#ffffff' },
-  };
-
-  const c = colorStyles[statConfig.color] || colorStyles.gray!;
+  const c = getStatusMarkerColor(status);
 
   const iconSvgs: Record<Category, string> = {
     den_duong: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`,
@@ -219,6 +235,9 @@ export const MapView: React.FC<MapViewProps> = ({
         {/* Markers */}
         {markers.map((m) => {
           const isSelected = m.id === selectedMarkerId;
+          const isResolved = m.status === 'hoan_thanh' || m.status === 'dong';
+          // Marker đang xử lý, chờ tiếp nhận hoặc được chọn sẽ nổi lên trên các marker đã xử lý
+          const zIndex = isSelected ? 2000 : isResolved ? 100 : 800;
           const icon = createCustomDivIcon(m.category, m.status, isSelected);
 
           return (
@@ -226,6 +245,7 @@ export const MapView: React.FC<MapViewProps> = ({
               key={m.id}
               position={[m.lat, m.lng]}
               icon={icon}
+              zIndexOffset={zIndex}
               eventHandlers={{
                 click: () => m.onClick?.(m.id),
               }}
@@ -265,19 +285,19 @@ export const MapView: React.FC<MapViewProps> = ({
             <h4 className="font-semibold text-gray-900 mb-2">Màu sắc trạng thái</h4>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2.5">
-                <span className="h-3.5 w-3.5 rounded-full bg-gray-400 border border-gray-500" />
+                <span className="h-3.5 w-3.5 rounded-full bg-slate-500 border border-slate-600" />
                 <span className="text-gray-700">Chờ tiếp nhận</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="h-3.5 w-3.5 rounded-full bg-blue-500 border border-blue-600" />
+                <span className="h-3.5 w-3.5 rounded-full bg-blue-600 border border-blue-700" />
                 <span className="text-gray-700">Đã tiếp nhận</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="h-3.5 w-3.5 rounded-full bg-amber-500 border border-amber-600" />
+                <span className="h-3.5 w-3.5 rounded-full bg-orange-500 border border-orange-600" />
                 <span className="text-gray-700">Đang xử lý</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="h-3.5 w-3.5 rounded-full bg-emerald-500 border border-emerald-600" />
+                <span className="h-3.5 w-3.5 rounded-full bg-green-600 border border-green-700" />
                 <span className="text-gray-700">Đã xử lý</span>
               </div>
             </div>

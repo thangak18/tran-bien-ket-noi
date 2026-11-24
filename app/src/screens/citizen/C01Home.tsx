@@ -7,7 +7,7 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { WARD_CENTER } from '@/data/streets';
 import { haversineMeters } from '@/domain/geo';
-import { formatDistance } from '@/domain/format';
+import { formatDistance, formatPercent, formatDays } from '@/domain/format';
 import { computeKpi } from '@/domain/kpi';
 import { MapView } from '@/components/map/MapView';
 import { Report, Category } from '@/domain/types';
@@ -96,9 +96,9 @@ export function C01Home() {
   // KPI tháng 11 cho sidebar desktop
   const kpi = useMemo(() => computeKpi(reports, '2026-11', now), [reports, now]);
 
-  // Marker cho bản đồ nhỏ desktop
+  // Marker cho bản đồ nhỏ desktop (lấy toàn bộ để đủ màu sắc)
   const mapMarkers = useMemo(() => {
-    return reports.slice(0, 25).map((r) => ({
+    return communityReports.map((r) => ({
       id: r.id,
       lat: r.lat,
       lng: r.lng,
@@ -107,7 +107,7 @@ export function C01Home() {
       title: r.address,
       onClick: (id: string) => navigate(`/phan-anh/${id}`),
     }));
-  }, [reports, navigate]);
+  }, [communityReports, navigate]);
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-4 pb-8 min-h-screen w-full max-w-[1200px] mx-auto md:p-6">
@@ -348,7 +348,9 @@ export function C01Home() {
                 <span className="text-[11px] text-emerald-700">Đã xử lý</span>
                 <div className="mt-0.5 text-xl font-bold text-emerald-700">
                   {kpi.resolved}{' '}
-                  <span className="text-xs font-medium">({kpi.resolvedPercent}%)</span>
+                  <span className="text-xs font-medium">
+                    ({formatPercent(kpi.resolvedPercent)})
+                  </span>
                 </div>
               </div>
               <div className="rounded-lg bg-amber-50 p-2.5 border border-amber-100">
@@ -358,7 +360,7 @@ export function C01Home() {
               <div className="rounded-lg bg-blue-50 p-2.5 border border-blue-100">
                 <span className="text-[11px] text-blue-700">Thời gian TB</span>
                 <div className="mt-0.5 text-xl font-bold text-blue-700">
-                  {kpi.avgDays ?? 3.2} <span className="text-xs font-medium">ngày</span>
+                  {formatDays(kpi.avgDays ?? 3.2)}
                 </div>
               </div>
             </div>
