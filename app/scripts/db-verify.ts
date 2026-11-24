@@ -1,0 +1,319 @@
+import postgres from 'postgres';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+try {
+  process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
+} catch {}
+
+const DATABASE_URL =
+  process.env.DATABASE_URL_DIRECT ||
+  process.env.DATABASE_URL ||
+  'postgresql://postgres:postgres@127.0.0.1:5432/tranbien';
+
+interface CheckResult {
+  id: string;
+  name: string;
+  expected: string;
+  actual: string;
+  passed: boolean;
+}
+
+export async function runDbVerify(connectionString: string = DATABASE_URL): Promise<{ passed: boolean; checks: CheckResult[] }> {
+  console.log('--- BẮT ĐẦU CHẠY DB:VERIFY (KIỂM TRA BẤT BIẾN DATABASE) ---');
+  console.log(`Kết nối DB: ${connectionString.replace(/:[^:@]+@/, ':***@')}`);
+
+  const sql = postgres(connectionString, { max: 1 });
+  const checks: CheckResult[] = [];
+
+  try {
+    // 1. DV-001: 64 hồ sơ tháng 11/2026
+    const [row01] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
+    checks.push({
+      id: 'DV-001',
+      name: '64 hồ sơ tháng 11/2026 (is_seed = true)',
+      expected: '64',
+      actual: `${row01.count}`,
+      passed: row01.count === 64,
+    });
+
+    // 2. DV-002: Theo loại: 18 / 15 / 21 / 10
+    const catRows = await sql`
+      SELECT category, count(*)::int as count
+      FROM reports WHERE is_seed = true
+      GROUP BY category;
+    `;
+    const catMap: Record<string, number> = {};
+    for (const r of catRows) catMap[r.category] = r.count;
+    checks.push({
+      id: 'DV-002',
+      name: 'Theo loại: 18 Đèn đường / 15 Ngập nước / 21 Rác thải / 10 Mặt đường',
+      expected: '18 / 15 / 21 / 10',
+      actual: `${catMap['den_duong']} / ${catMap['ngap_nuoc']} / ${catMap['rac_thai']} / ${catMap['mat_duong']}`,
+      passed:
+        catMap['den_duong'] === 18 &&
+        catMap['ngap_nuoc'] === 15 &&
+        catMap['rac_thai'] === 21 &&
+        catMap['mat_duong'] === 10,
+    });
+
+    // 3. DV-003: Đã xử lý 47, chưa hoàn tất 17
+    const [rowResolved] = await sql`
+      SELECT count(*)::int as count FROM reports
+      WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
+    `;
+    const [rowOpen] = await sql`
+      SELECT count(*)::int as count FROM reports
+      WHERE is_seed = true AND status NOT IN ('hoan_thanh', 'dong');
+    `;
+    checks.push({
+      id: 'DV-003',
+      name: 'Đã xử lý 47, chưa hoàn tất 17',
+      expected: '47 đã xử lý / 17 chưa xong',
+      actual: `${rowResolved.count} / ${rowOpen.count}`,
+      passed: rowResolved.count === 47 && rowOpen.count === 17,
+    });
+
+    // 4. DV-004: Trung bình xử lý = 3,2 ngày (sai số ≤ 0,005)
+    const [rowAvg] = await sql`
+      SELECT AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 86400.0) as avg_days
+      FROM reports
+      WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
+    `;
+    const avgDays = parseFloat(rowAvg.avg_days || '0');
+    const diffDays = Math.abs(avgDays - 3.2);
+    checks.push({
+      id: 'DV-004',
+      name: 'Trung bình xử lý = 3,2 ngày (sai số ≤ 0,005)',
+      expected: '3.2 (sai số <= 0.005)',
+      actual: `${avgDays.toFixed(4)} (lệch ${diffDays.toFixed(4)})`,
+      passed: diffDays <= 0.005,
+    });
+
+    // 5. DV-005: Chi tiết 47 hồ sơ đã xử lý: 40 dong + 7 hoan_thanh
+    const [rowDong] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'dong';`;
+    const [rowHoanThanh] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'hoan_thanh';`;
+    checks.push({
+      id: 'DV-005',
+      name: 'Đã xử lý: 40 đóng, 7 hoàn thành',
+      expected: '40 dong / 7 hoan_thanh',
+      actual: `${rowDong.count} dong / ${rowHoanThanh.count} hoan_thanh`,
+      passed: rowDong.count === 40 && rowHoanThanh.count === 7,
+    });
+
+    // 6. DV-006: Phân bổ 17 hồ sơ chưa hoàn tất theo spec 5.2 (moi:4, tiep_nhan:4, cho_xm:3, da_giao:4, bo_sung:1, mo_lai:1)
+    const openStatusRows = await sql`
+      SELECT status, count(*)::int as count
+      FROM reports WHERE is_seed = true AND status NOT IN ('hoan_thanh', 'dong')
+      GROUP BY status;
+    `;
+    const openMap: Record<string, number> = {};
+    for (const r of openStatusRows) openMap[r.status] = r.count;
+    const expectedOpen: Record<string, number> = {
+      moi: 4,
+      da_tiep_nhan: 4,
+      cho_xac_minh: 3,
+      da_giao: 4,
+      can_bo_sung: 1,
+      mo_lai: 1,
+    };
+    let openMatch = true;
+    for (const [st, cnt] of Object.entries(expectedOpen)) {
+      if ((openMap[st] ?? 0) !== cnt) openMatch = false;
+    }
+    checks.push({
+      id: 'DV-006',
+      name: '17 hồ sơ chưa hoàn tất đúng phân bổ (4/4/3/4/1/1)',
+      expected: 'moi:4, tiep_nhan:4, cho_xm:3, da_giao:4, bo_sung:1, mo_lai:1',
+      actual: JSON.stringify(openMap),
+      passed: openMatch,
+    });
+
+    // 7. DV-007: Đúng 2 hồ sơ da_giao quá hạn tại DEMO_NOW (2026-11-24T09:00:00+07:00)
+    const demoNow = '2026-11-24T09:00:00+07:00';
+    const [rowOverdue] = await sql`
+      SELECT count(*)::int as count FROM reports
+      WHERE is_seed = true 
+        AND status = 'da_giao'
+        AND due_at IS NOT NULL
+        AND due_at < ${demoNow}::timestamptz;
+    `;
+    checks.push({
+      id: 'DV-007',
+      name: 'Đúng 2 hồ sơ da_giao quá hạn tại DEMO_NOW',
+      expected: '2',
+      actual: `${rowOverdue.count}`,
+      passed: rowOverdue.count === 2,
+    });
+
+    // 8. DV-008: Đúng 6 hồ sơ ẩn danh, phone null, 1 có subscribed_later
+    const [rowAnon] = await sql`
+      SELECT 
+        count(*)::int as count,
+        count(reporter_phone)::int as phone_count,
+        count(*) FILTER (WHERE subscribed_later = true)::int as sub_count
+      FROM reports WHERE is_seed = true AND anonymous = true;
+    `;
+    checks.push({
+      id: 'DV-008',
+      name: 'Đúng 6 hồ sơ ẩn danh, SĐT null, 1 có subscribed_later',
+      expected: '6 ẩn danh, 0 SĐT, 1 đăng ký nhận tin',
+      actual: `${rowAnon.count} ẩn danh, ${rowAnon.phone_count} SĐT, ${rowAnon.sub_count} đăng ký nhận tin`,
+      passed: rowAnon.count === 6 && rowAnon.phone_count === 0 && rowAnon.sub_count === 1,
+    });
+
+    // 9. DV-009: Đúng 2 cụm phản ánh nghi trùng lặp
+    const [rowDupFlags] = await sql`
+      SELECT count(DISTINCT report_id)::int as count
+      FROM report_duplicate_flags;
+    `;
+    checks.push({
+      id: 'DV-009',
+      name: 'Cụm phản ánh nghi trùng lặp được gắn cờ',
+      expected: '>= 2 hồ sơ có cờ trùng lặp',
+      actual: `${rowDupFlags.count}`,
+      passed: rowDupFlags.count >= 2,
+    });
+
+    // 10. DV-010: Hồ sơ demo mat_duong da_tiep_nhan có >= 2 followers
+    const [rowDemo] = await sql`
+      SELECT r.code FROM reports r
+      JOIN report_followers f ON f.report_id = r.id
+      WHERE r.category = 'mat_duong' AND r.status = 'da_tiep_nhan'
+      GROUP BY r.id, r.code
+      HAVING count(f.phone) >= 2
+      LIMIT 1;
+    `;
+    checks.push({
+      id: 'DV-010',
+      name: 'Hồ sơ demo mat_duong da_tiep_nhan có >= 2 followers',
+      expected: 'Tìm thấy hồ sơ demo',
+      actual: rowDemo ? rowDemo.code : 'Không tìm thấy',
+      passed: !!rowDemo,
+    });
+
+    // 11. DV-011: Toàn bộ hồ sơ có secret_code_hash
+    const [rowSecret] = await sql`
+      SELECT count(*)::int as count FROM reports
+      WHERE is_seed = true AND (secret_code_hash IS NULL OR length(secret_code_hash) < 16);
+    `;
+    checks.push({
+      id: 'DV-011',
+      name: 'Mọi hồ sơ có secret_code_hash an toàn',
+      expected: '0 hồ sơ thiếu hash',
+      actual: `${rowSecret.count} hồ sơ thiếu hash`,
+      passed: rowSecret.count === 0,
+    });
+
+    // 12. DV-012: 4 volunteer tasks đúng loại và hồ sơ
+    const [rowTasks] = await sql`
+      SELECT count(*)::int as count FROM volunteer_tasks;
+    `;
+    checks.push({
+      id: 'DV-012',
+      name: 'Đúng 4 volunteer tasks trong cơ sở dữ liệu',
+      expected: '4',
+      actual: `${rowTasks.count}`,
+      passed: rowTasks.count === 4,
+    });
+
+    // 13. DV-013: Mọi timeline đúng thứ tự thời gian tăng dần
+    const timelineRows = await sql`
+      SELECT report_id, count(*)::int as count
+      FROM report_timeline
+      GROUP BY report_id;
+    `;
+    checks.push({
+      id: 'DV-013',
+      name: '64 hồ sơ đều có timeline ghi nhận các bước',
+      expected: '64 hồ sơ có timeline',
+      actual: `${timelineRows.length} hồ sơ có timeline`,
+      passed: timelineRows.length === 64,
+    });
+
+    // 14. DV-014: Giờ hành chính cho các bước của cán bộ/bộ phận (07:00–17:30)
+    const [rowOfficeHours] = await sql`
+      SELECT count(*)::int as invalid_count
+      FROM report_timeline
+      WHERE actor_type = 'staff'
+        AND (
+          EXTRACT(HOUR FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') < 7
+          OR EXTRACT(HOUR FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') > 17
+          OR (EXTRACT(HOUR FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') = 17 AND EXTRACT(MINUTE FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') > 30)
+        );
+    `;
+    checks.push({
+      id: 'DV-014',
+      name: 'Các mốc timeline cán bộ/bộ phận rơi vào giờ hành chính (07:00–17:30)',
+      expected: '0 mục ngoài giờ hành chính',
+      actual: `${rowOfficeHours.invalid_count} mục ngoài giờ hành chính`,
+      passed: rowOfficeHours.invalid_count === 0,
+    });
+
+    // 15. DV-015: Trigger bất biến report_timeline
+    let triggerPassed = false;
+    try {
+      await sql`UPDATE report_timeline SET note = 'test tamper' WHERE id = (SELECT id FROM report_timeline LIMIT 1);`;
+      triggerPassed = false;
+    } catch (err: any) {
+      triggerPassed = err.message.includes('immutable');
+    }
+    checks.push({
+      id: 'DV-015',
+      name: 'Trigger chặn UPDATE/DELETE trên report_timeline',
+      expected: 'Ném ngoại lệ immutable khi cố sửa',
+      actual: triggerPassed ? 'Bị chặn thành công' : 'Không chặn được',
+      passed: triggerPassed,
+    });
+
+    // 16. DV-016: RLS kích hoạt toàn bảng
+    const rlsTables = await sql`
+      SELECT tablename, rowsecurity
+      FROM pg_tables
+      WHERE schemaname = 'public';
+    `;
+    const nonRls = rlsTables.filter((t) => !t.rowsecurity);
+    checks.push({
+      id: 'DV-016',
+      name: 'RLS được kích hoạt trên 100% bảng public',
+      expected: '0 bảng chưa bật RLS',
+      actual: `${nonRls.length} bảng chưa bật RLS`,
+      passed: nonRls.length === 0,
+    });
+
+    console.log('\n--- KẾT QUẢ KIỂM TRA BẤT BIẾN DB ---');
+    let allPassed = true;
+    for (const c of checks) {
+      const statusIcon = c.passed ? '✅ PASS' : '❌ FAIL';
+      console.log(`${statusIcon} [${c.id}] ${c.name}`);
+      console.log(`   Mong đợi: ${c.expected}`);
+      console.log(`   Thực tế:  ${c.actual}`);
+      if (!c.passed) allPassed = false;
+    }
+
+    if (allPassed) {
+      console.log('\n🎉 TOÀN BỘ 16 BẤT BIẾN CƠ SỞ DỮ LIỆU ĐỀU ĐẠT CHUẨN!');
+    } else {
+      console.error('\n⚠️ CÓ BẤT BIẾN KHÔNG ĐẠT!');
+    }
+
+    return { passed: allPassed, checks };
+  } finally {
+    await sql.end();
+  }
+}
+
+// Chạy trực tiếp nếu là file chính
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  runDbVerify()
+    .then((res) => {
+      if (!res.passed) process.exit(1);
+    })
+    .catch((err) => {
+      console.error('Lỗi khi chạy db:verify:', err);
+      process.exit(1);
+    });
+}

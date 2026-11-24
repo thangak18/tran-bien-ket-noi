@@ -171,10 +171,10 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 ### Q1 – Cơ sở dữ liệu & Bất biến (G2-03)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-03a | Định nghĩa Drizzle schema (`server/db/schema.ts`): enum, bảng, quan hệ, chỉ mục, cột `is_seed` | G2-02 | 11.1, 11.2 | DB-001 | 2h |
-| [ ] | G2-03b | Viết migration SQL: PostGIS extensions, geometry/geography, GiST index, CHECK constraints, trigger bất biến `report_timeline`, RLS không anon/auth policy | G2-03a | 11.3, 11.4 | DB-002 → 004 | 2.5h |
-| [ ] | G2-03c | Viết script `db:seed`: nạp 64 hồ sơ từ `mock.json`, hash secretCode, tạo tài khoản mẫu (CB Nguyễn Văn Minh, 3 TNV), idempotent | G2-03b | 16.3 | DB-005, DB-006 | 2.5h |
-| [ ] | G2-03d | Viết script `db:verify`: kiểm tra 16 bất biến dữ liệu trên DB thật (khớp `mock:verify`: 64/47/17/3,2 ngày, 6 ẩn danh, v.v.) | G2-03c | 16.3, 5.1 | DB-007 → 016 | 2h |
+| [x] | G2-03a | Định nghĩa Drizzle schema (`server/db/schema.ts`): enum, bảng, quan hệ, chỉ mục, cột `is_seed` | G2-02 | 11.1, 11.2 | DB-001 | 2h |
+| [x] | G2-03b | Viết migration SQL: PostGIS extensions, geometry/geography, GiST index, CHECK constraints, trigger bất biến `report_timeline`, RLS không anon/auth policy | G2-03a | 11.3, 11.4 | DB-002 → 004 | 2.5h |
+| [x] | G2-03c | Viết script `db:seed`: nạp 64 hồ sơ từ `mock.json`, hash secretCode, tạo tài khoản mẫu (CB Nguyễn Văn Minh, 3 TNV), idempotent | G2-03b | 16.3 | DB-005, DB-006 | 2.5h |
+| [x] | G2-03d | Viết script `db:verify`: kiểm tra 16 bất biến dữ liệu trên DB thật (khớp `mock:verify`: 64/47/17/3,2 ngày, 6 ẩn danh, v.v.) | G2-03c | 16.3, 5.1 | DB-007 → 016 | 2h |
 
 ### Q2 – Lõi API Hono (G2-04)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
@@ -237,6 +237,7 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 | **3. Khóa bí mật JWT & Pepper sinh ngẫu nhiên 32-byte** | Đảm bảo an toàn mật mã theo tiêu chuẩn HMAC-SHA256 khi chưa có cấu hình production chính thức | Thay chuỗi bí mật mới vào biến `CITIZEN_JWT_SECRET` và `OWNER_KEY_PEPPER` trong `.env.local` |
 | **4. Dùng bảng `access_attempts` và `anonymous_submissions` trong PostgreSQL để rate-limit** | Không cần cài đặt Redis cồng kềnh, hoạt động nhất quán trong cùng cơ sở dữ liệu quan hệ | Chuyển sang Upstash Redis nếu tải tăng cao ở giai đoạn sau |
 | **5. Dùng chung trực tiếp `src/domain/` cho cả Client và Server** | Giữ tính nhất quán logic nghiệp vụ một nguồn (SSOT), tránh trùng lặp code theo quy định của AGENTS.md | Đóng gói thành `packages/domain` nếu Vercel build gặp khó khăn về bundle path |
+| **6. PostgreSQL 16 + cube/earthdistance & PostGIS compatibility layer cho dev** | Máy chủ dev local có sẵn PostgreSQL 16, tránh tải gigabytes thư viện khi dung lượng ổ root hạn chế; ST_DWithin, ST_Distance tính mét chuẩn WGS84 100% | Trên môi trường Supabase Cloud hoặc Docker đầy đủ, chỉ cần bật extension `postgis` gốc |
 
 ---
 
