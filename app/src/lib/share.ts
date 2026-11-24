@@ -11,7 +11,10 @@ export type ShareResult = 'shared' | 'copied' | 'cancelled' | 'failed';
  */
 export function buildTrackingUrl(reportId: string, secretCode?: string, origin?: string): string {
   const base =
-    origin || (typeof window !== 'undefined' ? window.location.origin : 'https://tranbien.vn');
+    origin ||
+    (typeof window !== 'undefined' && window.location.origin
+      ? window.location.origin
+      : 'http://localhost');
   return secretCode
     ? `${base}/phan-anh/${reportId}?k=${secretCode}`
     : `${base}/phan-anh/${reportId}`;

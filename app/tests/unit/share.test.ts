@@ -16,13 +16,13 @@ describe('UT-039 – Share and Tracking Link', () => {
   });
 
   it('buildTrackingUrl tạo link chuẩn có secretCode khi có mã', () => {
-    const url = buildTrackingUrl('TB-0010', '1234', 'https://tranbien.vn');
-    expect(url).toBe('https://tranbien.vn/phan-anh/TB-0010?k=1234');
+    const url = buildTrackingUrl('TB-0010', '1234', 'http://localhost');
+    expect(url).toBe('http://localhost/phan-anh/TB-0010?k=1234');
   });
 
   it('buildTrackingUrl tạo link không có ?k= khi không có mã', () => {
-    const url = buildTrackingUrl('TB-0010', undefined, 'https://tranbien.vn');
-    expect(url).toBe('https://tranbien.vn/phan-anh/TB-0010');
+    const url = buildTrackingUrl('TB-0010', undefined, 'http://localhost');
+    expect(url).toBe('http://localhost/phan-anh/TB-0010');
   });
 
   it('có navigator.share -> gọi với { title, text, url } chứa ?k=', async () => {
@@ -34,7 +34,7 @@ describe('UT-039 – Share and Tracking Link', () => {
       writable: true,
     });
 
-    const url = 'https://tranbien.vn/phan-anh/TB-0065?k=9876';
+    const url = 'http://localhost/phan-anh/TB-0065?k=9876';
     const result = await shareOrCopy({
       title: 'Phản ánh Trấn Biên',
       text: 'Mã theo dõi phản ánh',
@@ -60,7 +60,7 @@ describe('UT-039 – Share and Tracking Link', () => {
       writable: true,
     });
 
-    const url = 'https://tranbien.vn/phan-anh/TB-0065?k=9876';
+    const url = 'http://localhost/phan-anh/TB-0065?k=9876';
     const result = await shareOrCopy({ url });
 
     expect(writeTextMock).toHaveBeenCalledWith(url);
@@ -80,7 +80,7 @@ describe('UT-039 – Share and Tracking Link', () => {
     });
 
     const result = await shareOrCopy({
-      url: 'https://tranbien.vn/phan-anh/TB-0065?k=9876',
+      url: 'http://localhost/phan-anh/TB-0065?k=9876',
     });
 
     expect(result).toBe('cancelled');

@@ -393,7 +393,7 @@ export const DevUiGallery: React.FC = () => {
             <TrackingLinkCard
               reportId="TB-0065"
               secretCode="4821"
-              origin="https://tranbien.vn"
+              origin={typeof window !== 'undefined' ? window.location.origin : 'http://localhost'}
               showSecretDefault={true}
             />
 
@@ -423,7 +423,7 @@ export const DevUiGallery: React.FC = () => {
             <SmsPreview
               phone="0909 *** 068"
               sender="UBND P. Tran Bien"
-              message="UBND P. Tran Bien: Phan anh TB-0010 ve den duong da duoc Phong KT-HT&DT tiep nhan. Theo doi tai: https://tranbien.vn/phan-anh/TB-0010?k=1234"
+              message={`UBND P. Tran Bien: Phan anh TB-0010 ve den duong da duoc Phong KT-HT&DT tiep nhan. Theo doi tai: ${typeof window !== 'undefined' ? window.location.origin : 'http://localhost'}/phan-anh/TB-0010?k=1234`}
               time="10:30 Hôm nay"
             />
           </div>
