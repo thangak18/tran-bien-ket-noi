@@ -1,6 +1,6 @@
-# SPEC – Trấn Biên Kết Nối (UI/UX Prototype)
+# SPEC – Trấn Biên Kết Nối
 
-Phiên bản: 1.2 (ưu tiên tính năng bắt buộc; quy chuẩn UI theo `ui-ux-guidelines.md`) · Nguồn: `proposal_v2.1.md`  
+Phiên bản: 2.0 · Mục 0–9 = **giai đoạn 1** (prototype UI/UX, đã nộp 24/11/2026, vẫn là chuẩn cho giao diện và nghiệp vụ). **Mục 10–17 = giai đoạn 2** (backend + database, mở 25/11/2026): khi mục 10–17 mâu thuẫn mục 1.2, 1.3, 2, 4.4, 5 thì mục 10–17 thắng. · Nguồn: `proposal_v2.1.md`  
 Nhãn: **[ĐỀ]** yêu cầu BTC · **[GĐ]** giả định thiết kế · **[KC]** cần kiểm chứng
 
 ---
@@ -47,6 +47,8 @@ Prototype web tương tác thể hiện trọn vòng đời một phản ánh hi
 | Chế độ chữ lớn | Đầy đủ – **[BONUS – HOÃN]** |
 
 ### 1.3. Ngoài phạm vi
+
+*(Áp dụng cho giai đoạn 1. Sang giai đoạn 2 backend, database, xác thực, phân quyền thật **nằm trong phạm vi** – xem mục 10; vẫn ngoài phạm vi: gửi SMS/Zalo thật, AI thật, đa ngôn ngữ, web push – xem 10.3.)*
 
 Backend, database, xác thực thật, gửi tin nhắn thật, AI thật, phân quyền bảo mật thật, đa ngôn ngữ, thông báo đẩy (web push).
 
@@ -553,3 +555,346 @@ Lõi dùng cột "Chuẩn"; cột "Chữ lớn" thuộc B3. Quy tắc viết: `u
 2. Hạn mặc định theo loại – chờ duyệt.
 3. Có cần xuất Figma không – chờ thể lệ.
 4. Số tổng đài phường hiển thị trong demo – dùng số giả định có nhãn "Mô phỏng" cho tới khi có số chính thức.
+
+---
+
+# GIAI ĐOẠN 2 – Backend và database (mở 25/11/2026)
+
+Nhãn bổ sung: **[ĐĐ]** đề xuất thiết kế chờ chủ dự án duyệt (liệt kê ở 17). Mọi AC của mục 6 vẫn đúng; giai đoạn 2 chỉ đổi **nơi lưu và nơi kiểm tra** (từ localStorage trong trình duyệt sang server), không đổi hành vi nhìn thấy được, trừ những chỗ mục 10–17 nêu rõ.
+
+## 10. Phạm vi giai đoạn 2
+
+### 10.1. Quyết định đã chốt (chủ dự án, 25/11/2026)
+
+| Hạng mục | Quyết định |
+|---|---|
+| Stack | Supabase (PostgreSQL + PostGIS + Auth + Storage) · Vercel Functions (TypeScript) · Drizzle ORM |
+| OTP/SMS/Zalo | **Vẫn mô phỏng** (mã `123456`, nhãn "Mô phỏng"); thiết kế sẵn điểm cắm để thay bằng nhà cung cấp thật sau (10.3) |
+| AI nhận diện ảnh (B1) | **Vẫn mô phỏng** theo manifest ảnh demo |
+| Trang quản trị | **Không làm** (25/11, đổi quyết định): tài khoản cán bộ/TNV, bộ phận, hạn xử lý quản lý bằng script (mục 14) |
+
+### 10.2. Trong phạm vi
+
+API REST có kiểm tra nghiệp vụ phía server (mục 12) · schema PostgreSQL/PostGIS + migration + seed từ `mock.json` (mục 11) · xác thực và phân quyền (mục 13) · lưu ảnh ở Storage (mục 15) · script quản lý tài khoản/cấu hình (mục 14) · frontend gọi API, giữ **chế độ demo offline** (mục 16) · các bất biến mục 5.1 giữ nguyên, kiểm tra được trên DB.
+
+### 10.3. Điểm cắm dịch vụ mô phỏng
+
+Hai interface phía server, mỗi interface có bản `mock` (mặc định) và chỗ thay bản thật sau, chọn bằng biến môi trường:
+
+| Interface | Biến | Bản mock | Bản thật (chưa làm) |
+|---|---|---|---|
+| `OtpProvider.send(phone)` / `verify(phone, code)` | `OTP_PROVIDER=mock` | Chấp nhận đúng `123456`, hết hạn 5 phút, tối đa 5 lần sai | Nhà cung cấp SMS/Zalo ZNS – chờ chủ dự án chọn |
+| `NotificationChannel.send(phone, message)` | `SMS_PROVIDER=mock` | Ghi vào `notifications` với `channel='sms_mo_phong'`, không gửi đi đâu | Cùng nhà cung cấp trên |
+
+Khi `OTP_PROVIDER=mock`, API trả kèm cờ `mock: true` để UI hiện nhãn "Mô phỏng". **Không được chạy production với `mock` mà không có nhãn trên UI.**
+
+### 10.4. Ngoài phạm vi giai đoạn 2
+
+SMS/Zalo thật, AI thật, web push, đa ngôn ngữ, ứng dụng native, đăng nhập SSO/VNeID, xác thực hai lớp (MFA) cho cán bộ, tích hợp hệ thống một cửa của tỉnh.
+
+---
+
+## 11. Schema cơ sở dữ liệu
+
+PostgreSQL 15+ trên Supabase, extension `postgis`. Mọi thời điểm là `timestamptz` (UTC trong DB, API trả ISO `+07:00` theo 7.6). Định danh nội bộ `uuid`; mã hiển thị (`TB-0065`, `NV-005`) là cột `code` riêng, sinh từ sequence, không dùng làm khoá ngoại.
+
+### 11.1. Enum
+
+`category` (4 mã 3.1) · `report_status` (11 mã 3.2) · `priority` (`cao`, `binh_thuong`) · `task_type` (`xac_minh`, `nghiem_thu`) · `task_status` (`cho_nhan`, `dang_lam`, `xong`) · `staff_role` (`can_bo`, `tnv`) · `follower_source` (`reporter`, `also_me`, `subscribe_later`) · `photo_kind` (`before`, `after`, `verify`, `feedback`) · `actor_type` (`citizen`, `staff`, `system`).
+
+### 11.2. Bảng
+
+| Bảng | Cột chính | Ghi chú |
+|---|---|---|
+| `departments` | `id`, `name` unique, `is_active`, `sort` | 5 dòng seed (3.1). Sửa bằng migration/seed; không xoá cứng nếu đã có hồ sơ tham chiếu |
+| `category_settings` | `category` pk, `label`, `default_department_id` → departments, `sla_days` int > 0 | 4 dòng seed (3.1). **Nguồn của "hạn mặc định" và "bộ phận gợi ý"** thay cho `constants.ts` khi chạy server |
+| `staff_profiles` | `user_id` pk → `auth.users`, `role` staff_role, `display_name`, `department_id`?, `is_active`, `created_at` | 1–1 với tài khoản Supabase Auth. `is_active=false` → API từ chối dù token còn hạn |
+| `reports` | `id` uuid pk, `code` text unique (`TB-0001`…), `category`, `status`, `status_before_merge`?, `priority`, `location` `geography(Point,4326)`, `address`, `location_note`?, `description`?, `department_id`?, `due_at`?, `created_at`, `completed_at`?, `reporter_phone`?, `anonymous` bool, `subscribed_later` bool, `on_behalf` bool, `secret_code_hash`, `owner_token_hash`, `anonymous_follows` int ≥ 0, `merged_into` → reports?, `photos_approved` bool, `result_note`?, `version` int | Chỉ mục: GiST(`location`), (`status`,`due_at`), (`category`,`created_at`), (`reporter_phone`). `lat`/`lng` lấy bằng `ST_Y/ST_X`, không lưu trùng |
+| `report_photos` | `id`, `report_id`, `kind` photo_kind, `storage_path`, `sort`, `source` (`storage` \| `static`), `created_at` | `source='static'` cho ảnh demo `/demo-photos/...` từ seed; còn lại là đường dẫn trong bucket |
+| `report_followers` | (`report_id`, `phone`) pk, `source` follower_source, `created_at` | Thay mảng `followers`. `followerCount` = số dòng + `anonymous_follows` (3.6) |
+| `report_timeline` | `id`, `report_id`, `at`, `status`, `actor_type`, `actor_staff_id`?, `actor_label`, `note`? | Chỉ thêm, không sửa/xoá (trigger chặn UPDATE/DELETE). `actor_label` là nhãn công khai ("Phường Trấn Biên", tên bộ phận, "Tình nguyện viên"); tên cá nhân chỉ lấy từ `actor_staff_id` cho A02 |
+| `report_duplicate_flags` | (`report_id`, `other_report_id`) pk | Thay `suspectedDuplicateOf` (B2) |
+| `feedback` | `report_id` pk, `resolved`, `rating`? 1–5, `tags` text[], `comment`?, `at` | CHECK: `resolved=true` ⇒ `rating` not null |
+| `volunteer_tasks` | `id`, `code` (`NV-001`…), `report_id`, `type`, `status`, `assignee_id`? → staff_profiles, `result_exists`?, `result_severity`?, `result_note`?, `result_at`? | Ảnh kết quả nằm ở `report_photos` (`kind='verify'`). `assignee_id` null = mở cho TNV gần nhất (AC-A02-4) |
+| `notifications` | `id`, `phone`, `report_id`, `message`, `channel` (`app` \| `sms_mo_phong`), `read`, `created_at` | Index (`phone`,`created_at` desc) |
+| `phone_otps` | `phone`, `code_hash`, `expires_at`, `attempts` | Dùng cả khi mock (để giữ đúng luồng hết hạn/giới hạn lần sai) |
+| `anonymous_submissions` | `id`, `device_id`, `ip_hash`, `created_at` | Đếm quota 3.4b phía server (13.4) |
+| `access_attempts` | `report_id`, `ip_hash`, `at` | Khoá tạm khi dò mã bí mật (13.4) |
+| `pending_uploads` | `path` pk, `device_id`?, `staff_id`?, `created_at`, `attached` bool | Ảnh đã xin ký nhưng chưa gắn hồ sơ; cron xoá sau 24 giờ (15) |
+| `app_settings` | `key` pk, `value` jsonb | `clock` (`{mode:'real'\|'fixed', fixedAt}`), `ward` (tâm, ranh giới), `otp_mock_notice` |
+
+### 11.3. Ràng buộc ở mức DB (không chỉ ở code)
+
+1. `reports.anonymous = true` ⇒ `reporter_phone IS NULL` (CHECK). `subscribed_later` không làm `anonymous` đổi.
+2. `status IN ('hoan_thanh','dong')` ⇒ `completed_at IS NOT NULL` (CHECK).
+3. `merged_into IS NOT NULL` ⇔ `status = 'da_gop'` (CHECK); không tự trỏ về chính nó.
+4. `reporter_phone` khớp `^0[0-9]{9}$`; `secret_code` gốc 4 chữ số (chỉ kiểm khi sinh, DB lưu hash).
+5. `report_timeline` bất biến (trigger).
+6. Mọi bảng bật **RLS, không có policy cho `anon`/`authenticated`** ⇒ trình duyệt không đọc/ghi trực tiếp được; chỉ API (kết nối bằng vai trò server) truy cập. Đây là lớp phòng thủ thứ hai, lớp thứ nhất là phân quyền ở mục 13.
+7. Bất biến mục 5.1 kiểm bằng `db:verify` (16.3), không dùng CHECK.
+
+### 11.4. Dùng PostGIS
+
+| Việc | Truy vấn |
+|---|---|
+| Quanh đây / C07 (bán kính) | `ST_DWithin(location, ST_MakePoint(lng,lat)::geography, r)` + `ST_Distance` để sắp |
+| Nghi trùng 3.5 (≤ 50 m, cùng loại, ≤ 14 ngày, trạng thái còn mở) | `ST_DWithin(..., 50)` + điều kiện cột; trả tối đa 3, gần nhất trước |
+| Kiểm tra trong phường | `ST_Covers(ward_polygon, point)` – cảnh báo, **không chặn** (AC-C03-2) |
+| Khoảng cách V01 | `ST_Distance` theo vị trí TNV gửi lên |
+
+Kết quả phải khớp `haversineMeters` ở client trong sai số 1 m (test đối chiếu).
+
+---
+
+## 12. API
+
+### 12.1. Quy ước
+
+- Gốc `/api/v1`. JSON UTF-8. Mọi thời điểm ISO 8601 `+07:00`. Mã phản ánh trong URL là `code` (`TB-0065`).
+- Xác thực: `Authorization: Bearer <JWT>` (nhân viên: JWT Supabase; người dân: JWT do API ký, 13.3). Khoá chủ hồ sơ ẩn danh: header `X-Report-Key` (13.4).
+- Kiểm tra đầu vào bằng schema (zod) ở mọi endpoint; trường lạ bị từ chối.
+- Lỗi: `{ "error": { "code": "TRANSITION_NOT_ALLOWED", "message": "<tiếng Việt, nói được cách khắc phục>", "details": {…} } }`. Mã HTTP: 400 đầu vào sai · 401 chưa đăng nhập · 403 sai quyền · 404 không có (hồ sơ không có quyền xem cũng trả 404 để không lộ sự tồn tại khi cần) · 409 chuyển trạng thái sai hoặc xung đột `version` · 422 vi phạm điều kiện nghiệp vụ (vd. thiếu ảnh sau) · 429 quá giới hạn.
+- Tạo mới (`POST /reports`) nhận `Idempotency-Key`; gửi lại cùng khoá trả về kết quả cũ, không tạo bản sao (phục vụ AC-C04-9 "thử lại khi có mạng").
+- Phân trang theo con trỏ: `?limit=50&cursor=…`.
+- **Không endpoint nào trả `reporter_phone` đầy đủ, `secret_code`, hash, hoặc `followers`** ngoại trừ: (a) `GET /me/*` trả SĐT của chính người đang đăng nhập; (b) `GET /reports/:code/owner` trả `secretCode` cho chủ hồ sơ (AC-C06-11).
+- Mọi chuyển trạng thái chạy trong **một giao dịch**: khoá dòng (`FOR UPDATE`) → kiểm `canTransition` + điều kiện bắt buộc 3.3 → cập nhật → thêm `report_timeline` → sinh `notifications` (3.4). Một bước lỗi thì toàn bộ huỷ.
+- Hàm nghiệp vụ trong `src/domain/` được **dùng chung** giữa client và server; server là nơi quyết định, client chỉ dùng để hiện/ẩn nút.
+
+### 12.2. Công khai (không cần đăng nhập)
+
+| Method + đường dẫn | Việc | Trả về |
+|---|---|---|
+| `GET /public/config` | Loại, bộ phận đang bật, hạn mặc định, tâm và ranh giới phường, cờ `otpMock` | cấu hình |
+| `GET /public/reports` | Danh sách cho C07; lọc `near=lat,lng&radius`, `category`, `bucket` (đang xử lý/đã xử lý), `limit` | `PublicReport[]` + `distanceMeters` |
+| `GET /public/reports/:code` | C06 cho người ngoài | `PublicReport` (bỏ SĐT, mã bí mật, followers → `followerCount`, timeline bỏ tên cá nhân; ảnh chỉ khi `photos_approved`) |
+| `GET /public/kpi?month=2026-11` | KPI C08/A01, **tính bằng SQL từ bảng `reports`** | `{total, resolved, open, avgDays, byCategory[]}` |
+| `GET /public/recent-results?limit=6` | AC-C08-3 | thẻ Trước → Sau |
+
+### 12.3. Người dân
+
+| Method + đường dẫn | Quyền | Việc |
+|---|---|---|
+| `POST /citizen/otp/request` `{phone}` | công khai, giới hạn 5/giờ/SĐT, 20/giờ/IP | Gửi OTP (mock) |
+| `POST /citizen/otp/verify` `{phone, code}` | công khai | Đúng → `{token}` (JWT người dân, 30 ngày) |
+| `POST /uploads/sign` `{kind:'before', contentType, size}` | token người dân **hoặc** `X-Device-Id` | Trả URL ký sẵn để tải ảnh lên Storage (15) |
+| `POST /reports` | token người dân, **hoặc** `anonymous:true` + `X-Device-Id` | Gửi phản ánh: `category`, `photoPaths[1..3]`, `lat`, `lng`, `address`, `locationNote?`, `description?`. Trả `{code, secretCode, ownerToken}` – **lần duy nhất** server trả `secretCode` gốc kèm `ownerToken` |
+| `GET /me/reports` | token người dân | Hồ sơ mà SĐT nằm trong `report_followers` |
+| `POST /reports/lookup` `{code, proof}` | công khai, giới hạn thử | `proof` = 4 số cuối SĐT hoặc mã bí mật (AC-C05-7) → `{ownerToken}` |
+| `POST /reports/:code/claim` `{secretCode}` | công khai, giới hạn thử | Mở link `?k=` (3.4a.3) → `{ownerToken}` |
+| `GET /reports/:code/owner` | chủ hồ sơ (13.4) | Bản C06 đầy đủ cho chủ: cờ quyền, `secretCode`, SĐT đã che đang nhận tin |
+| `POST /reports/:code/follow` | token người dân hoặc `X-Device-Id` | "Tôi cũng gặp" (B2; ẩn danh → tăng `anonymous_follows`) |
+| `POST /reports/:code/subscribe` `{phone, otpToken}` / `DELETE …/subscribe` | chủ hồ sơ ẩn danh | AC-C06-9 |
+| `POST /reports/:code/feedback` | chủ hồ sơ | AC-C06-5: `{resolved, rating?, tags?, comment?, photoPaths?}` → `dong` hoặc `mo_lai` + task `nghiem_thu` |
+| `POST /reports/:code/supplement` | chủ hồ sơ | AC-C06-7 (`can_bo_sung` → `moi`) |
+| `GET /me/notifications`, `POST /me/notifications/read` | token người dân | AC-C05-5. Hồ sơ ẩn danh chưa đăng ký nhận tin không có thông báo (3.4) |
+
+### 12.4. Cán bộ (`can_bo`)
+
+| Method + đường dẫn | Việc | Chuyển trạng thái (3.3) |
+|---|---|---|
+| `GET /officer/reports` | A01: lọc loại/trạng thái/bộ phận/khoảng ngày/nguồn, tab, tìm mã/địa chỉ, sắp theo 3.6 | – |
+| `GET /officer/reports/:code` | A02: SĐT **đã che** (`0909 *** 068`) hoặc nhãn Ẩn danh, timeline có tên người thao tác, kết quả xác minh, phản ánh tương tự | – |
+| `GET /officer/kpi` | KPI + quá hạn + sắp đến hạn (3.6) | – |
+| `PATCH /officer/reports/:code` `{category?, priority?, departmentId?, dueAt?}` | Sửa trường phân loại (AC-A02-2); gửi kèm `version` | – |
+| `POST …/accept` | Tiếp nhận (loại + bộ phận + hạn) | `moi` → `da_tiep_nhan` |
+| `POST …/assign-volunteer` `{volunteerId?}` | Tạo task `xac_minh` | → `cho_xac_minh` |
+| `POST …/assign-department` | Giao xử lý | `da_tiep_nhan`/`mo_lai` → `da_giao` |
+| `POST …/complete` `{photoPaths[1..3], note≥10, completedAt?}` | A03 | `da_giao`/`mo_lai` → `hoan_thanh` |
+| `POST …/request-supplement`, `…/transfer`, `…/close`, `…/mark-unverified` `{reason≥10}` | Nút ngoại lệ | theo 3.3 |
+| `POST …/merge` `{intoCode}` · `POST …/split` | B2 | → `da_gop` / khôi phục `status_before_merge` |
+| `POST /officer/reports` | Tạo phản ánh hộ (B5) | → `da_tiep_nhan`, `on_behalf=true` |
+| `GET /officer/volunteers` | Danh sách TNV đang hoạt động để giao | – |
+
+### 12.5. Tình nguyện viên (`tnv`)
+
+| Method + đường dẫn | Việc |
+|---|---|
+| `GET /volunteer/tasks?lat&lng` | AC-V01: nhiệm vụ giao cho mình + nhiệm vụ mở (`assignee_id IS NULL`), sắp theo khoảng cách, tab Cần làm/Đã xong |
+| `GET /volunteer/tasks/:code` | AC-V02-1; **không** có SĐT, mã bí mật, followers |
+| `POST /volunteer/tasks/:code/claim` | Nhận nhiệm vụ mở; chỉ một người nhận được (khoá dòng) |
+| `POST /volunteer/tasks/:code/result` `{exists, severity?, photoPath, note?}` | AC-V02-2 → 5; kích hoạt chuyển trạng thái 3.3 do hệ thống. TNV **không** có endpoint đóng hồ sơ |
+
+### 12.6. Không có API quản trị
+
+Quản lý tài khoản/cấu hình bằng script (mục 14).
+
+### 12.7. Việc nền (Vercel Cron, 1 lần/ngày)
+
+| Việc | Quy tắc |
+|---|---|
+| Tự đóng hồ sơ | `hoan_thanh` quá 7 ngày chưa phản hồi → `dong` (3.3), timeline "Tự đóng sau 7 ngày không phản hồi" |
+| Dọn ảnh mồ côi | Xoá file trong `pending_uploads` chưa gắn quá 24 giờ |
+| Dọn dữ liệu hạn chế | Xoá `phone_otps` hết hạn, `access_attempts` > 24 giờ |
+
+### 12.8. Đồng hồ
+
+Mọi hàm nhận `now` như giai đoạn 1. Server lấy `now` từ `Clock`: `real` (mặc định production) hoặc `fixed` (demo/test, đọc `app_settings.clock`). Seed mock có dữ liệu tới `2026-11-24T09:00+07:00`; ở chế độ `real` các hồ sơ quá hạn của seed sẽ lệch con số "2 quá hạn" – chỉ chế độ `fixed` giữ đúng DV-016.
+
+---
+
+## 13. Xác thực và phân quyền
+
+### 13.1. Vai trò
+
+Giữ **3 nhóm người dùng** như bảng 2. Hai vai trò nhân viên (`can_bo`, `tnv`) có tài khoản thật; người dân không có tài khoản.
+
+| Vai trò | Xác định bằng | Thiết bị | Cấp bởi |
+|---|---|---|---|
+| ND | SĐT đã xác thực OTP **hoặc** khoá chủ hồ sơ (13.4) **hoặc** không gì (chỉ xem công khai) | Mobile | Tự do |
+| CB | Tài khoản Supabase Auth + `staff_profiles.role='can_bo'` | Desktop | Script `staff:create` |
+| TNV | như trên, `role='tnv'` | Mobile | Script `staff:create` |
+
+### 13.2. Đăng nhập nhân viên
+
+1. Route `/dang-nhap`: email + mật khẩu → Supabase Auth (`signInWithPassword`). Không có đăng ký tự do; không có "Quên mật khẩu" tự phục vụ ở giai đoạn 2 – nhà phát triển đặt lại bằng `staff:reset-password`.
+2. SPA giữ phiên của Supabase (tự làm mới token). Mọi gọi API kèm `Bearer`.
+3. API **xác minh JWT** (chữ ký, hạn, `aud`), rồi tra `staff_profiles` mỗi request: không có dòng hoặc `is_active=false` → 403 `ACCOUNT_DISABLED`. Vai trò lấy từ DB, **không** tin claim trong token.
+4. Sau đăng nhập chuyển theo vai trò: CB → `/can-bo`, TNV → `/tnv`. Vào route không đúng vai trò → trang "Bạn không có quyền vào trang này" + nút về đúng trang.
+5. Đăng xuất xoá phiên; hết phiên giữa chừng → quay về `/dang-nhap` kèm đường dẫn cũ.
+6. Mật khẩu tối thiểu 10 ký tự (cấu hình Supabase). Giới hạn đăng nhập sai do Supabase Auth đảm nhiệm.
+
+### 13.3. Phiên người dân
+
+- Xác thực SĐT: `otp/request` → `otp/verify`. Đúng → API ký JWT riêng (`HS256`, khoá `CITIZEN_JWT_SECRET`) với `sub = HMAC(phone)`, claim `phone`, hạn 30 ngày; lưu ở localStorage (thay `settings.phone`).
+- Token chỉ chứng minh "tôi sở hữu SĐT này". Quyền chủ hồ sơ = SĐT ∈ `report_followers` của hồ sơ (3.4a.1).
+- Đăng xuất = xoá token ở máy; đổi máy = xác thực OTP lại (AC-C05-7).
+
+### 13.4. Quyền chủ hồ sơ cho hồ sơ ẩn danh [ĐĐ]
+
+Giữ nguyên trải nghiệm 3.4a (mã 4 số, link `?k=`, QR) nhưng chống dò mã:
+
+1. Khi gửi, server sinh `secretCode` 4 số (hiện cho người dùng một lần) và `ownerToken` ngẫu nhiên 256 bit. DB chỉ lưu **hash** của cả hai.
+2. Thiết bị lưu `{code, ownerToken}` trong `deviceReports` (thay cặp `{id, secretCode}`). Gọi API chủ hồ sơ bằng `X-Report-Key: <ownerToken>`.
+3. Mở link `?k=` hoặc tra cứu bằng mã bí mật/4 số cuối SĐT → `claim`/`lookup` kiểm tra rồi trả `ownerToken` mới cho thiết bị đó. Có thể có nhiều `ownerToken` cho một hồ sơ (mỗi thiết bị một cái).
+4. **Chống dò**: tối đa **5 lần sai / hồ sơ / IP / 15 phút**, quá thì 429 `TOO_MANY_ATTEMPTS`; tối đa **30 lần sai / hồ sơ / 24 giờ** từ mọi IP thì khoá `claim`/`lookup` hồ sơ đó 24 giờ (chủ thật dùng `ownerToken` đã có nên không bị ảnh hưởng). Mọi lần sai ghi `access_attempts`.
+5. Quota ẩn danh (3.4b): đếm ở `anonymous_submissions` theo `device_id` (UUID sinh ở client) **và** `ip_hash`. Thiết bị: 5/ngày (AC-C04-12). IP: 20/ngày (chặn người xoá localStorage để lách).
+
+### 13.5. Ma trận quyền
+
+Ký hiệu: ✓ được · ✗ không · own = chỉ hồ sơ của mình (13.4) · assigned = chỉ nhiệm vụ giao cho mình hoặc mở.
+
+| Hành động | Công khai | ND (SĐT/ẩn danh) | TNV | CB |
+|---|:--:|:--:|:--:|:--:|
+| Xem hồ sơ công khai, bản đồ, KPI | ✓ | ✓ | ✓ | ✓ |
+| Gửi phản ánh (SĐT hoặc ẩn danh) | ✗ | ✓ | ✗ | ✗ |
+| Xem chi tiết đầy đủ + mã bí mật | ✗ | own | ✗ | ✗ |
+| Đánh giá / báo chưa giải quyết / bổ sung / đăng ký nhận tin | ✗ | own | ✗ | ✗ |
+| "Tôi cũng gặp" | ✗ | ✓ | ✗ | ✗ |
+| Xem hộp tiếp nhận + panel (SĐT che) | ✗ | ✗ | ✗ | ✓ |
+| Tiếp nhận, giao, hoàn thành, ngoại lệ, gộp/tách, gửi hộ | ✗ | ✗ | ✗ | ✓ |
+| Xem SĐT **đầy đủ** của người dân | ✗ | chính mình | ✗ | ✗ |
+| Xem nhiệm vụ, nhận nhiệm vụ, gửi kết quả xác minh | ✗ | ✗ | assigned | ✗ |
+| Đóng hồ sơ | ✗ | ✗ | ✗ | ✓ |
+
+Quyền xem SĐT đầy đủ của người dân: **không vai trò nhân viên nào có**. Khi cần gọi lại người dân (ngoài phạm vi), thêm sau bằng tính năng có nhật ký truy cập riêng.
+
+### 13.6. Tiêu chí chấp nhận
+
+- AC-AUTH-1: Gọi endpoint `/officer/*` không token → 401; token TNV → 403; token CB → 200.
+- AC-AUTH-2: Tài khoản `is_active=false` bị 403 ngay request kế tiếp dù token chưa hết hạn.
+- AC-AUTH-3: Đổi vai trò trong DB có hiệu lực ở request kế tiếp (không chờ token mới).
+- AC-AUTH-4: Người dân A không đọc được `/reports/:code/owner` của hồ sơ do người dân B gửi (SĐT khác, `ownerToken` khác) → 404.
+- AC-AUTH-5: Sai mã bí mật 5 lần trong 15 phút từ một IP → lần thứ 6 trả 429 kể cả khi mã đúng.
+- AC-AUTH-6: Quét toàn bộ phản hồi của `/public/*` và `/volunteer/*` không chứa chuỗi SĐT (regex `0\d{9}`), `secretCode`, hash (test tự động trên dữ liệu seed).
+- AC-AUTH-7: Bản ghi `reports` ẩn danh có `reporter_phone` null kể cả sau `subscribe` (bất biến mục 5).
+- AC-AUTH-8: `ownerToken` và `secretCode` không xuất hiện trong log máy chủ.
+
+---
+
+## 14. Quản lý tài khoản và cấu hình bằng script
+
+**Không có trang quản trị và không có vai trò quản trị** (chủ dự án quyết 25/11/2026). Vẫn chỉ 3 nhóm người dùng: người dân, cán bộ, TNV. Việc vận hành do nhà phát triển chạy script trên máy mình (cần `SUPABASE_SERVICE_ROLE_KEY` và `DATABASE_URL_DIRECT`), không có endpoint hay màn hình tương ứng.
+
+| Script | Việc |
+|---|---|
+| `npm run staff:create -- --email … --name … --role can_bo\|tnv [--department …]` | Tạo tài khoản Supabase Auth + `staff_profiles`; in mật khẩu tạm **một lần** (hoặc nhận từ `--password`) |
+| `npm run staff:disable -- --email …` / `staff:enable` | Khoá/mở khoá (`is_active`); khoá có hiệu lực ở request kế tiếp (AC-AUTH-2) |
+| `npm run staff:reset-password -- --email …` | Cấp mật khẩu tạm mới |
+| `npm run staff:list` | Liệt kê tài khoản, vai trò, trạng thái |
+| `npm run config:set-sla -- --category den_duong --days 3 [--department …]` | Đổi hạn/bộ phận gợi ý (`category_settings`); chỉ áp dụng hồ sơ tiếp nhận sau đó |
+| `npm run demo:reset` / `demo:clock -- --mode fixed\|real [--at …]` | Đặt lại dữ liệu demo / đồng hồ; **từ chối chạy khi `DEMO_MODE` không bật** |
+
+- Tài khoản mẫu (CB Nguyễn Văn Minh, 3 TNV) do `db:seed` tạo (16.3).
+- Bộ phận đổi tên/thêm: sửa `departments` bằng migration hoặc seed; không xoá nếu đã có hồ sơ tham chiếu.
+- Việc quản lý tài khoản được Supabase Auth ghi log; không có bảng nhật ký riêng. Mọi thao tác của cán bộ/TNV trên hồ sơ đã có trong `report_timeline` (actor là `actor_staff_id`).
+
+AC-OPS-1: `staff:create` trùng email báo lỗi bằng lời, không để lại bản ghi dở dang (Auth và `staff_profiles` cùng thành công hoặc cùng huỷ). · AC-OPS-2: Không script nào in khoá service hay DB URL. · AC-OPS-3: Không thể khoá tài khoản khiến hệ thống còn 0 cán bộ hoạt động (script cảnh báo, cần `--force`).
+
+---
+
+## 15. Lưu ảnh
+
+| Mục | Quy định |
+|---|---|
+| Bucket | `report-photos`, **riêng tư**. Không bật URL công khai |
+| Tải lên | Client nén (AC-C02-3: ≤ 1280px, JPEG 0,7 → thường < 500 KB) → `POST /uploads/sign` trả URL ký sẵn → client `PUT` thẳng lên Storage. Ảnh không đi qua Vercel Function (tránh giới hạn kích thước) |
+| Kiểm ở server | Khi ký: loại `image/jpeg` hoặc `image/webp`, `size ≤ 1,5 MB`, tối đa 3 ảnh `before`/hồ sơ, 3 ảnh `after`. Khi gắn vào hồ sơ: server kiểm file tồn tại, đúng kích cỡ và **magic bytes** đúng định dạng ảnh; sai → 422, xoá file |
+| Đường dẫn | `reports/{yyyy}/{mm}/{uuid}.jpg`. Không chứa mã hồ sơ, SĐT hay tên |
+| Đọc | API trả **URL ký ngắn hạn** (1 giờ) cho ảnh được phép: công khai chỉ khi `photos_approved`; chủ hồ sơ thấy ảnh của mình; CB thấy mọi ảnh; TNV thấy ảnh của hồ sơ được giao. Ảnh `static` (seed) trả đường dẫn `/demo-photos/...` |
+| Quyền riêng tư | Ảnh nén bằng canvas nên mất EXIF (GPS, thiết bị); server không giữ ảnh gốc |
+| Mồ côi | `pending_uploads` + cron dọn (12.7) |
+| Dung lượng | Xem dung lượng ở bảng điều khiển Supabase; gói miễn phí Supabase 1 GB – cảnh báo khi > 80% |
+
+AC-PHOTO-1: Ảnh tải lên bằng chữ ký hết hạn → 403. · AC-PHOTO-2: File `.exe` đặt tên `.jpg` bị từ chối ở bước gắn hồ sơ. · AC-PHOTO-3: Người dân A không tải được ảnh `before` của hồ sơ B bằng cách đoán đường dẫn (bucket riêng tư, URL ký gắn quyền).
+
+---
+
+## 16. Frontend, chế độ demo và dữ liệu
+
+### 16.1. Hai chế độ chạy
+
+| | `VITE_DATA_SOURCE=local` (**Chế độ demo offline**) | `VITE_DATA_SOURCE=api` (**Chế độ thật**) |
+|---|---|---|
+| Lưu ở | localStorage + `mock.json` như giai đoạn 1 | PostgreSQL qua API |
+| Đăng nhập nhân viên | Không – nút "Đổi vai trò" và Demo Hub như cũ | Có – `/dang-nhap`, ẩn nút "Đổi vai trò" |
+| Ảnh | dataURL | Storage |
+| Triển khai | Một dự án Vercel riêng (giữ link đã nộp cho giám khảo, không đổi hành vi) | Dự án Vercel chính |
+
+Cả hai chế độ dùng **cùng màn hình và cùng hàm `domain/`**. Giữa UI và dữ liệu có một lớp `DataSource` (interface) với hai bản cài đặt: `LocalDataSource` (bọc `citizenActions`/`officerActions` hiện có) và `ApiDataSource` (gọi API). Màn hình không biết đang ở chế độ nào.
+
+### 16.2. Thay đổi hành vi nhìn thấy được ở chế độ thật
+
+1. Thao tác trở thành **bất đồng bộ**: nút có trạng thái đang gửi; lỗi 409/422 hiện bằng lời tiếng Việt (map từ `error.code`) và dữ liệu tự tải lại.
+2. Đồng bộ nhiều thiết bị: thay sự kiện `storage` bằng tải lại khi quay lại tab và làm mới định kỳ 30 giây ở A01/C05 (chưa cần realtime).
+3. Nhãn "Mô phỏng" ở OTP/SMS/gợi ý loại **giữ nguyên** (10.3).
+4. Offline khi gửi: dùng `Idempotency-Key`, giữ nháp (AC-C04-9).
+5. `deviceReports` đổi sang `{code, ownerToken}`; dữ liệu cũ ở localStorage của giai đoạn 1 không di chuyển (chế độ thật bắt đầu từ DB).
+
+### 16.3. Seed và kiểm tra bất biến
+
+- `db:seed` đọc `src/data/mock.json` → ghi DB qua Drizzle, giữ nguyên `code`, thời điểm, timeline, followers, `secretCode` (hash). Ảnh mock là `source='static'`. Tài khoản nhân viên mẫu (CB Nguyễn Văn Minh, 3 TNV) tạo bằng Supabase Admin API; mật khẩu lấy từ biến môi trường lúc seed, **không** ghi vào repo.
+- `db:verify` kiểm trên DB đang chạy: 64 hồ sơ; 18/15/21/10; 47 đã xử lý (40 `dong` + 7 `hoan_thanh`); 17 chưa hoàn tất theo phân bổ 5.2; trung bình 3,2 ngày (sai số ≤ 0,005); đúng 6 hồ sơ ẩn danh (1 có `subscribed_later`) và `reporter_phone` rỗng ở cả 6; 2 cụm nghi trùng; mọi hồ sơ có `secret_code_hash`; mọi timeline đủ bước theo 5.3. **Cùng bộ kiểm với `mock:verify`**, chạy ở CI trên DB thử nghiệm.
+- Dữ liệu thật phát sinh sau seed (hồ sơ `TB-0065` trở đi) không làm sai `db:verify`: kiểm 5.1 chỉ tính **tháng 11/2026 theo `code ≤ TB-0064`** hoặc cờ `is_seed` [ĐĐ: thêm cột `is_seed bool`].
+
+### 16.4. Tiêu chí chấp nhận
+
+- AC-DATA-1: Cùng một kịch bản (E2E-01, 03, 05, 07) chạy được ở **cả hai chế độ** với kết quả nhìn thấy giống nhau.
+- AC-DATA-2: KPI ở C08/A01 chế độ thật bằng với `computeKpi(reports)` tính bằng code trên cùng dữ liệu (test đối chiếu).
+- AC-DATA-3: Chuyển trạng thái không hợp lệ gọi thẳng API (bỏ qua UI) → 409 và DB không đổi.
+- AC-DATA-4: Hai cán bộ cùng "Tiếp nhận" một hồ sơ → một bên thành công, bên kia nhận 409 `VERSION_CONFLICT`/`TRANSITION_NOT_ALLOWED` và timeline chỉ có một mục.
+- AC-DATA-5: Gửi cùng `Idempotency-Key` hai lần → một hồ sơ.
+
+---
+
+## 17. Câu hỏi mở và rủi ro giai đoạn 2
+
+**Cần chủ dự án duyệt trước khi code (đánh dấu [ĐĐ] ở trên):**
+
+1. **Chống dò mã bí mật (13.4):** giữ mã 4 số cho trải nghiệm + `ownerToken` mạnh + khoá thử sai – hay đổi mã thành 6 ký tự (đổi AC-C04-11, link, QR)?
+2. **Cột `is_seed` (16.3)** để bất biến 64/47/3,2 không vỡ khi có hồ sơ thật – chấp nhận?
+3. **Chế độ demo offline giữ link cũ (16.1):** triển khai thành dự án Vercel riêng để link đã nộp không đổi – chấp nhận?
+4. **Vùng đặt dữ liệu:** Supabase gói miễn phí không có máy chủ trong nước (gần nhất Singapore). Hồ sơ chứa SĐT công dân → khi chạy thật cần cân nhắc Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân (lưu ở nước ngoài, thông báo xử lý dữ liệu, đồng ý của chủ thể). Phục vụ thi/pilot nhỏ thì chấp nhận được; **triển khai chính thức cho phường cần phương án hạ tầng khác – chủ dự án quyết**.
+5. **CB không xem được SĐT đầy đủ (13.5):** có chấp nhận không? Nếu cần gọi lại người dân, phải thêm tính năng riêng có nhật ký.
+6. **Không có "Quên mật khẩu" tự phục vụ cho nhân viên (13.2)** – nhà phát triển đặt lại bằng script. Chấp nhận ở giai đoạn 2?
+7. **Cron 1 lần/ngày** (giới hạn gói Hobby của Vercel) cho tự đóng hồ sơ 7 ngày – chấp nhận độ trễ tối đa 24 giờ?
+
+**Rủi ro:**
+
+| Rủi ro | Biện pháp |
+|---|---|
+| Lộ SĐT qua API/log | AC-AUTH-6, 8; serializer công khai duy nhất (`toPublicReport`) dùng cho mọi endpoint ngoài `/me` |
+| Gói miễn phí Supabase tạm dừng khi không dùng 7 ngày | Ghi vào hướng dẫn vận hành; cron ping hằng ngày |
+| Giới hạn kết nối DB từ Vercel Functions | Dùng chuỗi kết nối **pooler (transaction mode)**, mỗi function tối đa 1–3 kết nối |
+| Lệch logic client/server | `domain/` dùng chung; test hợp đồng chạy cùng một bộ case trên hàm thuần và trên API |
+| Lạm dụng gửi ẩn danh/spam | Quota 13.4, giới hạn OTP, kích cỡ ảnh; khoá bằng script nếu cần |
+| Mock OTP bị bỏ quên khi chạy thật | Cờ `otpMock` trong `/public/config`, UI luôn hiện nhãn; `db:verify`/CI cảnh báo nếu `OTP_PROVIDER=mock` và `NODE_ENV=production` mà không đặt `ALLOW_MOCK_OTP=true` |

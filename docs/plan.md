@@ -1,8 +1,10 @@
-# PLAN – Trấn Biên Kết Nối (UI/UX Prototype)
+# PLAN – Trấn Biên Kết Nối
 
-Nguồn: `spec.md` v1.2, `ui-ux-guidelines.md`
+Nguồn: `spec.md` v2.0, `ui-ux-guidelines.md`
 
-**Phạm vi plan này: lõi (Functional Requirements).** Bonus B1–B5 nằm ở `tasks.md` mục Backlog Bonus, chưa lên lịch.
+**Mục 1–9 = giai đoạn 1 (prototype, đã nộp). Mục 10–18 = giai đoạn 2 (backend + database, từ 25/11/2026); nếu mâu thuẫn mục 2 "Không dùng… SDK backend" thì mục 10+ thắng.**
+
+**Phạm vi mục 1–9: lõi (Functional Requirements).** Bonus B1–B5 nằm ở `tasks.md` mục Backlog Bonus, chưa lên lịch.
 
 ---
 
@@ -198,3 +200,179 @@ Sau lõi, mở bonus theo thứ tự B3 → B2 → B1 → B4 → B5 (B1–B3 là
 | Lạm dụng tile OSM | Chỉ dùng cho demo, có attribution, không prefetch hàng loạt |
 | iframe Demo Hub không nhận GPS | Thêm `allow="geolocation; camera; microphone"` cho iframe |
 | Ngày giờ lệch múi | Mọi tính toán dùng `demoNow` từ settings, định dạng UTC+7 |
+
+---
+
+# GIAI ĐOẠN 2 – Backend và database
+
+Spec tương ứng: `spec.md` mục 10–17.
+
+## 10. Kiến trúc
+
+```
+Trình duyệt (SPA React, Vercel static)
+   │  HTTPS, Bearer JWT / X-Report-Key / X-Device-Id
+   ▼
+Vercel Function  app/api/[...path].ts  (Hono, một điểm vào)
+   │  ├─ middleware: CORS, request-id, xác thực, phân quyền, giới hạn tốc độ, zod
+   │  ├─ routes/: public · citizen · officer · volunteer · cron
+   │  ├─ services/: nghiệp vụ trong giao dịch (dùng chung src/domain/)
+   │  └─ providers/: OtpProvider, NotificationChannel (mock)  ← điểm cắm dịch vụ thật
+   ▼
+Supabase
+   ├─ PostgreSQL + PostGIS (truy cập qua pooler, vai trò server; RLS bật, không policy cho anon)
+   ├─ Auth (chỉ nhân viên: email + mật khẩu)
+   └─ Storage (bucket riêng tư report-photos, URL ký)
+```
+
+Nguyên tắc:
+
+1. **Trình duyệt không nói chuyện trực tiếp với DB.** Chỉ dùng `@supabase/supabase-js` ở client cho đăng nhập nhân viên; mọi dữ liệu đi qua API.
+2. **Server quyết định.** Chuyển trạng thái, phân quyền, quota, kiểm tra ảnh đều ở server; UI chỉ hiện/ẩn.
+3. **`src/domain/` là code dùng chung** (không import React, không import Node). Server import trực tiếp (`../src/domain/...`); không sao chép.
+4. **Một serializer công khai** (`toPublicReport`) cho mọi phản hồi không phải của chủ hồ sơ.
+5. **Giao dịch cho mọi chuyển trạng thái** (spec 12.1); `version` cho xung đột.
+6. **`now` là tham số** (Clock), test không phụ thuộc giờ máy.
+7. **Tách biến môi trường theo môi trường**: `development`, `preview`, `production`; không khoá bí mật trong repo (AGENTS.md).
+
+## 11. Thư viện bổ sung (ghi lý do theo AGENTS.md)
+
+Các mục dưới đây **ngoại lệ** của câu "Không dùng… SDK backend" ở mục 2, chỉ áp dụng giai đoạn 2. Ghi version cố định khi cài.
+
+| Thư viện | Dùng ở | Lý do |
+|---|---|---|
+| `drizzle-orm`, `drizzle-kit` | server, migration | ORM đã chốt; sinh migration SQL, kiểu TypeScript từ schema |
+| `postgres` (postgres.js) | server | Driver cho Drizzle, hợp pooler transaction mode |
+| `hono` | server | Router nhẹ cho **một** Vercel Function thay vì ~50 file function (giảm cold start, middleware dùng chung, test bằng `app.request()` không cần dựng server) |
+| `zod` | server + client | Schema đầu vào một nguồn; client dùng lại để kiểm form |
+| `jose` | server | Xác minh JWT Supabase (JWKS) và ký/verify JWT người dân |
+| `@supabase/supabase-js` | client + server | Đăng nhập nhân viên (client); Admin API tạo tài khoản và Storage ký URL (server, khoá service) |
+| `vitest` + DB thử nghiệm | test | Đã có; test API dùng `app.request()` + Postgres thật (Docker `postgis/postgis`) – **không mock DB** vì bất biến nằm ở DB |
+| `@vercel/node` (types) | server | Kiểu cho handler |
+
+Không thêm: NestJS/Express, Prisma, Redis (giới hạn tốc độ dùng bảng Postgres), thư viện SMS (chưa làm thật).
+
+## 12. Cấu trúc thư mục thêm
+
+```
+app/
+├── api/
+│   └── [...path].ts              # Vercel entry: export default handle(app)
+├── server/
+│   ├── app.ts                    # tạo Hono app, gắn middleware + routes (test import file này)
+│   ├── env.ts                    # đọc + kiểm biến môi trường (zod), fail sớm
+│   ├── db/
+│   │   ├── schema.ts             # Drizzle schema (spec 11)
+│   │   ├── client.ts             # kết nối pooler
+│   │   ├── migrations/           # SQL sinh bởi drizzle-kit + SQL tay (PostGIS, RLS, trigger, CHECK)
+│   │   └── seed.ts               # mock.json → DB
+│   ├── middleware/               # auth.ts, role.ts, rateLimit.ts, idempotency.ts, errors.ts
+│   ├── routes/                   # public.ts, citizen.ts, reports.ts, officer.ts, volunteer.ts, cron.ts
+│   ├── services/                 # reportService, transitionService, taskService, notifyService, ownerAccess, photoService
+│   ├── providers/                # otp.ts, notification.ts (mock + interface)
+│   └── clock.ts
+├── scripts/
+│   ├── db-verify.ts              # bất biến spec 16.3
+│   ├── staff.ts                  # staff:create/disable/enable/reset-password/list (spec 14)
+│   └── ops.ts                    # config:set-sla, demo:reset, demo:clock
+├── src/
+│   ├── data/                     # DataSource: types.ts, LocalDataSource.ts, ApiDataSource.ts, index.ts
+│   ├── lib/api.ts                # fetch wrapper: token, lỗi → thông báo tiếng Việt, Idempotency-Key
+│   ├── auth/                     # AuthProvider, RequireRole, LoginPage (/dang-nhap)
+└── tests/
+    ├── api/                      # test hợp đồng + phân quyền + bất biến trên Postgres thật
+    └── e2e/                      # chạy cả hai chế độ (VITE_DATA_SOURCE)
+```
+
+## 13. Biến môi trường
+
+Chỉ liệt kê **tên**; giá trị đặt ở `.env.local` (không commit) và Vercel.
+
+| Biến | Phạm vi | Ghi chú |
+|---|---|---|
+| `DATABASE_URL` | server | Chuỗi pooler (transaction mode) |
+| `DATABASE_URL_DIRECT` | máy dev/CI | Chỉ cho migration |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | client + server | `VITE_` tiền tố cho client |
+| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | Tạo user, ký URL Storage |
+| `CITIZEN_JWT_SECRET` | server | ≥ 32 byte ngẫu nhiên |
+| `OWNER_KEY_PEPPER` | server | Pepper cho hash `secretCode`/`ownerToken`/`ip_hash` |
+| `OTP_PROVIDER`, `SMS_PROVIDER` | server | `mock` (mặc định) |
+| `ALLOW_MOCK_OTP` | server | Phải `true` mới cho chạy `mock` khi `NODE_ENV=production` |
+| `DEMO_MODE` | server | `true` cho phép script `demo:reset`/`demo:clock` |
+| `CRON_SECRET` | server | Vercel Cron gọi `/api/v1/cron/*` kèm bí mật |
+| `VITE_DATA_SOURCE` | client | `local` \| `api` |
+| `SEED_STAFF_PASSWORD` | máy chạy seed | Mật khẩu tài khoản mẫu, không ghi repo |
+
+## 14. Môi trường và triển khai
+
+| Môi trường | Supabase | Vercel | Ghi chú |
+|---|---|---|---|
+| Local | Docker `postgis/postgis` (test API) hoặc Supabase CLI | `vercel dev` / Vite | Mặc định `VITE_DATA_SOURCE=local` để dev UI không cần DB |
+| Preview | Dự án Supabase "staging" | Preview deployment mỗi PR | Seed lại khi cần |
+| Production | Dự án Supabase "prod" | Dự án `tran-bien-ket-noi` (Root = `app`) | `VITE_DATA_SOURCE=api` |
+| Demo offline | Không | Dự án Vercel **riêng** `tran-bien-ket-noi-demo` | `VITE_DATA_SOURCE=local`; giữ hành vi nộp 24/11 |
+
+- Migration chạy **thủ công có kiểm soát** (`npm run db:migrate`) trước khi deploy bản cần schema mới; không chạy tự động trong build.
+- Gói miễn phí Supabase chỉ cho 2 dự án → staging và prod dùng hết; dev dùng Docker.
+- `vercel.json`: thêm rewrite `/api/(.*)` → function, giữ SPA rewrite cho phần còn lại; cron `0 20 * * *` (UTC, = 03:00 UTC+7).
+
+## 15. Phases giai đoạn 2
+
+Ước lượng giờ làm việc tập trung (một người + agent). Mỗi phase kết thúc bằng thứ chạy được và `npm run verify` pass.
+
+| Phase | Task | Nội dung | Ước lượng | Đầu ra kiểm tra được |
+|---|---|---|---|---|
+| Q0 – Tài liệu | G2-01, G2-02 | Chốt stack, spec + plan (file này) | – | Chủ dự án duyệt |
+| Q1 – DB | G2-03 | Drizzle schema, migration (PostGIS, enum, CHECK, trigger timeline, RLS), seed từ `mock.json`, `db:verify` | 6h | `db:verify` pass trên DB thử nghiệm; AC bất biến 16.3 |
+| Q2 – Lõi API | G2-04 | Hono app, middleware lỗi/zod/Clock, `public/*`, `reports` gửi + chủ hồ sơ, `officer/*`, `volunteer/*`, `transitionService` dùng `domain/status.ts`, thông báo | 14h | Test hợp đồng pass; AC-DATA-3, 4, 5 |
+| Q3 – Xác thực | G2-05 | Supabase Auth cho nhân viên, JWT người dân + OTP mock, `X-Report-Key`/`claim`/`lookup`, quota ẩn danh, chống dò | 8h | AC-AUTH-1 → 8 pass |
+| Q4 – Ảnh | G2-06 | `uploads/sign`, kiểm magic bytes, URL ký đọc, cron dọn | 4h | AC-PHOTO-1 → 3 |
+| Q5 – Tài khoản & vận hành | G2-10 | Script `staff:*`, `config:set-sla`, `demo:*` + màn `/dang-nhap` | 3h | AC-OPS-1 → 3 pass |
+| Q6 – Frontend | G2-07 | `DataSource`, `ApiDataSource`, async UI, map lỗi, tách demo | 14h | AC-DATA-1, 2: E2E-01/03/05/07 chạy cả hai chế độ |
+| Q7 – Vận hành | G2-11 | Env, 4 môi trường, cron, CI (Postgres service), hướng dẫn vận hành, kiểm thử bảo mật cuối (quét SĐT/mã) | 5h | Deploy production; checklist mục 17 |
+| Sau – tuỳ chọn | G2-08, G2-09 | OTP/SMS thật, AI thật (**chờ chủ dự án quyết**); sửa 17 test cũ | – | – |
+| **Tổng** | | | **≈ 54h** | |
+
+Thứ tự phụ thuộc: Q1 → Q2 → (Q3, Q4 song song được) → Q5 → Q6 → Q7. Q6 có thể bắt đầu phần "giao diện đăng nhập + lớp `DataSource`" sớm khi Q2 có hợp đồng ổn định.
+
+Cắt giảm khi thiếu thời gian (theo thứ tự): làm mới định kỳ 30 giây (chỉ làm tải lại khi mở màn) → cron dọn ảnh mồ côi (chạy tay). **Không cắt**: kiểm chuyển trạng thái server, phân quyền, che SĐT/mã bí mật, bất biến dữ liệu.
+
+## 16. Chiến lược kiểm thử giai đoạn 2
+
+Chi tiết case ghi vào `tests.md` trước khi code mỗi phase (AGENTS.md quy trình).
+
+| Tầng | Công cụ | Nội dung |
+|---|---|---|
+| Hàm thuần `domain/` | Vitest | Giữ nguyên; thêm test cho thay đổi nếu có |
+| Hợp đồng API | Vitest + `app.request()` + Postgres/PostGIS thật trong Docker | Mọi endpoint: thành công, 400/401/403/404/409/422/429; **cùng bộ case chạy trên hàm thuần và trên API** để bắt lệch |
+| Phân quyền | Vitest | Ma trận 13.5 sinh test: mỗi ô "✗" phải trả 401/403/404 |
+| Bất biến dữ liệu | `db:verify` + test | Spec 16.3, 5.1 |
+| Rò rỉ dữ liệu | Vitest | AC-AUTH-6, 8: quét phản hồi và log tìm SĐT/mã |
+| Đồng thời | Vitest | AC-DATA-4: hai giao dịch song song trên cùng hồ sơ |
+| E2E | Playwright | Chạy hai lần: `local` và `api` (DB seed) |
+
+CI (GitHub Actions): lint → typecheck → vitest (service Postgres) → `db:migrate` + `db:seed` + `db:verify` → build. E2E chạy khi gắn nhãn hoặc trước deploy production.
+
+## 17. Checklist trước khi mở cho người dùng thật
+
+- [ ] `db:verify` pass trên production sau seed.
+- [ ] Quét tự động `/public/*`, `/volunteer/*`: không SĐT/mã bí mật (AC-AUTH-6).
+- [ ] RLS bật ở **mọi** bảng; thử đọc bằng khoá `anon` trả 0 dòng/403.
+- [ ] Bucket `report-photos` không công khai; thử mở URL không ký → 4xx.
+- [ ] Không có `SUPABASE_SERVICE_ROLE_KEY` trong bundle client (`grep` thư mục `dist`).
+- [ ] `OTP_PROVIDER=mock` ⇒ UI hiện nhãn "Mô phỏng" ở mọi điểm (hoặc đã thay OTP thật).
+- [ ] Mật khẩu tài khoản seed mẫu đã đổi, hoặc tài khoản bị khoá, trước khi mở cho người dùng thật.
+- [ ] Cron chạy thử một lần; `CRON_SECRET` đã đặt.
+- [ ] Sao lưu: bật backup Supabase (gói trả phí) hoặc `pg_dump` định kỳ – ghi cách khôi phục.
+- [ ] README và hướng dẫn vận hành cập nhật; xoá câu "chưa có code".
+
+## 18. Rủi ro kỹ thuật giai đoạn 2
+
+Xem bảng rủi ro ở `spec.md` mục 17. Bổ sung kỹ thuật:
+
+| Rủi ro | Biện pháp |
+|---|---|
+| Vercel Function import `src/domain` ngoài thư mục `api/` | Cấu hình `includeFiles` / dùng bundler của Vercel; kiểm bằng `vercel build` sớm ở Q2 (nếu không được, chuyển `domain/` sang `packages/domain` workspace) |
+| Drizzle không biểu diễn hết PostGIS/trigger/RLS | Viết các phần đó bằng SQL tay trong `migrations/`, có test kiểm tồn tại |
+| Lệch múi giờ | DB `timestamptz`; chỉ định dạng `+07:00` ở lớp serialize |
+| Seed ghi đè dữ liệu thật | `db:seed` từ chối chạy nếu bảng `reports` đã có dòng không phải `is_seed` (trừ cờ `--force` chỉ ở staging) |
