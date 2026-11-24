@@ -1,7 +1,8 @@
-import { createContext, useContext, useReducer, ReactNode, Dispatch } from 'react';
+import { createContext, useContext, useReducer, useEffect, ReactNode, Dispatch } from 'react';
 import { Notification, Report, ReportDraft, Settings, VolunteerTask } from '../domain/types';
 import { DEMO_NOW } from '../domain/constants';
 import mockData from '../data/mock.json';
+import { loadPersistedState, saveStateDebounced, setupStorageSync } from './persistence';
 
 export interface AppState {
   reports: Report[];
@@ -41,35 +42,7 @@ export function getInitialState(): AppState {
 }
 
 export function loadInitialState(storageKey: string = DEFAULT_STORAGE_KEY): AppState {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return getInitialState();
-  }
-
-  try {
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) {
-      return getInitialState();
-    }
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.reports)) {
-      return getInitialState();
-    }
-    return {
-      reports: parsed.reports ?? [],
-      volunteerTasks: parsed.volunteerTasks ?? [],
-      notifications: parsed.notifications ?? [],
-      settings: {
-        seniorMode: !!parsed.settings?.seniorMode,
-        phone: parsed.settings?.phone,
-        demoNow: parsed.settings?.demoNow ?? DEMO_NOW,
-        deviceReports: parsed.settings?.deviceReports ?? [],
-        anonymousLog: parsed.settings?.anonymousLog ?? [],
-      },
-      draft: parsed.draft ?? { photos: [] },
-    };
-  } catch {
-    return getInitialState();
-  }
+  return loadPersistedState(undefined, storageKey);
 }
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -166,14 +139,24 @@ const AppStoreContext = createContext<AppStoreContextValue | null>(null);
 export function AppStoreProvider({
   children,
   initialState,
+  frame,
 }: {
   children: ReactNode;
   initialState?: AppState;
+  frame?: string;
 }) {
   const [state, dispatch] = useReducer(
     appReducer,
-    initialState ?? loadInitialState(DEFAULT_STORAGE_KEY)
+    initialState ?? loadPersistedState(frame, DEFAULT_STORAGE_KEY)
   );
+
+  useEffect(() => {
+    return setupStorageSync(dispatch, frame, DEFAULT_STORAGE_KEY);
+  }, [frame]);
+
+  useEffect(() => {
+    saveStateDebounced(state, frame, 100, DEFAULT_STORAGE_KEY);
+  }, [state, frame]);
 
   return (
     <AppStoreContext.Provider value={{ state, dispatch }}>{children}</AppStoreContext.Provider>
