@@ -1,0 +1,77 @@
+import { describe, it, expect } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
+import { AppStoreProvider, AppState } from '@/store/AppStore';
+import { A02Panel } from '@/screens/officer/A02Panel';
+import { V01Tasks } from '@/screens/volunteer/V01Tasks';
+import { V02Verify } from '@/screens/volunteer/V02Verify';
+import mockData from '@/data/mock.json';
+import { Report } from '@/domain/types';
+
+describe('Luồng liên vai trò: cán bộ giao TNV -> TNV gửi -> cán bộ xem kết quả', () => {
+  it('chạy trọn luồng', async () => {
+    const reports = mockData.reports as Report[];
+    const target = reports.find((r) => r.status === 'moi') as Report;
+    expect(target).toBeTruthy();
+    const initial: AppState = {
+      reports,
+      volunteerTasks: [],
+      notifications: [],
+      settings: {
+        seniorMode: false,
+        demoNow: '2026-11-24T09:00:00+07:00',
+        deviceReports: [],
+        anonymousLog: [],
+      },
+      draft: { photos: [] },
+    };
+    const router = createMemoryRouter(
+      [
+        {
+          element: (
+            <AppStoreProvider initialState={initial}>
+              <Outlet />
+            </AppStoreProvider>
+          ),
+          children: [
+            { path: '/can-bo/:id', element: <A02Panel /> },
+            { path: '/tnv', element: <V01Tasks /> },
+            { path: '/tnv/:taskId', element: <V02Verify /> },
+          ],
+        },
+      ],
+      { initialEntries: [`/can-bo/${target.id}`] }
+    );
+    render(<RouterProvider router={router} />);
+
+    // Cán bộ giao TNV
+    fireEvent.click(screen.getByRole('button', { name: 'Giao TNV xác minh' }));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Lê Thảo Vy' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận giao' }));
+    await screen.findByText('Đã giao tình nguyện viên xác minh');
+
+    // TNV thấy nhiệm vụ
+    await router.navigate('/tnv');
+    expect(await screen.findByText('Xác minh ban đầu')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Làm tiếp/ }));
+
+    // Form: chưa đủ -> nút Gửi bị khoá
+    const send = await screen.findByRole('button', { name: 'Gửi kết quả' });
+    expect(send).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Có' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nguy hiểm' }));
+    fireEvent.click(screen.getByRole('button', { name: /Dùng ảnh mẫu/ }));
+    expect(send).toBeEnabled();
+    fireEvent.click(send);
+
+    // Về V01 + toast, nhiệm vụ sang Đã xong
+    await screen.findByText('Đã gửi kết quả cho cán bộ');
+    expect(screen.getByRole('button', { name: /Đã xong \(1\)/ })).toBeInTheDocument();
+
+    // Cán bộ thấy kết quả xác minh, hồ sơ về Đã tiếp nhận
+    await router.navigate(`/can-bo/${target.id}`);
+    const block = await screen.findByTestId('verify-result');
+    await waitFor(() => expect(block).toHaveTextContent('Nguy hiểm'));
+    expect(block).toHaveTextContent('Lê Thảo Vy');
+  });
+});

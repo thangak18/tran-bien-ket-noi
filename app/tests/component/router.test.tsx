@@ -16,7 +16,7 @@ describe('T-004 – Router với 14 route spec 8 (E2E-00)', () => {
     { path: '/can-bo', title: 'Hộp tiếp nhận cán bộ' },
     { path: '/can-bo/TB-0001', title: 'Chi tiết & Giao xử lý' },
     { path: '/can-bo/TB-0001/ket-qua', title: 'Cập nhật kết quả' },
-    { path: '/tnv', title: 'Nhiệm vụ tình nguyện viên' },
+    { path: '/tnv', title: 'Nhiệm vụ của tôi' },
     { path: '/tnv/NV-001', title: 'Xác minh tại chỗ' },
     { path: '/demo', title: 'Demo Hub' },
   ];
