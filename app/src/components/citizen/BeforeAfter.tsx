@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
+import { Category } from '@/domain/types';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { formatDate } from '@/domain/format';
 
 export interface BeforeAfterProps {
@@ -7,6 +9,7 @@ export interface BeforeAfterProps {
   afterPhotos?: string[];
   beforeTime?: string;
   afterTime?: string;
+  category?: Category;
   className?: string;
 }
 
@@ -15,9 +18,13 @@ export const BeforeAfter: React.FC<BeforeAfterProps> = ({
   afterPhotos,
   beforeTime,
   afterTime,
+  category,
   className = '',
 }) => {
-  const beforePhoto = beforePhotos[0];
+  const [beforeError, setBeforeError] = useState(false);
+  const [afterError, setAfterError] = useState(false);
+
+  const beforePhoto = beforePhotos && beforePhotos.length > 0 ? beforePhotos[0] : null;
   const afterPhoto = afterPhotos && afterPhotos.length > 0 ? afterPhotos[0] : null;
 
   return (
@@ -32,11 +39,17 @@ export const BeforeAfter: React.FC<BeforeAfterProps> = ({
             )}
           </div>
           <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 shadow-2xs">
-            {beforePhoto ? (
-              <img src={beforePhoto} alt="Trước xử lý" className="h-full w-full object-cover" />
+            {beforePhoto && !beforeError ? (
+              <img
+                src={beforePhoto}
+                alt="Trước xử lý"
+                onError={() => setBeforeError(true)}
+                className="h-full w-full object-cover"
+              />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-gray-400">
-                <ImageIcon className="h-8 w-8" />
+              <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center text-gray-400 select-none">
+                <CategoryIcon category={category} className="h-7 w-7 text-gray-400 mb-1" />
+                <span className="text-xs font-medium text-gray-500">Chưa có ảnh</span>
               </div>
             )}
           </div>
@@ -51,13 +64,23 @@ export const BeforeAfter: React.FC<BeforeAfterProps> = ({
             )}
           </div>
           <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-dashed border-gray-300 bg-gray-50/70 shadow-2xs">
-            {afterPhoto ? (
-              <img src={afterPhoto} alt="Sau xử lý" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center text-gray-400">
+            {!afterPhoto ? (
+              <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center text-gray-400 select-none">
                 <ImageIcon className="h-7 w-7 text-gray-300 mb-1" />
                 <span className="text-xs font-medium text-gray-500">Chưa có ảnh sau xử lý</span>
               </div>
+            ) : afterError ? (
+              <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center text-gray-400 select-none">
+                <CategoryIcon category={category} className="h-7 w-7 text-gray-400 mb-1" />
+                <span className="text-xs font-medium text-gray-500">Chưa có ảnh</span>
+              </div>
+            ) : (
+              <img
+                src={afterPhoto}
+                alt="Sau xử lý"
+                onError={() => setAfterError(true)}
+                className="h-full w-full object-cover"
+              />
             )}
           </div>
         </div>
