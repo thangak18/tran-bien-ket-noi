@@ -40,7 +40,7 @@ Ký hiệu trạng thái: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong (gh
 |---|---|---|---|---|---|
 | [x] (24/11) | T-020 | `AppStore` Context + reducer, hydrate từ mock | T-019 | plan 4 | UT-020 |
 | [x] (24/11) | T-021 | Actions người dân: `submitReport` (có SĐT / ẩn danh), `followReport` (có SĐT / ẩn danh), `subscribeLater`, `unsubscribe`, `submitFeedback`, `supplementReport`, `verifyPhone`, `markNotificationsRead`, `claimByLink`, `lookupReport` | T-020, T-016b | spec 3.3, 3.4a, 3.4b, AC-C04, AC-C05, AC-C06 | UT-021 |
-| [ ] | T-022 | Actions cán bộ/TNV: `accept`, `assignVolunteer`, `assignDepartment`, `complete`, `requestSupplement`, `transferAgency`, `close`, `merge`, `split`, `createOnBehalf`, `submitVerification` | T-020 | spec 3.3, AC-A02, AC-A03, AC-V02 | UT-022 |
+| [x] (24/11) | T-022 | Actions cán bộ/TNV: `accept`, `assignVolunteer`, `assignDepartment`, `complete`, `requestSupplement`, `transferAgency`, `close`, `merge`, `split`, `createOnBehalf`, `submitVerification` | T-020 | spec 3.3, AC-A02, AC-A03, AC-V02 | UT-022 |
 | [ ] | T-023 | `persistence.ts`: localStorage, debounce, `storage` event, settings theo `frame` (gồm `deviceReports`, `anonymousLog`), reset | T-020 | plan 4, AC-DEMO-3/4 | UT-023 |
 
 ## P3 – Component dùng chung
