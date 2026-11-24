@@ -193,9 +193,9 @@ CREATE TABLE IF NOT EXISTS reports (
 
 -- Chỉ mục Reports (Spec 11.2 & 11.4)
 DO $$ BEGIN
-  CREATE INDEX IF NOT EXISTS reports_location_gist ON reports USING GIST (location);
+  CREATE INDEX IF NOT EXISTS idx_reports_location_gist ON reports USING GIST (location);
 EXCEPTION WHEN OTHERS THEN
-  CREATE INDEX IF NOT EXISTS reports_location_idx ON reports (location);
+  CREATE INDEX IF NOT EXISTS idx_reports_location_gist ON reports (location);
 END $$;
 CREATE INDEX IF NOT EXISTS reports_status_due_idx ON reports (status, due_at);
 CREATE INDEX IF NOT EXISTS reports_category_created_idx ON reports (category, created_at);
