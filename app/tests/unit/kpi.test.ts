@@ -1,9 +1,24 @@
 import { describe, it, expect } from 'vitest';
 import { computeKpi } from '@/domain/kpi';
 import { Report } from '@/domain/types';
+import mockData from '@/data/mock.json';
 
 describe('UT-015 – KPI (spec 5.1, AC-C08-1, AC-A01-2)', () => {
   const now = '2026-11-24T09:00:00+07:00';
+
+  it('1. Với mock.json: total 64; byCategory {18,15,21,10}; resolved 47; open 17; avgDays làm tròn 1 chữ số = 3,2', () => {
+    const reports = mockData.reports as unknown as Report[];
+    const kpi = computeKpi(reports, '2026-11', now);
+
+    expect(kpi.total).toBe(64);
+    expect(kpi.resolved).toBe(47);
+    expect(kpi.open).toBe(17);
+    expect(kpi.avgDays).toBe(3.2);
+    expect(kpi.byCategory.den_duong.total).toBe(18);
+    expect(kpi.byCategory.ngap_nuoc.total).toBe(15);
+    expect(kpi.byCategory.rac_thai.total).toBe(21);
+    expect(kpi.byCategory.mat_duong.total).toBe(10);
+  });
 
   it('2. Tập rỗng -> mọi số 0, avgDays null (UI hiện "–")', () => {
     const kpi = computeKpi([], '2026-11', now);

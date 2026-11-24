@@ -1,0 +1,2373 @@
+{
+  "reports": [
+    {
+      "id": "TB-0001",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9465,
+      "lng": 106.8225,
+      "address": "12 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-08T08:51:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "7916",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-10T07:07:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-10T07:07:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-08T08:51:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-10T07:07:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0002",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.949499999999999,
+      "lng": 106.83,
+      "address": "37 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-12T08:10:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7950",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-16T08:50:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-16T08:50:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T08:10:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-16T08:50:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0003",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.949,
+      "lng": 106.819,
+      "address": "16 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-06T11:20:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6746",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-09T14:39:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-09T14:39:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-06T11:20:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-09T14:39:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0004",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.955,
+      "lng": 106.82950000000001,
+      "address": "26 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-03T15:11:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7669",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-07T12:30:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-07T12:30:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-03T15:11:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-07T12:30:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0005",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.962,
+      "lng": 106.81099999999999,
+      "address": "91 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-12T15:50:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2873",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-16T07:52:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-16T07:52:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T15:50:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-16T07:52:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0006",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.9535,
+      "lng": 106.827,
+      "address": "138 Đường 30 Tháng 4",
+      "createdAt": "2026-11-05T15:50:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9967",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-09T01:52:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-09T01:52:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-05T15:50:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-09T01:52:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0007",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.945,
+      "lng": 106.8155,
+      "address": "11 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-14T16:37:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9820",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-16T18:29:48.000Z",
+      "timeline": [
+        {
+          "at": "2026-11-14T16:37:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-16T18:29:48.000Z",
+          "status": "hoan_thanh",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0008",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.950299999999999,
+      "lng": 106.8223,
+      "address": "15 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-16T09:00:00+07:00",
+      "status": "da_tiep_nhan",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-27T17:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1947",
+      "onBehalf": false,
+      "followers": ["0912000001", "0912000002"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-16T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0009",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.95225,
+      "lng": 106.824,
+      "address": "45 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-19T09:00:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-23T08:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7488",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-19T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0010",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.952,
+      "lng": 106.824,
+      "address": "45 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-18T09:00:00+07:00",
+      "status": "moi",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2891",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-18T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0011",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.951,
+      "lng": 106.832,
+      "address": "94 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-14T08:54:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "8644",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-17T13:25:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-17T13:25:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-14T08:54:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-17T13:25:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0012",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.946,
+      "lng": 106.841,
+      "address": "11 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-07T13:50:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1086",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-10T08:45:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-10T08:45:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-07T13:50:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-10T08:45:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0013",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.962,
+      "lng": 106.828,
+      "address": "80 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-13T15:33:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8027",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-17T04:57:00.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-17T04:57:00.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-13T15:33:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-17T04:57:00.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0014",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.958,
+      "lng": 106.83800000000001,
+      "address": "138 Đường Dương Tử Giang",
+      "createdAt": "2026-11-12T11:40:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8227",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-14T02:44:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-14T02:44:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T11:40:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-14T02:44:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0015",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9565,
+      "lng": 106.81949999999999,
+      "address": "31 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-11T09:15:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7799",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-15T04:10:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-15T04:10:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-11T09:15:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T04:10:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0016",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.9565,
+      "lng": 106.8245,
+      "address": "122 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-03T10:22:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1523",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-05T16:34:00.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-05T16:34:00.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-03T10:22:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-05T16:34:00.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0017",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9455,
+      "lng": 106.818,
+      "address": "140 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-06T16:30:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1221",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-09T15:01:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-09T15:01:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-06T16:30:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-09T15:01:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0018",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.945,
+      "lng": 106.821,
+      "address": "5 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-04T14:43:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2657",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-08T10:21:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-08T10:21:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-04T14:43:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-08T10:21:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0019",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.950999999999999,
+      "lng": 106.8315,
+      "address": "40 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-12T17:22:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7989",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-15T14:41:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-15T14:41:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T17:22:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T14:41:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0020",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.958,
+      "lng": 106.813,
+      "address": "57 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-02T09:22:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7719",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-06T03:05:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-06T03:05:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-02T09:22:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-06T03:05:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0021",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9495,
+      "lng": 106.82900000000001,
+      "address": "16 Đường 30 Tháng 4",
+      "createdAt": "2026-11-01T09:11:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "4788",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-04T02:39:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-04T02:39:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-01T09:11:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-04T02:39:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0022",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.955,
+      "lng": 106.8175,
+      "address": "37 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-04T17:27:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3515",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-07T12:07:48.000Z",
+      "timeline": [
+        {
+          "at": "2026-11-04T17:27:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-07T12:07:48.000Z",
+          "status": "hoan_thanh",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0023",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.961,
+      "lng": 106.83399999999999,
+      "address": "127 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-08T08:36:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2579",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-11T00:09:36.000Z",
+      "timeline": [
+        {
+          "at": "2026-11-08T08:36:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-11T00:09:36.000Z",
+          "status": "hoan_thanh",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0024",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9493,
+      "lng": 106.821,
+      "address": "12 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-17T09:00:00+07:00",
+      "status": "da_tiep_nhan",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-27T17:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2982",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-17T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0025",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.949,
+      "lng": 106.821,
+      "address": "12 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-19T09:00:00+07:00",
+      "status": "cho_xac_minh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6312",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-19T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0026",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.942,
+      "lng": 106.829,
+      "address": "74 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-16T09:00:00+07:00",
+      "status": "moi",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1090",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-16T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0027",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.958,
+      "lng": 106.83,
+      "address": "36 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-17T09:00:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-23T08:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6770",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-17T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0028",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.953999999999999,
+      "lng": 106.84,
+      "address": "75 Đường Dương Tử Giang",
+      "createdAt": "2026-11-20T09:00:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-26T17:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7624",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-20T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0029",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9525,
+      "lng": 106.8215,
+      "address": "86 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-03T13:36:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8787",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-05T16:55:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-05T16:55:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-03T13:36:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-05T16:55:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0030",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.9525,
+      "lng": 106.82650000000001,
+      "address": "79 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-09T17:28:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5227",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-11T05:40:00.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-11T05:40:00.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-09T17:28:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-11T05:40:00.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0031",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.955499999999999,
+      "lng": 106.82,
+      "address": "51 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-10T10:26:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6379",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-12T21:40:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-12T21:40:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-10T10:26:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-12T21:40:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0032",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.955,
+      "lng": 106.823,
+      "address": "130 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-03T14:57:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1015",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-07T02:11:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-07T02:11:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-03T14:57:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-07T02:11:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0033",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.947,
+      "lng": 106.8195,
+      "address": "2 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-11T17:39:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9918",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-14T17:07:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-14T17:07:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-11T17:39:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-14T17:07:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0034",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.954,
+      "lng": 106.815,
+      "address": "12 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-11T15:40:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8851",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-14T19:42:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-14T19:42:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-11T15:40:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-14T19:42:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0035",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9455,
+      "lng": 106.831,
+      "address": "117 Đường 30 Tháng 4",
+      "createdAt": "2026-11-06T11:58:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2900",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-08T06:24:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-08T06:24:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-06T11:58:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-08T06:24:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0036",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.951,
+      "lng": 106.8195,
+      "address": "117 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-05T12:27:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8031",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-09T07:51:00.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-09T07:51:00.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-05T12:27:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-09T07:51:00.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0037",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.957,
+      "lng": 106.836,
+      "address": "59 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-05T11:18:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7081",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-07T04:03:36.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-07T04:03:36.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-05T11:18:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-07T04:03:36.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0038",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.952,
+      "lng": 106.83099999999999,
+      "address": "88 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-01T12:16:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9430",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-03T07:25:36.000Z",
+      "timeline": [
+        {
+          "at": "2026-11-01T12:16:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-03T07:25:36.000Z",
+          "status": "hoan_thanh",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0039",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.968,
+      "lng": 106.832,
+      "address": "48 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-10T09:28:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6493",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-13T06:47:12.000Z",
+      "timeline": [
+        {
+          "at": "2026-11-10T09:28:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-13T06:47:12.000Z",
+          "status": "hoan_thanh",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0040",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.95,
+      "lng": 106.828,
+      "address": "39 Đường Dương Tử Giang",
+      "createdAt": "2026-11-20T09:00:00+07:00",
+      "status": "moi",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2513",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-20T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0041",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.948500000000001,
+      "lng": 106.8235,
+      "address": "15 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-22T09:00:00+07:00",
+      "status": "da_tiep_nhan",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-27T17:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8903",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-22T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0042",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9485,
+      "lng": 106.8285,
+      "address": "78 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-18T09:00:00+07:00",
+      "status": "cho_xac_minh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "5107",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "timeline": [
+        {
+          "at": "2026-11-18T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0043",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9515,
+      "lng": 106.822,
+      "address": "72 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-21T09:00:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-26T17:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9223",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-21T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0044",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.951,
+      "lng": 106.825,
+      "address": "24 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-01T16:48:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "5764",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-03T21:33:36.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-03T21:33:36.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-01T16:48:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-03T21:33:36.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0045",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.956999999999999,
+      "lng": 106.8215,
+      "address": "37 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-01T15:46:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "8603",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-04T18:07:36.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-04T18:07:36.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-01T15:46:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-04T18:07:36.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0046",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.964,
+      "lng": 106.817,
+      "address": "93 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-03T10:48:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6485",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-05T21:04:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-05T21:04:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-03T10:48:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-05T21:04:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0047",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9415,
+      "lng": 106.819,
+      "address": "40 Đường 30 Tháng 4",
+      "createdAt": "2026-11-08T16:22:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9924",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-11T09:07:36.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-11T09:07:36.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-08T16:22:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-11T09:07:36.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0048",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.947000000000001,
+      "lng": 106.8215,
+      "address": "136 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-13T15:41:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "4671",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-17T13:57:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-17T13:57:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-13T15:41:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-17T13:57:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0049",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.953,
+      "lng": 106.838,
+      "address": "27 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-04T09:55:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5761",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-07T20:26:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-07T20:26:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-04T09:55:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-07T20:26:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0050",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.948,
+      "lng": 106.833,
+      "address": "23 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-05T12:53:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6949",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-09T12:21:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-09T12:21:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-05T12:53:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-09T12:21:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0051",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.964,
+      "lng": 106.834,
+      "address": "42 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-12T08:56:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2102",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-15T21:22:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-15T21:22:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T08:56:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T21:22:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0052",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.959999999999999,
+      "lng": 106.83,
+      "address": "9 Đường Dương Tử Giang",
+      "createdAt": "2026-11-12T17:31:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9557",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-15T04:02:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-15T04:02:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T17:31:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T04:02:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0053",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9585,
+      "lng": 106.82549999999999,
+      "address": "1 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-05T10:51:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7070",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-08T05:17:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-08T05:17:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-05T10:51:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-08T05:17:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0054",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.9445,
+      "lng": 106.8165,
+      "address": "58 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-12T10:28:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "4922",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-15T18:06:24.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-15T18:06:24.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T10:28:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T18:06:24.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0055",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9475,
+      "lng": 106.824,
+      "address": "50 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-06T17:36:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7944",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-10T00:31:12.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-10T00:31:12.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-06T17:36:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-10T00:31:12.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0056",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.947,
+      "lng": 106.827,
+      "address": "50 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-07T12:31:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3831",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-10T07:11:48.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-10T07:11:48.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-07T12:31:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-10T07:11:48.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0057",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.953,
+      "lng": 106.82350000000001,
+      "address": "44 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-13T10:43:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7009",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-17T10:55:00.000Z",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-17T10:55:00.000Z"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-13T10:43:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-17T10:55:00.000Z",
+          "status": "dong",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0058",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.96,
+      "lng": 106.819,
+      "address": "55 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-04T16:27:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "4620",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-06T08:00:36.000Z",
+      "timeline": [
+        {
+          "at": "2026-11-04T16:27:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-06T08:00:36.000Z",
+          "status": "hoan_thanh",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0059",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9515,
+      "lng": 106.821,
+      "address": "104 Đường 30 Tháng 4",
+      "createdAt": "2026-11-10T09:42:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7907",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-12T23:20:24.000Z",
+      "timeline": [
+        {
+          "at": "2026-11-10T09:42:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-12T23:20:24.000Z",
+          "status": "hoan_thanh",
+          "actor": "Phường Trấn Biên"
+        }
+      ]
+    },
+    {
+      "id": "TB-0060",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.957,
+      "lng": 106.8235,
+      "address": "111 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-16T09:00:00+07:00",
+      "status": "moi",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6997",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-16T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0061",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.949,
+      "lng": 106.826,
+      "address": "24 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-18T09:00:00+07:00",
+      "status": "da_tiep_nhan",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "dueAt": "2026-11-27T17:00:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9266",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-18T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0062",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.944,
+      "lng": 106.835,
+      "address": "5 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-21T09:00:00+07:00",
+      "status": "cho_xac_minh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1482",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-21T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0063",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.959999999999999,
+      "lng": 106.836,
+      "address": "42 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-21T09:00:00+07:00",
+      "status": "can_bo_sung",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7121",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-21T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    },
+    {
+      "id": "TB-0064",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.956,
+      "lng": 106.83200000000001,
+      "address": "53 Đường Dương Tử Giang",
+      "createdAt": "2026-11-16T09:00:00+07:00",
+      "status": "mo_lai",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT",
+      "anonymous": true,
+      "subscribedLater": true,
+      "secretCode": "7142",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-16T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        }
+      ]
+    }
+  ],
+  "volunteerTasks": [
+    {
+      "id": "NV-001",
+      "reportId": "TB-0025",
+      "type": "xac_minh",
+      "assignee": null,
+      "status": "cho_nhan"
+    },
+    {
+      "id": "NV-002",
+      "reportId": "TB-0042",
+      "type": "xac_minh",
+      "assignee": null,
+      "status": "cho_nhan"
+    },
+    {
+      "id": "NV-003",
+      "reportId": "TB-0062",
+      "type": "xac_minh",
+      "assignee": null,
+      "status": "cho_nhan"
+    }
+  ]
+}

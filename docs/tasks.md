@@ -32,7 +32,7 @@ Ký hiệu trạng thái: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong (gh
 | [x] (24/11) | T-016b | `domain/access.ts`: `hasOwnerAccess`, `followerCount`, `canSendAnonymous` (quota 5/ngày) | T-010 | spec 3.4a, 3.4b, 3.6 | UT-016b |
 | [x] (24/11) | T-017 | `domain/format.ts` + `domain/notifications.ts` | T-011 | spec 3.4, 7.6 | UT-017 |
 | [x] (24/11) | T-018 | `data/streets.ts`: ≥ 10 đường trong phường với tọa độ gần đúng; `nearestStreet(lat,lng)` | T-010 | spec 5.3, AC-C03-5 | UT-018 |
-| [ ] | T-019 | `scripts/generate-mock.ts` (seed cố định) + `scripts/verify-mock.ts`; commit `mock.json` | T-012 → T-018 | spec 5 | UT-019, DV-001 → DV-012, DV-014 |
+| [x] (24/11) | T-019 | `scripts/generate-mock.ts` (seed cố định) + `scripts/verify-mock.ts`; commit `mock.json` | T-012 → T-018 | spec 5 | UT-019, DV-001 → DV-012, DV-014 |
 
 ## P2 – Store
 
