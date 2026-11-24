@@ -67,7 +67,7 @@ Quy chuẩn từng component: `ui-ux-guidelines.md` mục 5.
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-040 | C01 Trang chủ: thẻ kêu gọi, "Phản ánh của bạn" (trượt ngang), "Quanh đây", dải số liệu | T-005, T-015, T-032, T-037 | AC-C01-1, 3, 5, 6, 7 | CT-040 |
+| [x] (24/11) | T-040 | C01 Trang chủ: thẻ kêu gọi, "Phản ánh của bạn" (trượt ngang), "Quanh đây", dải số liệu | T-005, T-015, T-032, T-037 | AC-C01-1, 3, 5, 6, 7 | CT-040 |
 | [ ] | T-041 | Draft gửi phản ánh trong store (lưu/khôi phục, hỏi khi ✕) | T-021 | AC-C02-7 | UT-041 |
 | [ ] | T-042 | C02 Chụp ảnh (ô chụp lớn, mẹo, xem trước, dải ảnh, chụp lại) | T-033, T-035, T-041 | AC-C02 (trừ AC-C02-5) | CT-042 |
 | [ ] | T-043 | C03 Vị trí (ảnh trên + sheet; GPS, ngoài phường, từ chối, nhập địa chỉ, chạm bản đồ, LocationRow) | T-034, T-035, T-041 | AC-C03 (trừ AC-C03-7) | CT-043 |
