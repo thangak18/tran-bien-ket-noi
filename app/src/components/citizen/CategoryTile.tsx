@@ -51,8 +51,6 @@ export const CategoryTile: React.FC<CategoryTileProps> = ({
       <div className="mb-1.5 flex h-10 w-10 items-center justify-center">{icon}</div>
 
       <div className="text-sm font-semibold text-gray-900 leading-tight">{config.label}</div>
-
-      <div className="mt-1 text-[11px] text-gray-500">Xử lý trong {config.defaultDays} ngày</div>
     </button>
   );
 };
