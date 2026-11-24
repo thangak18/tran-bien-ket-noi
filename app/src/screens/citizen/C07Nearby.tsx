@@ -65,7 +65,7 @@ export function C07Nearby() {
       <header className="z-20 border-b border-gray-200 bg-white px-4 py-3 shadow-2xs">
         <div className="flex items-center justify-between">
           <h1 className="text-base font-bold text-gray-900" data-testid="screen-title">
-            Phản ánh quanh bạn
+            Bản đồ quanh tôi
           </h1>
 
           {/* Công tắc Bản đồ | Danh sách */}

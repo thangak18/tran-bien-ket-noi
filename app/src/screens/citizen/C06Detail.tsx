@@ -97,6 +97,9 @@ export function C06Detail() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
+      <h1 data-testid="screen-title" className="sr-only">
+        Chi tiết phản ánh
+      </h1>
       {/* Header */}
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-100 bg-white/95 px-4 backdrop-blur-md">
         <button

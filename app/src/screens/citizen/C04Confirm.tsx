@@ -118,6 +118,9 @@ export function C04Confirm() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 pb-8">
+      <h1 data-testid="screen-title" className="sr-only">
+        Bước 3: Xác nhận & gửi
+      </h1>
       <StepHeader
         currentStep={3}
         title="Xác nhận & gửi"

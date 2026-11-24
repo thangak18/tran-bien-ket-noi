@@ -43,6 +43,9 @@ export function C02Photo() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 pb-8">
+      <h1 data-testid="screen-title" className="sr-only">
+        Bước 1: Chụp ảnh
+      </h1>
       <StepHeader currentStep={1} title="Chụp ảnh" onCancel={() => navigate('/')} />
 
       <main className="flex-1 px-4 py-4 flex flex-col justify-between max-w-md mx-auto w-full">

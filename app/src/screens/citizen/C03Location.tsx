@@ -66,6 +66,9 @@ export function C03Location() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 pb-8">
+      <h1 data-testid="screen-title" className="sr-only">
+        Bước 2: Vị trí
+      </h1>
       <StepHeader
         currentStep={2}
         title="Vị trí"

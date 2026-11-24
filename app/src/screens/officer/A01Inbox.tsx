@@ -56,7 +56,7 @@ export function A01Inbox() {
         <div className="mx-auto flex max-w-4xl items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-gray-900" data-testid="screen-title">
-              Hộp tiếp nhận phản ánh
+              Hộp tiếp nhận cán bộ
             </h1>
             <p className="text-xs text-gray-500">UBND Phường Trấn Biên · Cán bộ điều phối</p>
           </div>

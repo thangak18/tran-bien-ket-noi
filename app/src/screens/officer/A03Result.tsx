@@ -87,7 +87,7 @@ export function A03Result() {
 
         <div className="text-center">
           <h1 className="text-sm font-bold text-gray-900" data-testid="screen-title">
-            Cập nhật kết quả hoàn thành
+            Cập nhật kết quả
           </h1>
           <span className="font-mono text-xs text-gray-500" data-testid="report-id">
             {report.id}
