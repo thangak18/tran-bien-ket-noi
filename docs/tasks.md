@@ -55,7 +55,7 @@ Quy chuẩn từng component: `ui-ux-guidelines.md` mục 5.
 | [x] (24/11) | T-031 | `StatusChip` (icon + chữ + màu; biến thể CB / công khai) + `DelayChip` | T-011, T-013, T-030 | spec 3.2, 3.6a | CT-031 |
 | [x] (24/11) | T-032 | `ProgressBar` ngang 4 mốc có giờ + `Timeline` dọc có mốc tương lai + băng ngoại lệ | T-012, T-030 | AC-C01-6, AC-C06-1 | CT-032 |
 | [x] (24/11) | T-033 | `StepHeader` (←, ①──②──③ + "Bước n/3 – tên", ✕ Huỷ) | T-030 | AC-NAV-2 | CT-033 |
-| [ ] | T-034 | `MapView` (React Leaflet, marker icon loại trên nền màu trạng thái + viền, chú giải, attribution, onTap, vòng bán kính, fallback khi tile lỗi) | T-011 | AC-C03, AC-C07 | CT-034 |
+| [x] (24/11) | T-034 | `MapView` (React Leaflet, marker icon loại trên nền màu trạng thái + viền, chú giải, attribution, onTap, vòng bán kính, fallback khi tile lỗi) | T-011 | AC-C03, AC-C07 | CT-034 |
 | [ ] | T-035 | `lib/geolocation.ts` (timeout 10s, phân loại lỗi) + `lib/image.ts` (nén) | T-010 | AC-C02, AC-C03 | UT-035 |
 | [ ] | T-036 | `PhoneOtpSheet` (validate SĐT, dòng cam kết riêng tư, OTP 123456, nhãn Mô phỏng) | T-030 | AC-C04-5 | CT-036 |
 | [ ] | T-037 | `BeforeAfter` (ô Sau trống "Chưa có ảnh sau xử lý") + `CategoryTile` + `LocationRow` + `ReportCard` + `LatestUpdate` | T-030, T-031 | AC-C06-4, AC-C04-1, AC-C05-2 | CT-037 |
