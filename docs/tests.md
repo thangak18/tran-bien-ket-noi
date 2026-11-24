@@ -298,3 +298,168 @@ Chỉ viết khi mở task bonus tương ứng trong `tasks.md`. Danh sách ki�
 | BT-B4-1 | B4 Giọng nói | Không hỗ trợ → không có nút micro; có → chèn chữ vào ô mô tả |
 | BT-B5-1 | B5 Gửi hộ | Modal tạo hộ: thiếu SĐT không lưu; lưu → `onBehalf`, `da_tiep_nhan`, SMS mô phỏng có mã |
 | UX-001 → 004 | Thử nghiệm người dùng | Báo ổ gà; xem trạng thái; báo chưa giải quyết; gửi ẩn danh rồi tìm lại |
+
+---
+
+# GIAI ĐOẠN 2 – KẾ HOẠCH KIỂM THỬ BACKEND, DATABASE VÀ TÍCH HỢP
+
+Áp dụng cho sản phẩm hoàn chỉnh Client-Server với Supabase (PostgreSQL 15+, PostGIS, Auth, Storage) và Vercel Functions (Hono TypeScript).
+
+## 10. Hợp đồng API (API-*)
+
+Kiểm thử toàn bộ endpoints: thành công (200/201) và các mã lỗi chuẩn (400, 401, 403, 404, 409, 422, 429).
+
+| ID | Endpoint | Tình huống | Kết quả mong đợi |
+|---|---|---|---|
+| API-001 | Mọi endpoint | Request bất kỳ | Header `X-Request-Id` luôn có trong phản hồi |
+| API-002 | Mọi endpoint | Lỗi nghiệp vụ / hệ thống | Cấu trúc `{ error: { code, message, details? } }` |
+| API-PUB-001 | `GET /public/reports` | Xem danh sách phản ánh công khai | 200, danh sách lọc và phân trang đúng, không lộ thông tin cá nhân |
+| API-PUB-002 | `GET /public/reports/:code` | Xem chi tiết 1 hồ sơ | 200, thông tin công khai, 4 bước tiến trình |
+| API-PUB-003 | `GET /public/kpi` | Lấy KPI tháng 11/2026 | 200, tính từ bảng `reports`: 64 tổng, 47 đã xử lý, 3,2 ngày |
+| API-PUB-004 | `GET /public/config` | Lấy cấu hình phường | 200, tâm và ranh giới Trấn Biên, cờ `otpMock: true` |
+| API-PUB-005 | `GET /public/recent-results` | Danh sách vừa xử lý xong | 200, tối đa 6 hồ sơ có ảnh trước/sau |
+| API-CIT-001 | `POST /citizen/otp/request` | Xin OTP với SĐT hợp lệ | 200, cờ mock: true |
+| API-CIT-002 | `POST /citizen/otp/request` | Xin OTP quá 5 lần/giờ | 429 `TOO_MANY_REQUESTS` |
+| API-CIT-003 | `POST /citizen/otp/verify` | Nhập mã OTP đúng `123456` | 200, cấp JWT người dân hạn 30 ngày |
+| API-CIT-004 | `POST /citizen/otp/verify` | Nhập sai OTP 5 lần | 429 hoặc 400 khoá mã |
+| API-CIT-005 | `POST /citizen/reports` | Gửi hồ sơ có SĐT hoặc ẩn danh | 201, trả `{code, secretCode, ownerToken}` |
+| API-CIT-006 | `POST /citizen/reports` | Dữ liệu thiếu loại hoặc vị trí | 422 `UNPROCESSABLE_ENTITY` kèm details |
+| API-CIT-007 | `POST /citizen/reports/lookup` | Tra cứu bằng mã + 4 số cuối SĐT | 200, trả `ownerToken` mới |
+| API-CIT-008 | `POST /citizen/reports/:code/claim` | Mở link `?k=` với mã bí mật | 200, trả `ownerToken` |
+| API-CIT-009 | `GET /citizen/reports/:code/owner` | Chủ hồ sơ xem chi tiết | 200, thấy `secretCode` và SĐT đã che |
+| API-CIT-010 | `POST /citizen/reports/:code/feedback` | Đánh giá kết quả (hài lòng/chưa giải quyết) | 200, đổi trạng thái sang `dong` hoặc `mo_lai` |
+| API-OFF-001 | `GET /officer/reports` | Cán bộ xem hộp thư tiếp nhận A01 | 200, danh sách đầy đủ, SĐT che `0909 *** 068` |
+| API-OFF-002 | `GET /officer/reports/:code` | Cán bộ xem chi tiết A02 | 200, lịch sử timeline, kết quả xác minh |
+| API-OFF-003 | `GET /officer/kpi` | KPI cán bộ (quá hạn, sắp đến hạn) | 200, số liệu tính toán động |
+| API-OFF-004 | `POST /officer/reports/:code/accept` | Tiếp nhận hồ sơ `moi` → `da_tiep_nhan` | 200, ghi timeline cán bộ tiếp nhận |
+| API-OFF-005 | `POST /officer/reports/:code/assign-volunteer` | Giao TNV xác minh | 200, tạo task `xac_minh`, trạng thái `cho_xac_minh` |
+| API-OFF-006 | `POST /officer/reports/:code/assign-dept` | Giao bộ phận xử lý | 200, trạng thái `da_giao` |
+| API-OFF-007 | `POST /officer/reports/:code/complete` | Cập nhật kết quả kèm ảnh sau | 200, trạng thái `hoan_thanh` |
+| API-OFF-008 | `POST /officer/reports/:code/complete` | Thiếu ảnh sau hoặc mô tả < 10 ký tự | 422 `UNPROCESSABLE_ENTITY` |
+| API-OFF-009 | `POST /officer/reports/:code/close` | Đóng hồ sơ kèm lý do | 200, trạng thái `dong` |
+| API-OFF-010 | `POST /officer/reports/:code/merge` | Gộp hồ sơ phụ vào hồ sơ chính | 200, hồ sơ phụ chuyển `da_gop` |
+| API-OFF-011 | `POST /officer/reports/:code/split` | Tách hồ sơ đã gộp | 200, khôi phục `status_before_merge` |
+| API-OFF-012 | `POST /officer/reports` | Cán bộ tạo phản ánh hộ dân | 201, cờ `on_behalf=true`, `da_tiep_nhan` |
+| API-VOL-001 | `GET /volunteer/tasks` | TNV xem nhiệm vụ theo GPS | 200, sắp theo khoảng cách tăng dần |
+| API-VOL-002 | `GET /volunteer/tasks/:code` | Chi tiết nhiệm vụ TNV V02 | 200, không chứa SĐT hay mã bí mật của dân |
+| API-VOL-003 | `POST /volunteer/tasks/:code/claim` | TNV nhận nhiệm vụ mở | 200, khoá dòng gán cho TNV này |
+| API-VOL-004 | `POST /volunteer/tasks/:code/result` | Nộp kết quả xác minh 3 câu + ảnh | 200, task `xong`, kích hoạt transition 3.3 |
+
+---
+
+## 11. Phân quyền và Bảo mật (AUTHZ-*, LEAK-*)
+
+Sinh trực tiếp từ ma trận phân quyền mục 13.5:
+
+| ID | Mô tả case kiểm thử | Kết quả mong đợi |
+|---|---|---|
+| AUTHZ-001 | Không có token gọi endpoint yêu cầu cán bộ (`/officer/*`) | 401 `UNAUTHORIZED` |
+| AUTHZ-002 | Token TNV gọi endpoint cán bộ (`/officer/reports`) | 403 `FORBIDDEN` |
+| AUTHZ-003 | Token Cán bộ gọi endpoint nhận việc của TNV (`claim`) | 403 `FORBIDDEN` |
+| AUTHZ-004 | Người dân gọi endpoint của cán bộ hoặc TNV | 403 `FORBIDDEN` |
+| AUTHZ-005 | Người dân A gọi `/citizen/reports/:code/owner` của người B | 404 `NOT_FOUND` |
+| AUTHZ-006 | Tài khoản bị vô hiệu hoá (`is_active=false`) gọi API | 403 `ACCOUNT_DISABLED` |
+| AUTHZ-007 | Token hết hạn gọi API | 401 `TOKEN_EXPIRED` |
+| AUTHZ-008 | Token bị sai chữ ký hoặc giải mã lỗi | 401 `INVALID_TOKEN` |
+| AUTHZ-009 | Người không phải chủ sở hữu gửi đánh giá feedback | 403 `FORBIDDEN` hoặc 404 |
+| AUTHZ-010 | TNV gọi API đóng hồ sơ của cán bộ | 403 `FORBIDDEN` |
+| AUTHZ-011 | Thử dò mã bí mật sai quá 5 lần / 15 phút từ 1 IP | 429 `TOO_MANY_ATTEMPTS` |
+| AUTHZ-012 | Thử dò mã bí mật sai quá 30 lần / 24 giờ trên 1 hồ sơ | Khoá claim/lookup hồ sơ đó 24h (429) |
+| AUTHZ-013 | Gửi ẩn danh quá 5 hồ sơ / ngày / thiết bị | 429 `QUOTA_EXCEEDED` |
+| AUTHZ-014 | Gửi ẩn danh quá 20 hồ sơ / ngày / IP | 429 `QUOTA_EXCEEDED` |
+| AUTHZ-015 | Đổi vai trò trong DB có hiệu lực ngay request kế tiếp | Quyền mới được áp dụng không cần cấp token mới |
+| LEAK-001 | Quét response `/public/*` và `/volunteer/*` tìm SĐT dạng `0\d{9}` | 0 kết quả (SĐT luôn che mặt nạ hoặc null) |
+| LEAK-002 | Quét response công khai tìm `secretCode`, `ownerToken`, chuỗi hash | 0 kết quả (hoàn toàn bị loại bỏ bởi serializer) |
+| LEAK-003 | Quét toàn bộ server console log tìm chuỗi nhạy cảm | 0 kết quả rò rỉ token, password, secretCode |
+
+---
+
+## 12. Bất biến Cơ sở dữ liệu (DB-*)
+
+Kiểm tra trực tiếp trên PostgreSQL + PostGIS thật bằng `npm run db:verify`:
+
+| ID | Tiêu chí bất biến | Kết quả mong đợi |
+|---|---|---|
+| DB-001 | Định nghĩa bảng và quan hệ | Đủ 16 bảng, quan hệ khoá ngoại toàn vẹn |
+| DB-002 | PostGIS không gian | Geometry Point(4326), GiST index hoạt động đúng |
+| DB-003 | Bất biến timeline | Trigger chặn UPDATE/DELETE trên `report_timeline` |
+| DB-004 | RLS kích hoạt toàn bảng | Không thể đọc/ghi bằng Supabase anon key trực tiếp |
+| DB-005 | CHECK ràng buộc | `anonymous=true` ⇒ `reporter_phone IS NULL`; `hoan_thanh/dong` ⇒ `completed_at NOT NULL` |
+| DB-006 | Tính Idempotent của seed | Chạy `npm run db:seed` 2 lần liên tiếp không làm nhân đôi dữ liệu |
+| DB-007 | Tổng số hồ sơ tháng 11/2026 | Đúng 64 hồ sơ (`code <= TB-0064` hoặc `is_seed=true`) |
+| DB-008 | Phân bổ danh mục | 18 Đèn đường, 15 Ngập nước, 21 Rác thải, 10 Mặt đường |
+| DB-009 | Hồ sơ đã xử lý | Đúng 47 hồ sơ (40 `dong` + 7 `hoan_thanh`) |
+| DB-010 | Hồ sơ chưa hoàn tất | Đúng 17 hồ sơ (1 `moi`, 4 `da_tiep_nhan`, 2 `cho_xac_minh`, 5 `da_giao`, 1 `can_bo_sung`, 1 `da_gop`, 1 `chuyen_co_quan_khac`, 1 `khong_xac_nhan`, 1 `mo_lai`) |
+| DB-011 | Thời gian xử lý trung bình | Đúng 3,2 ngày cho 47 hồ sơ (sai số ≤ 0,005) |
+| DB-012 | Hồ sơ ẩn danh | Đúng 6 hồ sơ ẩn danh, trong đó 1 hồ sơ đã đăng ký nhận tin sau |
+| DB-013 | Cụm phản ánh nghi trùng | Đúng 2 cụm nghi trùng được gắn cờ |
+| DB-014 | Băm mã bí mật | Mọi hồ sơ có `secret_code_hash` (không lưu mã thô) |
+| DB-015 | Tiến trình timeline | Mọi hồ sơ có timeline đầy đủ các bước theo bảng chuyển trạng thái 3.3 |
+| DB-016 | Giờ hành chính | Mọi mục timeline do cán bộ/bộ phận ghi rơi vào 07:00–17:30 |
+
+---
+
+## 13. Đồng thời & Idempotency (CONC-*, IDEM-*)
+
+| ID | Tình huống | Kết quả mong đợi |
+|---|---|---|
+| CONC-001 | Hai cán bộ cùng gọi tiếp nhận một hồ sơ đồng thời | Chỉ 1 request thành công, 1 request nhận 409, timeline có đúng 1 bản ghi |
+| CONC-002 | Hai TNV cùng nhấn nhận một nhiệm vụ mở đồng thời | Chỉ 1 TNV nhận được (khoá dòng FOR UPDATE), bên kia nhận thông báo đã được nhận |
+| IDEM-001 | Client gửi lặp lại 2 request tạo hồ sơ với cùng `Idempotency-Key` | Chỉ tạo 1 hồ sơ duy nhất trong DB, 2 request trả về cùng mã hồ sơ |
+
+---
+
+## 14. Ảnh hiện trường, Vận hành và Cron (PHOTO-*, OPS-*, CRON-*, LOGIN-*)
+
+| ID | Nhóm | Kiểm tra | Kết quả mong đợi |
+|---|---|---|---|
+| PHOTO-001 | Ảnh | `POST /uploads/sign` với payload hợp lệ | 200, trả signed URL PUT lên bucket riêng tư |
+| PHOTO-002 | Ảnh | Upload bằng chữ ký hết hạn | 403 `FORBIDDEN` |
+| PHOTO-003 | Ảnh | Gắn file giả mạo đuôi ảnh (.exe đổi thành .jpg) | 422 `UNPROCESSABLE_ENTITY` (kiểm tra magic bytes thất bại) |
+| PHOTO-004 | Ảnh | Người ngoài đoán đường dẫn ảnh hiện trường trong bucket | 403/404 (bucket riêng tư, URL ký 1 giờ) |
+| OPS-001 | Scripts | `npm run staff:create` tạo tài khoản nhân viên | Tạo thành công Auth user + profile, in mật khẩu 1 lần |
+| OPS-002 | Scripts | `npm run staff:disable` khoá tài khoản | `is_active=false`, API từ chối ngay lập tức |
+| OPS-003 | Scripts | `npm run staff:reset-password` cấp mật khẩu mới | Đặt lại mật khẩu thành công |
+| OPS-004 | Scripts | `npm run config:set-sla` đổi hạn xử lý | Cập nhật cấu hình bảng `category_settings` |
+| OPS-005 | Scripts | `npm run demo:reset` khi `DEMO_MODE=false` | Bị từ chối thực thi với thông báo lỗi |
+| CRON-001 | Cron | Gọi `/cron/daily` không có `CRON_SECRET` | 401 `UNAUTHORIZED` |
+| CRON-002 | Cron | Chạy cron tự đóng hồ sơ `hoan_thanh` quá 7 ngày | Chuyển thành công sang `dong`, timeline "Tự đóng sau 7 ngày" |
+| CRON-003 | Cron | Chạy cron dọn ảnh `pending_uploads` quá 24h | File rác chưa gắn hồ sơ bị xoá sạch |
+| CRON-004 | Cron | Chạy cron dọn OTP và access_attempts hết hạn | Bản ghi quá hạn bị xoá khỏi database |
+| LOGIN-001 | Đăng nhập | Màn hình `/dang-nhap` ở mobile (<768px) và desktop (≥1024px) | Bố cục responsive chuẩn: desktop cho CB, mobile cho TNV |
+| LOGIN-002 | Đăng nhập | Cán bộ đăng nhập đúng email/mật khẩu | Chuyển hướng tự động tới `/can-bo` |
+| LOGIN-003 | Đăng nhập | TNV đăng nhập đúng email/mật khẩu | Chuyển hướng tự động tới `/tnv` |
+| LOGIN-004 | Đăng nhập | Đăng nhập sai mật khẩu | Báo lỗi tiếng Việt: "Email hoặc mật khẩu không chính xác" |
+| LOGIN-005 | Đăng nhập | Tài khoản bị khoá đăng nhập | Báo lỗi tài khoản bị tạm khoá (403) |
+| LOGIN-006 | Đăng nhập | Đăng xuất | Xoá phiên Supabase Auth, chuyển hướng về `/dang-nhap` |
+
+---
+
+## 15. Tích hợp Hai chế độ (E2E-*-local, E2E-*-api, INT-*)
+
+| ID | Luồng nghiệp vụ | Chế độ | Kết quả mong đợi |
+|---|---|:---:|---|
+| E2E-01-local | Người dân gửi phản ánh (có SĐT) | `local` | Tạo hồ sơ thành công, lưu localStorage |
+| E2E-01-api | Người dân gửi phản ánh (có SĐT) | `api` | Tạo hồ sơ thành công trong PostgreSQL, ảnh lưu Storage |
+| E2E-03-local | Cán bộ tiếp nhận và giao xử lý | `local` | Đổi trạng thái `da_giao`, lưu store |
+| E2E-03-api | Cán bộ tiếp nhận và giao xử lý | `api` | Đổi trạng thái qua API, cập nhật DB giao dịch |
+| E2E-05-local | TNV xác minh tại chỗ | `local` | Nộp kết quả 3 câu, cập nhật store |
+| E2E-05-api | TNV xác minh tại chỗ | `api` | Nộp kết quả qua API, ghi DB và timeline |
+| E2E-07-local | Trọn vẹn vòng đời phản ánh | `local` | Chạy xuyên suốt từ gửi → đóng/đánh giá |
+| E2E-07-api | Trọn vẹn vòng đời phản ánh | `api` | Chạy xuyên suốt qua API và cơ sở dữ liệu thật |
+| INT-001 | Đối chiếu dữ liệu UI ↔ API ↔ DB | `api` | Mọi trường hiển thị trên UI khớp 100% với response API và bản ghi DB |
+| INT-002 | Đối chiếu KPI | `api` | Số liệu KPI trên C01, C08, A01 khớp đúng với truy vấn SQL và API `/public/kpi` |
+| INT-003 | Thử nghiệm mất mạng (ngắt API) | `api` | UI hiển thị thông báo lỗi mạng tiếng Việt kèm nút "Thử lại", không crash |
+
+---
+
+## 16. Checklist Kiểm tra UI Giai đoạn 2 (UI-G2-*)
+
+- [ ] **UI-G2-01**: Nhãn "Mô phỏng" hiển thị rõ ràng tại: ô nhập OTP, xem trước tin nhắn SMS/Zalo, gợi ý phân loại AI.
+- [ ] **UI-G2-02**: Không hiển thị số điện thoại đầy đủ ở bất kỳ màn hình công khai nào hoặc màn hình TNV (chỉ hiện `0909 *** 068` hoặc nhãn Ẩn danh).
+- [ ] **UI-G2-03**: Nút "Đổi vai trò" ở thanh điều hướng tự động ẩn khi chạy ở chế độ `VITE_DATA_SOURCE=api`.
+- [ ] **UI-G2-04**: Màn hình `/dang-nhap` không bị tràn ngang ở 360px, hiển thị đầy đủ nhãn và form nhập.
+- [ ] **UI-G2-05**: Khi truy cập trái quyền, hiển thị trang `/khong-co-quyen` thân thiện có nút quay về.
+- [ ] **UI-G2-06**: Nút bấm đang gửi yêu cầu hiển thị spinner hoặc trạng thái đang xử lý, ngăn bấm liên tiếp.
+- [ ] **UI-G2-07**: Chế độ chữ lớn (Senior Mode) hoạt động mượt mà ở cả 2 chế độ `local` và `api`.
+
