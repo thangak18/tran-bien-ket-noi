@@ -84,22 +84,36 @@ officerRoutes.get('/reports', async (c) => {
 });
 
 /**
- * 2. GET /officer/kpi - Thống kê chỉ số phục vụ cán bộ
+ * 2. GET /officer/kpi - Thống kê chỉ số phục vụ cán bộ (tính từ dữ liệu thực, không cứng theo is_seed)
  */
 officerRoutes.get('/kpi', async (c) => {
+  const query = c.req.query();
+  const from = query.from;
+  const to = query.to;
   const now = await getDemoNow();
 
-  const [totalRow] =
-    await sqlClient`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
+  const [totalRow] = await sqlClient`
+    SELECT count(*)::int as count FROM reports
+    WHERE (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
+  `;
   const [resolvedRow] = await sqlClient`
-    SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
+    SELECT count(*)::int as count FROM reports 
+    WHERE status IN ('hoan_thanh', 'dong')
+      AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
   `;
   const [overdueRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
-    WHERE is_seed = true AND status = 'da_giao' AND due_at < ${now}::timestamptz;
+    WHERE status = 'da_giao' AND due_at < ${now}::timestamptz
+      AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
   `;
   const [pendingRow] = await sqlClient`
-    SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'moi';
+    SELECT count(*)::int as count FROM reports 
+    WHERE status = 'moi'
+      AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
   `;
 
   return c.json({

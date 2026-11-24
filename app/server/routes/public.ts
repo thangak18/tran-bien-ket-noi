@@ -257,33 +257,46 @@ publicRoutes.get('/reports/:code', async (c) => {
 });
 
 /**
- * GET /public/kpi - Thống kê KPI công khai minh bạch
+ * GET /public/kpi - Thống kê KPI công khai minh bạch (tính từ dữ liệu thực, không cứng theo is_seed)
  */
 publicRoutes.get('/kpi', async (c) => {
+  const query = c.req.query();
+  const from = query.from;
+  const to = query.to;
   const now = await getDemoNow();
 
-  const [totalRow] =
-    await sqlClient`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
+  const [totalRow] = await sqlClient`
+    SELECT count(*)::int as count FROM reports
+    WHERE (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
+  `;
   const [resolvedRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
-    WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
+    WHERE status IN ('hoan_thanh', 'dong')
+      AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
   `;
   const [overdueRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
-    WHERE is_seed = true
-      AND status NOT IN ('hoan_thanh', 'dong')
+    WHERE status NOT IN ('hoan_thanh', 'dong')
       AND due_at IS NOT NULL
-      AND due_at < ${now}::timestamptz;
+      AND due_at < ${now}::timestamptz
+      AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
   `;
   const [avgRow] = await sqlClient`
     SELECT AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 86400.0) as avg_days
     FROM reports
-    WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
+    WHERE status IN ('hoan_thanh', 'dong')
+      AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
   `;
 
   const catRows = await sqlClient`
     SELECT category, count(*)::int as count
-    FROM reports WHERE is_seed = true
+    FROM reports
+    WHERE (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`})
     GROUP BY category;
   `;
   const byCategory: Record<string, number> = {
@@ -296,7 +309,9 @@ publicRoutes.get('/kpi', async (c) => {
 
   const statusRows = await sqlClient`
     SELECT status, count(*)::int as count
-    FROM reports WHERE is_seed = true
+    FROM reports
+    WHERE (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`})
     GROUP BY status;
   `;
   const byStatus: Record<string, number> = {};
