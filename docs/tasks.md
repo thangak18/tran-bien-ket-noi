@@ -52,7 +52,7 @@ Quy chuẩn từng component: `ui-ux-guidelines.md` mục 5.
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
 | [x] (24/11) | T-030 | UI kit: Button, Card, BottomSheet (tay nắm, nút chính cố định đáy), Modal (focus trap), Toast, Tabs cuộn ngang có số đếm, Chip, TextField, EmptyState | T-003 | spec 7, guidelines 5 | CT-030 |
-| [ ] | T-031 | `StatusChip` (icon + chữ + màu; biến thể CB / công khai) + `DelayChip` | T-011, T-013, T-030 | spec 3.2, 3.6a | CT-031 |
+| [x] (24/11) | T-031 | `StatusChip` (icon + chữ + màu; biến thể CB / công khai) + `DelayChip` | T-011, T-013, T-030 | spec 3.2, 3.6a | CT-031 |
 | [ ] | T-032 | `ProgressBar` ngang 4 mốc có giờ + `Timeline` dọc có mốc tương lai + băng ngoại lệ | T-012, T-030 | AC-C01-6, AC-C06-1 | CT-032 |
 | [ ] | T-033 | `StepHeader` (←, ①──②──③ + "Bước n/3 – tên", ✕ Huỷ) | T-030 | AC-NAV-2 | CT-033 |
 | [ ] | T-034 | `MapView` (React Leaflet, marker icon loại trên nền màu trạng thái + viền, chú giải, attribution, onTap, vòng bán kính, fallback khi tile lỗi) | T-011 | AC-C03, AC-C07 | CT-034 |
