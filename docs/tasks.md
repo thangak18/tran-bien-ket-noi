@@ -13,37 +13,37 @@ Ký hiệu trạng thái: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong (gh
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-001 | Khởi tạo `app/` bằng Vite React TS strict; cài thư viện theo plan 2; ghi version cố định | – | plan 2–3 | UT-000 |
-| [ ] | T-002 | Cấu hình ESLint, Prettier, Vitest (jsdom), Playwright (2 project: mobile 390×844, desktop 1440×900); script npm theo plan 7 | T-001 | plan 7 | UT-000 |
-| [ ] | T-003 | Tailwind + design token (màu, bo góc, font Be Vietnam Pro); **mọi cỡ chữ, chiều cao nút, vùng chạm khai báo bằng biến CSS** (`--fs-body`, `--fs-title`, `--btn-h`, `--tap`) | T-001 | spec 7.2, 7.5 | CT-001 |
-| [ ] | T-004 | Router với các route spec 8; mỗi route render tiêu đề màn hình | T-001 | spec 8 | E2E-00 |
-| [ ] | T-005 | `CitizenLayout` (khung mobile ≤ 430px, thanh điều hướng đáy 5 mục + FAB camera 64px, ẩn trong `/bao-su-co/*`), `OfficerLayout`, `VolunteerLayout` | T-003, T-004 | AC-NAV-1 → 3, spec 7.1 | CT-002 |
-| [ ] | T-006 | Cấu hình Vercel SPA rewrite (`vercel.json`) | T-004 | plan 8 | – |
+| [x] (24/11) | T-001 | Khởi tạo `app/` bằng Vite React TS strict; cài thư viện theo plan 2; ghi version cố định | – | plan 2–3 | UT-000 |
+| [x] (24/11) | T-002 | Cấu hình ESLint, Prettier, Vitest (jsdom), Playwright (2 project: mobile 390×844, desktop 1440×900); script npm theo plan 7 | T-001 | plan 7 | UT-000 |
+| [x] (24/11) | T-003 | Tailwind + design token (màu, bo góc, font Be Vietnam Pro); **mọi cỡ chữ, chiều cao nút, vùng chạm khai báo bằng biến CSS** (`--fs-body`, `--fs-title`, `--btn-h`, `--tap`) | T-001 | spec 7.2, 7.5 | CT-001 |
+| [x] (24/11) | T-004 | Router với các route spec 8; mỗi route render tiêu đề màn hình | T-001 | spec 8 | E2E-00 |
+| [x] (24/11) | T-005 | `CitizenLayout` (khung mobile ≤ 430px, thanh điều hướng đáy 5 mục + FAB camera 64px, ẩn trong `/bao-su-co/*`), `OfficerLayout`, `VolunteerLayout` | T-003, T-004 | AC-NAV-1 → 3, spec 7.1 | CT-002 |
+| [x] (24/11) | T-006 | Cấu hình Vercel SPA rewrite (`vercel.json`) | T-004 | plan 8 | – |
 
 ## P1 – Domain & dữ liệu
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-010 | `domain/types.ts`: Report, VolunteerTask, Notification, Settings, enum (gồm trường chừa sẵn cho bonus: `suspectedDuplicateOf`, `anonymousFollows`, `onBehalf`) | T-001 | spec 4 | UT-010 |
-| [ ] | T-011 | `domain/constants.ts`: 4 loại, 5 bộ phận, hạn mặc định, nhãn trạng thái (CB + công khai "Chờ tiếp nhận"… + bước + màu + icon), TNV mẫu, `DEMO_NOW`, bộ chip đánh giá | T-010 | spec 2, 3.1, 3.2, AC-C06-5 | UT-011 |
-| [ ] | T-012 | `domain/status.ts`: `canTransition`, `transition`, `publicLabel`, `progressStep`, `publicTimeline` (gồm mốc tương lai + ngày dự kiến) | T-011 | spec 3.2, 3.3, AC-C06-1 | UT-012 |
-| [ ] | T-013 | `domain/latestUpdate.ts`: câu "Cập nhật mới nhất" theo 3.4c + `delayDays` theo 3.6a | T-012, T-014 | spec 3.4c, 3.6a | UT-013 |
-| [ ] | T-014 | `domain/sorting.ts`: `isOverdue`, `isDueSoon`, `sortInbox`, `computePriority` | T-011 | spec 3.6 | UT-014 |
-| [ ] | T-015 | `domain/kpi.ts`: `computeKpi(reports, month)` | T-014 | spec 5.1, AC-C08-1, AC-A01-2 | UT-015 |
-| [ ] | T-016 | `domain/privacy.ts`: `maskPhone`, `toPublicReport` (bỏ SĐT, `secretCode`, followers → `followerCount`, timeline bỏ actor cá nhân) | T-010 | spec 4.1 | UT-016 |
-| [ ] | T-016b | `domain/access.ts`: `hasOwnerAccess`, `followerCount`, `canSendAnonymous` (quota 5/ngày) | T-010 | spec 3.4a, 3.4b | UT-016b |
-| [ ] | T-017 | `domain/format.ts` (ngày, số thập phân, khoảng cách) + `domain/notifications.ts` + `domain/geo.ts` (`haversineMeters` dùng cho "Quanh đây" và khoảng cách) | T-011 | spec 3.4, 7.6, AC-C01-7 | UT-017 |
-| [ ] | T-018 | `data/streets.ts`: ≥ 10 đường trong phường với tọa độ gần đúng; `nearestStreet(lat,lng)` | T-010 | spec 5.3, AC-C03-5 | UT-018 |
-| [ ] | T-019 | `scripts/generate-mock.ts` (seed cố định) + `scripts/verify-mock.ts`; commit `mock.json` | T-012 → T-018 | spec 5 | UT-019, DV-001 → DV-012, DV-014 |
+| [x] (24/11) | T-010 | `domain/types.ts`: Report, VolunteerTask, Notification, Settings, enum (gồm trường chừa sẵn cho bonus: `suspectedDuplicateOf`, `anonymousFollows`, `onBehalf`) | T-001 | spec 4 | UT-010 |
+| [x] (24/11) | T-011 | `domain/constants.ts`: 4 loại, 5 bộ phận, hạn mặc định, nhãn trạng thái (CB + công khai "Chờ tiếp nhận"… + bước + màu + icon), TNV mẫu, `DEMO_NOW`, bộ chip đánh giá | T-010 | spec 2, 3.1, 3.2, AC-C06-5 | UT-011 |
+| [x] (24/11) | T-012 | `domain/status.ts`: `canTransition`, `transition`, `publicLabel`, `progressStep`, `publicTimeline` (gồm mốc tương lai + ngày dự kiến) | T-011 | spec 3.2, 3.3, AC-C06-1 | UT-012 |
+| [x] (24/11) | T-013 | `domain/latestUpdate.ts`: câu "Cập nhật mới nhất" theo 3.4c + `delayDays` theo 3.6a | T-012, T-014 | spec 3.4c, 3.6a | UT-013 |
+| [x] (24/11) | T-014 | `domain/sorting.ts`: `isOverdue`, `isDueSoon`, `sortInbox`, `computePriority` | T-011 | spec 3.6 | UT-014 |
+| [x] (24/11) | T-015 | `domain/kpi.ts`: `computeKpi(reports, month)` | T-014 | spec 5.1, AC-C08-1, AC-A01-2 | UT-015 |
+| [x] (24/11) | T-016 | `domain/privacy.ts`: `maskPhone`, `toPublicReport` (bỏ SĐT, `secretCode`, followers → `followerCount`, timeline bỏ actor cá nhân) | T-010 | spec 4.1 | UT-016 |
+| [x] (24/11) | T-016b | `domain/access.ts`: `hasOwnerAccess`, `followerCount`, `canSendAnonymous` (quota 5/ngày) | T-010 | spec 3.4a, 3.4b | UT-016b |
+| [x] (24/11) | T-017 | `domain/format.ts` (ngày, số thập phân, khoảng cách) + `domain/notifications.ts` + `domain/geo.ts` (`haversineMeters` dùng cho "Quanh đây" và khoảng cách) | T-011 | spec 3.4, 7.6, AC-C01-7 | UT-017 |
+| [x] (24/11) | T-018 | `data/streets.ts`: ≥ 10 đường trong phường với tọa độ gần đúng; `nearestStreet(lat,lng)` | T-010 | spec 5.3, AC-C03-5 | UT-018 |
+| [x] (24/11) | T-019 | `scripts/generate-mock.ts` (seed cố định) + `scripts/verify-mock.ts`; commit `mock.json` | T-012 → T-018 | spec 5 | UT-019, DV-001 → DV-012, DV-014 |
 
 ## P2 – Store
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-020 | `AppStore` Context + reducer, hydrate từ mock | T-019 | plan 4 | UT-020 |
-| [ ] | T-021 | Actions người dân: `submitReport` (có SĐT / ẩn danh), `subscribeLater`, `unsubscribe`, `submitFeedback` (rating + tags + comment / chưa giải quyết), `supplementReport`, `verifyPhone`, `markNotificationsRead`, `claimByLink`, `lookupReport` | T-020, T-016b | spec 3.3, 3.4a, 3.4b, AC-C04, AC-C05, AC-C06 | UT-021 |
-| [ ] | T-022 | Actions cán bộ/TNV: `accept`, `assignVolunteer`, `assignDepartment`, `complete`, `requestSupplement`, `transferAgency`, `close`, `submitVerification` | T-020 | spec 3.3, AC-A02, AC-A03, AC-V02 | UT-022 |
-| [ ] | T-023 | `persistence.ts`: localStorage, debounce, `storage` event, settings theo `frame` (gồm `deviceReports`, `anonymousLog`), reset | T-020 | plan 4, AC-DEMO-3/4 | UT-023 |
+| [x] (24/11) | T-020 | `AppStore` Context + reducer, hydrate từ mock | T-019 | plan 4 | UT-020 |
+| [x] (24/11) | T-021 | Actions người dân: `submitReport` (có SĐT / ẩn danh), `subscribeLater`, `unsubscribe`, `submitFeedback` (rating + tags + comment / chưa giải quyết), `supplementReport`, `verifyPhone`, `markNotificationsRead`, `claimByLink`, `lookupReport` | T-020, T-016b | spec 3.3, 3.4a, 3.4b, AC-C04, AC-C05, AC-C06 | UT-021 |
+| [x] (24/11) | T-022 | Actions cán bộ/TNV: `accept`, `assignVolunteer`, `assignDepartment`, `complete`, `requestSupplement`, `transferAgency`, `close`, `submitVerification` | T-020 | spec 3.3, AC-A02, AC-A03, AC-V02 | UT-022 |
+| [x] (24/11) | T-023 | `persistence.ts`: localStorage, debounce, `storage` event, settings theo `frame` (gồm `deviceReports`, `anonymousLog`), reset | T-020 | plan 4, AC-DEMO-3/4 | UT-023 |
 
 ## P3 – Component dùng chung
 
