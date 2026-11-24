@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AppStoreProvider, useAppStore } from './store/AppStore';
 import { applySeniorMode } from './lib/senior';
+import { RoleSwitcher } from './components/common/RoleSwitcher';
 import { CitizenLayout } from './layouts/CitizenLayout';
 import { C01Home } from './screens/citizen/C01Home';
 import { C02Photo } from './screens/citizen/C02Photo';
@@ -35,6 +36,7 @@ export default function App() {
   return (
     <AppStoreProvider>
       <SeniorSync />
+      <RoleSwitcher />
       <Routes>
         <Route
           path="/"
