@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
-import { requireStaffAuth, StaffProfile } from '../middleware/auth';
+import { requireStaffAuth, StaffProfile, hashPepper } from '../middleware/auth';
 import { maskPhone } from '../../src/domain/privacy';
 import { getDemoNow } from '../clock';
 import { executeTransition } from '../services/transition';
@@ -105,7 +105,18 @@ officerRoutes.get('/kpi', async (c) => {
   `;
   const [overdueRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
-    WHERE status = 'da_giao' AND due_at < ${now}::timestamptz
+    WHERE status IN ('da_tiep_nhan', 'cho_xac_minh', 'da_giao', 'mo_lai')
+      AND due_at IS NOT NULL
+      AND due_at < ${now}::timestamptz
+      AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
+  `;
+  const [dueSoonRow] = await sqlClient`
+    SELECT count(*)::int as count FROM reports
+    WHERE status IN ('da_tiep_nhan', 'cho_xac_minh', 'da_giao', 'mo_lai')
+      AND due_at IS NOT NULL
+      AND due_at >= ${now}::timestamptz
+      AND due_at <= (${now}::timestamptz + interval '24 hours')
       AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
       AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
   `;
@@ -120,6 +131,7 @@ officerRoutes.get('/kpi', async (c) => {
     total: totalRow?.count ?? 0,
     resolved: resolvedRow?.count ?? 0,
     overdue: overdueRow?.count ?? 0,
+    dueSoon: dueSoonRow?.count ?? 0,
     pendingAcceptance: pendingRow?.count ?? 0,
     evaluatedAt: now,
   });
@@ -380,5 +392,455 @@ officerRoutes.post('/reports/:id/merge', async (c) => {
     newStatus: result.report.status,
     mergedInto: targetReport.code,
     version: result.version,
+  });
+});
+
+/**
+ * 9. GET /officer/reports/:code - Chi tiết phản ánh đầy đủ cho cán bộ
+ */
+officerRoutes.get('/reports/:code', async (c) => {
+  const code = c.req.param('code');
+
+  const [report] = await sqlClient`
+    SELECT 
+      r.*,
+      d.name as department_name,
+      ST_X(r.location) as lng,
+      ST_Y(r.location) as lat,
+      (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count,
+      fb.resolved as feedback_resolved,
+      fb.rating as feedback_rating,
+      fb.tags as feedback_tags,
+      fb.comment as feedback_comment,
+      fb.at as feedback_at
+    FROM reports r
+    LEFT JOIN departments d ON d.id = r.department_id
+    LEFT JOIN feedback fb ON fb.report_id = r.id
+    WHERE r.code = ${code} OR r.id::text = ${code}
+    LIMIT 1;
+  `;
+
+  if (!report) {
+    throw new AppError('NOT_FOUND', `Không tìm thấy phản ánh ${code}`, 404);
+  }
+
+  const photos = await sqlClient`
+    SELECT report_id, kind, storage_path, sort
+    FROM report_photos
+    WHERE report_id = ${report.id}
+    ORDER BY sort ASC;
+  `;
+
+  const timeline = await sqlClient`
+    SELECT t.report_id, t.at, t.status, t.actor_type, t.actor_label, t.note, sp.display_name as staff_name
+    FROM report_timeline t
+    LEFT JOIN staff_profiles sp ON sp.user_id = t.actor_staff_id
+    WHERE t.report_id = ${report.id}
+    ORDER BY t.at ASC;
+  `;
+
+  return c.json({
+    id: report.code,
+    uuid: report.id,
+    code: report.code,
+    category: report.category,
+    status: report.status,
+    priority: report.priority,
+    lat: Number(report.lat),
+    lng: Number(report.lng),
+    address: report.address,
+    locationNote: report.location_note || undefined,
+    description: report.description || undefined,
+    departmentId: report.department_id,
+    departmentName: report.department_name,
+    dueAt: report.due_at,
+    createdAt: report.created_at,
+    completedAt: report.completed_at,
+    reporterPhone: maskPhone(report.reporter_phone),
+    anonymous: report.anonymous,
+    followerCount:
+      (report.follower_count ? Number(report.follower_count) : 0) + (report.anonymous_follows || 0),
+    photosApproved: report.photos_approved,
+    resultNote: report.result_note || undefined,
+    version: report.version,
+    photos: photos.map((p) => ({
+      kind: p.kind,
+      url: p.storage_path,
+    })),
+    timeline: timeline.map((t) => ({
+      at: t.at,
+      status: t.status,
+      actor: t.staff_name || t.actor_label,
+      note: t.note || undefined,
+    })),
+  });
+});
+
+/**
+ * 10. PATCH /officer/reports/:code - Sửa trường phân loại / phòng ban
+ */
+officerRoutes.patch('/reports/:code', async (c) => {
+  const code = c.req.param('code');
+  const body = await c.req.json();
+  const { category, priority, departmentId, dueAt, version } = body;
+
+  const [report] = await sqlClient`
+    SELECT * FROM reports WHERE code = ${code} OR id::text = ${code} LIMIT 1;
+  `;
+  if (!report) throw new AppError('NOT_FOUND', `Không tìm thấy phản ánh ${code}`, 404);
+
+  if (version !== undefined && version !== report.version) {
+    throw new AppError('VERSION_CONFLICT', 'Xung đột phiên bản cập nhật', 409);
+  }
+
+  const newVersion = (report.version || 1) + 1;
+  await sqlClient`
+    UPDATE reports
+    SET
+      category = ${category || report.category},
+      priority = ${priority || report.priority},
+      department_id = ${departmentId !== undefined ? departmentId : report.department_id},
+      due_at = ${dueAt ? new Date(dueAt).toISOString() : report.due_at}::timestamptz,
+      version = ${newVersion}
+    WHERE id = ${report.id};
+  `;
+
+  return c.json({ success: true, version: newVersion });
+});
+
+/**
+ * 11. POST /officer/reports/:id/assign-department - Alias cho assign-dept
+ */
+officerRoutes.post('/reports/:id/assign-department', async (c) => {
+  const codeOrId = c.req.param('id');
+  const body = await c.req.json();
+  const departmentId = body.departmentId;
+  const staff = c.get('staff') as StaffProfile;
+  const now = await getDemoNow();
+
+  if (!departmentId) {
+    throw new AppError('VALIDATION_ERROR', 'Vui lòng chọn đơn vị tiếp nhận xử lý', 400);
+  }
+
+  const [dept] = await sqlClient`
+    SELECT name FROM departments WHERE id = ${departmentId} LIMIT 1;
+  `;
+  const deptName = dept?.name || departmentId;
+
+  const [rep] = await sqlClient`
+    SELECT category FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
+  `;
+  const [slaRow] = await sqlClient`
+    SELECT sla_days FROM category_settings WHERE category = ${rep?.category} LIMIT 1;
+  `;
+  const slaDays = slaRow?.sla_days || 3;
+  const dueAt =
+    body.dueAt || new Date(new Date(now).getTime() + slaDays * 24 * 60 * 60 * 1000).toISOString();
+
+  const result = await executeTransition({
+    reportId: codeOrId,
+    targetStatus: 'da_giao',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ phân xử lý',
+      staffId: staff.userId,
+    },
+    params: {
+      departmentId,
+      dueAt,
+      note: `Giao xử lý: ${deptName}`,
+    },
+    clientVersion: body.version,
+  });
+
+  return c.json({
+    success: true,
+    newStatus: result.report.status,
+    dueAt,
+    version: result.version,
+  });
+});
+
+/**
+ * 12. POST /officer/reports/:id/request-supplement - Yêu cầu bổ sung thông tin
+ */
+officerRoutes.post('/reports/:id/request-supplement', async (c) => {
+  const id = c.req.param('id');
+  const staff = c.get('staff') as StaffProfile;
+  const body = await c.req.json();
+  const reason = body.reason || body.note;
+
+  if (!reason || reason.trim().length < 10) {
+    throw new AppError('BAD_REQUEST', 'Cần nhập lý do yêu cầu bổ sung ít nhất 10 ký tự', 400);
+  }
+
+  const result = await executeTransition({
+    reportId: id,
+    targetStatus: 'can_bo_sung',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ tiếp nhận',
+      staffId: staff.userId,
+    },
+    params: { note: reason.trim() },
+    clientVersion: body.version,
+  });
+
+  return c.json({ success: true, newStatus: result.report.status, version: result.version });
+});
+
+/**
+ * 13. POST /officer/reports/:id/transfer - Chuyển cơ quan khác xử lý
+ */
+officerRoutes.post('/reports/:id/transfer', async (c) => {
+  const id = c.req.param('id');
+  const staff = c.get('staff') as StaffProfile;
+  const body = await c.req.json();
+  const reason = body.reason || body.note;
+  const targetAgency = body.targetAgency || 'Cơ quan chức năng cấp trên';
+
+  if (!reason || reason.trim().length < 10) {
+    throw new AppError('BAD_REQUEST', 'Cần nhập lý do chuyển cơ quan ít nhất 10 ký tự', 400);
+  }
+
+  const result = await executeTransition({
+    reportId: id,
+    targetStatus: 'chuyen_co_quan',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ xử lý',
+      staffId: staff.userId,
+    },
+    params: { note: `Chuyển tới ${targetAgency}: ${reason.trim()}`, targetAgency },
+    clientVersion: body.version,
+  });
+
+  return c.json({ success: true, newStatus: result.report.status, version: result.version });
+});
+
+/**
+ * 14. POST /officer/reports/:id/close - Đóng hồ sơ trực tiếp
+ */
+officerRoutes.post('/reports/:id/close', async (c) => {
+  const id = c.req.param('id');
+  const staff = c.get('staff') as StaffProfile;
+  const body = await c.req.json().catch(() => ({}));
+  const reason = body.reason || body.note || 'Cán bộ quyết định đóng hồ sơ';
+
+  const result = await executeTransition({
+    reportId: id,
+    targetStatus: 'dong',
+    actor: {
+      role: 'system',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ xử lý',
+      staffId: staff.userId,
+    },
+    params: { note: reason },
+    clientVersion: body.version,
+  });
+
+  return c.json({ success: true, newStatus: result.report.status, version: result.version });
+});
+
+/**
+ * 15. POST /officer/reports/:id/mark-unverified - Đánh dấu không xác nhận
+ */
+officerRoutes.post('/reports/:id/mark-unverified', async (c) => {
+  const codeOrId = c.req.param('id');
+  const body = await c.req.json();
+  const reason =
+    body.reason?.trim() || 'Thông tin phản ánh không có căn cứ thực tế tại hiện trường';
+  const staff = c.get('staff') as StaffProfile;
+
+  const result = await executeTransition({
+    reportId: codeOrId,
+    targetStatus: 'khong_xac_nhan',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ tiếp nhận',
+      staffId: staff.userId,
+    },
+    params: { note: reason },
+    clientVersion: body.version,
+  });
+
+  return c.json({
+    success: true,
+    newStatus: result.report.status,
+    version: result.version,
+  });
+});
+
+/**
+ * 16. POST /officer/reports/:id/split - Tách hồ sơ đã gộp
+ */
+officerRoutes.post('/reports/:id/split', async (c) => {
+  const id = c.req.param('id');
+  const staff = c.get('staff') as StaffProfile;
+  const now = await getDemoNow();
+
+  const [report] = await sqlClient`
+    SELECT * FROM reports WHERE id::text = ${id} OR code = ${id} LIMIT 1;
+  `;
+  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
+  if (report.status !== 'da_gop') {
+    throw new AppError('BAD_REQUEST', 'Hồ sơ không ở trạng thái đã gộp', 400);
+  }
+
+  const restoredStatus = report.status_before_merge || 'da_tiep_nhan';
+  const newVersion = (report.version || 1) + 1;
+
+  await sqlClient`
+    UPDATE reports
+    SET status = ${restoredStatus}, merged_into = null, status_before_merge = null, version = ${newVersion}
+    WHERE id = ${report.id};
+  `;
+
+  await sqlClient`
+    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
+    VALUES (${report.id}, ${now}::timestamptz, ${restoredStatus}, 'staff', ${staff.userId}::uuid, ${staff.displayName}, 'Tách khỏi hồ sơ đã gộp');
+  `;
+
+  return c.json({ success: true, newStatus: restoredStatus, version: newVersion });
+});
+
+/**
+ * 17. POST /officer/reports - Tạo phản ánh hộ người dân (B5)
+ */
+officerRoutes.post('/reports', async (c) => {
+  const staff = c.get('staff') as StaffProfile;
+  const body = await c.req.json();
+  const { category, address, lat, lng, description, reporterPhone, photos } = body;
+  const now = await getDemoNow();
+
+  const [maxRow] = await sqlClient`
+    SELECT code FROM reports WHERE code ~ '^TB-[0-9]{4}$' ORDER BY code DESC LIMIT 1;
+  `;
+  let nextNum = 65;
+  if (maxRow?.code) {
+    const parsed = parseInt(maxRow.code.replace('TB-', ''), 10);
+    if (!isNaN(parsed)) nextNum = parsed + 1;
+  }
+  const code = `TB-${nextNum.toString().padStart(4, '0')}`;
+
+  const secretCode = '0000';
+  const secretCodeHash = hashPepper(secretCode);
+  const pointSql = `POINT(${lng ?? 106.8225} ${lat ?? 10.9505})`;
+
+  const [created] = await sqlClient`
+    INSERT INTO reports (
+      code, category, status, priority, location, address, description,
+      reporter_phone, anonymous, on_behalf, secret_code_hash, photos_approved, version, is_seed
+    ) VALUES (
+      ${code}, ${category || 'rac_thai'}, 'da_tiep_nhan', 'binh_thuong',
+      ST_GeographyFromText(${pointSql}), ${address || 'Ủy ban Phường Trấn Biên'}, ${description || null},
+      ${reporterPhone || null}, false, true, ${secretCodeHash}, true, 1, false
+    )
+    RETURNING id, code, status;
+  `;
+
+  if (!created) throw new AppError('INTERNAL_ERROR', 'Không thể tạo phản ánh', 500);
+
+  await sqlClient`
+    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
+    VALUES (${created.id}, ${now}::timestamptz, 'da_tiep_nhan', 'staff', ${staff.userId}::uuid, ${staff.displayName}, 'Cán bộ tạo phản ánh hộ người dân (B5)');
+  `;
+
+  if (Array.isArray(photos)) {
+    for (let i = 0; i < photos.length; i++) {
+      if (photos[i]) {
+        await sqlClient`
+          INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
+          VALUES (${created.id}, 'before', ${photos[i]}, ${i + 1}, 'staff');
+        `;
+      }
+    }
+  }
+
+  return c.json({ success: true, report: created }, 201);
+});
+
+/**
+ * 18. POST /officer/reports/on-behalf - Alias cho tạo phản ánh hộ
+ */
+officerRoutes.post('/reports/on-behalf', async (c) => {
+  const staff = c.get('staff') as StaffProfile;
+  const body = await c.req.json();
+  const { category, address, lat, lng, description, reporterPhone, photos } = body;
+  const now = await getDemoNow();
+
+  const [maxRow] = await sqlClient`
+    SELECT code FROM reports WHERE code ~ '^TB-[0-9]{4}$' ORDER BY code DESC LIMIT 1;
+  `;
+  let nextNum = 65;
+  if (maxRow?.code) {
+    const parsed = parseInt(maxRow.code.replace('TB-', ''), 10);
+    if (!isNaN(parsed)) nextNum = parsed + 1;
+  }
+  const code = `TB-${nextNum.toString().padStart(4, '0')}`;
+
+  const secretCode = '0000';
+  const secretCodeHash = hashPepper(secretCode);
+  const pointSql = `POINT(${lng ?? 106.8225} ${lat ?? 10.9505})`;
+
+  const [created] = await sqlClient`
+    INSERT INTO reports (
+      code, category, status, priority, location, address, description,
+      reporter_phone, anonymous, on_behalf, secret_code_hash, photos_approved, version, is_seed
+    ) VALUES (
+      ${code}, ${category || 'rac_thai'}, 'da_tiep_nhan', 'binh_thuong',
+      ST_GeographyFromText(${pointSql}), ${address || 'Ủy ban Phường Trấn Biên'}, ${description || null},
+      ${reporterPhone || null}, false, true, ${secretCodeHash}, true, 1, false
+    )
+    RETURNING id, code, status;
+  `;
+
+  if (!created) throw new AppError('INTERNAL_ERROR', 'Không thể tạo phản ánh', 500);
+
+  await sqlClient`
+    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
+    VALUES (${created.id}, ${now}::timestamptz, 'da_tiep_nhan', 'staff', ${staff.userId}::uuid, ${staff.displayName}, 'Cán bộ tạo phản ánh hộ người dân (B5)');
+  `;
+
+  if (Array.isArray(photos)) {
+    for (let i = 0; i < photos.length; i++) {
+      if (photos[i]) {
+        await sqlClient`
+          INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
+          VALUES (${created.id}, 'before', ${photos[i]}, ${i + 1}, 'staff');
+        `;
+      }
+    }
+  }
+
+  return c.json({ success: true, report: created }, 201);
+});
+
+/**
+ * 19. GET /officer/volunteers - Danh sách tình nguyện viên đang hoạt động
+ */
+officerRoutes.get('/volunteers', async (c) => {
+  const volunteers = await sqlClient`
+    SELECT 
+      sp.user_id as id,
+      sp.display_name as name,
+      sp.is_active,
+      (SELECT count(*)::int FROM volunteer_tasks vt WHERE vt.assignee_id = sp.user_id AND vt.status = 'dang_lam') as active_tasks_count
+    FROM staff_profiles sp
+    WHERE sp.role = 'tnv' AND sp.is_active = true
+    ORDER BY sp.display_name ASC;
+  `;
+
+  return c.json({
+    items: volunteers.map((v) => ({
+      id: v.id,
+      name: v.name,
+      activeTasksCount: v.active_tasks_count,
+    })),
   });
 });

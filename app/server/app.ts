@@ -13,6 +13,7 @@ import type { AppEnv } from './types';
 const subApp = new Hono<AppEnv>();
 subApp.route('/public', publicRoutes);
 subApp.route('/citizen', citizenRoutes);
+subApp.route('/', citizenRoutes);
 subApp.route('/officer', officerRoutes);
 subApp.route('/volunteer', volunteerRoutes);
 subApp.route('/cron', cronRoutes);
@@ -35,7 +36,8 @@ app.use('*', corsMiddleware);
 app.use('*', requestIdMiddleware);
 app.onError(errorHandler);
 
-// Hỗ trợ cả hai tiền tố: có /api và không có /api
+// Hỗ trợ chuẩn Spec 12 (/api/v1) cùng các tiền tố tương thích ngược (/api và root /)
+app.route('/api/v1', subApp);
 app.route('/api', subApp);
 app.route('/', subApp);
 

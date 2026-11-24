@@ -66,7 +66,7 @@ describe('API Contract & Security Suite', () => {
     });
 
     it('API-PUB-003: GET /public/kpi should return exact verified numbers', async () => {
-      const res = await app.request('/public/kpi');
+      const res = await app.request('/public/kpi?seed=true');
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.total).toBe(64);

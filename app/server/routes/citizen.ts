@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import crypto from 'node:crypto';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
@@ -18,6 +18,7 @@ import {
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { getDemoNow } from '../clock';
 import { executeTransition } from '../services/transition';
+import { maskPhone } from '../../src/domain/privacy';
 import type { AppEnv } from '../types';
 
 export const citizenRoutes = new Hono<AppEnv>();
@@ -227,21 +228,35 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
 });
 
 /**
- * 4. GET /citizen/reports/lookup - Tra cứu bằng mã phản ánh + mã bí mật 4 số (Anti-brute force)
+ * 4. POST /reports/lookup & GET /reports/lookup - Tra cứu bằng mã phản ánh + proof (mã bí mật 4 số HOẶC 4 số cuối SĐT)
  */
-citizenRoutes.get('/reports/lookup', async (c) => {
-  const code = c.req.query('code')?.trim();
-  const secretCode = c.req.query('secretCode')?.trim();
+const handleLookup = async (c: Context<AppEnv>) => {
+  let code: string | undefined;
+  let proof: string | undefined;
+
+  if (c.req.method === 'POST') {
+    const body = await c.req.json().catch(() => ({}));
+    code = (body.code || c.req.query('code'))?.trim();
+    proof = (body.proof || body.secretCode || c.req.query('secretCode'))?.trim();
+  } else {
+    code = c.req.query('code')?.trim();
+    proof = (c.req.query('proof') || c.req.query('secretCode'))?.trim();
+  }
+
   const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
 
-  if (!code || !secretCode) {
-    throw new AppError('VALIDATION_ERROR', 'Vui lòng nhập mã phản ánh và mã bí mật 4 số', 400);
+  if (!code || !proof) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      'Vui lòng nhập mã phản ánh và mã xác thực (mã bí mật hoặc 4 số cuối SĐT)',
+      400
+    );
   }
 
   await checkLookupRateLimit(code, ip);
 
   const [report] = await sqlClient`
-    SELECT id, code, secret_code_hash, owner_token_hash, anonymous, status
+    SELECT id, code, secret_code_hash, owner_token_hash, reporter_phone, anonymous, status
     FROM reports
     WHERE code = ${code} OR id::text = ${code}
     LIMIT 1;
@@ -252,13 +267,15 @@ citizenRoutes.get('/reports/lookup', async (c) => {
     throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ phản ánh với mã đã cho', 404);
   }
 
-  const expectedHash = hashPepper(secretCode);
-  if (expectedHash !== report.secret_code_hash) {
+  const secretMatches = hashPepper(proof) === report.secret_code_hash;
+  const phoneMatches = Boolean(report.reporter_phone && report.reporter_phone.endsWith(proof));
+
+  if (!secretMatches && !phoneMatches) {
     await recordFailedLookup(code, ip);
-    throw new AppError('INVALID_SECRET', 'Mã bí mật 4 số không chính xác', 400);
+    throw new AppError('INVALID_SECRET', 'Mã xác thực không chính xác', 400);
   }
 
-  // Tra cứu thành công: trả về token sở hữu phiên tra cứu
+  // Tra cứu thành công: sinh ownerToken mới
   const lookupToken = crypto.randomBytes(24).toString('hex');
   const lookupTokenHash = hashPepper(lookupToken);
   await sqlClient`
@@ -268,23 +285,30 @@ citizenRoutes.get('/reports/lookup', async (c) => {
   return c.json({
     id: report.code,
     uuid: report.id,
+    code: report.code,
     ownerToken: lookupToken,
     message: 'Tra cứu thành công',
   });
-});
+};
+
+citizenRoutes.post('/reports/lookup', handleLookup);
+citizenRoutes.get('/reports/lookup', handleLookup);
 
 /**
- * 5. POST /citizen/reports/:id/claim - Nhận phản ánh ẩn danh vào số điện thoại đã đăng nhập (Spec 4.1)
+ * 5. POST /citizen/reports/:id/claim - Nhận phản ánh ẩn danh vào máy qua link ?k= hoặc số điện thoại (Spec 12.3, 13.4)
  */
-citizenRoutes.post('/reports/:id/claim', requireCitizenAuth, async (c) => {
+citizenRoutes.post('/reports/:id/claim', optionalCitizenAuth, async (c) => {
   const codeOrId = c.req.param('id');
-  const body = await c.req.json();
+  const body = await c.req.json().catch(() => ({}));
   const secretCode = body.secretCode?.trim();
-  const citizenPhone = c.get('citizenPhone') as string;
+  const citizenPhone = c.get('citizenPhone') as string | undefined;
+  const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
 
   if (!secretCode) {
     throw new AppError('VALIDATION_ERROR', 'Vui lòng cung cấp mã bí mật 4 số để nhận hồ sơ', 400);
   }
+
+  await checkLookupRateLimit(codeOrId, ip);
 
   const [report] = await sqlClient`
     SELECT id, code, anonymous, secret_code_hash
@@ -294,27 +318,38 @@ citizenRoutes.post('/reports/:id/claim', requireCitizenAuth, async (c) => {
   `;
 
   if (!report) {
+    await recordFailedLookup(codeOrId, ip);
     throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
   }
 
   if (hashPepper(secretCode) !== report.secret_code_hash) {
+    await recordFailedLookup(codeOrId, ip);
     throw new AppError('INVALID_SECRET', 'Mã bí mật không chính xác', 400);
   }
 
-  // Spec 4.1 Invariant: anonymous giữ true, chỉ đánh dấu subscribed_later = true và thêm vào report_followers
+  // Cấp ownerToken
+  const ownerToken = crypto.randomBytes(24).toString('hex');
+  const ownerTokenHash = hashPepper(ownerToken);
   await sqlClient`
-    UPDATE reports SET subscribed_later = true WHERE id = ${report.id};
+    UPDATE reports SET owner_token_hash = ${ownerTokenHash} WHERE id = ${report.id};
   `;
 
-  await sqlClient`
-    INSERT INTO report_followers (report_id, phone, source)
-    VALUES (${report.id}, ${citizenPhone}, 'subscribe_later')
-    ON CONFLICT DO NOTHING;
-  `;
+  // Nếu người dân đã đăng nhập SĐT, liên kết vào report_followers
+  if (citizenPhone) {
+    await sqlClient`UPDATE reports SET subscribed_later = true WHERE id = ${report.id};`;
+    await sqlClient`
+      INSERT INTO report_followers (report_id, phone, source)
+      VALUES (${report.id}, ${citizenPhone}, 'subscribe_later')
+      ON CONFLICT DO NOTHING;
+    `;
+  }
 
   return c.json({
     success: true,
-    message: 'Đã liên kết hồ sơ vào tài khoản số điện thoại thành công',
+    id: report.code,
+    code: report.code,
+    ownerToken,
+    message: 'Xác thực chủ hồ sơ thành công',
   });
 });
 
@@ -466,4 +501,271 @@ citizenRoutes.post('/reports/:id/follow', optionalCitizenAuth, async (c) => {
   }
 
   return c.json({ success: true, message: 'Đã ghi nhận phản ánh của bạn' });
+});
+
+/**
+ * 9. GET /me/reports - Danh sách phản ánh của người dân đã đăng nhập SĐT (Spec 12.3, AC-C05)
+ */
+citizenRoutes.get('/me/reports', requireCitizenAuth, async (c) => {
+  const citizenPhone = c.get('citizenPhone') as string;
+
+  const rows = await sqlClient`
+    SELECT DISTINCT
+      r.id, r.code, r.category, r.status, r.address, r.location_note,
+      r.description, r.created_at, r.due_at, r.priority, r.anonymous,
+      r.subscribed_later, r.completed_at, r.result_note,
+      ST_X(r.location) as lng, ST_Y(r.location) as lat,
+      d.name as department_name,
+      (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count
+    FROM reports r
+    LEFT JOIN departments d ON d.id = r.department_id
+    LEFT JOIN report_followers rf ON rf.report_id = r.id
+    WHERE r.reporter_phone = ${citizenPhone} OR rf.phone = ${citizenPhone}
+    ORDER BY r.created_at DESC;
+  `;
+
+  const reportIds = rows.map((r) => r.id);
+  const photosByReport: Record<string, string[]> = {};
+  if (reportIds.length > 0) {
+    const photos = await sqlClient`
+      SELECT report_id, storage_path, kind FROM report_photos
+      WHERE report_id = ANY(${reportIds}) ORDER BY sort ASC;
+    `;
+    for (const p of photos) {
+      if (!photosByReport[p.report_id]) photosByReport[p.report_id] = [];
+      photosByReport[p.report_id]!.push(p.storage_path);
+    }
+  }
+
+  const items = rows.map((r) => ({
+    id: r.code,
+    uuid: r.id,
+    code: r.code,
+    category: r.category,
+    status: r.status,
+    address: r.address,
+    locationNote: r.location_note,
+    description: r.description,
+    lat: Number(r.lat),
+    lng: Number(r.lng),
+    createdAt: r.created_at,
+    dueAt: r.due_at,
+    priority: r.priority,
+    department: r.department_name,
+    followerCount: Number(r.follower_count || 1),
+    anonymous: r.anonymous,
+    subscribedLater: r.subscribed_later,
+    photos: photosByReport[r.id] || [],
+    resultNote: r.result_note,
+    completedAt: r.completed_at,
+  }));
+
+  return c.json({ items });
+});
+
+/**
+ * 10. GET /reports/:code/owner - Chi tiết C06 đầy đủ cho chủ hồ sơ (Spec 12.3, 13.4, AC-C06-11)
+ */
+citizenRoutes.get('/reports/:code/owner', optionalCitizenAuth, async (c) => {
+  const code = c.req.param('code');
+  const reportKey = c.req.header('X-Report-Key')?.trim();
+  const citizenPhone = c.get('citizenPhone') as string | undefined;
+
+  const [report] = await sqlClient`
+    SELECT 
+      r.*,
+      d.name as department_name,
+      ST_X(r.location) as lng,
+      ST_Y(r.location) as lat,
+      (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count,
+      fb.resolved as feedback_resolved,
+      fb.rating as feedback_rating,
+      fb.tags as feedback_tags,
+      fb.comment as feedback_comment,
+      fb.at as feedback_at
+    FROM reports r
+    LEFT JOIN departments d ON d.id = r.department_id
+    LEFT JOIN feedback fb ON fb.report_id = r.id
+    WHERE r.code = ${code} OR r.id::text = ${code}
+    LIMIT 1;
+  `;
+
+  if (!report) {
+    throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ phản ánh', 404);
+  }
+
+  // Xác thực quyền chủ hồ sơ:
+  // (a) X-Report-Key khớp owner_token_hash
+  // (b) citizenPhone khớp reporter_phone hoặc nằm trong report_followers
+  let isOwner = false;
+  if (reportKey && hashPepper(reportKey) === report.owner_token_hash) {
+    isOwner = true;
+  } else if (citizenPhone) {
+    if (report.reporter_phone === citizenPhone) {
+      isOwner = true;
+    } else {
+      const [follower] = await sqlClient`
+        SELECT 1 FROM report_followers WHERE report_id = ${report.id} AND phone = ${citizenPhone} LIMIT 1;
+      `;
+      if (follower) isOwner = true;
+    }
+  }
+
+  if (!isOwner) {
+    throw new AppError('FORBIDDEN', 'Bạn không có quyền quản lý hồ sơ này', 403);
+  }
+
+  // Lấy ảnh trước & sau
+  const photos = await sqlClient`
+    SELECT storage_path, kind FROM report_photos WHERE report_id = ${report.id} ORDER BY sort ASC;
+  `;
+  const beforePhotos = photos.filter((p) => p.kind === 'before').map((p) => p.storage_path);
+  const afterPhotos = photos.filter((p) => p.kind === 'after').map((p) => p.storage_path);
+
+  // Lấy timeline
+  const timeline = await sqlClient`
+    SELECT at, status, actor_label, note
+    FROM report_timeline
+    WHERE report_id = ${report.id}
+    ORDER BY at ASC;
+  `;
+
+  return c.json({
+    id: report.code,
+    uuid: report.id,
+    code: report.code,
+    category: report.category,
+    status: report.status,
+    priority: report.priority,
+    department: report.department_name,
+    address: report.address,
+    locationNote: report.location_note,
+    description: report.description,
+    lat: Number(report.lat),
+    lng: Number(report.lng),
+    createdAt: report.created_at,
+    dueAt: report.due_at,
+    completedAt: report.completed_at,
+    photos: beforePhotos,
+    resultPhotos: afterPhotos,
+    resultNote: report.result_note,
+    followerCount: Number(report.follower_count || 1) + Number(report.anonymous_follows || 0),
+    anonymous: report.anonymous,
+    subscribedLater: report.subscribed_later,
+    maskedPhone: report.reporter_phone ? maskPhone(report.reporter_phone) : undefined,
+    timeline: timeline.map((t) => ({
+      at: t.at,
+      status: t.status,
+      actor: t.actor_label,
+      note: t.note,
+    })),
+    feedback:
+      report.feedback_resolved != null
+        ? {
+            resolved: report.feedback_resolved,
+            rating: report.feedback_rating,
+            tags: report.feedback_tags,
+            comment: report.feedback_comment,
+            at: report.feedback_at,
+          }
+        : undefined,
+    canFeedback: ['hoan_thanh', 'dong'].includes(report.status),
+    canSupplement: report.status === 'can_bo_sung',
+    isOwner: true,
+  });
+});
+
+/**
+ * 11. POST & DELETE /reports/:code/subscribe - Đăng ký / huỷ nhận tin cho hồ sơ ẩn danh (AC-C06-9)
+ */
+citizenRoutes.post('/reports/:code/subscribe', optionalCitizenAuth, async (c) => {
+  const code = c.req.param('code');
+  const body = await c.req.json().catch(() => ({}));
+  const phone = (c.get('citizenPhone') as string) || body.phone?.replace(/\s+/g, '');
+  const reportKey = c.req.header('X-Report-Key')?.trim();
+
+  if (!phone || !/^0[0-9]{9}$/.test(phone)) {
+    throw new AppError(
+      'INVALID_PHONE',
+      'Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0)',
+      400
+    );
+  }
+
+  const [report] = await sqlClient`
+    SELECT id, code, owner_token_hash FROM reports WHERE code = ${code} OR id::text = ${code} LIMIT 1;
+  `;
+  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
+
+  if (reportKey && hashPepper(reportKey) !== report.owner_token_hash) {
+    throw new AppError('FORBIDDEN', 'Khoá hồ sơ không hợp lệ', 403);
+  }
+
+  await sqlClient`UPDATE reports SET subscribed_later = true WHERE id = ${report.id};`;
+  await sqlClient`
+    INSERT INTO report_followers (report_id, phone, source)
+    VALUES (${report.id}, ${phone}, 'subscribe_later')
+    ON CONFLICT DO NOTHING;
+  `;
+
+  return c.json({ success: true, message: 'Đăng ký nhận thông báo thành công' });
+});
+
+citizenRoutes.delete('/reports/:code/subscribe', optionalCitizenAuth, async (c) => {
+  const code = c.req.param('code');
+  const phone = (c.get('citizenPhone') as string) || c.req.query('phone')?.replace(/\s+/g, '');
+
+  if (!phone) {
+    throw new AppError('INVALID_PHONE', 'Thiếu số điện thoại', 400);
+  }
+
+  const [report] = await sqlClient`
+    SELECT id FROM reports WHERE code = ${code} OR id::text = ${code} LIMIT 1;
+  `;
+  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
+
+  await sqlClient`
+    DELETE FROM report_followers WHERE report_id = ${report.id} AND phone = ${phone};
+  `;
+
+  return c.json({ success: true, message: 'Đã huỷ nhận thông báo' });
+});
+
+/**
+ * 12. GET /me/notifications & POST /me/notifications/read - Thông báo của người dân (AC-C05-5)
+ */
+const handleGetNotifications = async (c: Context<AppEnv>) => {
+  const citizenPhone = c.get('citizenPhone') as string;
+  const items = await sqlClient`
+    SELECT n.id, n.phone, n.report_id, n.message, n.channel, n.read, n.created_at,
+           r.code as report_code
+    FROM notifications n
+    LEFT JOIN reports r ON r.id = n.report_id
+    WHERE n.phone = ${citizenPhone}
+    ORDER BY n.created_at DESC
+    LIMIT 50;
+  `;
+  return c.json({ items });
+};
+
+citizenRoutes.get('/me/notifications', requireCitizenAuth, handleGetNotifications);
+citizenRoutes.get('/notifications', requireCitizenAuth, handleGetNotifications);
+
+citizenRoutes.post('/me/notifications/read', requireCitizenAuth, async (c) => {
+  const citizenPhone = c.get('citizenPhone') as string;
+  const body = await c.req.json().catch(() => ({}));
+  const id = body.id;
+  if (id) {
+    await sqlClient`UPDATE notifications SET read = true WHERE id = ${id} AND phone = ${citizenPhone};`;
+  } else {
+    await sqlClient`UPDATE notifications SET read = true WHERE phone = ${citizenPhone};`;
+  }
+  return c.json({ success: true });
+});
+
+citizenRoutes.post('/notifications/:id/read', requireCitizenAuth, async (c) => {
+  const id = c.req.param('id');
+  const citizenPhone = c.get('citizenPhone') as string;
+  await sqlClient`UPDATE notifications SET read = true WHERE id = ${id} AND phone = ${citizenPhone};`;
+  return c.json({ success: true });
 });

@@ -81,11 +81,16 @@ export function clearAuthTokens() {
 }
 
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = endpoint.startsWith('http')
-    ? endpoint
-    : endpoint.startsWith('/api')
-      ? endpoint
-      : `/api${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  let url: string;
+  if (endpoint.startsWith('http')) {
+    url = endpoint;
+  } else if (endpoint.startsWith('/api/v1')) {
+    url = endpoint;
+  } else if (endpoint.startsWith('/api/')) {
+    url = endpoint.replace('/api/', '/api/v1/');
+  } else {
+    url = `/api/v1${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  }
 
   const headers = new Headers(options.headers || {});
 

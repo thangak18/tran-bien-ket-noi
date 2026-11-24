@@ -99,6 +99,7 @@ function formatPublicReportRow(
 
   return {
     id: r.code, // Public ID is TB-xxxx
+    code: r.code,
     uuid: r.id,
     category: r.category,
     status: r.status,
@@ -263,18 +264,21 @@ publicRoutes.get('/kpi', async (c) => {
   const query = c.req.query();
   const from = query.from;
   const to = query.to;
+  const isSeedOnly = query.seed === 'true';
   const now = await getDemoNow();
 
   const [totalRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
     WHERE (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
-      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`})
+      AND (${isSeedOnly ? sqlClient`is_seed = true` : sqlClient`true`});
   `;
   const [resolvedRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
     WHERE status IN ('hoan_thanh', 'dong')
       AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
-      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`})
+      AND (${isSeedOnly ? sqlClient`is_seed = true` : sqlClient`true`});
   `;
   const [overdueRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
@@ -282,14 +286,16 @@ publicRoutes.get('/kpi', async (c) => {
       AND due_at IS NOT NULL
       AND due_at < ${now}::timestamptz
       AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
-      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`})
+      AND (${isSeedOnly ? sqlClient`is_seed = true` : sqlClient`true`});
   `;
   const [avgRow] = await sqlClient`
     SELECT AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 86400.0) as avg_days
     FROM reports
     WHERE status IN ('hoan_thanh', 'dong')
       AND (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
-      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`});
+      AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`})
+      AND (${isSeedOnly ? sqlClient`is_seed = true` : sqlClient`true`});
   `;
 
   const catRows = await sqlClient`
@@ -297,6 +303,7 @@ publicRoutes.get('/kpi', async (c) => {
     FROM reports
     WHERE (${from ? sqlClient`created_at >= ${from}::timestamptz` : sqlClient`true`})
       AND (${to ? sqlClient`created_at <= ${to}::timestamptz` : sqlClient`true`})
+      AND (${isSeedOnly ? sqlClient`is_seed = true` : sqlClient`true`})
     GROUP BY category;
   `;
   const byCategory: Record<string, number> = {

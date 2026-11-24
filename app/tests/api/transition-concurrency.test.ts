@@ -1,14 +1,18 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from 'vitest';
+import crypto from 'node:crypto';
 import { executeTransition } from '../../server/services/transition';
 import { sqlClient } from '../../server/db/client';
 
 describe('L4: Transition Service & Concurrency Locking (Spec 3.3)', () => {
-  const testReportId = '77777777-7777-7777-7777-777777777777';
-  const testCode = 'TB-TEST-L4';
+  let testReportId: string;
+  let testCode: string;
 
   beforeEach(async () => {
-    // Tạo hoặc reset hồ sơ mẫu ở trạng thái 'moi'
+    testReportId = crypto.randomUUID();
+    testCode = `TB-${crypto.randomBytes(4).toString('hex')}`;
+
+    // Tạo hồ sơ mẫu mới ở trạng thái 'moi' cho từng test
     await sqlClient`
       INSERT INTO reports (
         id, code, category, status, priority, location, address,
@@ -17,15 +21,7 @@ describe('L4: Transition Service & Concurrency Locking (Spec 3.3)', () => {
         ${testReportId}::uuid, ${testCode}, 'rac_thai', 'moi', 'binh_thuong',
         ST_GeographyFromText('POINT(106.8225 10.9505)'), '123 Đường Test',
         'hash123', 1, false
-      )
-      ON CONFLICT (id) DO UPDATE SET
-        status = 'moi',
-        version = 1,
-        department_id = null,
-        due_at = null,
-        completed_at = null,
-        result_note = null,
-        merged_into = null;
+      );
     `;
   });
 

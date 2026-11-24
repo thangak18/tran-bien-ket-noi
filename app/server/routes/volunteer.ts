@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { requireStaffAuth, StaffProfile } from '../middleware/auth';
@@ -188,14 +188,16 @@ volunteerRoutes.post('/tasks/:id/claim', async (c) => {
 });
 
 /**
- * 4. POST /volunteer/tasks/:id/submit - Nộp kết quả xác minh / nghiệm thu (Kích hoạt chuyển trạng thái Spec 3.3)
+ * 4. POST /volunteer/tasks/:id/result & POST /volunteer/tasks/:id/submit - Nộp kết quả xác minh / nghiệm thu (Spec 12.5, AC-V02)
  */
-volunteerRoutes.post('/tasks/:id/submit', async (c) => {
+const handleTaskResult = async (c: Context<AppEnv>) => {
   const codeOrId = c.req.param('id');
   const body = await c.req.json();
-  const exists = Boolean(body.exists);
+  const rawExists = body.exists;
+  const exists = rawExists === true || rawExists === 'co' || rawExists === 'true';
   const severity = body.severity || 'binh_thuong';
   const note = body.note?.trim() || null;
+  const photoPath = body.photoPath || body.photo;
   const staff = c.get('staff') as StaffProfile;
   const now = await getDemoNow();
 
@@ -220,6 +222,14 @@ volunteerRoutes.post('/tasks/:id/submit', async (c) => {
       result_at = ${now}::timestamptz
     WHERE id = ${task.id};
   `;
+
+  // Lưu ảnh kết quả xác minh vào report_photos nếu có (kind = 'verify')
+  if (photoPath && typeof photoPath === 'string') {
+    await sqlClient`
+      INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
+      VALUES (${task.report_id}, 'verify', ${photoPath.trim()}, 0, 'volunteer');
+    `;
+  }
 
   // Kích hoạt chuyển trạng thái hồ sơ tương ứng (Spec 3.3, 3.4c)
   if (task.type === 'xac_minh') {
@@ -269,4 +279,7 @@ volunteerRoutes.post('/tasks/:id/submit', async (c) => {
   }
 
   return c.json({ success: true, message: 'Đã nộp kết quả thành công' });
-});
+};
+
+volunteerRoutes.post('/tasks/:id/result', handleTaskResult);
+volunteerRoutes.post('/tasks/:id/submit', handleTaskResult);
