@@ -7,9 +7,14 @@
 - **Không** gọi dịch vụ ngoài, trừ: tile OpenStreetMap, Geolocation API, Web Speech API của trình duyệt.
 - AI, OTP, SMS/Zalo đều là **mô phỏng** và phải hiển thị nhãn "Mô phỏng" trên UI.
 
+## Ưu tiên
+
+- Chỉ làm task lõi (P0–P8 trong `docs/tasks.md`). **Không** code, không viết test cho AC gắn nhãn `[BONUS – HOÃN]` hay task trong mục Backlog Bonus cho tới khi chủ dự án mở lại.
+- Trước khi làm bất kỳ màn hình nào, đọc `docs/ui-ux-guidelines.md` (khoảnh khắc người dùng, wireframe, component pattern).
+
 ## Nguồn sự thật
 
-Thứ tự ưu tiên khi có mâu thuẫn: `docs/spec.md` > `docs/plan.md` > `docs/tasks.md` > `docs/proposal_v2.1.md`.  
+Thứ tự ưu tiên khi có mâu thuẫn: `docs/spec.md` > `docs/ui-ux-guidelines.md` > `docs/plan.md` > `docs/tasks.md` > `docs/proposal_v2.1.md`.  
 Không tự thêm tính năng ngoài spec. Nếu spec thiếu, dừng và ghi câu hỏi vào cuối `docs/tasks.md` mục "Câu hỏi mở".
 
 ## Quy trình mỗi task

@@ -12,7 +12,8 @@ Workspace **mới chỉ có tài liệu**. Chưa khởi tạo project, chưa có
 | Bước | File | Nội dung | Trạng thái |
 |---|---|---|---|
 | 0 | `docs/proposal_v2.1.md` | Proposal đã phản biện | Xong |
-| 1 | `docs/spec.md` | Đặc tả: phạm vi, màn hình, nghiệp vụ, dữ liệu, tiêu chí chấp nhận | Xong – chờ duyệt |
+| 1 | `docs/spec.md` | Đặc tả: ưu tiên phạm vi, màn hình, nghiệp vụ, dữ liệu, tiêu chí chấp nhận | Xong – chờ duyệt |
+| 1b | `docs/ui-ux-guidelines.md` | Khoảnh khắc người dùng, phân tích mẫu tham khảo, điều hướng, wireframe, component, ngôn ngữ | Xong – chờ duyệt |
 | 2 | `docs/plan.md` | Kiến trúc, cấu trúc thư mục, route, store, các phase | Xong – chờ duyệt |
 | 3 | `docs/tasks.md` | Danh sách task có ID, phụ thuộc, tiêu chí hoàn thành | Xong – chờ duyệt |
 | 4 | `docs/tests.md` | Test case viết **trước** code cho từng task | Xong – chờ duyệt |
@@ -36,6 +37,7 @@ TranBienKetNoi_Workspace/
 ├── docs/
 │   ├── proposal_v2.1.md
 │   ├── spec.md
+│   ├── ui-ux-guidelines.md
 │   ├── plan.md
 │   ├── tasks.md
 │   ├── tests.md
@@ -44,6 +46,9 @@ TranBienKetNoi_Workspace/
 ```
 
 ## Quyết định đã chốt
+
+- **Ưu tiên:** làm trọn Functional Requirements trước; Bonus (AI gợi ý loại, gộp trùng, chữ lớn, giọng nói, gửi hộ) **hoãn** – xem `spec.md` mục 0.
+- **UI:** điều hướng đáy có nút camera nổi; luồng gửi ảnh trên + sheet dưới; trạng thái công khai "Chờ tiếp nhận → Đã tiếp nhận → Đang xử lý → Đã xử lý"; người dân thấy "Chậm n ngày" khi trễ hạn – xem `ui-ux-guidelines.md`.
 
 - Web mobile cho người dân và TNV (390px), desktop cho cán bộ (1440px).
 - Bản đồ: OpenStreetMap qua React Leaflet. Vị trí: Geolocation API, người dùng chấp nhận quyền GPS.

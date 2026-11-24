@@ -1,7 +1,27 @@
 # SPEC – Trấn Biên Kết Nối (UI/UX Prototype)
 
-Phiên bản: 1.1 (bổ sung gửi ẩn danh) · Nguồn: `proposal_v2.1.md`  
+Phiên bản: 1.2 (ưu tiên tính năng bắt buộc; quy chuẩn UI theo `ui-ux-guidelines.md`) · Nguồn: `proposal_v2.1.md`  
 Nhãn: **[ĐỀ]** yêu cầu BTC · **[GĐ]** giả định thiết kế · **[KC]** cần kiểm chứng
+
+---
+
+## 0. Thứ tự ưu tiên phạm vi
+
+**Làm trước – Lõi (Functional Requirements):** 6 màn hình bắt buộc của đề + 3 nhóm người dùng + công khai kết quả + gửi ẩn danh/theo dõi. Mọi AC không gắn nhãn đều thuộc lõi.
+
+**Hoãn – Bonus:** các AC gắn nhãn **[BONUS – HOÃN]** chưa thiết kế chi tiết, chưa code, chưa viết test. Lõi phải chạy trọn trên bản deploy trước khi mở lại bonus.
+
+| Mã | Bonus | Nguồn | AC / mục liên quan |
+|---|---|---|---|
+| B1 | Gợi ý loại từ ảnh bằng AI | [ĐỀ] điểm cộng | AC-C02-5, phần "Gợi ý" của AC-C04-1 |
+| B2 | Phát hiện & gộp phản ánh trùng, "Tôi cũng gặp" | [ĐỀ] điểm cộng | 3.5, AC-C04-3, 7, 8, AC-C06-8 (nút Tôi cũng gặp), AC-A01-5, AC-A02-6, 7 |
+| B3 | Chế độ chữ lớn | [ĐỀ] điểm cộng | 7.2 (cột Chữ lớn), 7.4 (cột Chữ lớn), AC-C01-2, AC-C03-7 |
+| B4 | Mô tả bằng giọng nói | Mở rộng của nhóm | Phần micro của AC-C04-2 |
+| B5 | Gửi hộ & tổng đài | Mở rộng của nhóm | AC-A01-8, AC-C01-4 |
+
+Lưu ý khi làm lõi: vẫn giữ chỗ cho bonus để thêm sau không phải đập lại – kích thước dùng biến CSS (sẵn cho B3), C04 có vùng trống phía trên thẻ loại (sẵn cho B1), store có trường `suspectedDuplicateOf`, `anonymousFollows` (sẵn cho B2).
+
+Quy chuẩn UI/UX chi tiết, wireframe và phân tích mẫu tham khảo: **`docs/ui-ux-guidelines.md`** – bắt buộc đọc trước khi làm bất kỳ màn hình nào.
 
 ---
 
@@ -19,12 +39,12 @@ Prototype web tương tác thể hiện trọn vòng đời một phản ánh hi
 | Bản đồ OpenStreetMap, GPS trình duyệt | Thật |
 | Chụp/chọn ảnh, nén ảnh phía client | Thật |
 | Lưu dữ liệu | localStorage (mock) |
-| Phân loại ảnh AI | Mô phỏng theo bộ ảnh demo |
+| Phân loại ảnh AI | Mô phỏng theo bộ ảnh demo – **[BONUS – HOÃN]** |
 | OTP, SMS/Zalo, tổng đài | Mô phỏng |
 | Gửi ẩn danh, máy tự nhớ phản ánh, link theo dõi + QR, đăng ký nhận tin sau | Đầy đủ |
 | Chia sẻ link | Web Share API; không hỗ trợ → sao chép link |
-| Giọng nói → chữ | Web Speech API, ẩn nếu không hỗ trợ |
-| Chế độ chữ lớn | Đầy đủ |
+| Giọng nói → chữ | Web Speech API, ẩn nếu không hỗ trợ – **[BONUS – HOÃN]** |
+| Chế độ chữ lớn | Đầy đủ – **[BONUS – HOÃN]** |
 
 ### 1.3. Ngoài phạm vi
 
@@ -64,7 +84,7 @@ Danh sách bộ phận chọn được ở A02 (đủ 5): 4 bộ phận trên + 
 
 | Mã nội bộ | Nhãn CB | Nhãn công khai | Bước tiến trình (1–4) | Màu | Icon |
 |---|---|---|---|---|---|
-| `moi` | Mới | Đã gửi | 1 | xám | `Send` |
+| `moi` | Mới | Chờ tiếp nhận | 1 | xám | `Send` |
 | `da_tiep_nhan` | Đã tiếp nhận | Đã tiếp nhận | 2 | xanh dương | `Inbox` |
 | `cho_xac_minh` | Chờ xác minh | Đã tiếp nhận · Đang kiểm tra tại chỗ | 2 | xanh dương | `Search` |
 | `da_giao` | Đã giao xử lý | Đang xử lý | 3 | cam | `Wrench` |
@@ -134,7 +154,25 @@ Mọi hồ sơ (có SĐT hay ẩn danh) đều có `secretCode` và được lư
 - "Tôi cũng gặp" ẩn danh: tăng `anonymousFollows`, không thêm vào `followers`.
 - Đăng ký nhận tin sau: SĐT xác thực OTP được thêm vào `followers` của **riêng hồ sơ đó**, `subscribedLater: true`; hồ sơ vẫn giữ `anonymous: true` với cộng đồng và cán bộ thấy nhãn "Ẩn danh · đã đăng ký nhận tin".
 
-### 3.5. Phát hiện trùng [GĐ]
+### 3.4c. Câu "Cập nhật mới nhất" [GĐ]
+
+Mỗi hồ sơ luôn có một câu trạng thái cho người dân, sinh từ trạng thái + dữ liệu:
+
+| Trạng thái | Câu |
+|---|---|
+| `moi` | "Phường đã nhận phản ánh và sẽ xem xét trong ngày làm việc." |
+| `da_tiep_nhan` | "Phường đã tiếp nhận, giao {bộ phận}. Dự kiến xong trước {ngày}." |
+| `cho_xac_minh` | "Tình nguyện viên đang kiểm tra tại chỗ. Dự kiến xong trước {ngày}." |
+| `da_giao`, `mo_lai` | "{Bộ phận} đang xử lý. Dự kiến xong trước {ngày}." |
+| quá hạn (3.6a) | Thêm: "Việc xử lý đang chậm hơn dự kiến {n} ngày." |
+| `hoan_thanh` | "Đã xử lý xong ngày {ngày}. Mời bạn xem ảnh kết quả và đánh giá." |
+| `dong` | "Đã xử lý xong ngày {ngày}." |
+| `can_bo_sung` | "Phường cần bạn bổ sung: {lý do}." |
+| `da_gop` | "Phản ánh được gộp vào #{id} để xử lý chung." |
+| `chuyen_co_quan` | "Phản ánh đã được chuyển đến {cơ quan}: {lý do}." |
+| `khong_xac_nhan` | "Khi kiểm tra tại chỗ không thấy sự cố. Bạn có thể gửi lại kèm ảnh mới." |
+
+### 3.5. Phát hiện trùng [GĐ] – **[BONUS – HOÃN]**
 
 Hồ sơ B nghi trùng với hồ sơ đang tạo/hồ sơ A khi **tất cả** đúng:
 - Cùng `category`.
@@ -151,6 +189,7 @@ Kết quả sắp xếp theo khoảng cách tăng dần, tối đa 3.
 - Hồ sơ "quá hạn": `dueAt < now` và trạng thái thuộc {`da_tiep_nhan`, `cho_xac_minh`, `da_giao`, `mo_lai`}.
 - Hồ sơ "sắp đến hạn": `0 ≤ dueAt − now ≤ 24h`, cùng tập trạng thái.
 - Thứ tự A01 mặc định: quá hạn → sắp đến hạn → `moi` → còn lại; trong nhóm sắp `dueAt` tăng dần, rồi `createdAt` giảm dần.
+- **3.6a – Chậm hạn công khai:** hồ sơ quá hạn hiển thị cho người dân chip "⏰ Chậm {n} ngày" (n làm tròn lên) cạnh nhãn trạng thái, ở C01, C05, C06, C07. Người dân không thấy chữ "Quá hạn" – từ này chỉ dùng phía cán bộ.
 - "Hiện tại" của demo cố định: **24/11/2026 09:00 (UTC+7)**, có thể chỉnh trong Demo Hub.
 
 ---
@@ -188,7 +227,7 @@ Kết quả sắp xếp theo khoảng cách tăng dần, tối đa 3.
 | `resultPhotos` | string[] | ✓ | |
 | `resultNote` | string? | ✓ | |
 | `completedAt` | ISO string? | ✓ | Thời điểm vào `hoan_thanh` lần đầu |
-| `feedback` | `{ resolved: boolean, rating?: 1-5, comment?: string, at: ISO }`? | ✓ (rating) | |
+| `feedback` | `{ resolved: boolean, rating?: 1-5, tags?: string[], comment?: string, at: ISO }`? | ✓ (rating) | `tags` lấy từ bộ chip 6.C06 |
 | `timeline` | `{ at, status, actor, note? }[]` | ✓ (bỏ `actor` nội bộ) | |
 
 ### 4.2. VolunteerTask
@@ -266,105 +305,114 @@ Kết quả sắp xếp theo khoảng cách tăng dần, tối đa 3.
 
 Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 
+### Khung chung màn người dân
+
+- AC-NAV-1: Thanh điều hướng đáy 5 mục: Trang chủ · Của tôi · **Báo sự cố** (FAB tròn 64px ở giữa) · Bản đồ · Kết quả; icon + nhãn chữ (`ui-ux-guidelines.md` mục 3).
+- AC-NAV-2: Trong C02–C04 ẩn thanh điều hướng; header có "←", chỉ báo bước "①──②──③" kèm chữ "Bước {n}/3 – {tên}", và "✕ Huỷ".
+- AC-NAV-3: Nút chính mỗi màn nằm ở 1/3 dưới, rộng toàn chiều ngang trừ lề 16px.
+
 ### C01 – Trang chủ người dân
 
-- AC-C01-1: Có 4 nút lớn theo thứ tự: **Báo sự cố**, **Phản ánh của tôi**, **Quanh đây**, **Kết quả của phường**; mỗi nút có icon + nhãn.
-- AC-C01-2: Nút "Aa Chữ lớn" ở góc trên; bật/tắt có hiệu lực toàn app và được ghi nhớ.
-- AC-C01-3: Dải số liệu nhỏ: "Tháng 11: 47/64 phản ánh đã xử lý" – tính từ dữ liệu.
-- AC-C01-4: Chân trang: nút "Gọi tổng đài phường" (mô phỏng: mở modal hiển thị số giả định và nhãn "Mô phỏng").
+- AC-C01-1: Thứ tự khối từ trên xuống: Header ("Phường Trấn Biên" + chuông) → thẻ kêu gọi "Thấy chỗ hư hỏng? Chụp một tấm, phường sẽ lo." + nút "Báo sự cố" → "Phản ánh của bạn" → "Quanh đây" → dải số liệu.
+- AC-C01-6: "Phản ánh của bạn": thẻ cho mỗi hồ sơ trong `deviceReports` hoặc của SĐT đã xác thực, mới nhất trước, trượt ngang có chấm phân trang. Mỗi thẻ: icon + tên loại, mã, ProgressBar ngang 4 mốc có giờ, câu "Cập nhật mới nhất" (3.4c), DelayChip nếu chậm (3.6a). Chạm → C06. Không có hồ sơ → ẩn khối.
+- AC-C01-7: "Quanh đây": 3 hồ sơ gần nhất (GPS nếu đã cấp, không thì tâm phường) gồm icon loại, nhãn trạng thái, khoảng cách; link "Xem bản đồ" → C07.
+- AC-C01-3: Dải số liệu: "Tháng 11: 47/64 phản ánh đã xử lý →" tính từ dữ liệu, chạm → C08.
 - AC-C01-5: Không yêu cầu đăng nhập.
+- AC-C01-2: **[BONUS – HOÃN – B3]** Nút "Aa Chữ lớn" ở header; bật/tắt có hiệu lực toàn app và được ghi nhớ.
+- AC-C01-4: **[BONUS – HOÃN – B5]** Nút "Gọi tổng đài phường" (mô phỏng).
 
 ### C02 – Bước 1: Chụp ảnh
 
-- AC-C02-1: Thanh bước "1 Ảnh · 2 Vị trí · 3 Loại" hiện bước hiện tại bằng số + chữ + màu.
-- AC-C02-2: Nút "Chụp ảnh" dùng `capture="environment"`; nút "Chọn ảnh có sẵn" không có `capture`.
-- AC-C02-3: Tối đa 3 ảnh; ảnh được nén về cạnh dài ≤ 1280px, JPEG chất lượng 0,7; xem trước, xoá từng ảnh.
+- AC-C02-1: Header theo AC-NAV-2, "Bước 1/3 – Ảnh".
+- AC-C02-2: Ô chụp lớn ≈ 60% chiều cao vùng nội dung, icon camera + "Chạm để chụp ảnh", dùng `<input type="file" accept="image/*" capture="environment">` (không dựng khung ngắm `getUserMedia`). Nút phụ "Chọn ảnh có sẵn" (không có `capture`). Dòng mẹo: "Lùi xa một chút để thấy cả xung quanh chỗ bị hư."
+- AC-C02-3: Sau khi có ảnh: ô chụp thành ảnh xem trước lớn có nút "Chụp lại"; bên dưới dải ảnh nhỏ + ô "+"; tối đa 3 ảnh; nén cạnh dài ≤ 1280px, JPEG 0,7; xoá từng ảnh.
 - AC-C02-4: "Tiếp tục" chỉ bật khi có ≥ 1 ảnh.
-- AC-C02-5: AI mô phỏng: nếu tên file khớp manifest → hiện "Có vẻ là: {loại} · Mô phỏng"; không khớp → "Chưa nhận diện được – bạn sẽ chọn ở bước 3".
-- AC-C02-6: Ảnh lỗi định dạng hoặc > 15MB trước nén → thông báo lỗi bằng lời và cách khắc phục.
-- AC-C02-7: Thoát giữa chừng → hỏi "Lưu nháp?"; nháp được khôi phục khi quay lại.
+- AC-C02-6: Ảnh lỗi định dạng hoặc > 15MB trước nén → thông báo bằng lời + cách khắc phục.
+- AC-C02-7: Bấm "✕" khi đã có dữ liệu → hỏi "Lưu nháp để gửi sau?" [Lưu nháp] [Bỏ]; nháp khôi phục khi bấm lại "Báo sự cố".
+- AC-C02-5: **[BONUS – HOÃN – B1]** Gợi ý loại bằng AI mô phỏng theo manifest.
 
 ### C03 – Bước 2: Vị trí
 
-- AC-C03-1: Vào màn → xin quyền GPS. Đồng ý → ghim tại vị trí, bản đồ zoom 17.
+- AC-C03-9: Bố cục: ảnh vừa chụp (cao 120px) cố định phía trên; nội dung trong bottom sheet: tiêu đề "Chỗ bị hư ở đâu?", bản đồ, LocationRow, ô mô tả vị trí; nút chính "Đúng chỗ này rồi".
+- AC-C03-1: Vào màn → xin quyền GPS. Đồng ý → ghim tại vị trí, zoom 17.
 - AC-C03-2: GPS cách tâm phường > 5 km → banner "Bạn đang ở ngoài phường Trấn Biên. Dùng vị trí mẫu trong phường?" [Dùng vị trí mẫu] [Giữ vị trí của tôi].
-- AC-C03-3: Từ chối GPS / lỗi / quá 10 giây → banner giải thích + ô "Nhập địa chỉ hoặc tên đường" (gợi ý từ danh sách đường trong dữ liệu mẫu, không gọi API geocoding) + nút "Chọn trên bản đồ".
+- AC-C03-3: Từ chối GPS / lỗi / quá 10 giây → banner "Chưa lấy được vị trí. Bạn bật định vị hoặc gõ tên đường nhé." + ô "Nhập địa chỉ hoặc tên đường" (gợi ý từ danh sách đường mẫu, không gọi geocoding) + "Chọn trên bản đồ".
 - AC-C03-4: Chạm bản đồ để dời ghim; không bắt buộc kéo.
-- AC-C03-5: Hiện địa chỉ dạng chữ dưới bản đồ (đường gần nhất trong danh sách đường mẫu).
-- AC-C03-6: Ô "Mô tả thêm vị trí" tùy chọn, tối đa 120 ký tự.
-- AC-C03-7: Chế độ chữ lớn: nút chính là "Tôi đang đứng ở chỗ bị hư", bản đồ thu nhỏ còn 40% chiều cao.
-- AC-C03-8: Có attribution "© OpenStreetMap contributors".
+- AC-C03-5: LocationRow "📍 {đường gần nhất}, {mô tả nếu có}" + nút "Đổi" (focus vào ô nhập địa chỉ).
+- AC-C03-6: Ô "Mô tả thêm vị trí (không bắt buộc)", tối đa 120 ký tự, placeholder "Ví dụ: trước nhà số 12, gần cột điện".
+- AC-C03-8: Attribution "© OpenStreetMap contributors".
+- AC-C03-7: **[BONUS – HOÃN – B3]** Biến thể chữ lớn.
 
 ### C04 – Bước 3: Loại, xác nhận, gửi
 
-- AC-C04-1: 4 thẻ loại dạng lưới 2×2, mỗi thẻ ≥ 96px cao, icon + nhãn; thẻ AI gợi ý được chọn sẵn và có huy hiệu "Gợi ý".
-- AC-C04-2: Mô tả tùy chọn ≤ 300 ký tự; nút micro chỉ hiện khi trình duyệt hỗ trợ `SpeechRecognition` (lang `vi-VN`).
-- AC-C04-3: Khi đã chọn loại → chạy kiểm tra trùng (3.5). Có kết quả → hộp "Đã có {n} người báo {loại} cách bạn khoảng {x} m" + ảnh + 2 nút: **"Đúng chỗ này – tôi cũng gặp"**, **"Không phải – gửi phản ánh mới"**.
-- AC-C04-4: Tóm tắt ảnh, vị trí, loại trên cùng màn hình; nút "Sửa" quay lại đúng bước.
-- AC-C04-5: Bấm Gửi (hoặc "tôi cũng gặp") khi chưa có SĐT → bottom sheet nhập SĐT (10 số, bắt đầu bằng 0) → OTP; mã đúng `123456` (hiện gợi ý "Mã demo: 123456 · Mô phỏng"). Ô nhập có dòng "Số điện thoại chỉ dùng để báo tin cho bạn, không bao giờ hiển thị công khai." Đã xác thực trước đó → bỏ qua.
-- AC-C04-6: Gửi thành công → trạng thái thành công trong cùng route: mã `TB-xxxx` cỡ ≥ 32px, câu "Bạn sẽ nhận tin nhắn khi có cập nhật", nút "Theo dõi phản ánh" → C06. Cặp `{id, secretCode}` được thêm vào `deviceReports`.
-- AC-C04-7: "Tôi cũng gặp" → không tạo hồ sơ mới; có SĐT → thêm vào `followers`; ẩn danh → `anonymousFollows + 1`; `followerCount ≥ 3` → priority `cao`; màn thành công hiện mã hồ sơ cũ.
-- AC-C04-10: Dưới nút chính có link "Gửi không để lại số điện thoại". Bấm → sheet cảnh báo: "Bạn sẽ không nhận được tin báo. Máy này sẽ tự nhớ phản ánh; hãy lưu link theo dõi để xem trên máy khác." [Gửi ẩn danh] [Để lại số điện thoại]. Chế độ chữ lớn giữ nguyên link này (không ẩn vào "Thêm").
-- AC-C04-11: Thành công khi ẩn danh: mã phản ánh, **mã bí mật 4 số** (≥ 28px), mã QR của link theo dõi `{origin}/phan-anh/{id}?k={secretCode}`, nút "Lưu link theo dõi" (Web Share API; không hỗ trợ → sao chép + toast "Đã sao chép link"), dòng nhắc "Máy này sẽ tự nhớ phản ánh của bạn. Đổi máy thì mở link đã lưu.", nút phụ "Nhận tin báo cho phản ánh này".
-- AC-C04-12: Vượt 5 hồ sơ ẩn danh/ngày trên thiết bị → sheet "Hôm nay bạn đã gửi 5 phản ánh ẩn danh. Vui lòng để lại số điện thoại để gửi tiếp." chỉ còn lựa chọn có SĐT.
-- AC-C04-8: "Gửi phản ánh mới" khi có nghi trùng → hồ sơ mới có `suspectedDuplicateOf`.
-- AC-C04-9: Mất mạng (`navigator.onLine === false`) khi gửi → giữ nháp, banner "Chưa gửi được – sẽ thử lại khi có mạng", nút "Thử lại".
+- AC-C04-13: Bố cục: ảnh 120px phía trên; sheet gồm tiêu đề "Đây là chuyện gì?", lưới 4 CategoryTile, LocationRow (nút "Đổi" → C03), ô mô tả; nút chính "Gửi cho phường"; link phụ "Gửi không để lại số điện thoại" ngay dưới.
+- AC-C04-1: 4 CategoryTile lưới 2×2, ≥ 96px, icon + nhãn; chọn → viền 2px primary + ✓ + `aria-pressed`. "Gửi cho phường" chỉ bật khi đã chọn loại. Không có lựa chọn mức ưu tiên. *(Phần huy hiệu "Gợi ý": [BONUS – HOÃN – B1].)*
+- AC-C04-2: Mô tả tùy chọn ≤ 300 ký tự, placeholder "Ví dụ: ổ gà sâu, xe máy dễ té". *(Nút micro: [BONUS – HOÃN – B4].)*
+- AC-C04-5: Bấm "Gửi cho phường" khi chưa có SĐT → bottom sheet nhập SĐT (10 số, bắt đầu bằng 0) với dòng "Số điện thoại chỉ dùng để báo tin cho bạn, không bao giờ hiển thị công khai." → OTP; mã đúng `123456` (gợi ý "Mã demo: 123456 · Mô phỏng"). Đã xác thực → bỏ qua.
+- AC-C04-6: Thành công → màn thành công theo wireframe: ✅, "Phường đã nhận phản ánh", mã `TB-xxxx` ≥ 32px, đoạn "Tiếp theo: cán bộ phường sẽ xem và tiếp nhận, thường trong ngày làm việc. Bạn sẽ nhận tin nhắn khi có cập nhật.", nút "Theo dõi phản ánh" → C06, link "Về trang chủ". Cặp `{id, secretCode}` thêm vào `deviceReports`.
+- AC-C04-10: Link "Gửi không để lại số điện thoại" → sheet cảnh báo: "Bạn sẽ không nhận được tin báo. Máy này sẽ tự nhớ phản ánh; hãy lưu link theo dõi để xem trên máy khác." [Gửi ẩn danh] [Để lại số điện thoại].
+- AC-C04-11: Thành công khi ẩn danh: như AC-C04-6 nhưng thay câu nhận tin bằng: **mã bí mật 4 số** (≥ 28px), QR của `{origin}/phan-anh/{id}?k={secretCode}`, nút "Lưu link theo dõi" (Web Share API; không hỗ trợ → sao chép + toast "Đã sao chép link"), dòng "Máy này sẽ tự nhớ phản ánh của bạn. Đổi máy thì mở link đã lưu.", nút phụ "Nhận tin báo cho phản ánh này".
+- AC-C04-12: Vượt 5 hồ sơ ẩn danh/ngày → sheet "Hôm nay bạn đã gửi 5 phản ánh ẩn danh. Vui lòng để lại số điện thoại để gửi tiếp."; chỉ còn lựa chọn có SĐT.
+- AC-C04-9: Mất mạng khi gửi → giữ nháp, banner "Chưa gửi được – sẽ thử lại khi có mạng", nút "Thử lại".
+- AC-C04-3, AC-C04-7, AC-C04-8: **[BONUS – HOÃN – B2]** Kiểm tra trùng, "Tôi cũng gặp", cờ nghi trùng.
 
 ### C05 – Phản ánh của tôi
 
-- AC-C05-1: Luôn hiện ngay mục "Gửi từ máy này" (từ `deviceReports`), không cần đăng nhập. Bên dưới 2 lựa chọn: "Đăng nhập bằng số điện thoại" (OTP mô phỏng) và "Tra cứu bằng mã phản ánh" (mã + 4 số cuối SĐT **hoặc** mã + mã bí mật – một ô 4 số chấp nhận cả hai).
-- AC-C05-6: Mục "Gửi từ máy này" có dòng chú thích "Xoá dữ liệu trình duyệt sẽ mất danh sách này – hãy lưu link theo dõi." và mỗi thẻ có nút "Lưu link".
-- AC-C05-2: Danh sách thẻ: ảnh, loại, nhãn công khai (icon + chữ + màu), "Dự kiến trước {ngày}" nếu có; gồm hồ sơ đã gửi và đang theo dõi (ghi "Đang theo dõi").
-- AC-C05-3: Bộ lọc: Tất cả / Đang xử lý / Đã xử lý.
-- AC-C05-4: Trạng thái trống: minh hoạ + "Bạn chưa có phản ánh nào" + nút "Báo sự cố".
-- AC-C05-5: Chuông thông báo có số chưa đọc; mở danh sách thông báo; mỗi thông báo có nút "Xem tin nhắn mẫu" hiển thị khung SMS "Mô phỏng".
+- AC-C05-1: Header "Phản ánh của tôi" + chuông. Ngay dưới: danh sách hồ sơ từ `deviceReports` và SĐT đã xác thực, không cần đăng nhập để thấy hồ sơ gửi từ máy này.
+- AC-C05-3: Tab trạng thái cuộn ngang có số đếm: Tất cả · Chờ tiếp nhận · Đã tiếp nhận · Đang xử lý · Đã xử lý · Khác (cần bổ sung / đã chuyển / không xác nhận / đã gộp).
+- AC-C05-2: ReportCard: ảnh 64px, icon + tên loại, mã, địa chỉ 1 dòng, StatusChip công khai, DelayChip nếu chậm, câu "Cập nhật mới nhất" rút gọn 1 dòng.
+- AC-C05-7: Cuối danh sách (hoặc khi trống): khối "Không thấy phản ánh của bạn?" với 2 lựa chọn "Đăng nhập bằng số điện thoại" (OTP mô phỏng) và "Tra cứu bằng mã phản ánh" (mã + 4 số – nhận cả 4 số cuối SĐT hoặc mã bí mật).
+- AC-C05-6: Thẻ của hồ sơ chỉ có trên máy này (không gắn SĐT) có nút "Lưu link"; đầu danh sách có dòng "Xoá dữ liệu trình duyệt sẽ mất các phản ánh chỉ lưu trên máy này – hãy lưu link theo dõi." khi có ít nhất 1 thẻ như vậy.
+- AC-C05-4: Trống hoàn toàn: minh hoạ + "Bạn chưa có phản ánh nào" + nút "Báo sự cố".
+- AC-C05-5: Chuông có số chưa đọc; danh sách thông báo; mỗi thông báo có "Xem tin nhắn mẫu" (khung SMS "Mô phỏng").
 
 ### C06 – Chi tiết phản ánh
 
-- AC-C06-1: Thanh tiến trình 4 bước theo nhãn công khai; trạng thái ngoại lệ hiện băng màu riêng + lý do.
-- AC-C06-2: Dòng giải thích dưới tiến trình, ví dụ "Đã giao Đội duy tu đường · Dự kiến xong trước 27/11".
-- AC-C06-3: Timeline đảo ngược thời gian; không lộ tên cán bộ, chỉ "Phường Trấn Biên" / "Tình nguyện viên".
-- AC-C06-4: Khi có `resultPhotos`: khối "Trước / Sau" 2 ảnh cạnh nhau, chạm để phóng to.
-- AC-C06-5: Trạng thái `hoan_thanh` và người xem là người gửi/theo dõi → khối "Vấn đề đã được giải quyết chưa?" [Đã giải quyết] [Chưa giải quyết].
-  - Đã giải quyết → 5 mặt cười có nhãn chữ + góp ý tùy chọn → Gửi → `dong`.
-  - Chưa giải quyết → ảnh hiện trạng tùy chọn + ghi chú → `mo_lai` + tạo VolunteerTask `nghiem_thu`.
-- AC-C06-6: `da_gop` → banner "Đã gộp vào #{id} cùng {n} người" + link sang hồ sơ chính.
-- AC-C06-7: `can_bo_sung` → nút "Bổ sung ngay" mở lại C02/C03 với dữ liệu cũ.
-- AC-C06-8: Người không có quyền chủ hồ sơ (3.4a) xem được (từ C07/C08) nhưng không thấy khối đánh giá; có nút "Tôi cũng gặp vấn đề này" nếu hồ sơ chưa đóng.
-- AC-C06-9: Hồ sơ `anonymous` + người xem có quyền chủ hồ sơ + chưa có SĐT trong `followers` → thẻ "Nhận tin báo cho phản ánh này" với câu "Số điện thoại chỉ dùng cho phản ánh này." → OTP → `subscribedLater: true`, thông báo xác nhận; thẻ đổi thành "Đang nhận tin qua 0909 *** 068 · Huỷ". Huỷ → gỡ SĐT khỏi `followers`, `subscribedLater: false`.
-- AC-C06-10: Mở bằng link có `k` sai → xem như người ngoài, hiện dòng "Link theo dõi không đúng – hãy kiểm tra lại mã bí mật." (không tiết lộ hồ sơ có tồn tại mã hay không ngoài nội dung công khai).
-- AC-C06-11: Chủ hồ sơ thấy nút "Lưu link theo dõi" và mã bí mật (ẩn mặc định, nút "Hiện").
+- AC-C06-12: Thứ tự khối: ảnh gốc → hàng loại + StatusChip + DelayChip → LocationRow (không có nút Đổi) → hộp "Cập nhật mới nhất" (3.4c) → "Hành trình phản ánh" (timeline dọc) → Trước/Sau → khu vực hành động. Khi `hoan_thanh`/`dong`: khối Trước/Sau lên ngay dưới ảnh gốc.
+- AC-C06-1: Timeline dọc gồm đủ 4 mốc công khai: mốc đã qua (chấm đặc, giờ, 1 câu, tên bộ phận khi có), mốc hiện tại (vòng sáng), mốc tương lai (chấm rỗng, màu nhạt, "dự kiến {ngày}" nếu có `dueAt`). Trạng thái ngoại lệ hiện băng màu riêng + lý do phía trên timeline.
+- AC-C06-3: Không lộ tên cá nhân; chỉ "Phường Trấn Biên", tên bộ phận, "Tình nguyện viên".
+- AC-C06-4: Khối Trước/Sau luôn hiện từ đầu; ô Sau trống ghi "Chưa có ảnh sau xử lý"; có ảnh thì chạm để phóng to; dưới mỗi ảnh là thời điểm.
+- AC-C06-5: `hoan_thanh` + quyền chủ hồ sơ → khối "Vấn đề đã được giải quyết chưa?" [Đã giải quyết] [Chưa giải quyết].
+  - Đã giải quyết → RatingSheet: tiêu đề "Bạn thấy kết quả thế nào?", phụ đề "Chưa đến 30 giây"; 5 sao có nhãn (Rất tệ · Không hài lòng · Bình thường · Hài lòng · Rất hài lòng); chip chọn nhiều theo số sao – 4–5 sao: "Xử lý nhanh", "Sạch sẽ, gọn gàng", "Làm đúng chỗ", "Được báo tin đầy đủ"; 1–3 sao: "Xử lý chậm", "Chưa triệt để", "Thiếu thông báo", "Ảnh kết quả chưa rõ"; ô "Phường có thể làm tốt hơn điều gì?" tuỳ chọn; nút "Gửi đánh giá" bật khi đã chọn sao → `dong`.
+  - Chưa giải quyết → sheet "Điều gì chưa ổn?" với ảnh hiện trạng tuỳ chọn + ghi chú → `mo_lai` + VolunteerTask `nghiem_thu`; màn hiện "Phường đã nhận ý kiến và sẽ kiểm tra lại."
+- AC-C06-6: `da_gop` → banner "Đã gộp vào #{id}" + link hồ sơ chính.
+- AC-C06-7: `can_bo_sung` → nút chính "Bổ sung ngay" mở lại C02/C03 với dữ liệu cũ.
+- AC-C06-8: Người không có quyền chủ hồ sơ (3.4a) xem được nhưng không thấy khu vực hành động. *(Nút "Tôi cũng gặp vấn đề này": [BONUS – HOÃN – B2].)*
+- AC-C06-9: Hồ sơ `anonymous` + quyền chủ hồ sơ + chưa có SĐT → thẻ "Nhận tin báo cho phản ánh này" với câu "Số điện thoại chỉ dùng cho phản ánh này." → OTP → `subscribedLater: true` + thông báo xác nhận; thẻ đổi thành "Đang nhận tin qua 0909 *** 068 · Huỷ". Huỷ → gỡ SĐT, `subscribedLater: false`.
+- AC-C06-10: Link có `k` sai → xem như người ngoài + dòng "Link theo dõi không đúng – hãy kiểm tra lại mã bí mật."
+- AC-C06-11: Chủ hồ sơ thấy nút "⤴ Lưu" ở header (lưu link theo dõi) và mã bí mật (ẩn mặc định, nút "Hiện").
 
 ### C07 – Bản đồ quanh tôi
 
-- AC-C07-1: Mặc định tâm theo GPS (nếu đã cấp và trong phường) hoặc tâm phường; vòng tròn bán kính 1 km.
-- AC-C07-2: Nút "Toàn phường" bỏ giới hạn bán kính và fit toàn bộ marker.
-- AC-C07-3: Marker = icon loại trên nền màu trạng thái + viền; hồ sơ `da_gop` không hiển thị.
-- AC-C07-4: Bộ lọc chip: 4 loại (chọn nhiều) + Đang xử lý / Đã xử lý.
-- AC-C07-5: Chạm marker → thẻ tóm tắt: ảnh, loại, nhãn trạng thái, "{n} người cùng báo", nút "Xem chi tiết".
-- AC-C07-6: Nút chuyển "Bản đồ / Danh sách"; danh sách sắp theo khoảng cách, hiện "cách {x} m".
-- AC-C07-7: Không hiện SĐT hoặc tên người gửi ở bất kỳ đâu.
-- AC-C07-8: Bản đồ không tải được (tile lỗi) → tự chuyển sang Danh sách + thông báo.
+- AC-C07-1: Mặc định tâm theo GPS (nếu đã cấp và trong phường) hoặc tâm phường; vòng bán kính 1 km; ghim "Bạn ở đây".
+- AC-C07-2: Nút nổi "Toàn phường" bỏ giới hạn bán kính, fit toàn bộ marker.
+- AC-C07-3: Marker = icon loại (Lucide) trắng trên nền tròn màu trạng thái + viền 2px trắng + bóng; nút "ⓘ Chú giải" mở bảng màu/icon có chữ; hồ sơ `da_gop` không hiển thị.
+- AC-C07-4: Hàng chip cuộn ngang: Tất cả · 4 loại (chọn nhiều) · Đang xử lý · Đã xử lý.
+- AC-C07-5: Chạm marker → thẻ nổi đáy: ảnh, icon + loại, khoảng cách, StatusChip, DelayChip nếu có, "Xem →" sang C06.
+- AC-C07-6: Công tắc "Bản đồ | Danh sách" ở header; danh sách dùng ReportCard + "cách {x} m", sắp theo khoảng cách.
+- AC-C07-7: Không hiện SĐT hoặc tên người gửi.
+- AC-C07-8: Tile lỗi → tự chuyển Danh sách + thông báo.
+- AC-C07-9: Thanh điều hướng đáy và FAB "Báo sự cố" vẫn hiện trên bản đồ.
 
-### C08 – Bảng minh bạch phường
+### C08 – Kết quả của phường (bảng minh bạch)
 
 - AC-C08-1: 4 thẻ KPI tính từ dữ liệu: Tổng phản ánh · Đã xử lý (kèm %) · Chưa hoàn tất · Thời gian xử lý TB (1 chữ số thập phân, dấu phẩy).
 - AC-C08-2: Biểu đồ cột ngang 4 loại, mỗi cột tách Đã xử lý / Chưa hoàn tất, có nhãn số.
-- AC-C08-3: Danh sách "Vừa xử lý xong" 6 hồ sơ mới nhất có ảnh trước/sau.
-- AC-C08-4: Chú thích nguồn: "Số liệu tháng 11/2026 · Dữ liệu mẫu cuộc thi". Nếu hiển thị điểm hài lòng → thêm "Dữ liệu mô phỏng".
-- AC-C08-5: Truy cập không cần đăng nhập; không có thông tin cá nhân.
+- AC-C08-3: Dòng "Vừa xử lý xong": 6 thẻ mới nhất, mỗi thẻ ảnh Trước → Sau (mũi tên giữa), icon + loại, StatusChip "Đã xử lý", ngày xong, tên bộ phận; chạm → C06.
+- AC-C08-4: Chú thích nguồn: "Số liệu tháng 11/2026 · Dữ liệu mẫu cuộc thi". Điểm hài lòng (nếu hiển thị) gắn "Dữ liệu mô phỏng".
+- AC-C08-5: Không cần đăng nhập; không có thông tin cá nhân.
 
 ### A01 – Hộp tiếp nhận cán bộ
 
-- AC-A01-1: Header: tên cán bộ, ô tìm kiếm (mã/địa chỉ), nút "Tạo phản ánh hộ".
+- AC-A01-1: Header: tên cán bộ, ô tìm kiếm (mã/địa chỉ). *(Nút "Tạo phản ánh hộ": [BONUS – HOÃN – B5].)*
 - AC-A01-2: 4 thẻ KPI giống C08 + thẻ "Quá hạn" và "Sắp đến hạn" (tính theo 3.6).
-- AC-A01-3: Bảng cột: Mã · Ảnh · Loại · Địa chỉ · Trạng thái (nhãn CB) · Bộ phận · Hạn · Người cùng báo · Cờ (Nghi trùng / Ẩn danh / Gửi hộ).
-- AC-A01-9: Bộ lọc thêm "Nguồn": Có SĐT / Ẩn danh / Gửi hộ.
+- AC-A01-3: Bảng cột: Mã · Ảnh · Loại · Địa chỉ · Trạng thái (nhãn CB) · Bộ phận · Hạn · Cờ (Ẩn danh). *(Cột "Người cùng báo", cờ Nghi trùng / Gửi hộ: bonus B2, B5.)*
+- AC-A01-9: Bộ lọc thêm "Nguồn": Có SĐT / Ẩn danh.
 - AC-A01-4: Sắp xếp mặc định theo 3.6; hàng quá hạn có nhãn chữ "Quá hạn {n} ngày" + icon, không chỉ tô đỏ.
-- AC-A01-5: Cờ "Nghi trùng" khi hồ sơ có `suspectedDuplicateOf` hoặc có hồ sơ khác thỏa 3.5.
+- AC-A01-5: **[BONUS – HOÃN – B2]** Cờ "Nghi trùng" khi hồ sơ có `suspectedDuplicateOf` hoặc có hồ sơ khác thỏa 3.5.
 - AC-A01-6: Bộ lọc: loại, trạng thái, bộ phận, khoảng ngày; tab nhanh: Cần xử lý / Tất cả / Đã xử lý.
 - AC-A01-7: Chọn hàng → mở panel A02 bên phải (≈ 480px), danh sách vẫn thấy.
-- AC-A01-8: "Tạo phản ánh hộ" → modal: SĐT người dân, loại, vị trí (bản đồ nhỏ hoặc chọn đường), mô tả, ảnh tùy chọn → hồ sơ `onBehalf: true`, trạng thái `da_tiep_nhan`; hiện tin nhắn mẫu gửi mã cho người dân.
+- AC-A01-8: **[BONUS – HOÃN – B5]** "Tạo phản ánh hộ" → modal: SĐT người dân, loại, vị trí (bản đồ nhỏ hoặc chọn đường), mô tả, ảnh tùy chọn → hồ sơ `onBehalf: true`, trạng thái `da_tiep_nhan`; hiện tin nhắn mẫu gửi mã cho người dân.
 
 ### A02 – Panel chi tiết & giao xử lý
 
@@ -373,8 +421,8 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 - AC-A02-3: Nút theo trạng thái (chỉ hiện nút hợp lệ theo 3.3): Tiếp nhận · Giao TNV xác minh · Giao xử lý · Cập nhật kết quả (→ A03) · Yêu cầu bổ sung · Chuyển cơ quan khác · Đóng.
 - AC-A02-4: "Giao TNV xác minh" → chọn TNV hoặc "Để TNV gần nhất nhận" → tạo VolunteerTask `xac_minh`.
 - AC-A02-5: Khối "Kết quả xác minh" hiện khi task xong: ảnh TNV, 3 câu trả lời.
-- AC-A02-6: Khối "Phản ánh tương tự": các hồ sơ thỏa 3.5 + khoảng cách + ảnh; nút "Gộp vào hồ sơ này" → modal xác nhận nêu rõ hồ sơ chính và hồ sơ bị gộp.
-- AC-A02-7: Gộp: hồ sơ phụ `da_gop`, `mergedInto` = chính; followers hợp nhất; ảnh phụ thêm vào hồ sơ chính; hồ sơ chính có danh sách "Đã gộp" với nút "Tách".
+- AC-A02-6: **[BONUS – HOÃN – B2]** Khối "Phản ánh tương tự": các hồ sơ thỏa 3.5 + khoảng cách + ảnh; nút "Gộp vào hồ sơ này" → modal xác nhận nêu rõ hồ sơ chính và hồ sơ bị gộp.
+- AC-A02-7: **[BONUS – HOÃN – B2]** Gộp: hồ sơ phụ `da_gop`, `mergedInto` = chính; followers hợp nhất; ảnh phụ thêm vào hồ sơ chính; hồ sơ chính có danh sách "Đã gộp" với nút "Tách".
 - AC-A02-8: Nút ngoại lệ yêu cầu nhập lý do (≥ 10 ký tự) trước khi xác nhận.
 - AC-A02-9: Tab "Lịch sử": timeline đầy đủ có tên người thao tác.
 - AC-A02-10: Hồ sơ ẩn danh ở `moi` → gợi ý "Hồ sơ ẩn danh: nên giao TNV xác minh trước khi xử lý" ngay trên nhóm nút; CB vẫn được bỏ qua. Nút "Yêu cầu bổ sung" với hồ sơ ẩn danh chưa đăng ký nhận tin có cảnh báo "Người gửi sẽ chỉ thấy yêu cầu khi tự mở hồ sơ".
@@ -418,7 +466,9 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 - Người dân/TNV: thiết kế 390px, hoạt động 360–430px; trên desktop hiển thị khung giữa rộng tối đa 430px.
 - Cán bộ: thiết kế 1440px, tối thiểu 1280px.
 
-### 7.2. Chế độ chữ lớn
+### 7.2. Chế độ chữ lớn – **[BONUS – HOÃN – B3]**
+
+Lõi chỉ cần: mọi kích thước chữ, chiều cao nút, vùng chạm khai báo bằng biến CSS để B3 chỉ cần đổi giá trị.
 
 | Thuộc tính | Thường | Chữ lớn |
 |---|---|---|
@@ -441,6 +491,8 @@ Không mất nội dung khi phóng to 200% (WCAG 1.4.4); không cuộn ngang ở
 - `prefers-reduced-motion` tắt animation.
 
 ### 7.4. Từ ngữ
+
+Lõi dùng cột "Chuẩn"; cột "Chữ lớn" thuộc B3. Quy tắc viết: `ui-ux-guidelines.md` mục 6.
 
 | Chuẩn | Chữ lớn |
 |---|---|

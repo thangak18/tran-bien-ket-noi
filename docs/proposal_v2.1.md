@@ -83,7 +83,7 @@ Cán bộ cần trạng thái chi tiết; người dân cần trạng thái dễ
 
 | Trạng thái nội bộ | Ai chuyển | Nhãn công khai (người dân thấy) | Thông báo gửi người dân |
 |---|---|---|---|
-| Mới | Hệ thống (khi gửi) | **Đã gửi** | "Phường đã nhận phản ánh #TB-xxxx của bạn." |
+| Mới | Hệ thống (khi gửi) | **Chờ tiếp nhận** | "Phường đã nhận phản ánh #TB-xxxx của bạn." |
 | Đã tiếp nhận | Cán bộ | **Đã tiếp nhận** | "Phản ánh đã được tiếp nhận, dự kiến xử lý trước [ngày]." |
 | Chờ xác minh | Cán bộ giao TNV | **Đã tiếp nhận** (kèm dòng "Đang kiểm tra tại chỗ") | Không gửi riêng |
 | Đã giao xử lý | Cán bộ | **Đang xử lý** | "Đã giao [bộ phận], hạn [ngày]." |
@@ -100,7 +100,7 @@ Cán bộ cần trạng thái chi tiết; người dân cần trạng thái dễ
 | Không thuộc thẩm quyền | **Đã chuyển cơ quan khác** | Ghi rõ cơ quan được chuyển tới |
 | Không phát hiện sự cố | **Không xác nhận được sự cố** | Có ảnh xác minh của TNV làm bằng chứng |
 
-Nguyên tắc: người dân **không bao giờ thấy quá 4 nhãn chính** (Đã gửi → Đã tiếp nhận → Đang xử lý → Đã xử lý); mỗi nhãn luôn đi kèm một câu giải thích và ngày dự kiến.
+Nguyên tắc: người dân **không bao giờ thấy quá 4 nhãn chính** (Chờ tiếp nhận → Đã tiếp nhận → Đang xử lý → Đã xử lý – từ vựng quen thuộc với các ứng dụng dịch vụ công); mỗi nhãn luôn đi kèm một câu "Cập nhật mới nhất" và ngày dự kiến. Khi quá hạn, người dân thấy thẳng chip **"Chậm {n} ngày"** – nhóm chọn nói thật thay vì che giấu.
 
 ### 4.2. Định tuyến loại sự cố → bộ phận và hạn xử lý
 
@@ -312,7 +312,7 @@ Không bao giờ tự động gộp chỉ dựa trên khoảng cách: hai sự c
 
 | ID | Màn hình | Đáp ứng | Ghi chú |
 |---|---|---|---|
-| C01 | Trang chủ | – | 4 nút lớn: Báo sự cố / Phản ánh của tôi / Quanh đây / Kết quả của phường; nút Chữ lớn |
+| C01 | Trang chủ | – | Thẻ kêu gọi "Báo sự cố", thẻ "Phản ánh của bạn" có tiến trình, "Quanh đây", số liệu tháng; thanh điều hướng đáy có nút camera nổi |
 | C02 | Bước 1 – Chụp ảnh | [ĐỀ] MH1 | Gợi ý AI |
 | C03 | Bước 2 – Vị trí | [ĐỀ] MH1 | Fallback nhập địa chỉ |
 | C04 | Bước 3 – Loại, xác nhận, gửi | [ĐỀ] MH1 | Cảnh báo trùng, OTP, trạng thái thành công |
@@ -432,7 +432,7 @@ Phía cán bộ: hồ sơ có nhãn "Ẩn danh", A02 gợi ý "Giao TNV xác min
 ### Hệ thống thị giác
 
 - Màu chủ đạo: xanh teal (tin cậy, dịch vụ công); màu cảnh báo chỉ dùng cho quá hạn và lỗi.
-- Bộ màu trạng thái: xám (Đã gửi), xanh dương (Đã tiếp nhận), cam (Đang xử lý), xanh lá (Đã xử lý), đỏ (Quá hạn – chỉ cán bộ thấy).
+- Bộ màu trạng thái: xám (Chờ tiếp nhận), xanh dương (Đã tiếp nhận), cam (Đang xử lý), xanh lá (Đã xử lý), đỏ (Quá hạn – chỉ cán bộ thấy).
 - Font hỗ trợ đầy đủ dấu tiếng Việt (ví dụ Be Vietnam Pro).
 - Vùng chạm tối thiểu 44×44px; 56px ở chế độ chữ lớn.
 
@@ -466,32 +466,34 @@ Nhóm sẽ thử với 5 người (ít nhất 2 người trên 60 tuổi) theo 3
 
 ## 12. Scope & Priority
 
-### P0 – Bắt buộc (đủ để nộp)
+**Quyết định ngày 24/11/2026:** làm trọn Functional Requirements trước; toàn bộ Bonus Features tạm hoãn.
 
-- C01–C08, A01–A03, V01–V02 với luồng chính.
-- Mô hình trạng thái hai lớp và thông báo mỗi lần đổi trạng thái.
+### P0 – Lõi: Functional Requirements (làm trước)
+
+- C01–C08, A01–A03, V01–V02 theo quy chuẩn `docs/ui-ux-guidelines.md`.
+- Mô hình trạng thái hai lớp, câu "Cập nhật mới nhất", chip "Chậm {n} ngày" công khai, thông báo mỗi lần đổi trạng thái.
 - Gợi ý bộ phận và hạn theo loại.
-- Chế độ chữ lớn.
+- Gửi có SĐT hoặc ẩn danh; theo dõi bằng máy tự nhớ, link/QR, tra cứu mã, đăng nhập SĐT; đăng ký nhận tin sau.
+- Luồng mở lại + nhiệm vụ nghiệm thu cho TNV.
 - Bảng minh bạch phường.
-- Kiểm tra trùng phía người dân + gộp phía cán bộ.
 - Dữ liệu mẫu đúng số liệu đề, trung bình 3,2 ngày.
 - Demo Hub chạy trọn một vòng đời.
-
-### P1 – Nên có
-
-- Luồng mở lại + nhiệm vụ nghiệm thu cho TNV.
-- Tạo phản ánh hộ, tra cứu bằng mã + SĐT.
-- Mô tả bằng giọng nói.
 - Đầy đủ trạng thái phụ (mục 7).
+
+### P1 – Bonus (hoãn đến khi P0 chạy trọn trên bản deploy)
+
+- B1 – Gợi ý loại từ ảnh bằng AI (mô phỏng, sau đó mới tính AI thật).
+- B2 – Phát hiện & gộp phản ánh trùng, "Tôi cũng gặp", tách hồ sơ.
+- B3 – Chế độ chữ lớn cho người cao tuổi.
+- B4 – Mô tả bằng giọng nói.
+- B5 – Gửi hộ qua tổng đài.
+
+### P2 – Sau cùng
+
 - Kiểm thử nhanh với 5 người.
+- Xuất file Figma (nếu BTC yêu cầu).
 
-### P2 – Nếu còn thời gian
-
-- AI phân loại hoạt động thật (Mức 2).
-- Tách hồ sơ đã gộp nhầm.
-- Xuất file Figma.
-
-Quy tắc: không bắt đầu P2 khi P0 chưa chạy trọn trên bản deploy.
+Lưu ý: B1–B3 là điểm cộng của đề, nên mở lại ngay khi P0 xong; thiết kế lõi đã chừa sẵn chỗ (biến CSS cho chữ lớn, vùng gợi ý ở Bước 3, trường dữ liệu cho trùng lặp).
 
 ---
 

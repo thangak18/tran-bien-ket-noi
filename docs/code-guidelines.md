@@ -6,7 +6,7 @@
 
 - Code, tên biến, tên file: **tiếng Anh**. Riêng giá trị enum nghiệp vụ dùng mã tiếng Việt không dấu theo spec (`den_duong`, `da_tiep_nhan`).
 - Mọi chuỗi hiển thị: **tiếng Việt có dấu**, đặt trong `src/domain/constants.ts` hoặc file `src/copy.ts`, không rải rác trong component.
-- Chế độ chữ lớn lấy chuỗi qua hàm `t(key, { senior })` trả biến thể theo spec 7.4.
+- Chuỗi hiển thị lấy qua hàm `t(key)`; chừa tham số `{ senior }` cho bonus B3 (spec 7.4), lõi chưa dùng.
 
 ## 2. TypeScript
 
@@ -24,7 +24,8 @@
 ## 4. Style
 
 - Chỉ dùng Tailwind + token đã khai báo; không màu hex rời trong className.
-- Kích thước phụ thuộc chế độ chữ lớn dùng biến CSS (`--fs-body`, `--btn-h`, `--tap`) đổi theo class `.senior`, không viết điều kiện JS cho từng phần tử.
+- Mọi cỡ chữ, chiều cao nút, vùng chạm dùng biến CSS (`--fs-body`, `--fs-title`, `--btn-h`, `--tap`) để bonus B3 chỉ cần đổi giá trị theo class `.senior`; không viết điều kiện JS cho từng phần tử.
+- Bố cục, thứ tự khối, câu chữ theo `docs/ui-ux-guidelines.md`; component theo bảng mục 5 của file đó.
 - Mobile-first; breakpoint desktop chỉ dùng trong layout cán bộ và Demo Hub.
 
 ## 5. Trạng thái và dữ liệu

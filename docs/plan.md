@@ -1,6 +1,8 @@
 # PLAN – Trấn Biên Kết Nối (UI/UX Prototype)
 
-Nguồn: `spec.md` v1.0
+Nguồn: `spec.md` v1.2, `ui-ux-guidelines.md`
+
+**Phạm vi plan này: lõi (Functional Requirements).** Bonus B1–B5 nằm ở `tasks.md` mục Backlog Bonus, chưa lên lịch.
 
 ---
 
@@ -60,7 +62,8 @@ app/
 │   │   ├── types.ts
 │   │   ├── constants.ts          # loại, bộ phận, hạn, nhãn trạng thái, đường mẫu
 │   │   ├── status.ts             # bảng chuyển trạng thái, ánh xạ nhãn công khai
-│   │   ├── duplicates.ts         # haversine, findDuplicates
+│   │   ├── geo.ts                # haversineMeters
+│   │   ├── latestUpdate.ts       # câu Cập nhật mới nhất, delayDays
 │   │   ├── sorting.ts            # overdue, dueSoon, sortInbox
 │   │   ├── kpi.ts                # computeKpi
 │   │   ├── notifications.ts      # buildNotification
@@ -74,13 +77,13 @@ app/
 │   │   ├── AppStore.tsx          # Context + reducer
 │   │   ├── actions.ts            # submitReport, follow, accept, assign, merge, ...
 │   │   ├── persistence.ts        # localStorage + storage event
-│   │   └── settings.ts           # seniorMode, phone, demoNow
+│   │   └── settings.ts           # phone, demoNow, deviceReports, anonymousLog (seniorMode: bonus B3)
 │   ├── lib/
 │   │   ├── image.ts              # nén ảnh bằng canvas
 │   │   ├── geolocation.ts        # wrapper có timeout 10s
-│   │   ├── speech.ts             # phát hiện + wrapper SpeechRecognition
+│   │   # speech.ts (B4) – chưa tạo
 │   │   ├── share.ts              # Web Share API + fallback clipboard
-│   │   └── aiMock.ts             # tra manifest
+│   │   # aiMock.ts (B1) – chưa tạo
 │   ├── components/
 │   │   ├── ui/                   # Button, Card, Badge, Sheet, Modal, Toast, Stepper, ...
 │   │   ├── StatusBadge.tsx
@@ -94,7 +97,7 @@ app/
 │   │   ├── SubscribeCard.tsx     # Nhận tin báo cho phản ánh này
 │   │   └── MockLabel.tsx         # nhãn "Mô phỏng"
 │   ├── layouts/
-│   │   ├── CitizenLayout.tsx     # khung mobile, senior mode
+│   │   ├── CitizenLayout.tsx     # khung mobile, thanh điều hướng đáy + FAB camera
 │   │   ├── OfficerLayout.tsx
 │   │   └── VolunteerLayout.tsx
 │   ├── screens/
@@ -119,7 +122,7 @@ app/
   - Khởi động: đọc `localStorage['tbkn:v1']`; không có → nạp `mock.json`.
   - Mỗi thay đổi: ghi lại (debounce 100ms).
   - Lắng nghe `window.addEventListener('storage')` → dispatch `HYDRATE` → các iframe trong Demo Hub tự đồng bộ.
-  - `settings` lưu khoá riêng `tbkn:settings:{frame}` để khung trái và phải có seniorMode / phone riêng; `frame` lấy từ query `?frame=left|right`.
+  - `settings` lưu khoá riêng `tbkn:settings:{frame}` để khung trái và phải có phone / deviceReports riêng; `frame` lấy từ query `?frame=left|right`.
 - `deviceReports` và `anonymousLog` nằm trong settings của thiết bị (theo `frame`), không nằm trong dữ liệu chung – mô phỏng đúng việc mỗi điện thoại tự nhớ phản ánh của mình.
 - Ảnh người dùng tải lên lưu dataURL đã nén; nếu `localStorage` đầy → báo lỗi bằng lời và đề nghị "Đặt lại dữ liệu demo".
 
@@ -132,17 +135,19 @@ app/
 | Phase | Nội dung | Task | Ước lượng | Đầu ra kiểm tra được |
 |---|---|---|---|---|
 | P0 – Nền móng | Init project, tooling, token, layout, router rỗng | T-001 → T-006 | 3h | `npm run verify` pass; 14 route render tiêu đề |
-| P1 – Domain & dữ liệu | Types, hằng số, status, duplicates, sorting, KPI, privacy, generator, verify-mock | T-010 → T-019 | 5h | Toàn bộ unit test domain pass; `verify-mock` pass |
+| P1 – Domain & dữ liệu | Types, hằng số, status, câu cập nhật & chậm hạn, sorting, KPI, privacy, access, geo, generator, verify-mock | T-010 → T-019 | 5h | Toàn bộ unit test domain pass; `verify-mock` pass |
 | P2 – Store | Reducer, actions, persistence, storage sync | T-020 → T-023 | 3h | Unit test action pass |
-| P3 – Component dùng chung | UI kit, StatusBadge, ProgressTracker, MapView, OTP sheet, BeforeAfter | T-030 → T-038 | 5h | Component test pass |
-| P4 – Luồng người dân | C01–C08, gửi ẩn danh, theo dõi không cần SĐT | T-040 → T-049c | 12h | E2E-01, E2E-02, E2E-07 pass |
-| P5 – Cán bộ | A01–A03, tạo hộ, gộp/tách | T-050 → T-056 | 8h | E2E-03, E2E-04 pass |
+| P3 – Component dùng chung | UI kit, StatusChip/DelayChip, ProgressBar/Timeline, StepHeader, MapView, OTP sheet, BeforeAfter, CategoryTile, ReportCard, TrackingLink, RatingSheet | T-030 → T-039b | 7h | Component test pass |
+| P4 – Luồng người dân | C01–C08, gửi ẩn danh, theo dõi không cần SĐT | T-040 → T-049b | 12h | E2E-01, E2E-07, E2E-08 pass |
+| P5 – Cán bộ | A01–A03, bàn phím | T-050 → T-056 | 6h | E2E-03 pass |
 | P6 – TNV | V01–V02, nghiệm thu | T-060 → T-062 | 3h | E2E-05 pass |
-| P7 – Demo Hub & chữ lớn hoàn thiện | `/demo`, đồng bộ, nút nhảy bước, rà soát senior mode | T-070 → T-074 | 4h | E2E-06 pass; checklist senior mode |
-| P8 – Hoàn thiện | A11y, trạng thái phụ, deploy Vercel, test thiết bị thật, video dự phòng | T-080 → T-087 | 5h | Checklist `tests.md` mục 6–8 đạt |
-| **Tổng** | | | **≈ 48h** | |
+| P7 – Demo Hub | `/demo`, đồng bộ, nút nhảy bước | T-070 → T-073 | 3h | E2E-06 pass |
+| P8 – Hoàn thiện lõi | A11y, trạng thái phụ, rà soát UI theo guidelines, deploy Vercel, test thiết bị thật, video dự phòng | T-080 → T-087 | 6h | Checklist `tests.md` mục 5–7 đạt |
+| **Tổng lõi** | | | **≈ 45h** | |
 
-Cắt giảm khi thiếu thời gian (theo thứ tự): T-073 (nhảy bước) → T-046 phần giọng nói → T-055 (tách hồ sơ) → T-052 (tạo hộ). Không cắt P1, Demo Hub đồng bộ cơ bản, chữ lớn.
+Cắt giảm khi thiếu thời gian (theo thứ tự): T-073 (nhảy bước) → T-056 (bàn phím) → T-084 (banner trình duyệt nhúng). Không cắt P1, 6 màn bắt buộc, công khai kết quả, Demo Hub đồng bộ cơ bản.
+
+Sau lõi, mở bonus theo thứ tự B3 → B2 → B1 → B4 → B5 (B1–B3 là điểm cộng của đề).
 
 ---
 
@@ -151,7 +156,7 @@ Cắt giảm khi thiếu thời gian (theo thứ tự): T-073 (nhảy bước) �
 - Test trong `tests.md` của task đã viết trước và pass.
 - `npm run verify` pass (eslint, `tsc --noEmit`, vitest, verify-mock).
 - Không có placeholder, không `console.log` thừa.
-- Màn hình mới đã xem ở 360px, 390px (người dân/TNV) hoặc 1280px, 1440px (cán bộ), cả chế độ chữ lớn nếu là màn người dân.
+- Màn hình mới đã xem ở 360px, 390px (người dân/TNV) hoặc 1280px, 1440px (cán bộ) và đối chiếu wireframe trong `ui-ux-guidelines.md`.
 - Tick trong `tasks.md` kèm ngày.
 
 ---
