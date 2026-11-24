@@ -48,6 +48,7 @@ export interface TimelineEntry {
 export interface Feedback {
   resolved: boolean;
   rating?: number; // 1-5
+  tags?: string[];
   comment?: string;
   at: string; // ISO
 }

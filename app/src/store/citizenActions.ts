@@ -277,7 +277,7 @@ export function lookupReport(reports: Report[], reportId: string, code4: string)
 export function submitFeedback(
   state: AppState,
   reportId: string,
-  feedback: { resolved: boolean; rating?: number; comment?: string },
+  feedback: { resolved: boolean; rating?: number; tags?: string[]; comment?: string },
   now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
@@ -291,6 +291,7 @@ export function submitFeedback(
   const fullFeedback: Feedback = {
     resolved: feedback.resolved,
     rating: feedback.rating,
+    tags: feedback.tags,
     comment: feedback.comment,
     at: now,
   };

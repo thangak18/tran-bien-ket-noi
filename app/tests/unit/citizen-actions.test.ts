@@ -205,12 +205,18 @@ describe('UT-021 – Actions người dân (spec 3.3, 3.4a, 3.4b, AC-C04/5/6)', 
     expect(lookupReport(state.reports, report.id, '9999')).toBeNull();
   });
 
-  it('4. submitFeedback({resolved:true, rating:4}) khi hoan_thanh -> dong', () => {
+  it('4. submitFeedback({resolved:true, rating:4, tags:["Xử lý nhanh"]}) khi hoan_thanh -> dong', () => {
     const hoanThanhReport = state.reports.find((r) => r.status === 'hoan_thanh')!;
-    const nextState = submitFeedback(state, hoanThanhReport.id, { resolved: true, rating: 4 }, now);
+    const nextState = submitFeedback(
+      state,
+      hoanThanhReport.id,
+      { resolved: true, rating: 4, tags: ['Xử lý nhanh'] },
+      now
+    );
     const updated = nextState.reports.find((r) => r.id === hoanThanhReport.id)!;
     expect(updated.status).toBe('dong');
     expect(updated.feedback?.rating).toBe(4);
+    expect(updated.feedback?.tags).toEqual(['Xử lý nhanh']);
   });
 
   it('5. submitFeedback({resolved:false}) -> mo_lai + task nghiem_thu + thông báo kiểm tra lại', () => {
