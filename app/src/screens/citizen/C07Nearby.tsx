@@ -10,10 +10,12 @@ import { WARD_CENTER } from '@/data/streets';
 import { haversineMeters } from '@/domain/geo';
 import { formatDistance } from '@/domain/format';
 import { Category } from '@/domain/types';
+import { useIsDesktop } from '@/lib/useIsDesktop';
 
 export function C07Nearby() {
   const navigate = useNavigate();
   const { state } = useAppStore();
+  const isDesktop = useIsDesktop();
 
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
@@ -75,155 +77,39 @@ export function C07Nearby() {
         Bản đồ quanh tôi
       </h1>
 
-      {/* ======================================================== */}
-      {/* 1. BỐ CỤC MOBILE (< 1024px)                             */}
-      {/* ======================================================== */}
-      <div className="flex flex-1 flex-col lg:hidden pb-16 h-screen overflow-hidden">
-        {/* Header mobile */}
-        <header className="z-20 border-b border-[#E5E7EB] bg-white px-4 py-2.5 shadow-soft">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                aria-label="Quay lại"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <h2 className="text-sm font-bold text-gray-900">
-                Quanh đây · {sortedReports.length} vụ
-              </h2>
-            </div>
-
-            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-primary border border-blue-200">
-              1 km
-            </span>
-          </div>
-
-          {/* Chip lọc */}
-          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('all')}
-              className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedCategory === 'all'
-                  ? 'bg-primary text-white font-semibold'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Tất cả ({state.reports.length})
-            </button>
-
-            {CATEGORY_CONFIGS.map((cfg) => {
-              const isSel = selectedCategory === cfg.key;
-              return (
-                <button
-                  key={cfg.key}
-                  type="button"
-                  onClick={() => setSelectedCategory(cfg.key as Category)}
-                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    isSel
-                      ? 'bg-primary text-white font-semibold'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <CategoryIcon category={cfg.key as Category} className="h-3.5 w-3.5" />
-                  <span>{cfg.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </header>
-
-        {/* Bản đồ lớn + Carousel đáy */}
-        <main className="relative flex-1">
-          <MapView
-            center={[userLat, userLng]}
-            zoom={15}
-            markers={markers}
-            selectedMarkerId={selectedReportId || undefined}
-            className="h-full w-full"
-          />
-
-          <div
-            ref={carouselRef}
-            className="absolute bottom-2 left-0 right-0 z-1000 flex gap-2.5 overflow-x-auto px-4 pb-2 snap-x no-scrollbar"
-          >
-            {sortedReports.map((report) => {
-              const isSelected = report.id === selectedReportId;
-              const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
-              const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
-
-              return (
-                <div
-                  key={report.id}
-                  id={`carousel-card-${report.id}`}
-                  onClick={() => {
-                    setSelectedReportId(report.id);
-                    navigate(`/phan-anh/${report.id}`);
-                  }}
-                  className={`flex w-[290px] shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-card border bg-white p-2.5 shadow-lg snap-center transition-all ${
-                    isSelected
-                      ? 'border-2 border-primary ring-2 ring-blue-400/20'
-                      : 'border-[#E5E7EB] hover:border-gray-300'
-                  }`}
-                >
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
-                    <img
-                      src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
-                      alt="Sự cố"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
-                      }}
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="truncate text-xs font-bold text-gray-900">
-                        {catConfig?.label || report.category}
-                      </span>
-                      <StatusChip status={report.status} variant="public" size="sm" />
-                    </div>
-
-                    <p className="mt-1 truncate text-xs text-gray-500">
-                      <span>{report.address}</span>
-                      <span className="ml-1 text-gray-400">· {formatDistance(distMeters)}</span>
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </main>
-      </div>
-
-      {/* ======================================================== */}
-      {/* 2. BỐ CỤC DESKTOP (>= 1024px): Danh sách 380px + Bản đồ  */}
-      {/* ======================================================== */}
-      <div className="hidden lg:flex flex-1 h-[calc(100vh-64px)] w-full overflow-hidden">
-        {/* TRÁI (380px): Danh sách cuộn dọc */}
-        <aside className="w-[380px] shrink-0 border-r border-[#E5E7EB] bg-white flex flex-col h-full shadow-soft z-10">
-          {/* Header & Filter */}
-          <div className="p-4 border-b border-gray-100 space-y-3">
+      {!isDesktop ? (
+        /* ======================================================== */
+        /* 1. BỐ CỤC MOBILE (< 1024px)                             */
+        /* ======================================================== */
+        <div className="flex flex-1 flex-col pb-16 h-screen overflow-hidden">
+          {/* Header mobile */}
+          <header className="z-20 border-b border-[#E5E7EB] bg-white px-4 py-2.5 shadow-soft">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900">
-                Sự cố quanh đây ({sortedReports.length})
-              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  aria-label="Quay lại"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <h2 className="text-sm font-bold text-gray-900">
+                  Quanh đây · {sortedReports.length} vụ
+                </h2>
+              </div>
+
               <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-primary border border-blue-200">
-                Bán kính 1 km
+                1 km
               </span>
             </div>
 
             {/* Chip lọc */}
-            <div className="flex flex-wrap gap-1.5">
+            <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
               <button
                 type="button"
                 onClick={() => setSelectedCategory('all')}
-                className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   selectedCategory === 'all'
                     ? 'bg-primary text-white font-semibold'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -239,94 +125,215 @@ export function C07Nearby() {
                     key={cfg.key}
                     type="button"
                     onClick={() => setSelectedCategory(cfg.key as Category)}
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       isSel
                         ? 'bg-primary text-white font-semibold'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <CategoryIcon category={cfg.key as Category} className="h-3 w-3" />
+                    <CategoryIcon category={cfg.key as Category} className="h-3.5 w-3.5" />
                     <span>{cfg.label}</span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </header>
 
-          {/* Danh sách thẻ cuộn dọc */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-            {sortedReports.map((report) => {
-              const isSelected = report.id === selectedReportId;
-              const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
-              const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
+          {/* Bản đồ lớn + Carousel đáy */}
+          <main className="relative flex-1">
+            <MapView
+              center={[userLat, userLng]}
+              zoom={15}
+              markers={markers}
+              selectedMarkerId={selectedReportId || undefined}
+              className="h-full w-full"
+            />
 
-              return (
-                <div
-                  key={report.id}
-                  id={`list-card-${report.id}`}
-                  onClick={() => {
-                    setSelectedReportId(report.id);
-                  }}
-                  onDoubleClick={() => navigate(`/phan-anh/${report.id}`)}
-                  className={`flex cursor-pointer items-start gap-3 rounded-card border p-3 transition-all ${
-                    isSelected
-                      ? 'border-2 border-primary bg-[#EFF4FF]/50 shadow-soft'
-                      : 'border-[#E5E7EB] bg-white hover:border-gray-300 shadow-2xs'
-                  }`}
-                >
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
-                    <img
-                      src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
-                      alt="Sự cố"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
-                      }}
-                    />
-                  </div>
+            <div
+              ref={carouselRef}
+              className="absolute bottom-2 left-0 right-0 z-1000 flex gap-2.5 overflow-x-auto px-4 pb-2 snap-x no-scrollbar"
+            >
+              {sortedReports.map((report) => {
+                const isSelected = report.id === selectedReportId;
+                const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
+                const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="truncate text-xs font-bold text-gray-900">
-                        {catConfig?.label || report.category}
-                      </span>
-                      <StatusChip status={report.status} variant="public" size="sm" />
+                return (
+                  <div
+                    key={report.id}
+                    id={`carousel-card-${report.id}`}
+                    onClick={() => {
+                      setSelectedReportId(report.id);
+                      navigate(`/phan-anh/${report.id}`);
+                    }}
+                    className={`flex w-[290px] shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-card border bg-white p-2.5 shadow-lg snap-center transition-all ${
+                      isSelected
+                        ? 'border-2 border-primary ring-2 ring-blue-400/20'
+                        : 'border-[#E5E7EB] hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
+                      <img
+                        src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
+                        alt="Sự cố"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
+                        }}
+                      />
                     </div>
 
-                    <p className="mt-1 truncate text-xs text-gray-500">
-                      <span>{report.address}</span>
-                      <span className="ml-1 text-gray-400">· {formatDistance(distMeters)}</span>
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="truncate text-xs font-bold text-gray-900">
+                          {catConfig?.label || report.category}
+                        </span>
+                        <StatusChip status={report.status} variant="public" size="sm" />
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/phan-anh/${report.id}`);
-                      }}
-                      className="mt-2 text-[11px] font-semibold text-primary hover:underline"
-                    >
-                      Xem chi tiết →
-                    </button>
+                      <p className="mt-1 truncate text-xs text-gray-500">
+                        <span>{report.address}</span>
+                        <span className="ml-1 text-gray-400">· {formatDistance(distMeters)}</span>
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </aside>
+                );
+              })}
+            </div>
+          </main>
+        </div>
+      ) : (
+        /* ======================================================== */
+        /* 2. BỐ CỤC DESKTOP (>= 1024px): Danh sách 380px + Bản đồ  */
+        /* ======================================================== */
+        <div
+          className="flex flex-1 w-full overflow-hidden"
+          style={{ height: 'calc(100vh - 64px)' }}
+        >
+          {/* TRÁI (380px): Danh sách cuộn dọc */}
+          <aside className="w-[380px] shrink-0 border-r border-[#E5E7EB] bg-white flex flex-col h-full shadow-soft z-10">
+            {/* Header & Filter */}
+            <div className="p-4 border-b border-gray-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold text-gray-900">
+                  Sự cố quanh đây ({sortedReports.length})
+                </h2>
+                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-primary border border-blue-200">
+                  Bán kính 1 km
+                </span>
+              </div>
 
-        {/* PHẢI: Bản đồ toàn diện */}
-        <main className="flex-1 h-full relative">
-          <MapView
-            center={[userLat, userLng]}
-            zoom={15}
-            markers={markers}
-            selectedMarkerId={selectedReportId || undefined}
-            className="h-full w-full"
-          />
-        </main>
-      </div>
+              {/* Chip lọc */}
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('all')}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    selectedCategory === 'all'
+                      ? 'bg-primary text-white font-semibold'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Tất cả ({state.reports.length})
+                </button>
+
+                {CATEGORY_CONFIGS.map((cfg) => {
+                  const isSel = selectedCategory === cfg.key;
+                  return (
+                    <button
+                      key={cfg.key}
+                      type="button"
+                      onClick={() => setSelectedCategory(cfg.key as Category)}
+                      className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                        isSel
+                          ? 'bg-primary text-white font-semibold'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <CategoryIcon category={cfg.key as Category} className="h-3 w-3" />
+                      <span>{cfg.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Danh sách thẻ cuộn dọc */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+              {sortedReports.map((report) => {
+                const isSelected = report.id === selectedReportId;
+                const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
+                const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
+
+                return (
+                  <div
+                    key={report.id}
+                    id={`list-card-${report.id}`}
+                    onClick={() => {
+                      setSelectedReportId(report.id);
+                    }}
+                    onDoubleClick={() => navigate(`/phan-anh/${report.id}`)}
+                    className={`flex cursor-pointer items-start gap-3 rounded-card border p-3 transition-all ${
+                      isSelected
+                        ? 'border-2 border-primary bg-[#EFF4FF]/50 shadow-soft'
+                        : 'border-[#E5E7EB] bg-white hover:border-gray-300 shadow-2xs'
+                    }`}
+                  >
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
+                      <img
+                        src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
+                        alt="Sự cố"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
+                        }}
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="truncate text-xs font-bold text-gray-900">
+                          {catConfig?.label || report.category}
+                        </span>
+                        <StatusChip status={report.status} variant="public" size="sm" />
+                      </div>
+
+                      <p className="mt-1 truncate text-xs text-gray-500">
+                        <span>{report.address}</span>
+                        <span className="ml-1 text-gray-400">· {formatDistance(distMeters)}</span>
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/phan-anh/${report.id}`);
+                        }}
+                        className="mt-2 text-[11px] font-semibold text-primary hover:underline"
+                      >
+                        Xem chi tiết →
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* PHẢI: Bản đồ toàn diện */}
+          <main className="flex-1 relative w-full" style={{ height: 'calc(100vh - 64px)' }}>
+            <MapView
+              center={[userLat, userLng]}
+              zoom={15}
+              markers={markers}
+              selectedMarkerId={selectedReportId || undefined}
+              className="h-full w-full"
+            />
+          </main>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Category, Status } from '@/domain/types';
 import { CATEGORY_CONFIGS, STATUS_CONFIGS } from '@/domain/constants';
@@ -120,6 +120,28 @@ function MapClickHandler({ onTap }: { onTap?: (lat: number, lng: number) => void
   return null;
 }
 
+function MapResizer() {
+  const map = useMap();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+
+    const handleResize = () => {
+      map.invalidateSize();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map]);
+
+  return null;
+}
+
 export const MapView: React.FC<MapViewProps> = ({
   center,
   zoom = 14,
@@ -200,6 +222,7 @@ export const MapView: React.FC<MapViewProps> = ({
         />
 
         <MapClickHandler onTap={onTap} />
+        <MapResizer />
 
         {/* Vòng bán kính (AC-C07) */}
         {radiusCircle &&

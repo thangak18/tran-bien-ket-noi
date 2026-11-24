@@ -12,6 +12,7 @@ import { RatingSheet } from '@/components/citizen/RatingSheet';
 import { MapView } from '@/components/map/MapView';
 import { formatLatestUpdate, computeDelayDays } from '@/domain/latestUpdate';
 import { formatDateTime } from '@/domain/format';
+import { useIsDesktop } from '@/lib/useIsDesktop';
 
 const STAR_LABELS: Record<number, string> = {
   1: 'Rất tệ',
@@ -25,6 +26,7 @@ export function C06Detail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const isDesktop = useIsDesktop();
 
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [isRatingSheetOpen, setIsRatingSheetOpen] = useState<boolean>(false);
@@ -365,20 +367,22 @@ export function C06Detail() {
 
             {/* Bản đồ nhỏ */}
             <div className="h-44 w-full rounded-xl overflow-hidden border border-gray-100">
-              <MapView
-                center={[report.lat, report.lng]}
-                zoom={15}
-                markers={[
-                  {
-                    id: report.id,
-                    lat: report.lat,
-                    lng: report.lng,
-                    category: report.category,
-                    status: report.status,
-                    title: report.address,
-                  },
-                ]}
-              />
+              {isDesktop && (
+                <MapView
+                  center={[report.lat, report.lng]}
+                  zoom={15}
+                  markers={[
+                    {
+                      id: report.id,
+                      lat: report.lat,
+                      lng: report.lng,
+                      category: report.category,
+                      status: report.status,
+                      title: report.address,
+                    },
+                  ]}
+                />
+              )}
             </div>
           </div>
 

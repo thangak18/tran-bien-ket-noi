@@ -11,6 +11,7 @@ import { formatDistance, formatPercent, formatDays } from '@/domain/format';
 import { computeKpi } from '@/domain/kpi';
 import { MapView } from '@/components/map/MapView';
 import { Report, Category } from '@/domain/types';
+import { useIsDesktop } from '@/lib/useIsDesktop';
 
 function formatDaysAgo(dateStr: string, nowStr: string): string {
   const diffMs = new Date(nowStr).getTime() - new Date(dateStr).getTime();
@@ -28,6 +29,7 @@ export function C01Home() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { state } = useAppStore();
+  const isDesktop = useIsDesktop();
   const { reports, settings } = state;
   const now = settings.demoNow;
 
@@ -389,7 +391,13 @@ export function C01Home() {
               </button>
             </div>
             <div className="h-[280px] w-full rounded-xl overflow-hidden border border-gray-100">
-              <MapView center={[WARD_CENTER.lat, WARD_CENTER.lng]} zoom={14} markers={mapMarkers} />
+              {isDesktop && (
+                <MapView
+                  center={[WARD_CENTER.lat, WARD_CENTER.lng]}
+                  zoom={14}
+                  markers={mapMarkers}
+                />
+              )}
             </div>
           </div>
 

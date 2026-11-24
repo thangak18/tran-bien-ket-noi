@@ -85,6 +85,14 @@ test.describe('Redesign Screenshots', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(outDir, '08-ho-so.png'), fullPage: false });
+
+    // Kiểm tra /quanh-day trên mobile 390x844
+    await page.goto('/quanh-day');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+    const mobileTiles = await page.locator('.leaflet-tile').count();
+    const mobileMarkers = await page.locator('.map-marker-div').count();
+    console.log(`Mobile (390x844) /quanh-day: tiles=${mobileTiles}, markers=${mobileMarkers}`);
   });
 
   test('Capture tablet screenshot 768x1024', async ({ page }) => {
@@ -144,6 +152,18 @@ test.describe('Redesign Screenshots', () => {
     await page.waitForTimeout(600);
     await page.screenshot({
       path: path.join(outDir, '12-desktop-gui-1440.png'),
+      fullPage: false,
+    });
+
+    // 14-desktop-ban-do-1440.png (/quanh-day trên desktop)
+    await page.goto('/quanh-day');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+    const desktopTiles = await page.locator('.leaflet-tile').count();
+    const desktopMarkers = await page.locator('.map-marker-div').count();
+    console.log(`Desktop (1440x900) /quanh-day: tiles=${desktopTiles}, markers=${desktopMarkers}`);
+    await page.screenshot({
+      path: path.join(outDir, '14-desktop-ban-do-1440.png'),
       fullPage: false,
     });
   });
