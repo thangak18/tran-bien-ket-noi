@@ -22,7 +22,7 @@ Ký hiệu trạng thái: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong (gh
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-010 | `domain/types.ts`: Report, VolunteerTask, Notification, Settings, enum | T-001 | spec 4 | UT-010 (typecheck) |
+| [x] (24/11) | T-010 | `domain/types.ts`: Report, VolunteerTask, Notification, Settings, enum | T-001 | spec 4 | UT-010 (typecheck) |
 | [ ] | T-011 | `domain/constants.ts`: 4 loại, 5 bộ phận, hạn mặc định, nhãn trạng thái (CB + công khai + bước + màu + icon), TNV mẫu, `DEMO_NOW` | T-010 | spec 2, 3.1, 3.2 | UT-011 |
 | [ ] | T-012 | `domain/status.ts`: `canTransition`, `transition` (trả report mới + timeline entry), `publicLabel`, `progressStep` | T-011 | spec 3.2, 3.3 | UT-012 |
 | [ ] | T-013 | `domain/duplicates.ts`: `haversineMeters`, `findDuplicates(candidate, reports, now)` | T-010 | spec 3.5 | UT-013 |
