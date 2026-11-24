@@ -160,7 +160,7 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 | DV-009 | Có đúng 2 cụm gần nhau cùng loại (dữ liệu chừa sẵn cho bonus B2) |
 | DV-010 | Có hồ sơ demo `mat_duong` `da_tiep_nhan` cách tâm phường ≤ 300 m |
 | DV-011 | Mọi `id` duy nhất, dạng `TB-\d{4}`, liên tục 0001–0064 |
-| DV-012 | 40 hồ sơ `dong` có `feedback.rating` 1–5 và `tags` thuộc bộ chip; 7 hồ sơ `hoan_thanh` không có feedback; 3 VolunteerTask khớp 3 hồ sơ `cho_xac_minh` |
+| DV-012 | 40 hồ sơ `dong` có `feedback.rating` 1–5 và `tags` thuộc bộ chip; 7 hồ sơ `hoan_thanh` không có feedback; 3 VolunteerTask `xac_minh` khớp 3 hồ sơ `cho_xac_minh` và 1 VolunteerTask `nghiem_thu` (`cho_nhan`) khớp hồ sơ `mo_lai`; hồ sơ `mo_lai` có `feedback.resolved = false`; mọi mục timeline do cán bộ/bộ phận thực hiện có giờ trong 07:00–17:30 |
 | DV-013 | Mọi đường dẫn ảnh trong mock tồn tại trong `public/demo-photos/`; mỗi loại ≥ 4 ảnh |
 | DV-015 | Timeline mạch lạc: mục cuối của `timeline` có `status` = `status` hiện tại; timeline đi qua đủ các bước trước đó theo bảng chuyển 3.3 (ví dụ `dong` phải có `moi → da_tiep_nhan → da_giao → hoan_thanh → dong`; `cho_xac_minh` phải có `moi → da_tiep_nhan → cho_xac_minh` hoặc `moi → cho_xac_minh`); thời điểm tăng dần; `hoan_thanh` trong timeline trùng `completedAt` |
 | DV-016 | `department` rỗng ở hồ sơ `moi`; mọi trạng thái từ `da_tiep_nhan` trở đi có `department` đúng bộ phận gợi ý của loại (spec 3.1) và có `dueAt` = thời điểm tiếp nhận + hạn mặc định của loại (spec 3.1), trừ 2 hồ sơ quá hạn được chỉnh để quá hạn; mọi thời điểm ghi cùng định dạng `+07:00` |

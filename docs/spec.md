@@ -292,7 +292,8 @@ Kết quả sắp xếp theo khoảng cách tăng dần, tối đa 3.
 - Hồ sơ cho kịch bản demo: 1 hồ sơ `mat_duong` `da_tiep_nhan` có 2 followers, đặt gần tâm phường, để ông Tư bấm "Tôi cũng gặp".
 - Địa chỉ dùng tên đường có thật trong phường (ví dụ: Cách Mạng Tháng Tám, Hưng Đạo Vương, Nguyễn Văn Trị, Phan Đình Phùng, Huỳnh Văn Nghệ) [KC].
 - Rating của 40 hồ sơ `dong` là dữ liệu mô phỏng; mọi chỗ hiển thị điểm hài lòng phải gắn nhãn "Dữ liệu mô phỏng".
-- 3 VolunteerTask có sẵn cho 3 hồ sơ `cho_xac_minh`.
+- 3 VolunteerTask `xac_minh` có sẵn cho 3 hồ sơ `cho_xac_minh`, và 1 VolunteerTask `nghiem_thu` cho hồ sơ `mo_lai` (hồ sơ này có `feedback.resolved = false` vì người dân đã báo chưa giải quyết).
+- Thao tác của cán bộ/bộ phận (tiếp nhận, giao, hoàn thành…) chỉ rơi vào giờ hành chính 07:00–17:30; người dân gửi và đánh giá được ở mọi giờ 06:00–21:00.
 - 6 hồ sơ `anonymous: true` (3 rác thải, 1 mỗi loại còn lại) phân bổ ở cả nhóm đã xử lý và chưa hoàn tất; đúng 1 hồ sơ ẩn danh có `subscribedLater: true`.
 - Mọi hồ sơ có `secretCode` 4 số sinh theo seed.
 
