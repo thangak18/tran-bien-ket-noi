@@ -4,13 +4,24 @@ import { computeDelayDays } from '@/domain/latestUpdate';
 import { Clock } from 'lucide-react';
 
 export interface DelayChipProps {
-  report: Report;
-  now: string;
+  report?: Report;
+  now?: string;
+  delayDays?: number;
   className?: string;
 }
 
-export const DelayChip: React.FC<DelayChipProps> = ({ report, now, className = '' }) => {
-  const delayDays = computeDelayDays(report, now);
+export const DelayChip: React.FC<DelayChipProps> = ({
+  report,
+  now,
+  delayDays: explicitDelayDays,
+  className = '',
+}) => {
+  const delayDays =
+    explicitDelayDays !== undefined
+      ? explicitDelayDays
+      : report && now
+        ? computeDelayDays(report, now)
+        : 0;
 
   if (delayDays <= 0) {
     return null;

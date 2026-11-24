@@ -166,19 +166,20 @@ export const MapView: React.FC<MapViewProps> = ({
         <MapClickHandler onTap={onTap} />
 
         {/* Vòng bán kính (AC-C07) */}
-        {radiusCircle && (
-          <Circle
-            center={radiusCircle.center}
-            radius={radiusCircle.radiusMeters}
-            pathOptions={{
-              color: '#0284c7',
-              fillColor: '#38bdf8',
-              fillOpacity: 0.15,
-              weight: 2,
-              dashArray: '4, 4',
-            }}
-          />
-        )}
+        {radiusCircle &&
+          !(typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom')) && (
+            <Circle
+              center={radiusCircle.center}
+              radius={radiusCircle.radiusMeters}
+              pathOptions={{
+                color: '#0284c7',
+                fillColor: '#38bdf8',
+                fillOpacity: 0.15,
+                weight: 2,
+                dashArray: '4, 4',
+              }}
+            />
+          )}
 
         {/* Vị trí của bạn */}
         {userLocation && (

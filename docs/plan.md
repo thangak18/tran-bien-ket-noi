@@ -104,13 +104,16 @@ app/
 │   │   ├── citizen/  C01Home, C02Photo, C03Location, C04Confirm, C05Mine, C06Detail, C07Nearby, C08Transparency
 │   │   ├── officer/  A01Inbox, A02Panel, A03Result, OnBehalfModal
 │   │   ├── volunteer/ V01Tasks, V02Verify
-│   │   └── demo/     DemoHub
+│   │   ├── demo/     DemoHub
+│   │   └── dev/      DevUiGallery (route `/dev/ui` – chỉ dùng khi dev để review UI)
 │   └── styles/index.css
 └── tests/
     ├── unit/                     # domain/*
     ├── component/                # screens & components
     └── e2e/                      # Playwright
 ```
+
+*Ghi chú route dev:* Route `/dev/ui` được mount có điều kiện (`import.meta.env.DEV`) chỉ dùng khi dev để review UI toàn bộ các component dùng chung với dữ liệu mẫu thật từ `mock.json`.
 
 ---
 
