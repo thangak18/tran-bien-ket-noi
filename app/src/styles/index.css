@@ -20,6 +20,19 @@ html.senior {
   --fs-title: 28px;
   --btn-h: 56px;
   --tap: 56px;
+  /* Tăng cỡ gốc 25%: mọi cỡ chữ Tailwind (rem) đều to lên theo */
+  font-size: 125%;
+}
+
+/* Các cỡ chữ cố định bằng px không đổi theo rem nên nâng riêng */
+html.senior .text-\[9px\] {
+  font-size: 0.6rem;
+}
+html.senior .text-\[10px\] {
+  font-size: 0.65rem;
+}
+html.senior .text-\[11px\] {
+  font-size: 0.7rem;
 }
 
 body {
