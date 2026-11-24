@@ -37,3 +37,43 @@ export function formatDate(isoString?: string | null): string {
 
   return formatter.format(date);
 }
+
+/**
+ * Định dạng ngày ngắn theo múi giờ UTC+7
+ * Trả về dd/MM (ví dụ 25/11)
+ */
+export function formatDateShort(isoString?: string | null): string {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    day: '2-digit',
+    month: '2-digit',
+  });
+
+  return formatter.format(date);
+}
+
+/**
+ * Định dạng ngày và giờ theo múi giờ UTC+7 (spec 7.6)
+ * Trả về dd/MM/yyyy HH:mm
+ */
+export function formatDateTime(isoString?: string | null): string {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return formatter.format(date).replace(',', '');
+}
