@@ -164,3 +164,84 @@ export function splitReport(mergedReport: Report, now: string, actor: string): R
     ],
   };
 }
+
+export interface PublicTimelineStep {
+  step: 1 | 2 | 3 | 4;
+  label: string;
+  status: 'done' | 'current' | 'upcoming';
+  at?: string;
+  expected?: string;
+  department?: string;
+  note?: string;
+}
+
+/**
+ * 4 mốc tiến trình công khai cho người dân (spec 3.2, AC-C06-1, UT-012 mục 8-9)
+ */
+export function publicTimeline(report: Report): PublicTimelineStep[] {
+  const currentStep = progressStep(report.status);
+  const isDongOrHoanThanh = report.status === 'hoan_thanh' || report.status === 'dong';
+
+  const tMoi = report.timeline.find((t) => t.status === 'moi');
+  const tTiepNhan = report.timeline.find(
+    (t) => t.status === 'da_tiep_nhan' || t.status === 'cho_xac_minh'
+  );
+  const tGiao = report.timeline.find((t) => t.status === 'da_giao' || t.status === 'mo_lai');
+  const tHoanThanh = report.timeline.find((t) => t.status === 'hoan_thanh' || t.status === 'dong');
+
+  const step1At = tMoi?.at || report.createdAt;
+  const step2At = tTiepNhan?.at;
+  const step3At = tGiao?.at;
+  const step4At = report.completedAt || tHoanThanh?.at;
+
+  const step1Status: 'done' | 'current' | 'upcoming' = 'done';
+
+  const step2Status: 'done' | 'current' | 'upcoming' =
+    isDongOrHoanThanh ||
+    (typeof currentStep === 'number' && currentStep >= 2) ||
+    currentStep === 'exception'
+      ? 'done'
+      : currentStep === 1
+        ? 'upcoming'
+        : 'upcoming';
+
+  const step3Status: 'done' | 'current' | 'upcoming' = isDongOrHoanThanh
+    ? 'done'
+    : typeof currentStep === 'number' && currentStep > 3
+      ? 'done'
+      : typeof currentStep === 'number' && currentStep === 3
+        ? 'current'
+        : 'upcoming';
+
+  const step4Status: 'done' | 'current' | 'upcoming' = isDongOrHoanThanh ? 'done' : 'upcoming';
+
+  return [
+    {
+      step: 1,
+      label: 'Chờ tiếp nhận',
+      status: step1Status,
+      at: step1At,
+    },
+    {
+      step: 2,
+      label: 'Đã tiếp nhận',
+      status: step2Status,
+      at: step2At || (step2Status === 'done' ? step1At : undefined),
+      note: report.status === 'cho_xac_minh' ? 'Tình nguyện viên đang kiểm tra tại chỗ' : undefined,
+    },
+    {
+      step: 3,
+      label: 'Đang xử lý',
+      status: step3Status,
+      at: step3At,
+      department: report.department,
+    },
+    {
+      step: 4,
+      label: 'Đã xử lý',
+      status: step4Status,
+      at: step4At,
+      expected: !isDongOrHoanThanh ? report.dueAt : undefined,
+    },
+  ];
+}

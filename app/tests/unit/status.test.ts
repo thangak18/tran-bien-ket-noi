@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { canTransition, transition, splitReport, progressStep } from '@/domain/status';
+import {
+  canTransition,
+  transition,
+  splitReport,
+  progressStep,
+  publicTimeline,
+} from '@/domain/status';
 import { Report } from '@/domain/types';
 
 describe('UT-012 – Status', () => {
@@ -114,7 +120,7 @@ describe('UT-012 – Status', () => {
     expect(progressStep('da_gop')).toBe('exception');
   });
 
-  it('8. Chuyển sang can_bo_sung, chuyen_co_quan không có lý do hoặc lý do < 10 ký tự -> lỗi', () => {
+  it('7. Chuyển sang can_bo_sung, chuyen_co_quan không có lý do hoặc lý do < 10 ký tự -> lỗi', () => {
     expect(() =>
       transition(baseReport, 'can_bo_sung', 'CB', 'Cán bộ Minh', now, {
         note: 'Ngắn',
@@ -127,5 +133,54 @@ describe('UT-012 – Status', () => {
         note: 'Ngắn',
       })
     ).toThrowError(/lý do/i);
+  });
+
+  it('8. publicTimeline hồ sơ da_tiep_nhan có dueAt -> trả 4 mốc: 2 mốc done có giờ, mốc "Đang xử lý" upcoming, mốc "Đã xử lý" upcoming kèm expected = dueAt', () => {
+    const report: Report = {
+      ...baseReport,
+      status: 'da_tiep_nhan',
+      dueAt: '2026-11-28T09:00:00+07:00',
+      timeline: [
+        { at: '2026-11-20T08:00:00+07:00', status: 'moi', actor: 'Người dân' },
+        { at: '2026-11-20T10:00:00+07:00', status: 'da_tiep_nhan', actor: 'Cán bộ Minh' },
+      ],
+    };
+
+    const timeline = publicTimeline(report);
+    expect(timeline).toHaveLength(4);
+
+    // 2 mốc done có giờ
+    expect(timeline[0]?.status).toBe('done');
+    expect(timeline[0]?.at).toBe('2026-11-20T08:00:00+07:00');
+    expect(timeline[1]?.status).toBe('done');
+    expect(timeline[1]?.at).toBe('2026-11-20T10:00:00+07:00');
+
+    // mốc "Đang xử lý" upcoming
+    const step3 = timeline.find((s) => s.label === 'Đang xử lý');
+    expect(step3?.status).toBe('upcoming');
+
+    // mốc "Đã xử lý" upcoming kèm expected = dueAt
+    const step4 = timeline.find((s) => s.label === 'Đã xử lý');
+    expect(step4?.status).toBe('upcoming');
+    expect(step4?.expected).toBe('2026-11-28T09:00:00+07:00');
+  });
+
+  it('9. publicTimeline hồ sơ dong -> 4 mốc đều done', () => {
+    const report: Report = {
+      ...baseReport,
+      status: 'dong',
+      completedAt: '2026-11-22T15:00:00+07:00',
+      timeline: [
+        { at: '2026-11-20T08:00:00+07:00', status: 'moi', actor: 'Người dân' },
+        { at: '2026-11-20T10:00:00+07:00', status: 'da_tiep_nhan', actor: 'Cán bộ' },
+        { at: '2026-11-21T09:00:00+07:00', status: 'da_giao', actor: 'Cán bộ' },
+        { at: '2026-11-22T15:00:00+07:00', status: 'hoan_thanh', actor: 'Cán bộ' },
+        { at: '2026-11-22T16:00:00+07:00', status: 'dong', actor: 'Người dân' },
+      ],
+    };
+
+    const timeline = publicTimeline(report);
+    expect(timeline).toHaveLength(4);
+    expect(timeline.every((s) => s.status === 'done')).toBe(true);
   });
 });
