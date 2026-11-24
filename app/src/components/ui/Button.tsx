@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'resolved';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface BaseButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -33,20 +33,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none';
+      'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none rounded-btn';
 
     const variantStyles: Record<ButtonVariant, string> = {
-      primary: 'bg-primary text-white hover:bg-primary-hover shadow-sm',
+      primary: 'bg-primary text-white hover:bg-primary-hover shadow-soft',
       secondary: 'bg-primary-50 text-primary-dark hover:bg-primary-100',
       outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
       ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
-      danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
+      danger: 'bg-red-600 text-white hover:bg-red-700 shadow-soft',
+      resolved: 'bg-[#16A34A] text-white hover:bg-[#15803D] shadow-soft',
     };
 
     const sizeStyles: Record<ButtonSize, string> = {
-      sm: 'h-9 px-3 text-xs rounded-xl min-h-[36px]',
-      md: 'h-[var(--btn-h)] min-h-[var(--btn-h)] px-4 text-[var(--fs-body)] rounded-2xl',
-      lg: 'h-14 min-h-[56px] px-6 text-lg rounded-2xl',
+      sm: 'h-9 px-3 text-xs min-h-[36px]',
+      md: 'h-[var(--btn-h)] min-h-[var(--btn-h)] px-4 text-[var(--fs-body)]',
+      lg: 'h-14 min-h-[56px] px-6 text-lg',
     };
 
     const widthStyle = fullWidth ? 'w-full' : '';
