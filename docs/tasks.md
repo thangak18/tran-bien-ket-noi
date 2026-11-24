@@ -162,22 +162,84 @@ T-001 → T-010 → T-011 → T-012 → T-019 → T-020 → T-021/T-022 → T-03
 
 ## Giai đoạn 2 – Sản phẩm hoàn chỉnh (mở 25/11/2026)
 
-Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6. Mỗi bước tách thành task có ID (`G2-xxx`) trước khi code.
+Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` mục 10–17, `docs/plan.md` mục 10–18. Mỗi task nhỏ ước lượng ≤ 3 giờ, có phụ thuộc, mục spec và ID test cụ thể.
 
-- [x] (25/11) G2-01 Chốt stack: Supabase (PostgreSQL + PostGIS + Auth + Storage) + Vercel Functions + Drizzle; OTP/AI vẫn mô phỏng; ~~trang quản trị~~ bỏ, dùng script (25/11)
-- [x] (25/11) G2-02 Cập nhật `spec.md` / `plan.md`: API, schema, phân quyền, luồng đăng nhập
-- [ ] G2-03 Schema + migration PostgreSQL/PostGIS, seed từ `mock.json`, test bất biến trên DB
-- [ ] G2-04 API reports / volunteer tasks / notifications / feedback, kiểm tra chuyển trạng thái phía server
-- [ ] G2-05 Auth: cán bộ, TNV (tài khoản + vai trò); người dân OTP hoặc ẩn danh (`secretCode`, link `?k=`)
-- [ ] G2-06 Lưu ảnh lên Storage (nén phía client)
-- [ ] G2-07 Frontend chuyển từ localStorage sang API; tách chế độ demo
-- [ ] G2-08 Dịch vụ thật OTP/SMS, AI gợi ý loại – chờ chủ dự án quyết
-- [ ] G2-09 Cập nhật 17 test cũ theo UI redesign
-- [ ] G2-10 Script quản lý tài khoản/cấu hình (`staff:*`, `config:set-sla`, `demo:*`) + màn `/dang-nhap` (spec 14, AC-OPS-1 → 3). Không làm trang quản trị
-- [ ] G2-11 Vận hành: env, 4 môi trường, cron, CI có Postgres, checklist plan 17
+### Q0 – Tài liệu & Chuẩn bị
+- [x] (25/11) G2-01 Chốt stack: Supabase (PostgreSQL + PostGIS + Auth + Storage) + Vercel Functions + Drizzle; OTP/AI vẫn mô phỏng; bỏ trang quản trị, dùng script
+- [x] (25/11) G2-02 Cập nhật tài liệu: `proposal_v3.md`, `spec.md`, `plan.md`, `tasks.md`, `tests.md`
 
-Phase và thứ tự: `plan.md` mục 15 (Q1 → Q7, ≈ 54h). **Chờ chủ dự án duyệt spec 10–17 trước khi làm G2-03.**
+### Q1 – Cơ sở dữ liệu & Bất biến (G2-03)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-03a | Định nghĩa Drizzle schema (`server/db/schema.ts`): enum, bảng, quan hệ, chỉ mục, cột `is_seed` | G2-02 | 11.1, 11.2 | DB-001 | 2h |
+| [ ] | G2-03b | Viết migration SQL: PostGIS extensions, geometry/geography, GiST index, CHECK constraints, trigger bất biến `report_timeline`, RLS không anon/auth policy | G2-03a | 11.3, 11.4 | DB-002 → 004 | 2.5h |
+| [ ] | G2-03c | Viết script `db:seed`: nạp 64 hồ sơ từ `mock.json`, hash secretCode, tạo tài khoản mẫu (CB Nguyễn Văn Minh, 3 TNV), idempotent | G2-03b | 16.3 | DB-005, DB-006 | 2.5h |
+| [ ] | G2-03d | Viết script `db:verify`: kiểm tra 16 bất biến dữ liệu trên DB thật (khớp `mock:verify`: 64/47/17/3,2 ngày, 6 ẩn danh, v.v.) | G2-03c | 16.3, 5.1 | DB-007 → 016 | 2h |
 
-### Câu hỏi mở giai đoạn 2
+### Q2 – Lõi API Hono (G2-04)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-04a | Khung Hono `server/app.ts`, `api/[...path].ts`, `env.ts` (zod fail sớm), `clock.ts` (real/fixed). Middleware: CORS, Request-Id, Error handler, Zod validator | G2-03d | 12.1, 12.8, AC-API-2,3,4 | API-001, API-002 | 2h |
+| [ ] | G2-04b | Middleware RateLimit bằng bảng Postgres (`AC-API-7`) và Idempotency-Key (`AC-API-6`) | G2-04a | 12.1, 13.4, AC-API-6,7 | IDEM-001, CONC-002 | 2h |
+| [ ] | G2-04c | Routes `/public/*`: reports, by code, kpi, config, recent-results. PostGIS ST_DWithin, serializer `toPublicReport` lọc SĐT/mã/hash | G2-04a | 12.2, AC-API-1, AC-AUTH-6 | API-PUB-001 → 005, LEAK-001 | 2.5h |
+| [ ] | G2-04d | Routes `/citizen/*`: otp/request, verify, gửi phản ánh ẩn danh/SĐT, claim, lookup, owner, feedback, supplement, follow, subscribe | G2-04b, G2-04c | 12.3, AC-DATA-3,5 | API-CIT-001 → 010 | 3h |
+| [ ] | G2-04e | Routes `/officer/*`: reports, kpi, accept, assign-volunteer, assign-dept, complete, ngoại lệ, gộp/tách, gửi hộ. Giao dịch FOR UPDATE + transition | G2-04d | 12.4, 3.3, 3.6 | API-OFF-001 → 012, CONC-001 | 3h |
+| [ ] | G2-04f | Routes `/volunteer/*`: tasks theo GPS, chi tiết, claim mở (khóa dòng), nộp kết quả. Kích hoạt chuyển trạng thái 3.3, che SĐT | G2-04e | 12.5, AC-V01, AC-V02 | API-VOL-001 → 004 | 2.5h |
+| [ ] | G2-04g | Cron route `/cron/daily`: bảo vệ bằng `CRON_SECRET`, tự đóng hồ sơ sau 7 ngày, dọn pending_uploads, dọn OTP và access_attempts hết hạn | G2-04f | 12.7, AC-API-8 | CRON-001 → 004 | 2h |
 
-Xem `spec.md` mục 17 (7 câu: mã bí mật 4 số + khoá dò, cột `is_seed`, dự án demo riêng, vùng đặt dữ liệu/Nghị định 13, CB không xem SĐT đầy đủ, quên mật khẩu nhân viên, cron 1 lần/ngày).
+### Q3 – Xác thực & Quyền riêng tư (G2-05)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-05a | Middleware xác thực nhân viên qua Supabase Auth JWT, tra `staff_profiles` mỗi request, `is_active=false` → 403. Kiểm soát ma trận quyền 13.5 | G2-04f | 13.1, 13.2, 13.5 | AUTHZ-001 → 015 | 2.5h |
+| [ ] | G2-05b | Xác thực người dân: OTP mock (123456, 5 phút, 5 lần sai), JWT 30 ngày qua jose HS256 | G2-05a | 13.3, 10.3 | AUTH-CIT-001 → 004 | 2h |
+| [ ] | G2-05c | Quyền chủ sở hữu hồ sơ ẩn danh: secretCode 4 số + ownerToken 256-bit hash kèm pepper, claim/lookup, chống dò brute force và quota | G2-05b | 13.4, AC-AUTH-4,5,7,8 | AUTH-ANON-001 → 006, LEAK-002 | 2.5h |
+
+### Q4 – Lưu trữ ảnh (G2-06)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-06a | Route `POST /uploads/sign`: cấp signed URL PUT lên bucket riêng tư `report-photos`, giới hạn 1.5MB, kiểm mime-type | G2-04a | 15, AC-PHOTO-1,4 | PHOTO-001, PHOTO-002 | 2h |
+| [ ] | G2-06b | Gắn ảnh vào hồ sơ: kiểm tra magic bytes, kích thước thật server-side, URL ký đọc ngắn hạn 1 giờ có kiểm soát quyền | G2-06a | 15, AC-PHOTO-2,3 | PHOTO-003, PHOTO-004 | 2h |
+
+### Q5 – Scripts Vận hành & Màn Đăng nhập (G2-10)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-10a | CLI scripts nhân viên & SLA: `staff:create`, `staff:disable`, `staff:enable`, `staff:reset-password`, `staff:list`, `config:set-sla` | G2-05a | 14, AC-OPS-1,2,3 | OPS-001 → 005 | 2h |
+| [ ] | G2-10b | CLI scripts demo: `demo:reset`, `demo:clock` (từ chối khi `DEMO_MODE !== 'true'`) | G2-10a | 14, AC-OPS-4 | OPS-006, OPS-007 | 1.5h |
+| [ ] | G2-10c | Màn hình `/dang-nhap` và phân quyền route: responsive CB desktop / TNV mobile, chuyển trang theo vai trò, trang `/khong-co-quyen`, đăng xuất | G2-05a | 8, 13.2, AC-LOGIN-1 → 6 | LOGIN-001 → 006 | 2.5h |
+
+### Q6 – Frontend DataSource & Tích hợp (G2-07)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-07a | Lớp trừu tượng `DataSource` (`types.ts`, `LocalDataSource.ts`, `ApiDataSource.ts`, `index.ts`), chọn qua `VITE_DATA_SOURCE=local\|api` | G2-04f, G2-05c | 16.1, AC-DATA-1 | DS-001, DS-002 | 2.5h |
+| [ ] | G2-07b | Tích hợp gọi API qua `src/lib/api.ts`: token, headers, map lỗi sang tiếng Việt. Trạng thái async (đang gửi, lỗi, thử lại) | G2-07a | 16.2 | API-CLIENT-001 → 004 | 2.5h |
+| [ ] | G2-07c | Tải ảnh trực tiếp lên Supabase Storage qua signed URL tại C02/C04, C06, A03, V02 | G2-06b, G2-07b | 15, 16.2 | PHOTO-CLIENT-001 | 2h |
+| [ ] | G2-07d | Đồng bộ thiết bị, làm mới định kỳ 30s hoặc khi tab active ở A01/C05, lưu trữ `deviceReports` dạng `{code, ownerToken}` | G2-07b | 16.2 | SYNC-001, SYNC-002 | 2h |
+
+### Sửa Test Redesign cũ (G2-09)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-09 | Cập nhật và sửa 17 test component/unit cũ đang fail do đợt redesign giao diện để toàn bộ test suite pass 100% | G2-07d | 6, 7 | UT-OLD-001 → 017 | 3h |
+
+### Q7 – Vận hành & CI/CD (G2-11)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [ ] | G2-11a | Cấu hình `vercel.json` (rewrites, cron, SPA), `.github/workflows/ci.yml` (lint, typecheck, vitest, postgres/postgis, migrate, seed, verify, build) | G2-04g, G2-07d | 12.7, 16.1 | OPS-VERCEL-001, CI-001 | 2h |
+| [ ] | G2-11b | Tài liệu vận hành `docs/van-hanh.md`, cập nhật `README.md`, `AGENTS.md`, `CLAUDE.md`, file `app/.env.example` chuẩn | G2-11a | 10, 14, 16 | DOC-001 | 1.5h |
+
+---
+
+## Giả định tự quyết đêm 25/11
+
+| Giả định | Vì sao chọn | Cách đổi lại nếu chủ dự án yêu cầu khác |
+|---|---|---|
+| **1. Chạy Supabase Local qua Docker dev** | Tiết kiệm chi phí, không cần tạo tài khoản cloud trong đêm, an toàn tuyệt đối, chạy nhanh không phụ thuộc mạng | Điền URL và khoá của Supabase Cloud vào `app/.env.local` |
+| **2. Mật khẩu tài khoản nhân viên seed: `TranBien@2026!`** | Cần mật khẩu ban đầu đáp ứng tiêu chuẩn Supabase (≥ 8 ký tự, có hoa, thường, số, ký tự đặc biệt) để seed và test tự động | Chạy `npm run staff:reset-password` hoặc đổi giá trị biến `SEED_STAFF_PASSWORD` |
+| **3. Khóa bí mật JWT & Pepper sinh ngẫu nhiên 32-byte** | Đảm bảo an toàn mật mã theo tiêu chuẩn HMAC-SHA256 khi chưa có cấu hình production chính thức | Thay chuỗi bí mật mới vào biến `CITIZEN_JWT_SECRET` và `OWNER_KEY_PEPPER` trong `.env.local` |
+| **4. Dùng bảng `access_attempts` và `anonymous_submissions` trong PostgreSQL để rate-limit** | Không cần cài đặt Redis cồng kềnh, hoạt động nhất quán trong cùng cơ sở dữ liệu quan hệ | Chuyển sang Upstash Redis nếu tải tăng cao ở giai đoạn sau |
+| **5. Dùng chung trực tiếp `src/domain/` cho cả Client và Server** | Giữ tính nhất quán logic nghiệp vụ một nguồn (SSOT), tránh trùng lặp code theo quy định của AGENTS.md | Đóng gói thành `packages/domain` nếu Vercel build gặp khó khăn về bundle path |
+
+---
+
+## Câu hỏi mở giai đoạn 2
+
+Xem `spec.md` mục 17 (7 câu: mã bí mật 4 số + khoá dò, cột `is_seed`, dự án demo riêng, vùng đặt dữ liệu/Nghị định 13, CB không xem SĐT đầy đủ, quên mật khẩu nhân viên, cron 1 lần/ngày). Toàn bộ 7 câu đã áp dụng phương án [ĐĐ] đề xuất trong đêm, ghi nhận chờ chủ dự án duyệt sáng mai.
