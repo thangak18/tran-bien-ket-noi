@@ -1,31 +1,32 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Map, List, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { MapView, MapMarker } from '@/components/map/MapView';
-import { ReportCard } from '@/components/citizen/ReportCard';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { StatusChip } from '@/components/common/StatusChip';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { WARD_CENTER } from '@/data/streets';
 import { haversineMeters } from '@/domain/geo';
+import { formatDistance } from '@/domain/format';
 import { Category } from '@/domain/types';
 
 export function C07Nearby() {
   const navigate = useNavigate();
   const { state } = useAppStore();
 
-  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
-  const now = state.settings.demoNow;
+  const carouselRef = useRef<HTMLDivElement>(null);
+
   const userLat = WARD_CENTER.lat;
   const userLng = WARD_CENTER.lng;
 
   // Lọc theo loại sự cố
   const filteredReports = useMemo(() => {
     return state.reports.filter((r) => {
+      if (r.status === 'da_gop') return false;
       if (selectedCategory !== 'all' && r.category !== selectedCategory) {
         return false;
       }
@@ -33,7 +34,7 @@ export function C07Nearby() {
     });
   }, [state.reports, selectedCategory]);
 
-  // Sắp xếp theo khoảng cách cho chế độ danh sách
+  // Sắp xếp theo khoảng cách
   const sortedReports = useMemo(() => {
     return [...filteredReports].sort((a, b) => {
       const distA = haversineMeters(userLat, userLng, a.lat, a.lng);
@@ -44,57 +45,60 @@ export function C07Nearby() {
 
   // Map markers
   const markers: MapMarker[] = useMemo(() => {
-    return filteredReports.map((r) => ({
+    return sortedReports.map((r) => ({
       id: r.id,
       lat: r.lat,
       lng: r.lng,
       category: r.category,
       status: r.status,
       title: `${r.id}: ${r.address}`,
-      onClick: (id: string) => setSelectedReportId(id),
+      onClick: (id: string) => {
+        setSelectedReportId(id);
+        // Cuộn thẻ tương ứng vào khung nhìn
+        const cardElem = document.getElementById(`carousel-card-${id}`);
+        cardElem?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      },
     }));
-  }, [filteredReports]);
+  }, [sortedReports]);
 
-  const selectedReport = useMemo(() => {
-    return state.reports.find((r) => r.id === selectedReportId) || null;
-  }, [state.reports, selectedReportId]);
+  // Đặt selectedReportId ban đầu là thẻ đầu tiên
+  useEffect(() => {
+    if (!selectedReportId && sortedReports.length > 0) {
+      setSelectedReportId(sortedReports[0]!.id);
+    }
+  }, [selectedReportId, sortedReports]);
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 pb-16">
-      {/* Header */}
-      <header className="z-20 border-b border-gray-200 bg-white px-4 py-3 shadow-2xs">
-        <div className="flex items-center justify-between">
-          <h1 className="text-base font-bold text-gray-900" data-testid="screen-title">
-            Bản đồ quanh tôi
-          </h1>
+    <div className="relative flex h-screen flex-col bg-background select-none overflow-hidden pb-16">
+      {/* Hidden test identifier */}
+      <h1 data-testid="screen-title" className="sr-only">
+        Bản đồ quanh tôi
+      </h1>
 
-          {/* Công tắc Bản đồ | Danh sách */}
-          <div className="flex rounded-xl bg-gray-100 p-0.5">
+      {/* Header: "← Quanh đây · {n} vụ" + chip "1 km" */}
+      <header className="z-20 border-b border-[#E5E7EB] bg-white px-4 py-2.5 shadow-soft">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setViewMode('map')}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                viewMode === 'map' ? 'bg-white text-primary shadow-2xs' : 'text-gray-600'
-              }`}
+              onClick={() => navigate(-1)}
+              aria-label="Quay lại"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
             >
-              <Map className="h-3.5 w-3.5" />
-              <span>Bản đồ</span>
+              <ArrowLeft className="h-5 w-5" />
             </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                viewMode === 'list' ? 'bg-white text-primary shadow-2xs' : 'text-gray-600'
-              }`}
-            >
-              <List className="h-3.5 w-3.5" />
-              <span>Danh sách</span>
-            </button>
+            <h2 className="text-sm font-bold text-gray-900">
+              Quanh đây · {sortedReports.length} vụ
+            </h2>
           </div>
+
+          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-primary border border-blue-200">
+            1 km
+          </span>
         </div>
 
-        {/* Thanh chip lọc loại cuộn ngang */}
-        <div className="mt-2.5 flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        {/* Chip lọc Tất cả / 4 loại cuộn ngang */}
+        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
           <button
             type="button"
             onClick={() => setSelectedCategory('all')}
@@ -128,67 +132,74 @@ export function C07Nearby() {
         </div>
       </header>
 
-      {/* Nội dung chính */}
-      <main className="relative flex-1 overflow-hidden">
-        {viewMode === 'map' ? (
-          <div className="relative h-full w-full">
-            <MapView
-              center={[userLat, userLng]}
-              zoom={15}
-              markers={markers}
-              selectedMarkerId={selectedReportId || undefined}
-              className="h-full w-full"
-            />
+      {/* Bản đồ lớn */}
+      <main className="relative flex-1">
+        <MapView
+          center={[userLat, userLng]}
+          zoom={15}
+          markers={markers}
+          selectedMarkerId={selectedReportId || undefined}
+          className="h-full w-full"
+        />
 
-            {/* Thẻ preview khi chọn marker */}
-            {selectedReport && (
-              <div className="absolute bottom-4 left-4 right-4 z-1000 mx-auto max-w-md">
-                <div
-                  onClick={() => navigate(`/phan-anh/${selectedReport.id}`)}
-                  className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-lg hover:border-primary-400"
-                >
-                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
-                    <img
-                      src={selectedReport.photos[0] || '/demo-photos/mat_duong/1.jpg'}
-                      alt="Ảnh"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
-                      }}
-                    />
-                  </div>
+        {/* Carousel thẻ ngang ở đáy (ảnh + loại + địa chỉ · khoảng cách) */}
+        <div
+          ref={carouselRef}
+          className="absolute bottom-2 left-0 right-0 z-1000 flex gap-2.5 overflow-x-auto px-4 pb-2 snap-x no-scrollbar"
+        >
+          {sortedReports.map((report) => {
+            const isSelected = report.id === selectedReportId;
+            const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
+            const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs font-bold text-gray-900">
-                        {selectedReport.id}
-                      </span>
-                      <StatusChip status={selectedReport.status} variant="public" size="sm" />
-                    </div>
-                    <p className="truncate text-xs font-medium text-gray-800">
-                      {selectedReport.address}
-                    </p>
-                    <p className="text-[11px] text-gray-500">Chạm để xem chi tiết</p>
-                  </div>
-
-                  <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="h-full overflow-y-auto px-4 py-4 space-y-3 max-w-md mx-auto">
-            {sortedReports.map((report) => (
-              <ReportCard
+            return (
+              <div
                 key={report.id}
-                report={report}
-                now={now}
-                onClick={() => navigate(`/phan-anh/${report.id}`)}
-              />
-            ))}
-          </div>
-        )}
+                id={`carousel-card-${report.id}`}
+                onClick={() => {
+                  setSelectedReportId(report.id);
+                  navigate(`/phan-anh/${report.id}`);
+                }}
+                className={`flex w-[290px] shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-card border bg-white p-2.5 shadow-lg snap-center transition-all ${
+                  isSelected
+                    ? 'border-2 border-primary ring-2 ring-blue-400/20'
+                    : 'border-[#E5E7EB] hover:border-gray-300'
+                }`}
+              >
+                {/* Ảnh 56px */}
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
+                  <img
+                    src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
+                    alt="Sự cố"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
+                    }}
+                  />
+                </div>
+
+                {/* Chi tiết */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="truncate text-xs font-bold text-gray-900">
+                      {catConfig?.label || report.category}
+                    </span>
+                    <StatusChip status={report.status} variant="public" size="sm" />
+                  </div>
+
+                  <p className="mt-0.5 truncate text-[11px] text-gray-600">{report.address}</p>
+
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    Cách {formatDistance(distMeters)}
+                  </p>
+                </div>
+
+                <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+              </div>
+            );
+          })}
+        </div>
       </main>
     </div>
   );
