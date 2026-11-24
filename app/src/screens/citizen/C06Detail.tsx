@@ -1,82 +1,82 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Share2, CheckCircle2, AlertTriangle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Star, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { submitFeedback } from '@/store/citizenActions';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { StatusChip } from '@/components/common/StatusChip';
 import { DelayChip } from '@/components/common/DelayChip';
-import { Timeline } from '@/components/common/Timeline';
-import { LatestUpdate } from '@/components/citizen/LatestUpdate';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { BeforeAfter } from '@/components/citizen/BeforeAfter';
-import { LocationRow } from '@/components/citizen/LocationRow';
 import { RatingSheet } from '@/components/citizen/RatingSheet';
-import { Button } from '@/components/ui/Button';
+import { formatLatestUpdate, computeDelayDays } from '@/domain/latestUpdate';
+import { formatDateTime } from '@/domain/format';
+
+const STAR_LABELS: Record<number, string> = {
+  1: 'Rất tệ',
+  2: 'Không hài lòng',
+  3: 'Bình thường',
+  4: 'Hài lòng',
+  5: 'Rất hài lòng',
+};
 
 export function C06Detail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
 
-  const [isRatingOpen, setIsRatingOpen] = useState(false);
-  const [copiedShare, setCopiedShare] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<number>(5);
+  const [isRatingSheetOpen, setIsRatingSheetOpen] = useState<boolean>(false);
 
   const report = state.reports.find((r) => r.id === id);
 
   if (!report) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
         <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
-        <h1 className="text-lg font-bold text-gray-900">Không tìm thấy hồ sơ</h1>
-        <p className="mt-1 text-sm text-gray-500">Mã phản ánh {id} không tồn tại hoặc đã bị xoá.</p>
-        <Button className="mt-4" onClick={() => navigate('/')}>
+        <h2 className="text-base font-bold text-gray-900">Không tìm thấy hồ sơ</h2>
+        <p className="mt-1 text-xs text-gray-500">Mã phản ánh {id} không tồn tại.</p>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="mt-4 rounded-btn bg-primary px-4 py-2 text-xs font-bold text-white shadow-soft"
+        >
           Về trang chủ
-        </Button>
+        </button>
       </div>
     );
   }
 
-  const categoryConfig =
-    CATEGORY_CONFIGS.find((c) => c.key === report.category) || CATEGORY_CONFIGS[0]!;
+  const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category) || CATEGORY_CONFIGS[0]!;
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: `Phản ánh ${report.id} - Trấn Biên Kết Nối`,
-          text: `Theo dõi phản ánh ${report.id}: ${report.address}`,
-          url: window.location.href,
-        })
-        .catch(() => {});
-    } else {
-      navigator.clipboard?.writeText(window.location.href);
-      setCopiedShare(true);
-      setTimeout(() => setCopiedShare(false), 2000);
-    }
-  };
+  const now = state.settings.demoNow;
+  const delayDays = computeDelayDays(report, now);
+  const latestUpdateSentence = formatLatestUpdate(report, now);
 
-  const handleRatingSubmit = (data: { rating: number; tags: string[]; comment?: string }) => {
+  // Timeline sắp xếp mới nhất ở trên
+  const timelineReversed = [...report.timeline].sort(
+    (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()
+  );
+
+  const handleResolve = () => {
     try {
       const newState = submitFeedback(
         state,
         report.id,
         {
           resolved: true,
-          rating: data.rating,
-          tags: data.tags,
-          comment: data.comment,
+          rating: selectedRating,
+          comment: `Đánh giá ${selectedRating} sao`,
         },
-        state.settings.demoNow
+        now
       );
       dispatch({ type: 'HYDRATE', payload: newState });
-      setIsRatingOpen(false);
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleReportUnresolved = () => {
+  const handleUnresolved = () => {
     if (window.confirm('Bạn xác nhận sự cố vẫn chưa được giải quyết triệt để?')) {
       try {
         const newState = submitFeedback(
@@ -84,9 +84,9 @@ export function C06Detail() {
           report.id,
           {
             resolved: false,
-            comment: 'Công dân báo sự cố chưa được giải quyết triệt để',
+            comment: 'Chưa giải quyết triệt để',
           },
-          state.settings.demoNow
+          now
         );
         dispatch({ type: 'HYDRATE', payload: newState });
       } catch (err) {
@@ -96,45 +96,34 @@ export function C06Detail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-background pb-16">
+      {/* Hidden test identifier */}
       <h1 data-testid="screen-title" className="sr-only">
         Chi tiết phản ánh
       </h1>
-      {/* Header */}
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-100 bg-white/95 px-4 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Quay lại"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
 
-        <div className="text-center">
-          <span className="font-mono text-base font-bold text-gray-900" data-testid="report-id">
-            {report.id}
-          </span>
+      {/* Header "← Chi tiết #TB-xxxx" + chip trạng thái phải */}
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[#E5E7EB] bg-white px-4 shadow-soft">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Quay lại"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h2 className="text-sm font-bold text-gray-900" data-testid="report-id">
+            Chi tiết #{report.id}
+          </h2>
         </div>
 
-        <button
-          type="button"
-          onClick={handleShare}
-          aria-label="Chia sẻ"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 relative"
-        >
-          <Share2 className="h-4 w-4" />
-          {copiedShare && (
-            <span className="absolute -bottom-7 right-0 whitespace-nowrap rounded-md bg-black px-2 py-0.5 text-[10px] text-white">
-              Đã sao chép!
-            </span>
-          )}
-        </button>
+        <StatusChip status={report.status} variant="public" size="sm" />
       </header>
 
-      <main className="mx-auto max-w-md px-4 py-4 space-y-4">
-        {/* Ảnh gốc lớn */}
-        <div className="relative h-56 w-full overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 shadow-2xs">
+      <main className="mx-auto max-w-md px-4 py-3 space-y-3">
+        {/* 1. Ảnh lớn bo 12px */}
+        <div className="relative h-52 w-full overflow-hidden rounded-card border border-[#E5E7EB] bg-gray-100 shadow-soft">
           <img
             src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
             alt="Hiện trường"
@@ -146,148 +135,142 @@ export function C06Detail() {
           />
         </div>
 
-        {/* Hàng loại sự cố + StatusChip + DelayChip */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white p-3.5 border border-gray-100 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <CategoryIcon category={report.category} className="h-5 w-5" />
-            <span className="text-sm font-bold text-gray-900">{categoryConfig.label}</span>
+        {/* 2. Thẻ: "{Loại} · {mô tả ngắn}" + chip; ProgressBar; LatestUpdate; DelayChip */}
+        <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft space-y-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-gray-900">
+              {catConfig.label} · {report.description || 'Ghi nhận hiện trường'}
+            </h3>
+            <StatusChip status={report.status} variant="public" size="sm" />
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <StatusChip status={report.status} variant="public" size="sm" />
-            <DelayChip report={report} now={state.settings.demoNow} />
+          {/* Thanh tiến trình 4 bước có nhãn dưới */}
+          <ProgressBar report={report} />
+
+          {/* Câu LatestUpdate + DelayChip nếu chậm */}
+          <div className="rounded-xl bg-[#EFF4FF] p-3 text-xs text-[#1D4ED8] space-y-1">
+            <p className="font-semibold leading-relaxed">{latestUpdateSentence}</p>
+            {delayDays > 0 && <DelayChip report={report} now={now} />}
           </div>
         </div>
 
-        {/* Vị trí */}
-        <LocationRow address={report.address} />
-
-        {/* Mô tả người dân nếu có */}
-        {report.description && (
-          <div className="rounded-2xl border border-gray-100 bg-white p-3.5 shadow-2xs text-xs text-gray-700">
-            <span className="font-semibold text-gray-900">Mô tả của người dân: </span>
-            <span>{report.description}</span>
+        {/* 3. Thẻ địa chỉ + "{n} người cùng báo vấn đề này" */}
+        <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft space-y-2">
+          <div className="flex items-start gap-2.5">
+            <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-xs font-semibold text-gray-800 leading-snug">{report.address}</div>
           </div>
-        )}
 
-        {/* Cập nhật mới nhất */}
-        <LatestUpdate report={report} now={state.settings.demoNow} />
-
-        {/* Nếu trạng thái là HOÀN THÀNH: Hiện khối Trước/Sau và Hỏi ý kiến người dân */}
-        {report.status === 'hoan_thanh' && (
-          <div className="space-y-4">
-            <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-              <h3 className="text-sm font-bold text-gray-900">Kết quả xử lý từ phường</h3>
-              <BeforeAfter
-                beforePhotos={report.photos}
-                afterPhotos={report.resultPhotos}
-                beforeTime={report.createdAt}
-                afterTime={report.completedAt}
-                category={report.category}
-              />
-            </div>
-
-            {/* Khối xác nhận giải quyết */}
-            <div className="rounded-3xl border border-primary-200 bg-primary-50/50 p-4 shadow-2xs space-y-3 text-center">
-              <h3 className="text-sm font-bold text-gray-900">
-                Vấn đề này đã được giải quyết chưa?
-              </h3>
-              <p className="text-xs text-gray-600">
-                Ý kiến của bạn giúp nâng cao chất lượng phục vụ của phường Trấn Biên.
-              </p>
-
-              <div className="flex gap-2.5 pt-1">
-                <Button
-                  fullWidth
-                  variant="primary"
-                  onClick={() => setIsRatingOpen(true)}
-                  className="flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>Đã giải quyết</span>
-                </Button>
-
-                <Button
-                  fullWidth
-                  variant="outline"
-                  onClick={handleReportUnresolved}
-                  className="text-gray-700"
-                >
-                  <span>Chưa giải quyết</span>
-                </Button>
-              </div>
-            </div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-1 border-t border-gray-100">
+            <Users className="h-4 w-4 text-primary shrink-0" />
+            <span>
+              {report.followers && report.followers.length > 0 ? report.followers.length : 1} người
+              cùng báo vấn đề này
+            </span>
           </div>
-        )}
+        </div>
 
-        {/* Nếu trạng thái đã ĐÓNG và có feedback */}
-        {report.status === 'dong' && (
-          <div className="space-y-4">
-            <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-              <h3 className="text-sm font-bold text-gray-900">Kết quả xử lý từ phường</h3>
-              <BeforeAfter
-                beforePhotos={report.photos}
-                afterPhotos={report.resultPhotos}
-                beforeTime={report.createdAt}
-                afterTime={report.completedAt}
-                category={report.category}
-              />
-            </div>
-
-            {report.feedback && (
-              <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs space-y-2">
-                <div className="flex items-center gap-2 text-emerald-800 font-semibold text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>Người dân đã xác nhận hài lòng ({report.feedback.rating || 5}★)</span>
-                </div>
-                {report.feedback.tags && report.feedback.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {report.feedback.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-emerald-800 border border-emerald-200"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {report.feedback.comment && (
-                  <p className="text-xs text-gray-600 italic">"{report.feedback.comment}"</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Nếu trạng thái khác (chờ tiếp nhận, đã tiếp nhận, đang xử lý...) */}
-        {report.status !== 'hoan_thanh' && report.status !== 'dong' && (
-          <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-            <h3 className="text-sm font-bold text-gray-900">Hình ảnh đối chiếu</h3>
+        {/* 4. (hoan_thanh/dong) Thẻ "Ảnh Trước / Sau xử lý (Chạm để phóng to)" */}
+        {(report.status === 'hoan_thanh' || report.status === 'dong') && (
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft space-y-2.5">
+            <h3 className="text-xs font-bold text-gray-900">
+              Ảnh Trước / Sau xử lý{' '}
+              <span className="text-[11px] font-normal text-gray-400">(Chạm để phóng to)</span>
+            </h3>
             <BeforeAfter
               beforePhotos={report.photos}
               afterPhotos={report.resultPhotos}
               beforeTime={report.createdAt}
+              afterTime={report.completedAt}
               category={report.category}
             />
           </div>
         )}
 
-        {/* Khối Hành trình xử lý */}
-        <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-          <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
-            <MessageSquare className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold text-gray-900">Hành trình phản ánh</h3>
+        {/* 5. (hoan_thanh) Thẻ "Vấn đề đã được giải quyết chưa?": 5 sao + 2 nút ngang */}
+        {report.status === 'hoan_thanh' && (
+          <div className="rounded-card border border-primary-200 bg-[#EFF4FF]/60 p-4 shadow-soft space-y-3 text-center">
+            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+              Vấn đề đã được giải quyết chưa?
+            </h3>
+
+            {/* 5 sao */}
+            <div className="flex items-center justify-center gap-2 pt-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setSelectedRating(star)}
+                  aria-label={`Chọn ${star} sao`}
+                  className="p-1 transition-transform hover:scale-110 active:scale-95"
+                >
+                  <Star
+                    className={`h-7 w-7 ${
+                      star <= selectedRating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+
+            {/* Dòng {n}/5 sao · {nhãn} (Chạm để chọn) */}
+            <p className="text-xs font-bold text-gray-700">
+              {selectedRating}/5 sao · {STAR_LABELS[selectedRating] || 'Hài lòng'}{' '}
+              <span className="font-normal text-gray-400">(Chạm để chọn)</span>
+            </p>
+
+            {/* 2 nút ngang: "Đã giải quyết" (xanh lá) / "Chưa giải quyết" (viền) */}
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleResolve}
+                className="rounded-btn bg-[#16A34A] py-2.5 text-xs font-bold text-white shadow-soft hover:bg-[#15803D] active:scale-95 transition-all text-center"
+              >
+                Đã giải quyết
+              </button>
+
+              <button
+                type="button"
+                onClick={handleUnresolved}
+                className="rounded-btn border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 shadow-soft hover:bg-gray-50 active:scale-95 transition-all text-center"
+              >
+                Chưa giải quyết
+              </button>
+            </div>
           </div>
-          <Timeline report={report} now={state.settings.demoNow} />
+        )}
+
+        {/* 6. Thẻ "Lịch sử cập nhật": danh sách gạch đầu dòng "• dd/MM HH:mm · {câu}" mới nhất trên cùng */}
+        <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft space-y-2.5">
+          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+            Lịch sử cập nhật
+          </h3>
+
+          <ul className="space-y-2 text-xs text-gray-700">
+            {timelineReversed.map((entry, index) => {
+              const formattedTime = formatDateTime(entry.at);
+              const note = entry.note || entry.status;
+              return (
+                <li key={index} className="flex items-start gap-2 leading-relaxed">
+                  <span className="text-primary font-bold">•</span>
+                  <span>
+                    <strong className="text-gray-900">{formattedTime}</strong> · {note}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </main>
 
-      {/* Sheet đánh giá kết quả */}
+      {/* Sheet đánh giá chi tiết tuỳ chọn */}
       <RatingSheet
-        isOpen={isRatingOpen}
-        onClose={() => setIsRatingOpen(false)}
-        onSubmit={handleRatingSubmit}
+        isOpen={isRatingSheetOpen}
+        onClose={() => setIsRatingSheetOpen(false)}
+        onSubmit={(data) => {
+          submitFeedback(state, report.id, { resolved: true, ...data }, now);
+          setIsRatingSheetOpen(false);
+        }}
       />
     </div>
   );
