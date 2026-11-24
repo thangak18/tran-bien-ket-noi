@@ -508,6 +508,7 @@ export function closeReport(
   };
 }
 
+// BONUS B2 – HOÃN: chưa dùng trong UI lõi
 /**
  * 9. Gộp hồ sơ (spec 3.3, 3.4, AC-A02-6, AC-A02-7)
  */
@@ -629,6 +630,7 @@ export function mergeReports(
   };
 }
 
+// BONUS B2 – HOÃN: chưa dùng trong UI lõi
 /**
  * 10. Tách hồ sơ đã gộp (spec 3.3, AC-A02-7)
  */
@@ -714,6 +716,7 @@ export function splitReportAction(
   };
 }
 
+// BONUS B5 – HOÃN: chưa dùng trong UI lõi
 /**
  * 11. Cán bộ tạo phản ánh hộ người dân (spec 3.3, AC-A01-8)
  */

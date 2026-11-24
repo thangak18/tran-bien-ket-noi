@@ -21,6 +21,7 @@ const NON_DUPLICATE_STATUSES = new Set(['dong', 'da_gop', 'chuyen_co_quan', 'kho
 const MAX_DUPLICATE_DISTANCE_METERS = 50.005; // 50 mét theo spec 3.5 (dung sai float)
 const MAX_DUPLICATE_DAYS = 14;
 
+// BONUS B2 – HOÃN: chưa dùng trong UI lõi
 /**
  * Tìm các hồ sơ nghi trùng (spec 3.5)
  * Trả về tối đa 3 kết quả sắp xếp theo khoảng cách tăng dần

@@ -138,6 +138,7 @@ export function transition(
   return { report: updatedReport, notificationNeeded };
 }
 
+// BONUS B2 – HOÃN: chưa dùng trong UI lõi
 /**
  * Tách hồ sơ đã gộp, khôi phục trạng thái cũ (spec 3.3, UT-012.6)
  */

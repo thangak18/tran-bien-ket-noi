@@ -1,3 +1,4 @@
+// BONUS B3 – HOÃN: chưa dùng trong UI lõi
 /**
  * Áp dụng chế độ chữ lớn (senior mode) vào phần tử html
  */

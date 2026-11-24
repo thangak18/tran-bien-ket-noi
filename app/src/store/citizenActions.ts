@@ -132,6 +132,7 @@ export function submitReport(
   return { state: nextState, report: newReport };
 }
 
+// BONUS B2 – HOÃN: chưa dùng trong UI lõi
 /**
  * Theo dõi hồ sơ hoặc "Tôi cũng gặp" (spec 3.4b, AC-C04-7)
  */
