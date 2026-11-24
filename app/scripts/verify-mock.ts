@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { Report, VolunteerTask } from '../src/domain/types';
+import { Report, VolunteerTask, Status } from '../src/domain/types';
 import { haversineMeters } from '../src/domain/geo';
 import { isOverdue } from '../src/domain/sorting';
-import { DEMO_NOW, ALL_FEEDBACK_TAGS } from '../src/domain/constants';
+import { DEMO_NOW, ALL_FEEDBACK_TAGS, CATEGORY_CONFIGS } from '../src/domain/constants';
 import { WARD_CENTER } from '../src/data/streets';
 
 const mockPath = path.resolve(process.cwd(), 'src/data/mock.json');
@@ -296,6 +296,194 @@ checks.push({
   expected: '6 ẩn danh, 1 subscribedLater, đủ 4 số',
   actual: dv014Passed ? 'Đạt' : 'Không đạt',
   passed: dv014Passed,
+});
+
+// DV-015
+let dv015Passed = true;
+let dv015Msg = 'Đạt';
+
+for (const r of reports) {
+  if (!r.timeline || r.timeline.length === 0) {
+    dv015Passed = false;
+    dv015Msg = `${r.id}: timeline rỗng`;
+    break;
+  }
+
+  const lastEntry = r.timeline[r.timeline.length - 1]!;
+  if (lastEntry.status !== r.status) {
+    dv015Passed = false;
+    dv015Msg = `${r.id}: status cuối (${lastEntry.status}) != ${r.status}`;
+    break;
+  }
+
+  for (let i = 1; i < r.timeline.length; i++) {
+    const prevMs = new Date(r.timeline[i - 1]!.at).getTime();
+    const currMs = new Date(r.timeline[i]!.at).getTime();
+    if (currMs <= prevMs) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: thời điểm timeline không tăng dần tại bước ${i}`;
+      break;
+    }
+  }
+  if (!dv015Passed) break;
+
+  const timelineStatuses = r.timeline.map((t) => t.status);
+  if (r.status === 'dong') {
+    const expected: Status[] = ['moi', 'da_tiep_nhan', 'da_giao', 'hoan_thanh', 'dong'];
+    if (!expected.every((st) => timelineStatuses.includes(st))) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: timeline dong thiếu bước`;
+      break;
+    }
+  } else if (r.status === 'hoan_thanh') {
+    const expected: Status[] = ['moi', 'da_tiep_nhan', 'da_giao', 'hoan_thanh'];
+    if (!expected.every((st) => timelineStatuses.includes(st))) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: timeline hoan_thanh thiếu bước`;
+      break;
+    }
+  } else if (r.status === 'da_giao') {
+    const expected: Status[] = ['moi', 'da_tiep_nhan', 'da_giao'];
+    if (!expected.every((st) => timelineStatuses.includes(st))) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: timeline da_giao thiếu bước`;
+      break;
+    }
+  } else if (r.status === 'cho_xac_minh') {
+    if (!timelineStatuses.includes('moi') || !timelineStatuses.includes('cho_xac_minh')) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: timeline cho_xac_minh thiếu bước`;
+      break;
+    }
+  } else if (r.status === 'da_tiep_nhan') {
+    if (!timelineStatuses.includes('moi') || !timelineStatuses.includes('da_tiep_nhan')) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: timeline da_tiep_nhan thiếu bước`;
+      break;
+    }
+  } else if (r.status === 'can_bo_sung') {
+    if (!timelineStatuses.includes('moi') || !timelineStatuses.includes('can_bo_sung')) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: timeline can_bo_sung thiếu bước`;
+      break;
+    }
+  } else if (r.status === 'mo_lai') {
+    const expected: Status[] = ['moi', 'da_tiep_nhan', 'da_giao', 'hoan_thanh', 'mo_lai'];
+    if (!expected.every((st) => timelineStatuses.includes(st))) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: timeline mo_lai thiếu bước`;
+      break;
+    }
+  }
+
+  const daGiaoEntry = r.timeline.find((t) => t.status === 'da_giao');
+  if (daGiaoEntry) {
+    if (!daGiaoEntry.note || !daGiaoEntry.note.includes('Giao ')) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: da_giao thiếu note giao bộ phận`;
+      break;
+    }
+  }
+
+  if (r.completedAt) {
+    const hoanThanhEntry = r.timeline.find((t) => t.status === 'hoan_thanh');
+    if (!hoanThanhEntry || hoanThanhEntry.at !== r.completedAt) {
+      dv015Passed = false;
+      dv015Msg = `${r.id}: hoan_thanh (${hoanThanhEntry?.at}) != completedAt (${r.completedAt})`;
+      break;
+    }
+  }
+}
+
+checks.push({
+  id: 'DV-015',
+  name: 'Timeline mạch lạc, qua đủ bước, tăng dần, hoan_thanh = completedAt',
+  expected: 'Đạt',
+  actual: dv015Passed ? 'Đạt' : dv015Msg,
+  passed: dv015Passed,
+});
+
+// DV-016
+let dv016Passed = true;
+let dv016Msg = 'Đạt';
+const ISO_OFFSET7_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+07:00$/;
+
+for (const r of reports) {
+  if (!ISO_OFFSET7_REGEX.test(r.createdAt)) {
+    dv016Passed = false;
+    dv016Msg = `${r.id}: createdAt không có +07:00 (${r.createdAt})`;
+    break;
+  }
+  if (r.completedAt && !ISO_OFFSET7_REGEX.test(r.completedAt)) {
+    dv016Passed = false;
+    dv016Msg = `${r.id}: completedAt không có +07:00 (${r.completedAt})`;
+    break;
+  }
+  if (r.dueAt && !ISO_OFFSET7_REGEX.test(r.dueAt)) {
+    dv016Passed = false;
+    dv016Msg = `${r.id}: dueAt không có +07:00 (${r.dueAt})`;
+    break;
+  }
+  if (r.feedback?.at && !ISO_OFFSET7_REGEX.test(r.feedback.at)) {
+    dv016Passed = false;
+    dv016Msg = `${r.id}: feedback.at không có +07:00 (${r.feedback.at})`;
+    break;
+  }
+  for (const t of r.timeline) {
+    if (!ISO_OFFSET7_REGEX.test(t.at)) {
+      dv016Passed = false;
+      dv016Msg = `${r.id}: timeline.at không có +07:00 (${t.at})`;
+      break;
+    }
+  }
+  if (!dv016Passed) break;
+
+  const cfg = CATEGORY_CONFIGS.find((c) => c.key === r.category)!;
+
+  if (r.status === 'moi') {
+    if (r.department && r.department !== '') {
+      dv016Passed = false;
+      dv016Msg = `${r.id}: moi có department (${r.department})`;
+      break;
+    }
+    if (r.dueAt) {
+      dv016Passed = false;
+      dv016Msg = `${r.id}: moi có dueAt (${r.dueAt})`;
+      break;
+    }
+  } else {
+    if (r.department !== cfg.suggestedDepartment) {
+      dv016Passed = false;
+      dv016Msg = `${r.id}: department (${r.department}) != gợi ý (${cfg.suggestedDepartment})`;
+      break;
+    }
+    const tTiepNhan = r.timeline.find((t) => t.status === 'da_tiep_nhan');
+    if (!tTiepNhan) {
+      dv016Passed = false;
+      dv016Msg = `${r.id}: thiếu da_tiep_nhan trong timeline`;
+      break;
+    }
+    if (!r.dueAt) {
+      dv016Passed = false;
+      dv016Msg = `${r.id}: thiếu dueAt`;
+      break;
+    }
+    const expectedDueMs = new Date(tTiepNhan.at).getTime() + cfg.defaultDays * 24 * 60 * 60 * 1000;
+    const actualDueMs = new Date(r.dueAt).getTime();
+    if (actualDueMs !== expectedDueMs) {
+      dv016Passed = false;
+      dv016Msg = `${r.id}: dueAt lệch so với tiếp nhận + ${cfg.defaultDays} ngày`;
+      break;
+    }
+  }
+}
+
+checks.push({
+  id: 'DV-016',
+  name: 'department rỗng ở moi; từ da_tiep_nhan đúng bộ phận & dueAt; chuẩn +07:00',
+  expected: 'Đạt',
+  actual: dv016Passed ? 'Đạt' : dv016Msg,
+  passed: dv016Passed,
 });
 
 // In bảng kết quả

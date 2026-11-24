@@ -1,6 +1,16 @@
-import { Report, VolunteerTask, Category, Status } from './types';
+import { Report, VolunteerTask, Category, Status, TimelineEntry } from './types';
 import { STREETS, WARD_CENTER } from '../data/streets';
-import { FEEDBACK_POSITIVE_TAGS, FEEDBACK_NEGATIVE_TAGS } from './constants';
+import { FEEDBACK_POSITIVE_TAGS, FEEDBACK_NEGATIVE_TAGS, CATEGORY_CONFIGS } from './constants';
+
+/**
+ * Định dạng thời điểm sang chuẩn ISO có múi giờ +07:00 (không dùng Z)
+ */
+export function toIsoOffset7(msOrIso: number | string): string {
+  const ms = typeof msOrIso === 'number' ? msOrIso : new Date(msOrIso).getTime();
+  const local = new Date(ms + 7 * 60 * 60 * 1000);
+  const iso = local.toISOString();
+  return iso.substring(0, 19) + '+07:00';
+}
 
 /**
  * Hàm PRNG Mulberry32 (plan 2, UT-019)
@@ -37,7 +47,7 @@ interface SpecDistribution {
 }
 
 /**
- * Sinh bộ dữ liệu mẫu 64 phản ánh và 3 nhiệm vụ tình nguyện viên (spec 5, DV-001 -> DV-014)
+ * Sinh bộ dữ liệu mẫu 64 phản ánh và 3 nhiệm vụ tình nguyện viên (spec 5, DV-001 -> DV-016)
  */
 export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
   const rand = mulberry32(seed);
@@ -146,6 +156,9 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
 
   for (const dist of distributions) {
     const { category, resolved, open, anonymousResolvedCount } = dist;
+    const cfg = CATEGORY_CONFIGS.find((c) => c.key === category)!;
+    const suggestedDept = cfg.suggestedDepartment;
+    const defaultDays = cfg.defaultDays;
 
     // A. Tạo hồ sơ đã xử lý
     const resolvedItems: { status: Status; isDong: boolean; isAnonymous: boolean }[] = [];
@@ -169,15 +182,31 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       reportIdCounter++;
 
       const coord = getDispersedCoord();
-      const dayOffset = Math.floor(rand() * 14) + 1; // Ngày 1 -> 15 tháng 11
-      const hour = Math.floor(rand() * 10) + 8;
+      const dayOffset = Math.floor(rand() * 14) + 1; // Ngày 1 -> 14 tháng 11
+      const hour = Math.floor(rand() * 16) + 6; // 06:00 -> 21:00
       const minute = Math.floor(rand() * 50) + 10;
       const createdAt = `2026-11-${dayOffset.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+07:00`;
 
       const durationDays = durations[durationIndex++]!;
       const createdMs = new Date(createdAt).getTime();
-      const completedMs = createdMs + durationDays * 24 * 60 * 60 * 1000;
-      const completedAt = new Date(completedMs).toISOString();
+      const durationMs = durationDays * 24 * 60 * 60 * 1000;
+      const completedMs = createdMs + durationMs;
+      const completedAt = toIsoOffset7(completedMs);
+
+      // Phân bổ các mốc tiến trình nằm giữa createdAt và completedAt
+      const stepDelta = Math.max(
+        15 * 60 * 1000,
+        Math.min(2 * 3600 * 1000, Math.floor(durationMs * 0.15))
+      );
+      const step2Ms = createdMs + stepDelta;
+      const step3Ms = step2Ms + stepDelta;
+      const step5Ms = completedMs + 3600 * 1000;
+
+      const tiepNhanAt = toIsoOffset7(step2Ms);
+      const giaoAt = toIsoOffset7(step3Ms);
+      const dongAt = toIsoOffset7(step5Ms);
+
+      const dueAt = toIsoOffset7(step2Ms + defaultDays * 24 * 60 * 60 * 1000);
 
       const secretCode = (1000 + Math.floor(rand() * 9000)).toString();
       const rating = item.isDong ? Math.floor(rand() * 3) + 3 : undefined; // 3, 4, 5
@@ -192,6 +221,32 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         }
       }
 
+      const timeline: TimelineEntry[] = [
+        { at: createdAt, status: 'moi', actor: 'Người dân' },
+        { at: tiepNhanAt, status: 'da_tiep_nhan', actor: 'Nguyễn Văn Minh – Cán bộ tiếp nhận' },
+        {
+          at: giaoAt,
+          status: 'da_giao',
+          actor: 'Nguyễn Văn Minh – Cán bộ tiếp nhận',
+          note: `Giao ${suggestedDept}`,
+        },
+        {
+          at: completedAt,
+          status: 'hoan_thanh',
+          actor: suggestedDept,
+          note: 'Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường',
+        },
+      ];
+
+      if (item.isDong) {
+        timeline.push({
+          at: dongAt,
+          status: 'dong',
+          actor: 'Người dân',
+          note: 'Đã xác nhận kết quả',
+        });
+      }
+
       reports.push({
         id: idStr,
         category,
@@ -203,7 +258,8 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         createdAt,
         status: item.status,
         priority: 'binh_thuong',
-        department: 'Phòng KT-HT&ĐT',
+        department: suggestedDept,
+        dueAt,
         reporterPhone: item.isAnonymous ? undefined : '0909000068',
         anonymous: item.isAnonymous,
         subscribedLater: false,
@@ -220,13 +276,10 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
               rating,
               tags,
               comment: 'Cảm ơn phường đã khắc phục nhanh chóng',
-              at: completedAt,
+              at: dongAt,
             }
           : undefined,
-        timeline: [
-          { at: createdAt, status: 'moi', actor: 'Người dân' },
-          { at: completedAt, status: item.status, actor: 'Phường Trấn Biên' },
-        ],
+        timeline,
       });
     }
 
@@ -261,21 +314,90 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         address = `${Math.floor(rand() * 120) + 1} Đường ${coord.streetName}`;
       }
 
-      // Thời gian tạo: từ ngày 16 đến ngày 23/11/2026
-      const dayOffset = Math.floor(rand() * 7) + 16;
-      const createdAt = `2026-11-${dayOffset.toString().padStart(2, '0')}T09:00:00+07:00`;
+      // Thời gian tạo: hồ sơ quá hạn chọn ngày sớm để dueAt < demoNow
+      let dayOffset: number;
+      if (openItem.overdue) {
+        dayOffset = category === 'mat_duong' ? 17 : 19;
+      } else {
+        dayOffset = 23;
+      }
 
+      const hour = Math.floor(rand() * 12) + 7; // 07:00 -> 18:00
+      const minute = Math.floor(rand() * 50) + 5;
+      const createdAt = `2026-11-${dayOffset.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+07:00`;
+      const createdMs = new Date(createdAt).getTime();
+
+      let department = '';
       let dueAt: string | undefined = undefined;
-      if (openItem.status === 'da_giao') {
-        if (openItem.overdue) {
-          // Quá hạn: do hạn trước demoNow (24/11 09:00)
-          dueAt = '2026-11-23T08:00:00+07:00';
-        } else {
-          // Còn hạn: hạn sau demoNow
-          dueAt = '2026-11-26T17:00:00+07:00';
+      let completedAt: string | undefined = undefined;
+      const timeline: TimelineEntry[] = [{ at: createdAt, status: 'moi', actor: 'Người dân' }];
+
+      if (openItem.status === 'moi') {
+        department = ''; // rỗng khi moi
+        dueAt = undefined;
+      } else {
+        department = suggestedDept;
+        const tiepNhanMs = createdMs + 30 * 60 * 1000;
+        const tiepNhanAt = toIsoOffset7(tiepNhanMs);
+        dueAt = toIsoOffset7(tiepNhanMs + defaultDays * 24 * 60 * 60 * 1000);
+
+        timeline.push({
+          at: tiepNhanAt,
+          status: 'da_tiep_nhan',
+          actor: 'Nguyễn Văn Minh – Cán bộ tiếp nhận',
+        });
+
+        if (openItem.status === 'cho_xac_minh') {
+          const xacMinhAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
+          timeline.push({
+            at: xacMinhAt,
+            status: 'cho_xac_minh',
+            actor: 'Nguyễn Văn Minh – Cán bộ tiếp nhận',
+            note: 'Giao tình nguyện viên kiểm tra tại chỗ',
+          });
+        } else if (openItem.status === 'da_giao') {
+          const giaoAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
+          timeline.push({
+            at: giaoAt,
+            status: 'da_giao',
+            actor: 'Nguyễn Văn Minh – Cán bộ tiếp nhận',
+            note: `Giao ${suggestedDept}`,
+          });
+        } else if (openItem.status === 'can_bo_sung') {
+          const boSungAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
+          timeline.push({
+            at: boSungAt,
+            status: 'can_bo_sung',
+            actor: 'Nguyễn Văn Minh – Cán bộ tiếp nhận',
+            note: 'Vui lòng chụp thêm ảnh rõ góc nhìn từ đầu hẻm để đội thu gom dễ xác định vị trí rác',
+          });
+        } else if (openItem.status === 'mo_lai') {
+          const giaoAt = toIsoOffset7(tiepNhanMs + 30 * 60 * 1000);
+          const hoanThanhMs = tiepNhanMs + 2 * 3600 * 1000;
+          const hoanThanhAt = toIsoOffset7(hoanThanhMs);
+          const moLaiAt = toIsoOffset7(hoanThanhMs + 2 * 3600 * 1000);
+          timeline.push(
+            {
+              at: giaoAt,
+              status: 'da_giao',
+              actor: 'Nguyễn Văn Minh – Cán bộ tiếp nhận',
+              note: `Giao ${suggestedDept}`,
+            },
+            {
+              at: hoanThanhAt,
+              status: 'hoan_thanh',
+              actor: suggestedDept,
+              note: 'Đã hoàn thành kiểm tra và thu gom rác',
+            },
+            {
+              at: moLaiAt,
+              status: 'mo_lai',
+              actor: 'Người dân',
+              note: 'Rác vẫn còn tồn đọng ở góc hẻm chưa được dọn sạch',
+            }
+          );
+          completedAt = hoanThanhAt;
         }
-      } else if (openItem.status === 'da_tiep_nhan') {
-        dueAt = '2026-11-27T17:00:00+07:00';
       }
 
       const isAnon = !!openItem.anonymous;
@@ -300,9 +422,10 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         address,
         createdAt,
         status: openItem.status,
-        priority: openItem.isDemo ? 'binh_thuong' : 'binh_thuong',
-        department: 'Phòng KT-HT&ĐT',
+        priority: 'binh_thuong',
+        department,
         dueAt,
+        completedAt,
         reporterPhone: isAnon ? undefined : '0909000068',
         anonymous: isAnon,
         subscribedLater: isSubscribed,
@@ -310,7 +433,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         onBehalf: false,
         followers,
         anonymousFollows: isAnon && !isSubscribed ? 1 : 0,
-        timeline: [{ at: createdAt, status: 'moi', actor: 'Người dân' }],
+        timeline,
       });
 
       // Nếu trạng thái là cho_xac_minh -> sinh VolunteerTask

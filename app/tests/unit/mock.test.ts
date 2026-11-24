@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateMockData } from '@/domain/generator';
 import { haversineMeters } from '@/domain/geo';
 import { isOverdue } from '@/domain/sorting';
-import { DEMO_NOW, ALL_FEEDBACK_TAGS } from '@/domain/constants';
+import { DEMO_NOW, ALL_FEEDBACK_TAGS, CATEGORY_CONFIGS } from '@/domain/constants';
 import { WARD_CENTER } from '@/data/streets';
 
 describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
@@ -213,6 +213,80 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
     // Mọi hồ sơ có secretCode 4 số
     for (const r of reports) {
       expect(r.secretCode).toMatch(/^\d{4}$/);
+    }
+  });
+
+  it('DV-015: Timeline mạch lạc: mục cuối trùng status hiện tại, thời điểm tăng dần, qua đủ các bước, hoan_thanh trùng completedAt', () => {
+    for (const r of reports) {
+      expect(r.timeline.length).toBeGreaterThan(0);
+      const last = r.timeline[r.timeline.length - 1]!;
+      expect(last.status).toBe(r.status);
+
+      for (let i = 1; i < r.timeline.length; i++) {
+        const prev = new Date(r.timeline[i - 1]!.at).getTime();
+        const curr = new Date(r.timeline[i]!.at).getTime();
+        expect(curr).toBeGreaterThan(prev);
+      }
+
+      const statuses = r.timeline.map((t) => t.status);
+      if (r.status === 'dong') {
+        expect(statuses).toEqual(['moi', 'da_tiep_nhan', 'da_giao', 'hoan_thanh', 'dong']);
+      } else if (r.status === 'hoan_thanh') {
+        expect(statuses).toEqual(['moi', 'da_tiep_nhan', 'da_giao', 'hoan_thanh']);
+      } else if (r.status === 'da_giao') {
+        expect(statuses).toEqual(['moi', 'da_tiep_nhan', 'da_giao']);
+      } else if (r.status === 'cho_xac_minh') {
+        expect(statuses).toEqual(['moi', 'da_tiep_nhan', 'cho_xac_minh']);
+      } else if (r.status === 'da_tiep_nhan') {
+        expect(statuses).toEqual(['moi', 'da_tiep_nhan']);
+      } else if (r.status === 'moi') {
+        expect(statuses).toEqual(['moi']);
+      } else if (r.status === 'can_bo_sung') {
+        expect(statuses).toEqual(['moi', 'da_tiep_nhan', 'can_bo_sung']);
+      } else if (r.status === 'mo_lai') {
+        expect(statuses).toEqual(['moi', 'da_tiep_nhan', 'da_giao', 'hoan_thanh', 'mo_lai']);
+      }
+
+      const daGiao = r.timeline.find((t) => t.status === 'da_giao');
+      if (daGiao) {
+        expect(daGiao.note).toContain('Giao ');
+      }
+
+      if (r.completedAt) {
+        const ht = r.timeline.find((t) => t.status === 'hoan_thanh');
+        expect(ht).toBeDefined();
+        expect(ht?.at).toBe(r.completedAt);
+      }
+    }
+  });
+
+  it('DV-016: department rỗng ở moi; từ da_tiep_nhan đúng bộ phận và dueAt = tiepNhan + SLA; mọi thời điểm có +07:00 (không dùng Z)', () => {
+    const ISO_OFFSET7_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+07:00$/;
+
+    for (const r of reports) {
+      expect(r.createdAt).toMatch(ISO_OFFSET7_REGEX);
+      if (r.completedAt) expect(r.completedAt).toMatch(ISO_OFFSET7_REGEX);
+      if (r.dueAt) expect(r.dueAt).toMatch(ISO_OFFSET7_REGEX);
+      if (r.feedback?.at) expect(r.feedback.at).toMatch(ISO_OFFSET7_REGEX);
+      for (const t of r.timeline) {
+        expect(t.at).toMatch(ISO_OFFSET7_REGEX);
+      }
+
+      if (r.status === 'moi') {
+        expect(r.department).toBeFalsy();
+        expect(r.dueAt).toBeUndefined();
+      } else {
+        const cfg = CATEGORY_CONFIGS.find((c) => c.key === r.category)!;
+        expect(r.department).toBe(cfg.suggestedDepartment);
+
+        const tTiepNhan = r.timeline.find((t) => t.status === 'da_tiep_nhan');
+        expect(tTiepNhan).toBeDefined();
+        expect(r.dueAt).toBeDefined();
+
+        const expectedDueMs =
+          new Date(tTiepNhan!.at).getTime() + cfg.defaultDays * 24 * 60 * 60 * 1000;
+        expect(new Date(r.dueAt!).getTime()).toBe(expectedDueMs);
+      }
     }
   });
 });
