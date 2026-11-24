@@ -11,7 +11,7 @@ Ký hiệu trạng thái: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong (gh
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-001 | Khởi tạo `app/` bằng Vite React TS strict; cài thư viện theo plan 2; ghi version cố định | – | plan 2–3 | UT-000 |
+| [x] (24/11) | T-001 | Khởi tạo `app/` bằng Vite React TS strict; cài thư viện theo plan 2; ghi version cố định | – | plan 2–3 | UT-000 |
 | [ ] | T-002 | Cấu hình ESLint, Prettier, Vitest (jsdom), Playwright (2 project: mobile 390×844, desktop 1440×900); script npm theo plan 7 | T-001 | plan 7 | UT-000 |
 | [ ] | T-003 | Tailwind + design token (màu, bo góc, font Be Vietnam Pro), class `.senior` trên `<html>` cho chế độ chữ lớn | T-001 | spec 7.2, 7.5 | CT-001 |
 | [ ] | T-004 | Router với 14 route spec 8; mỗi route render tiêu đề màn hình | T-001 | spec 8 | E2E-00 |
