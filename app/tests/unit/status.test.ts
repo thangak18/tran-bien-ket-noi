@@ -135,7 +135,7 @@ describe('UT-012 – Status', () => {
     ).toThrowError(/lý do/i);
   });
 
-  it('8. publicTimeline hồ sơ da_tiep_nhan có dueAt -> trả 4 mốc: 2 mốc done có giờ, mốc "Đang xử lý" upcoming, mốc "Đã xử lý" upcoming kèm expected = dueAt', () => {
+  it('8. publicTimeline hồ sơ da_tiep_nhan có dueAt -> mốc 1 done (có giờ), mốc 2 current (có giờ), mốc 3 upcoming, mốc 4 upcoming kèm expected = dueAt', () => {
     const report: Report = {
       ...baseReport,
       status: 'da_tiep_nhan',
@@ -149,23 +149,23 @@ describe('UT-012 – Status', () => {
     const timeline = publicTimeline(report);
     expect(timeline).toHaveLength(4);
 
-    // 2 mốc done có giờ
+    // Mốc 1: done (có giờ)
     expect(timeline[0]?.status).toBe('done');
     expect(timeline[0]?.at).toBe('2026-11-20T08:00:00+07:00');
-    expect(timeline[1]?.status).toBe('done');
+
+    // Mốc 2: current (có giờ)
+    expect(timeline[1]?.status).toBe('current');
     expect(timeline[1]?.at).toBe('2026-11-20T10:00:00+07:00');
 
-    // mốc "Đang xử lý" upcoming
-    const step3 = timeline.find((s) => s.label === 'Đang xử lý');
-    expect(step3?.status).toBe('upcoming');
+    // Mốc 3: upcoming
+    expect(timeline[2]?.status).toBe('upcoming');
 
-    // mốc "Đã xử lý" upcoming kèm expected = dueAt
-    const step4 = timeline.find((s) => s.label === 'Đã xử lý');
-    expect(step4?.status).toBe('upcoming');
-    expect(step4?.expected).toBe('2026-11-28T09:00:00+07:00');
+    // Mốc 4: upcoming kèm expected = dueAt
+    expect(timeline[3]?.status).toBe('upcoming');
+    expect(timeline[3]?.expected).toBe('2026-11-28T09:00:00+07:00');
   });
 
-  it('9. publicTimeline hồ sơ dong -> 4 mốc đều done', () => {
+  it('9. publicTimeline hồ sơ dong -> 4 mốc đều done, mỗi mốc có giờ lấy từ timeline', () => {
     const report: Report = {
       ...baseReport,
       status: 'dong',
@@ -182,5 +182,97 @@ describe('UT-012 – Status', () => {
     const timeline = publicTimeline(report);
     expect(timeline).toHaveLength(4);
     expect(timeline.every((s) => s.status === 'done')).toBe(true);
+    expect(timeline[0]?.at).toBe('2026-11-20T08:00:00+07:00');
+    expect(timeline[1]?.at).toBe('2026-11-20T10:00:00+07:00');
+    expect(timeline[2]?.at).toBe('2026-11-21T09:00:00+07:00');
+    expect(timeline[3]?.at).toBe('2026-11-22T15:00:00+07:00');
+  });
+
+  it('10. publicTimeline hồ sơ moi -> mốc 1 current, 3 mốc còn lại upcoming', () => {
+    const report: Report = {
+      ...baseReport,
+      status: 'moi',
+      createdAt: '2026-11-20T08:00:00+07:00',
+      timeline: [{ at: '2026-11-20T08:00:00+07:00', status: 'moi', actor: 'Người dân' }],
+    };
+
+    const timeline = publicTimeline(report);
+    expect(timeline[0]?.status).toBe('current');
+    expect(timeline[0]?.at).toBe('2026-11-20T08:00:00+07:00');
+    expect(timeline[1]?.status).toBe('upcoming');
+    expect(timeline[2]?.status).toBe('upcoming');
+    expect(timeline[3]?.status).toBe('upcoming');
+  });
+
+  it('11. Trạng thái ngoại lệ: tính theo trạng thái thường gần nhất; một mốc chỉ done khi timeline có mục tương ứng', () => {
+    // Trường hợp 1: can_bo_sung ngay từ moi -> trạng thái thường gần nhất là moi -> mốc 1 current, mốc 2 KHÔNG được done
+    const rFromMoi: Report = {
+      ...baseReport,
+      status: 'can_bo_sung',
+      timeline: [
+        { at: '2026-11-20T08:00:00+07:00', status: 'moi', actor: 'Người dân' },
+        {
+          at: '2026-11-20T09:00:00+07:00',
+          status: 'can_bo_sung',
+          actor: 'Cán bộ',
+          note: 'Thiếu ảnh',
+        },
+      ],
+    };
+
+    const tlFromMoi = publicTimeline(rFromMoi);
+    expect(tlFromMoi[0]?.status).toBe('current');
+    expect(tlFromMoi[1]?.status).toBe('upcoming'); // mốc 2 KHÔNG được done
+    expect(tlFromMoi[2]?.status).toBe('upcoming');
+    expect(tlFromMoi[3]?.status).toBe('upcoming');
+
+    // Trường hợp 2: can_bo_sung sau da_tiep_nhan -> trạng thái thường gần nhất là da_tiep_nhan -> mốc 1 done, mốc 2 current
+    const rFromTiepNhan: Report = {
+      ...baseReport,
+      status: 'can_bo_sung',
+      timeline: [
+        { at: '2026-11-20T08:00:00+07:00', status: 'moi', actor: 'Người dân' },
+        { at: '2026-11-20T10:00:00+07:00', status: 'da_tiep_nhan', actor: 'Cán bộ' },
+        {
+          at: '2026-11-20T11:00:00+07:00',
+          status: 'can_bo_sung',
+          actor: 'Cán bộ',
+          note: 'Thiếu ảnh vị trí',
+        },
+      ],
+    };
+
+    const tlFromTiepNhan = publicTimeline(rFromTiepNhan);
+    expect(tlFromTiepNhan[0]?.status).toBe('done');
+    expect(tlFromTiepNhan[1]?.status).toBe('current');
+    expect(tlFromTiepNhan[2]?.status).toBe('upcoming');
+    expect(tlFromTiepNhan[3]?.status).toBe('upcoming');
+  });
+
+  it('12. mo_lai -> mốc 3 current; mốc 4 upcoming (không hiển thị giờ completedAt cũ cho mốc 4)', () => {
+    const report: Report = {
+      ...baseReport,
+      status: 'mo_lai',
+      dueAt: '2026-11-27T17:00:00+07:00',
+      completedAt: '2026-11-22T15:00:00+07:00', // Completed cũ
+      timeline: [
+        { at: '2026-11-20T08:00:00+07:00', status: 'moi', actor: 'Người dân' },
+        { at: '2026-11-20T10:00:00+07:00', status: 'da_tiep_nhan', actor: 'Cán bộ' },
+        { at: '2026-11-21T09:00:00+07:00', status: 'da_giao', actor: 'Cán bộ' },
+        { at: '2026-11-22T15:00:00+07:00', status: 'hoan_thanh', actor: 'Cán bộ' },
+        { at: '2026-11-23T08:00:00+07:00', status: 'mo_lai', actor: 'Người dân' },
+      ],
+    };
+
+    const timeline = publicTimeline(report);
+    expect(timeline[0]?.status).toBe('done');
+    expect(timeline[1]?.status).toBe('done');
+    expect(timeline[2]?.status).toBe('current');
+    expect(timeline[2]?.at).toBe('2026-11-23T08:00:00+07:00');
+
+    // Mốc 4 upcoming, KHÔNG hiển thị giờ completedAt cũ
+    expect(timeline[3]?.status).toBe('upcoming');
+    expect(timeline[3]?.at).toBeUndefined();
+    expect(timeline[3]?.expected).toBe('2026-11-27T17:00:00+07:00');
   });
 });
