@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export interface ModalProps {
@@ -35,8 +36,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/40 transition-opacity"
@@ -67,6 +68,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {footer && <div className="mt-4 flex justify-end gap-2 border-t pt-3">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
