@@ -58,7 +58,7 @@ Quy chuẩn từng component: `ui-ux-guidelines.md` mục 5.
 | [x] (24/11) | T-034 | `MapView` (React Leaflet, marker icon loại trên nền màu trạng thái + viền, chú giải, attribution, onTap, vòng bán kính, fallback khi tile lỗi) | T-011 | AC-C03, AC-C07 | CT-034 |
 | [x] (24/11) | T-035 | `lib/geolocation.ts` (timeout 10s, phân loại lỗi) + `lib/image.ts` (nén) | T-010 | AC-C02, AC-C03 | UT-035 |
 | [x] (24/11) | T-036 | `PhoneOtpSheet` (validate SĐT, dòng cam kết riêng tư, OTP 123456, nhãn Mô phỏng) | T-030 | AC-C04-5 | CT-036 |
-| [ ] | T-037 | `BeforeAfter` (ô Sau trống "Chưa có ảnh sau xử lý") + `CategoryTile` + `LocationRow` + `ReportCard` + `LatestUpdate` | T-030, T-031 | AC-C06-4, AC-C04-1, AC-C05-2 | CT-037 |
+| [x] (24/11) | T-037 | `BeforeAfter` (ô Sau trống "Chưa có ảnh sau xử lý") + `CategoryTile` + `LocationRow` + `ReportCard` + `LatestUpdate` | T-030, T-031 | AC-C06-4, AC-C04-1, AC-C05-2 | CT-037 |
 | [ ] | T-038 | `NotificationBell` + `SmsPreview` + `MockLabel` | T-030, T-017 | AC-C05-5 | CT-038 |
 | [ ] | T-039 | `lib/share.ts` + `TrackingLinkCard` (mã bí mật, QR, Lưu link) + `SubscribeCard` | T-030, T-036 | AC-C04-11, AC-C06-9, AC-C06-11 | UT-039, CT-039 |
 | [ ] | T-039b | `RatingSheet` (5 sao có nhãn, chip theo số sao, góp ý tuỳ chọn, "Chưa đến 30 giây") | T-030, T-011 | AC-C06-5 | CT-039b |
