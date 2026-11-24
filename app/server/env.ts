@@ -8,10 +8,14 @@ const __dirname = path.dirname(__filename);
 // Load .env.local if present
 try {
   process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch {}
+} catch (_e) {
+  void _e;
+}
 try {
   process.loadEnvFile(path.resolve(__dirname, '../../.env.local'));
-} catch {}
+} catch (_e) {
+  void _e;
+}
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),

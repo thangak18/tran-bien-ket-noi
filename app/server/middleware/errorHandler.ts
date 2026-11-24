@@ -1,4 +1,5 @@
 import { ErrorHandler } from 'hono';
+import { StatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
 
 export class AppError extends Error {
@@ -6,7 +7,7 @@ export class AppError extends Error {
     public code: string,
     message: string,
     public status: number = 400,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'AppError';
@@ -26,7 +27,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
           requestId,
         },
       },
-      err.status as any
+      err.status as StatusCode
     );
   }
 
@@ -48,7 +49,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
   }
 
   // Postgres errors
-  if ((err as any)?.code === '23505') {
+  if ((err as { code?: string })?.code === '23505') {
     // Unique violation
     return c.json(
       {

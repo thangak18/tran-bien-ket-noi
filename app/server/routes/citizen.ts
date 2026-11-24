@@ -28,7 +28,11 @@ citizenRoutes.post('/otp/request', async (c) => {
   const body = await c.req.json();
   const phone = body.phone?.replace(/\s+/g, '');
   if (!phone || !/^0[0-9]{9}$/.test(phone)) {
-    throw new AppError('INVALID_PHONE', 'Số điện thoại không đúng định dạng (10 chữ số, bắt đầu bằng 0)', 400);
+    throw new AppError(
+      'INVALID_PHONE',
+      'Số điện thoại không đúng định dạng (10 chữ số, bắt đầu bằng 0)',
+      400
+    );
   }
 
   await checkOtpRateLimit(phone);
@@ -74,7 +78,11 @@ citizenRoutes.post('/otp/verify', async (c) => {
   `;
 
   if (!otpRecord) {
-    throw new AppError('OTP_NOT_FOUND', 'Không tìm thấy yêu cầu OTP cho số điện thoại này. Vui lòng gửi lại.', 400);
+    throw new AppError(
+      'OTP_NOT_FOUND',
+      'Không tìm thấy yêu cầu OTP cho số điện thoại này. Vui lòng gửi lại.',
+      400
+    );
   }
 
   if (new Date(otpRecord.expires_at).getTime() < Date.now()) {
@@ -87,11 +95,7 @@ citizenRoutes.post('/otp/verify', async (c) => {
       UPDATE phone_otps SET attempts = attempts + 1 WHERE phone = ${phone};
     `;
     const remaining = Math.max(0, 5 - (otpRecord.attempts + 1));
-    throw new AppError(
-      'INVALID_OTP',
-      `Mã OTP không chính xác. Bạn còn ${remaining} lần thử.`,
-      400
-    );
+    throw new AppError('INVALID_OTP', `Mã OTP không chính xác. Bạn còn ${remaining} lần thử.`, 400);
   }
 
   // OTP hợp lệ: xoá OTP đã dùng và cấp token
@@ -337,7 +341,11 @@ citizenRoutes.post('/reports/:id/feedback', async (c) => {
   }
 
   if (report.status !== 'hoan_thanh' && report.status !== 'dong') {
-    throw new AppError('INVALID_STATE', 'Chỉ có thể đánh giá kết quả khi hồ sơ đã ở trạng thái hoàn thành', 400);
+    throw new AppError(
+      'INVALID_STATE',
+      'Chỉ có thể đánh giá kết quả khi hồ sơ đã ở trạng thái hoàn thành',
+      400
+    );
   }
 
   // Lưu feedback

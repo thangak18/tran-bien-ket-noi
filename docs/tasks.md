@@ -218,7 +218,7 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 ### Sửa Test Redesign cũ (G2-09)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-09 | Cập nhật và sửa 17 test component/unit cũ đang fail do đợt redesign giao diện để toàn bộ test suite pass 100% | G2-07d | 6, 7 | UT-OLD-001 → 017 | 3h |
+| [x] (25/11) | G2-09 | Cập nhật và sửa 17 test component/unit cũ đang fail do đợt redesign giao diện để toàn bộ test suite pass 100% | G2-07d | 6, 7 | UT-OLD-001 → 017 | 3h |
 
 ### Q7 – Vận hành & CI/CD (G2-11)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |

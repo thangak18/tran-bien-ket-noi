@@ -3,7 +3,10 @@ import { sqlClient } from '../db/client';
 import { AppError } from './errorHandler';
 
 export function hashIp(ip: string): string {
-  return crypto.createHash('sha256').update(ip || '127.0.0.1').digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(ip || '127.0.0.1')
+    .digest('hex');
 }
 
 /**

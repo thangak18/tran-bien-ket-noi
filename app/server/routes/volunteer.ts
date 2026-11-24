@@ -85,14 +85,15 @@ volunteerRoutes.get('/tasks', async (c) => {
     lng: Number(t.report_lng),
     reporterPhone: maskPhone(t.report_phone), // TNV chỉ thấy SĐT che (Spec 4.1, AC-V02)
     distanceMeters: t.distance_meters ? Math.round(Number(t.distance_meters)) : undefined,
-    result: t.result_exists != null
-      ? {
-          exists: t.result_exists === 'true',
-          severity: t.result_severity,
-          note: t.result_note,
-          at: t.result_at,
-        }
-      : undefined,
+    result:
+      t.result_exists != null
+        ? {
+            exists: t.result_exists === 'true',
+            severity: t.result_severity,
+            note: t.result_note,
+            at: t.result_at,
+          }
+        : undefined,
   }));
 
   return c.json({ items });

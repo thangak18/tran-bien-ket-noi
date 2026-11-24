@@ -54,7 +54,7 @@ export const requireCitizenAuth = createMiddleware<AppEnv>(async (c, next) => {
     const payload = await verifyCitizenToken(token);
     c.set('citizenPhone', payload.phone);
     await next();
-  } catch (err: any) {
+  } catch {
     throw new AppError('UNAUTHORIZED', 'Phiên đăng nhập đã hết hạn hoặc không hợp lệ', 401);
   }
 });
@@ -104,7 +104,9 @@ export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
         staffUserId = payload.sub as string;
       } catch {
         // Fallback kiểm tra nếu token là uuid trực tiếp của staff
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          token
+        );
         if (isUuid) {
           staffUserId = token;
         } else {

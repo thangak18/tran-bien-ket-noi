@@ -86,7 +86,9 @@ export function LoginScreen() {
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Trấn Biên Kết Nối</h1>
         <div className="mt-1 flex items-center gap-1.5">
-          <span className="text-sm font-medium text-gray-500">Hệ thống Tiếp nhận & Xử lý Phản ánh</span>
+          <span className="text-sm font-medium text-gray-500">
+            Hệ thống Tiếp nhận & Xử lý Phản ánh
+          </span>
           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
             Mô phỏng
           </span>
@@ -175,7 +177,9 @@ export function LoginScreen() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-700">Email công vụ</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-700">
+                Email công vụ
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <input
@@ -202,7 +206,10 @@ export function LoginScreen() {
                   placeholder="••••••••"
                 />
               </div>
-              <p className="mt-1 text-[11px] text-gray-500">Mật khẩu mẫu demo: <code className="font-semibold text-gray-700">TranBien@2026!</code></p>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Mật khẩu mẫu demo:{' '}
+                <code className="font-semibold text-gray-700">TranBien@2026!</code>
+              </p>
             </div>
 
             <button
@@ -252,7 +259,9 @@ export function LoginScreen() {
         {activeTab === 'citizen' && (
           <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-700">Số điện thoại</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-700">
+                Số điện thoại
+              </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <input
@@ -269,7 +278,9 @@ export function LoginScreen() {
 
             {otpSent && (
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-700">Mã xác thực OTP (6 chữ số)</label>
+                <label className="mb-1 block text-xs font-semibold text-gray-700">
+                  Mã xác thực OTP (6 chữ số)
+                </label>
                 <input
                   type="text"
                   maxLength={6}
@@ -302,8 +313,8 @@ export function LoginScreen() {
               {loading
                 ? 'Đang xử lý...'
                 : otpSent
-                ? 'Xác nhận và Đăng nhập'
-                : 'Nhận mã OTP (Mô phỏng 123456)'}
+                  ? 'Xác nhận và Đăng nhập'
+                  : 'Nhận mã OTP (Mô phỏng 123456)'}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>

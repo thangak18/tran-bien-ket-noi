@@ -30,7 +30,7 @@ describe('CT-031 – StatusChip và DelayChip', () => {
       expect(screen.getByText('Đã xử lý')).toBeInTheDocument();
 
       rerender(<StatusChip status="cho_xac_minh" variant="public" />);
-      expect(screen.getByText('Đã tiếp nhận · Đang kiểm tra tại chỗ')).toBeInTheDocument();
+      expect(screen.getByText('Đã tiếp nhận')).toBeInTheDocument();
     });
   });
 

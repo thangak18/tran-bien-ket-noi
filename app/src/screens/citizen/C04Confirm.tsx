@@ -292,10 +292,11 @@ export function C04Confirm() {
                       key={item.key}
                       type="button"
                       onClick={() => setCategory(item.key)}
-                      className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${isSelected
-                        ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
-                        : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
-                        }`}
+                      className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${
+                        isSelected
+                          ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
+                          : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
+                      }`}
                     >
                       <div className="flex h-8 w-8 items-center justify-center shrink-0">
                         {item.icon}
@@ -398,27 +399,18 @@ export function C04Confirm() {
           {/* B2 Cảnh báo trùng: Thẻ cam nằm trong sheet, ngay trên nút Gửi */}
           {topDup && (
             <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 shadow-soft space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-amber-950">
-                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                <span>Có sự cố tương tự gần đây ({Math.round(topDup.distanceMeters)}m)</span>
+              <div className="flex items-center justify-between gap-1.5 font-bold text-amber-950">
+                <div className="flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>Có sự cố tương tự gần đây ({Math.round(topDup.distanceMeters)}m)</span>
+                </div>
+                <span className="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] text-amber-900 font-semibold shrink-0">
+                  Gợi ý mô phỏng
+                </span>
               </div>
               <p className="text-[11px] text-amber-800 leading-snug">
                 Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý. Bạn có thể tiếp
                 tục gửi hoặc theo dõi hồ sơ này.
-              </p>
-            </div>
-          )}
-
-          {/* B2 Cảnh báo trùng: Thẻ cam nằm trong sheet, ngay trên nút Gửi */}
-          {topDup && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 shadow-soft space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-amber-950">
-                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                <span>Có sự cố tương tự gần đây ({Math.round(topDup.distanceMeters)}m)</span>
-              </div>
-              <p className="text-[11px] text-amber-800 leading-snug">
-                Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý. Bạn có thể tiếp tục
-                gửi hoặc theo dõi hồ sơ này.
               </p>
             </div>
           )}
@@ -612,10 +604,11 @@ export function C04Confirm() {
                           key={item.key}
                           type="button"
                           onClick={() => setCategory(item.key)}
-                          className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${isSelected
-                            ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
-                            : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
-                            }`}
+                          className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${
+                            isSelected
+                              ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
+                              : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
+                          }`}
                         >
                           <div className="flex h-8 w-8 items-center justify-center shrink-0">
                             {item.icon}
@@ -711,9 +704,14 @@ export function C04Confirm() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-amber-950">
-                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                      <span>Có sự cố tương tự cách {Math.round(topDup.distanceMeters)}m</span>
+                    <div className="flex items-center justify-between gap-1.5 font-bold text-xs text-amber-950">
+                      <div className="flex items-center gap-1.5">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Có sự cố tương tự cách {Math.round(topDup.distanceMeters)}m</span>
+                      </div>
+                      <span className="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] text-amber-900 font-semibold shrink-0">
+                        Gợi ý mô phỏng
+                      </span>
                     </div>
                     <p className="text-[11px] text-amber-800 line-clamp-2 mt-0.5 leading-snug">
                       Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý.
@@ -735,10 +733,11 @@ export function C04Confirm() {
                   type="button"
                   disabled={!category || !hasLocation}
                   onClick={handleStartSubmit}
-                  className={`w-full rounded-btn py-3 text-xs font-bold text-white shadow-soft transition-all ${category && hasLocation
-                    ? 'bg-primary hover:bg-primary-hover active:scale-[0.99]'
-                    : 'bg-gray-300 cursor-not-allowed text-gray-500'
-                    }`}
+                  className={`w-full rounded-btn py-3 text-xs font-bold text-white shadow-soft transition-all ${
+                    category && hasLocation
+                      ? 'bg-primary hover:bg-primary-hover active:scale-[0.99]'
+                      : 'bg-gray-300 cursor-not-allowed text-gray-500'
+                  }`}
                 >
                   Gửi phản ánh ngay
                 </button>

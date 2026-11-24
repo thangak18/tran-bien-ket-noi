@@ -1,7 +1,11 @@
 import { createMiddleware } from 'hono/factory';
+import { StatusCode } from 'hono/utils/http-status';
 
 // Simple in-memory / cache table for Idempotency-Key
-const idempotencyCache = new Map<string, { status: number; body: any; at: number }>();
+const idempotencyCache = new Map<
+  string,
+  { status: StatusCode; body: Record<string, unknown>; at: number }
+>();
 
 export const idempotencyMiddleware = createMiddleware(async (c, next) => {
   const key = c.req.header('Idempotency-Key');
@@ -20,7 +24,7 @@ export const idempotencyMiddleware = createMiddleware(async (c, next) => {
   const cached = idempotencyCache.get(key);
   if (cached) {
     c.header('X-Idempotent-Replay', 'true');
-    return c.json(cached.body, cached.status as any);
+    return c.json(cached.body, cached.status);
   }
 
   await next();
@@ -29,9 +33,9 @@ export const idempotencyMiddleware = createMiddleware(async (c, next) => {
   if (c.res.status >= 200 && c.res.status < 300) {
     try {
       const cloned = c.res.clone();
-      const body = await cloned.json();
+      const body = (await cloned.json()) as Record<string, unknown>;
       idempotencyCache.set(key, {
-        status: c.res.status,
+        status: c.res.status as StatusCode,
         body,
         at: now,
       });

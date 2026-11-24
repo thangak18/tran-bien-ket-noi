@@ -88,7 +88,8 @@ officerRoutes.get('/reports', async (c) => {
 officerRoutes.get('/kpi', async (c) => {
   const now = await getDemoNow();
 
-  const [totalRow] = await sqlClient`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
+  const [totalRow] =
+    await sqlClient`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
   const [resolvedRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
   `;
@@ -123,7 +124,11 @@ officerRoutes.post('/reports/:id/accept', async (c) => {
 
   if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
   if (report.status !== 'moi') {
-    throw new AppError('INVALID_STATE', `Không thể tiếp nhận hồ sơ đang ở trạng thái "${report.status}"`, 400);
+    throw new AppError(
+      'INVALID_STATE',
+      `Không thể tiếp nhận hồ sơ đang ở trạng thái "${report.status}"`,
+      400
+    );
   }
 
   await sqlClient`
@@ -222,7 +227,8 @@ officerRoutes.post('/reports/:id/assign-dept', async (c) => {
     SELECT sla_days FROM category_settings WHERE category = ${report.category} LIMIT 1;
   `;
   const slaDays = slaRow?.sla_days || 3;
-  const dueAt = body.dueAt || new Date(new Date(now).getTime() + slaDays * 24 * 60 * 60 * 1000).toISOString();
+  const dueAt =
+    body.dueAt || new Date(new Date(now).getTime() + slaDays * 24 * 60 * 60 * 1000).toISOString();
 
   const [dept] = await sqlClient`
     SELECT name FROM departments WHERE id = ${departmentId} LIMIT 1;
@@ -252,7 +258,8 @@ officerRoutes.post('/reports/:id/assign-dept', async (c) => {
 officerRoutes.post('/reports/:id/complete', async (c) => {
   const codeOrId = c.req.param('id');
   const body = await c.req.json();
-  const resultNote = body.resultNote?.trim() || 'Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường';
+  const resultNote =
+    body.resultNote?.trim() || 'Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường';
   const resultPhotos = Array.isArray(body.resultPhotos) ? body.resultPhotos : [];
   const staff = c.get('staff') as StaffProfile;
   const now = await getDemoNow();
@@ -297,7 +304,8 @@ officerRoutes.post('/reports/:id/complete', async (c) => {
 officerRoutes.post('/reports/:id/reject', async (c) => {
   const codeOrId = c.req.param('id');
   const body = await c.req.json();
-  const reason = body.reason?.trim() || 'Thông tin phản ánh không có căn cứ thực tế tại hiện trường';
+  const reason =
+    body.reason?.trim() || 'Thông tin phản ánh không có căn cứ thực tế tại hiện trường';
   const staff = c.get('staff') as StaffProfile;
   const now = await getDemoNow();
 

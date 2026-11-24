@@ -13,7 +13,8 @@ export function ForbiddenScreen() {
 
         <h1 className="text-xl font-bold text-gray-900">403 – Không có quyền truy cập</h1>
         <p className="mt-2 text-xs leading-relaxed text-gray-500">
-          Tài khoản hiện tại của bạn không có quyền xem hoặc thao tác trên trang này. Khu vực này chỉ dành cho tài khoản có phân quyền tương ứng (Cán bộ hoặc Tình nguyện viên).
+          Tài khoản hiện tại của bạn không có quyền xem hoặc thao tác trên trang này. Khu vực này
+          chỉ dành cho tài khoản có phân quyền tương ứng (Cán bộ hoặc Tình nguyện viên).
         </p>
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">

@@ -9,7 +9,9 @@ const __dirname = path.dirname(__filename);
 
 try {
   process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch {}
+} catch (_e) {
+  void _e;
+}
 
 const PEPPER = process.env.OWNER_KEY_PEPPER || 'tran-bien-ket-noi-secret-pepper-2026';
 const DATABASE_URL =
@@ -54,10 +56,30 @@ export async function runSeed(connectionString: string = DATABASE_URL) {
     // 2. Seed Category Settings
     console.log('2. Nạp cấu hình SLA & Gợi ý bộ phận (category_settings)...');
     const categorySettings = [
-      { category: 'den_duong', label: 'Đèn đường', default_department_id: 'doi_chieu_sang', sla_days: 3 },
-      { category: 'ngap_nuoc', label: 'Ngập nước', default_department_id: 'doi_thoat_nuoc', sla_days: 2 },
-      { category: 'rac_thai', label: 'Rác thải', default_department_id: 'doi_ve_sinh', sla_days: 2 },
-      { category: 'mat_duong', label: 'Mặt đường', default_department_id: 'doi_duy_tu', sla_days: 5 },
+      {
+        category: 'den_duong',
+        label: 'Đèn đường',
+        default_department_id: 'doi_chieu_sang',
+        sla_days: 3,
+      },
+      {
+        category: 'ngap_nuoc',
+        label: 'Ngập nước',
+        default_department_id: 'doi_thoat_nuoc',
+        sla_days: 2,
+      },
+      {
+        category: 'rac_thai',
+        label: 'Rác thải',
+        default_department_id: 'doi_ve_sinh',
+        sla_days: 2,
+      },
+      {
+        category: 'mat_duong',
+        label: 'Mặt đường',
+        default_department_id: 'doi_duy_tu',
+        sla_days: 5,
+      },
     ];
 
     for (const cs of categorySettings) {
@@ -137,7 +159,8 @@ export async function runSeed(connectionString: string = DATABASE_URL) {
 
       let deptId: string | null = null;
       if (r.department) {
-        if (r.department.includes('vệ sinh') || r.department.includes('Môi trường')) deptId = 'doi_ve_sinh';
+        if (r.department.includes('vệ sinh') || r.department.includes('Môi trường'))
+          deptId = 'doi_ve_sinh';
         else if (r.department.includes('chiếu sáng')) deptId = 'doi_chieu_sang';
         else if (r.department.includes('thoát nước')) deptId = 'doi_thoat_nuoc';
         else if (r.department.includes('duy tu')) deptId = 'doi_duy_tu';
@@ -206,18 +229,25 @@ export async function runSeed(connectionString: string = DATABASE_URL) {
       if (Array.isArray(r.timeline)) {
         for (const item of r.timeline) {
           let actorType = 'system';
-          let actorLabel = item.actor || 'Hệ thống';
+          const actorLabel = item.actor || 'Hệ thống';
           let actorStaffId = null;
 
           if (actorLabel.includes('Nguyễn Văn Minh')) {
             actorType = 'staff';
             actorStaffId = '11111111-1111-1111-1111-111111111111';
-          } else if (actorLabel.includes('Tình nguyện viên') || actorLabel.includes('Trần Thị Mai')) {
+          } else if (
+            actorLabel.includes('Tình nguyện viên') ||
+            actorLabel.includes('Trần Thị Mai')
+          ) {
             actorType = 'staff';
             actorStaffId = '22222222-2222-2222-2222-222222222222';
           } else if (actorLabel.includes('Người dân')) {
             actorType = 'citizen';
-          } else if (actorLabel.includes('Bộ phận') || actorLabel.includes('Đội') || actorLabel.includes('Phòng')) {
+          } else if (
+            actorLabel.includes('Bộ phận') ||
+            actorLabel.includes('Đội') ||
+            actorLabel.includes('Phòng')
+          ) {
             actorType = 'staff';
           }
 
@@ -252,16 +282,25 @@ export async function runSeed(connectionString: string = DATABASE_URL) {
     // 4e. Duplicate flags - Phát hiện các cụm nghi trùng (cách 20-45m cùng loại trong nhóm mở)
     console.log('4e. Gắn cờ các phản ánh nghi trùng lặp...');
     await sql`DELETE FROM report_duplicate_flags;`;
-    const openReports = reports.filter((r: any) => r.status !== 'dong' && r.status !== 'hoan_thanh');
+    const openReports = (
+      reports as Array<{
+        status: string;
+        category: string;
+        lat?: number;
+        lng?: number;
+        location?: { lat: number; lng: number };
+        id: string;
+      }>
+    ).filter((r) => r.status !== 'dong' && r.status !== 'hoan_thanh');
     for (let i = 0; i < openReports.length; i++) {
       for (let j = i + 1; j < openReports.length; j++) {
         const a = openReports[i];
         const b = openReports[j];
-        if (a.category === b.category) {
-          const lat1 = a.lat ?? a.location?.lat;
-          const lng1 = a.lng ?? a.location?.lng;
-          const lat2 = b.lat ?? b.location?.lat;
-          const lng2 = b.lng ?? b.location?.lng;
+        if (a && b && a.category === b.category) {
+          const lat1 = a.lat ?? a.location?.lat ?? 0;
+          const lng1 = a.lng ?? a.location?.lng ?? 0;
+          const lat2 = b.lat ?? b.location?.lat ?? 0;
+          const lng2 = b.lng ?? b.location?.lng ?? 0;
           // Approximate meters
           const dlat = (lat2 - lat1) * 111320;
           const dlng = (lng2 - lng1) * 111320 * Math.cos((lat1 * Math.PI) / 180);

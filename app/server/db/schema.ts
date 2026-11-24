@@ -21,12 +21,7 @@ export const geographyPoint = customType<{ data: string; driverData: string }>({
 });
 
 // 11.1 Enums
-export const categoryEnum = pgEnum('category', [
-  'den_duong',
-  'ngap_nuoc',
-  'rac_thai',
-  'mat_duong',
-]);
+export const categoryEnum = pgEnum('category', ['den_duong', 'ngap_nuoc', 'rac_thai', 'mat_duong']);
 
 export const reportStatusEnum = pgEnum('report_status', [
   'moi',

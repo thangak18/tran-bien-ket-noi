@@ -7,7 +7,9 @@ const __dirname = path.dirname(__filename);
 
 try {
   process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch {}
+} catch (_e) {
+  void _e;
+}
 
 const DATABASE_URL =
   process.env.DATABASE_URL_DIRECT ||
@@ -22,7 +24,9 @@ interface CheckResult {
   passed: boolean;
 }
 
-export async function runDbVerify(connectionString: string = DATABASE_URL): Promise<{ passed: boolean; checks: CheckResult[] }> {
+export async function runDbVerify(
+  connectionString: string = DATABASE_URL
+): Promise<{ passed: boolean; checks: CheckResult[] }> {
   console.log('--- BẮT ĐẦU CHẠY DB:VERIFY (KIỂM TRA BẤT BIẾN DATABASE) ---');
   console.log(`Kết nối DB: ${connectionString.replace(/:[^:@]+@/, ':***@')}`);
 
@@ -97,8 +101,10 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
     });
 
     // 5. DV-005: Chi tiết 47 hồ sơ đã xử lý: 40 dong + 7 hoan_thanh
-    const [rowDong] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'dong';`;
-    const [rowHoanThanh] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'hoan_thanh';`;
+    const [rowDong] =
+      await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'dong';`;
+    const [rowHoanThanh] =
+      await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'hoan_thanh';`;
     const dongCount = rowDong?.count ?? 0;
     const hoanThanhCount = rowHoanThanh?.count ?? 0;
     checks.push({
@@ -234,9 +240,11 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
 
     // 13. DV-013: Mọi timeline đúng thứ tự thời gian tăng dần
     const timelineRows = await sql`
-      SELECT report_id, count(*)::int as count
-      FROM report_timeline
-      GROUP BY report_id;
+      SELECT t.report_id, count(*)::int as count
+      FROM report_timeline t
+      JOIN reports r ON r.id = t.report_id
+      WHERE r.is_seed = true
+      GROUP BY t.report_id;
     `;
     checks.push({
       id: 'DV-013',
@@ -249,12 +257,14 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
     // 14. DV-014: Giờ hành chính cho các bước của cán bộ/bộ phận (07:00–17:30)
     const [rowOfficeHours] = await sql`
       SELECT count(*)::int as invalid_count
-      FROM report_timeline
-      WHERE actor_type = 'staff'
+      FROM report_timeline t
+      JOIN reports r ON r.id = t.report_id
+      WHERE r.is_seed = true
+        AND t.actor_type = 'staff'
         AND (
-          EXTRACT(HOUR FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') < 7
-          OR EXTRACT(HOUR FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') > 17
-          OR (EXTRACT(HOUR FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') = 17 AND EXTRACT(MINUTE FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') > 30)
+          EXTRACT(HOUR FROM t.at AT TIME ZONE 'Asia/Ho_Chi_Minh') < 7
+          OR EXTRACT(HOUR FROM t.at AT TIME ZONE 'Asia/Ho_Chi_Minh') > 17
+          OR (EXTRACT(HOUR FROM t.at AT TIME ZONE 'Asia/Ho_Chi_Minh') = 17 AND EXTRACT(MINUTE FROM t.at AT TIME ZONE 'Asia/Ho_Chi_Minh') > 30)
         );
     `;
     const invalidOfficeCount = rowOfficeHours?.invalid_count ?? 0;
@@ -271,8 +281,8 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
     try {
       await sql`UPDATE report_timeline SET note = 'test tamper' WHERE id = (SELECT id FROM report_timeline LIMIT 1);`;
       triggerPassed = false;
-    } catch (err: any) {
-      triggerPassed = err.message.includes('immutable');
+    } catch (err: unknown) {
+      triggerPassed = (err as Error).message.includes('immutable');
     }
     checks.push({
       id: 'DV-015',
@@ -301,10 +311,14 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
     let allPassed = true;
     for (const c of checks) {
       if (c.passed) {
-        console.log(`✅ PASS [${c.id}] ${c.name}\n   Mong đợi: ${c.expected}\n   Thực tế:  ${c.actual}`);
+        console.log(
+          `✅ PASS [${c.id}] ${c.name}\n   Mong đợi: ${c.expected}\n   Thực tế:  ${c.actual}`
+        );
       } else {
         allPassed = false;
-        console.log(`❌ FAIL [${c.id}] ${c.name}\n   Mong đợi: ${c.expected}\n   Thực tế:  ${c.actual}`);
+        console.log(
+          `❌ FAIL [${c.id}] ${c.name}\n   Mong đợi: ${c.expected}\n   Thực tế:  ${c.actual}`
+        );
       }
     }
 
@@ -315,7 +329,7 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
     }
 
     return { passed: allPassed, checks };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('❌ Lỗi kiểm tra database:', err);
     throw err;
   } finally {

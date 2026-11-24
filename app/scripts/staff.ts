@@ -8,7 +8,9 @@ const __dirname = path.dirname(__filename);
 
 try {
   process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch {}
+} catch (_e) {
+  void _e;
+}
 
 const DATABASE_URL =
   process.env.DATABASE_URL_DIRECT ||
@@ -82,7 +84,8 @@ async function main() {
         await listStaff();
         break;
       case 'create':
-        if (!process.argv[3] || !process.argv[4]) throw new Error('Thiếu tham số vai trò hoặc họ tên');
+        if (!process.argv[3] || !process.argv[4])
+          throw new Error('Thiếu tham số vai trò hoặc họ tên');
         await createStaff(process.argv[3], process.argv[4], process.argv[5]);
         break;
       case 'disable':
@@ -94,7 +97,8 @@ async function main() {
         await setStaffActive(process.argv[3], true);
         break;
       case 'set-sla':
-        if (!process.argv[3] || !process.argv[4]) throw new Error('Thiếu danh mục hoặc số ngày SLA');
+        if (!process.argv[3] || !process.argv[4])
+          throw new Error('Thiếu danh mục hoặc số ngày SLA');
         await setSla(process.argv[3], parseInt(process.argv[4], 10));
         break;
       default:
@@ -107,8 +111,8 @@ Sử dụng:
   npm run config:set-sla <category> <số_ngày>
         `);
     }
-  } catch (err: any) {
-    console.error('❌ Lỗi:', err.message);
+  } catch (err: unknown) {
+    console.error('❌ Lỗi:', (err as Error).message);
     process.exit(1);
   } finally {
     await sql.end();

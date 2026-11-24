@@ -9,11 +9,12 @@ const __dirname = path.dirname(__filename);
 
 try {
   process.loadEnvFile(path.resolve(__dirname, '../../.env.local'));
-} catch {}
+} catch (_e) {
+  void _e;
+}
 
 const connectionString =
-  process.env.DATABASE_URL ||
-  'postgresql://postgres:postgres@127.0.0.1:5432/tranbien';
+  process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/tranbien';
 
 export const sqlClient = postgres(connectionString, {
   max: 10,
@@ -22,4 +23,3 @@ export const sqlClient = postgres(connectionString, {
 });
 
 export const db = drizzle(sqlClient, { schema });
-

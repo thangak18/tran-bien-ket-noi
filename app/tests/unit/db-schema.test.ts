@@ -38,7 +38,11 @@ describe('DB-001: Drizzle Database Schema', () => {
     expect(schema.taskTypeEnum.enumValues).toEqual(['xac_minh', 'nghiem_thu']);
     expect(schema.taskStatusEnum.enumValues).toEqual(['cho_nhan', 'dang_lam', 'xong']);
     expect(schema.staffRoleEnum.enumValues).toEqual(['can_bo', 'tnv']);
-    expect(schema.followerSourceEnum.enumValues).toEqual(['reporter', 'also_me', 'subscribe_later']);
+    expect(schema.followerSourceEnum.enumValues).toEqual([
+      'reporter',
+      'also_me',
+      'subscribe_later',
+    ]);
     expect(schema.photoKindEnum.enumValues).toEqual(['before', 'after', 'verify', 'feedback']);
     expect(schema.actorTypeEnum.enumValues).toEqual(['citizen', 'staff', 'system']);
   });

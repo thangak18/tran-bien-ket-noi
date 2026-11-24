@@ -493,9 +493,11 @@ function ReportItem({
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <span className="text-[11px] text-gray-400 font-medium whitespace-nowrap">
-              {timeAgo}
-            </span>
+            <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium whitespace-nowrap">
+              <span>{timeAgo}</span>
+              <span>·</span>
+              <span className="font-mono text-gray-500 font-semibold">{report.id}</span>
+            </div>
             <h4 className="truncate text-xs font-bold text-gray-900 leading-snug">{typeUpper}</h4>
           </div>
 

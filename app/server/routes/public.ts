@@ -6,25 +6,77 @@ import type { AppEnv } from '../types';
 
 export const publicRoutes = new Hono<AppEnv>();
 
+interface DbReportRow {
+  id?: string;
+  code?: string;
+  category?: string;
+  status?: string;
+  lat?: number;
+  lng?: number;
+  address?: string;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  due_at?: string | null;
+  completed_at?: string | null;
+  distance_meters?: number | null;
+  follower_count?: number | string | null;
+  anonymous_follows?: number | null;
+  priority?: string | null;
+  location_note?: string | null;
+  department_name?: string | null;
+  photos_approved?: boolean | null;
+  result_note?: string | null;
+  feedback_resolved?: boolean | null;
+  feedback_rating?: number | null;
+  feedback_tags?: string[] | null;
+  feedback_comment?: string | null;
+  feedback_at?: string | null;
+  [key: string]: unknown;
+}
+
+interface DbPhotoRow {
+  report_id?: string;
+  kind?: string;
+  storage_path?: string;
+  sort?: number;
+  [key: string]: unknown;
+}
+
+interface DbTimelineRow {
+  report_id?: string;
+  at?: string;
+  status?: string;
+  actor_type?: string | null;
+  actor_label?: string | null;
+  note?: string | null;
+  [key: string]: unknown;
+}
+
 // Helper to format DB report into public response
-function formatPublicReportRow(r: any, photos: any[] = [], timeline: any[] = []) {
+function formatPublicReportRow(
+  r: DbReportRow,
+  photos: DbPhotoRow[] = [],
+  timeline: DbTimelineRow[] = []
+) {
   const beforePhotos = photos
     .filter((p) => p.report_id === r.id && p.kind === 'before')
-    .sort((a, b) => a.sort - b.sort)
-    .map((p) => p.storage_path);
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+    .map((p) => String(p.storage_path));
 
   const afterPhotos = photos
     .filter((p) => p.report_id === r.id && p.kind === 'after')
-    .sort((a, b) => a.sort - b.sort)
-    .map((p) => p.storage_path);
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+    .map((p) => String(p.storage_path));
 
   const sanitizedTimeline = timeline
     .filter((t) => t.report_id === r.id)
-    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+    .sort((a, b) => new Date(a.at || 0).getTime() - new Date(b.at || 0).getTime())
     .map((t) => {
       let publicActor = 'Phường Trấn Biên';
       if (t.actor_type === 'citizen') publicActor = 'Người dân';
-      else if (t.actor_label?.includes('Tình nguyện') || t.actor_label?.includes('TNV')) publicActor = 'Tình nguyện viên';
+      else if (t.actor_label?.includes('Tình nguyện') || t.actor_label?.includes('TNV'))
+        publicActor = 'Tình nguyện viên';
 
       return {
         at: t.at,
@@ -42,7 +94,8 @@ function formatPublicReportRow(r: any, photos: any[] = [], timeline: any[] = [])
     lng = Number(r.lng);
   }
 
-  const followerCount = (r.follower_count ? Number(r.follower_count) : 0) + (r.anonymous_follows || 0);
+  const followerCount =
+    (r.follower_count ? Number(r.follower_count) : 0) + (r.anonymous_follows || 0);
 
   return {
     id: r.code, // Public ID is TB-xxxx
@@ -64,15 +117,16 @@ function formatPublicReportRow(r: any, photos: any[] = [], timeline: any[] = [])
     resultNote: r.result_note || undefined,
     followerCount,
     timeline: sanitizedTimeline,
-    feedback: r.feedback_resolved != null
-      ? {
-          resolved: Boolean(r.feedback_resolved),
-          rating: r.feedback_rating != null ? Number(r.feedback_rating) : undefined,
-          tags: r.feedback_tags || [],
-          comment: r.feedback_comment || undefined,
-          at: r.feedback_at,
-        }
-      : undefined,
+    feedback:
+      r.feedback_resolved != null
+        ? {
+            resolved: Boolean(r.feedback_resolved),
+            rating: r.feedback_rating != null ? Number(r.feedback_rating) : undefined,
+            tags: r.feedback_tags || [],
+            comment: r.feedback_comment || undefined,
+            at: r.feedback_at,
+          }
+        : undefined,
   };
 }
 
@@ -139,7 +193,7 @@ publicRoutes.get('/reports', async (c) => {
   }
 
   const reportIds = reportsQuery.map((r) => r.id);
-  let photos: any[] = [];
+  let photos: DbPhotoRow[] = [];
   if (reportIds.length > 0) {
     photos = await sqlClient`
       SELECT report_id, kind, storage_path, sort
@@ -208,7 +262,8 @@ publicRoutes.get('/reports/:code', async (c) => {
 publicRoutes.get('/kpi', async (c) => {
   const now = await getDemoNow();
 
-  const [totalRow] = await sqlClient`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
+  const [totalRow] =
+    await sqlClient`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
   const [resolvedRow] = await sqlClient`
     SELECT count(*)::int as count FROM reports
     WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
@@ -307,7 +362,7 @@ publicRoutes.get('/recent-results', async (c) => {
   `;
 
   const reportIds = reports.map((r) => r.id);
-  let photos: any[] = [];
+  let photos: DbPhotoRow[] = [];
   if (reportIds.length > 0) {
     photos = await sqlClient`
       SELECT report_id, kind, storage_path, sort

@@ -131,12 +131,13 @@ describe('API Contract & Security Suite', () => {
     });
 
     it('API-CIT-002: Anonymous report submission generates 4-digit secretCode and ownerToken', async () => {
+      const randIp = `10.50.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200) + 1}`;
       const res = await app.request('/citizen/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Device-Id': 'test-device-contract-002',
-          'x-forwarded-for': '10.10.10.2',
+          'X-Device-Id': `test-device-${Date.now()}`,
+          'x-forwarded-for': randIp,
         },
         body: JSON.stringify({
           category: 'den_duong',
@@ -156,13 +157,14 @@ describe('API Contract & Security Suite', () => {
     });
 
     it('API-CIT-003: Lookup report by secret code', async () => {
+      const randIp = `10.50.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200) + 1}`;
       // Create report first
       const createRes = await app.request('/citizen/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Device-Id': 'test-lookup-device-003',
-          'x-forwarded-for': '10.10.10.3',
+          'X-Device-Id': `test-lookup-${Date.now()}`,
+          'x-forwarded-for': randIp,
         },
         body: JSON.stringify({
           category: 'rac_thai',
@@ -178,7 +180,7 @@ describe('API Contract & Security Suite', () => {
       // Lookup with wrong secret code
       const wrongRes = await app.request(
         `/citizen/reports/lookup?code=${created.code}&secretCode=0000`,
-        { headers: { 'x-forwarded-for': '10.10.10.3' } }
+        { headers: { 'x-forwarded-for': randIp } }
       );
       expect(wrongRes.status).toBe(400);
 
