@@ -1,8 +1,19 @@
 {
+  "framework": "vite",
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/[...path]"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sweep-overdue",
+      "schedule": "0 17 * * *"
     }
   ]
 }

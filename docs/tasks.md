@@ -223,8 +223,8 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 ### Q7 – Vận hành & CI/CD (G2-11)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-11a | Cấu hình `vercel.json` (rewrites, cron, SPA), `.github/workflows/ci.yml` (lint, typecheck, vitest, postgres/postgis, migrate, seed, verify, build) | G2-04g, G2-07d | 12.7, 16.1 | OPS-VERCEL-001, CI-001 | 2h |
-| [ ] | G2-11b | Tài liệu vận hành `docs/van-hanh.md`, cập nhật `README.md`, `AGENTS.md`, `CLAUDE.md`, file `app/.env.example` chuẩn | G2-11a | 10, 14, 16 | DOC-001 | 1.5h |
+| [x] (25/11) | G2-11a | Cấu hình `vercel.json` (rewrites, cron, SPA), `.github/workflows/ci.yml` (lint, typecheck, vitest, postgres/postgis, migrate, seed, verify, build) | G2-04g, G2-07d | 12.7, 16.1 | OPS-VERCEL-001, CI-001 | 2h |
+| [x] (25/11) | G2-11b | Tài liệu vận hành `docs/van-hanh.md`, cập nhật `README.md`, `AGENTS.md`, `CLAUDE.md`, file `app/.env.example` chuẩn | G2-11a | 10, 14, 16 | DOC-001 | 1.5h |
 
 ---
 

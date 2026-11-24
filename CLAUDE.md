@@ -14,15 +14,14 @@ Người dân chụp ảnh báo sự cố (đèn đường, ngập nước, rác
 
 ## 2. Trạng thái hiện tại (25/11/2026)
 
-**Vòng 1 đã nộp (24/11, 15:15):** prototype **frontend thuần**, chạy hoàn toàn trong trình duyệt.
-
-- Dữ liệu: `app/src/data/mock.json` (sinh bằng generator có seed) + `localStorage` (key `tbkn:v1`), đồng bộ giữa tab bằng sự kiện `storage`.
-- Không có backend, DB, tài khoản thật. OTP / SMS / Zalo / AI gợi ý loại đều là **mô phỏng** và có nhãn "Mô phỏng" trên UI.
-- Đã có đủ màn lõi + bonus ở mức mô phỏng: chữ lớn (B3), "Tôi cũng gặp" + cảnh báo trùng + gộp/tách hồ sơ (B2), gợi ý loại "Gợi ý mô phỏng" (B1), cán bộ gửi hộ (B5). Nút nổi **"Đổi vai trò"** (`RoleSwitcher`) để giám khảo chuyển 3 vai trò.
-
-**Việc tiếp theo: làm BACKEND** (chủ dự án yêu cầu 25/11). Phạm vi chưa chốt – xem mục 6.
-
-> ⚠️ `AGENTS.md` mục "Phạm vi" ghi "Không tạo backend" – đó là luật của **vòng 1**. Khi chủ dự án xác nhận phạm vi backend ở mục 6, cập nhật lại `AGENTS.md` và `README.md` (README đang lỗi thời, vẫn ghi "chưa có code").
+**Giai đoạn 2 đã HOÀN THÀNH TRỌN VẸN trong đêm 25/11/2026** trên nhánh `feat/giai-doan-2`:
+- Full-stack hoàn chỉnh: Hono API + PostgreSQL/PostGIS + Drizzle ORM + React SPA + DataSource Abstraction.
+- Toàn bộ 39 test files (229 tests) PASS 100%. Đã sửa toàn bộ 17 test cũ sau đợt Redesign giao diện.
+- Toàn bộ 16 bất biến cơ sở dữ liệu (DV-001 đến DV-016) được kiểm tra trực tiếp qua `npm run db:verify` và ĐẠT 100%.
+- Đầy đủ tài liệu theo chuỗi truy vết: `docs/proposal_v3.md` -> `docs/spec.md` -> `docs/plan.md` -> `docs/tasks.md` -> `docs/tests.md` -> `docs/van-hanh.md`.
+- Báo cáo tổng kết đêm: `docs/bao-cao-dem-25-11.md`.
+- Sổ tay vận hành: `docs/van-hanh.md`.
+- Lệnh kiểm tra nhanh: `npm run verify` và `npm run db:verify`.
 
 ## 3. Stack frontend
 
