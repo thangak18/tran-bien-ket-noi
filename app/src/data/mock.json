@@ -3,198 +3,16 @@
     {
       "id": "TB-0001",
       "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.9465,
-      "lng": 106.8225,
-      "address": "125 Đường Cách Mạng Tháng Tám",
-      "createdAt": "2026-11-02T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-07T07:20:00+07:00",
-      "anonymous": true,
-      "subscribedLater": false,
-      "secretCode": "6109",
-      "onBehalf": false,
-      "followers": [],
-      "anonymousFollows": 1,
-      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-04T12:16:48+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Chưa triệt để"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-04T13:16:48+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-02T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-02T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-02T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        },
-        {
-          "at": "2026-11-04T12:16:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-04T13:16:48+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0002",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/4.jpg"],
-      "photosApproved": true,
-      "lat": 10.949499999999999,
-      "lng": 106.83,
-      "address": "12 Đường Hưng Đạo Vương",
-      "createdAt": "2026-11-03T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-08T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "7916",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-07T14:40:48+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 5,
-        "tags": ["Làm đúng chỗ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-07T15:40:48+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-03T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-03T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-03T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        },
-        {
-          "at": "2026-11-07T14:40:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-07T15:40:48+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0003",
-      "category": "mat_duong",
       "photos": ["/demo-photos/mat_duong/1.jpg"],
       "photosApproved": true,
       "lat": 10.949,
       "lng": 106.819,
-      "address": "2 Đường Nguyễn Văn Trị",
-      "createdAt": "2026-11-04T07:00:00+07:00",
+      "address": "37 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-01T07:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
       "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-09T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "8581",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-07T17:19:12+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Ảnh kết quả chưa rõ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-07T18:19:12+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-04T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-04T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-04T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        },
-        {
-          "at": "2026-11-07T17:19:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-07T18:19:12+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0004",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.955,
-      "lng": 106.82950000000001,
-      "address": "37 Đường Phan Đình Phùng",
-      "createdAt": "2026-11-05T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-10T07:20:00+07:00",
+      "dueAt": "2026-11-06T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
@@ -204,708 +22,13 @@
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-09T11:19:12+07:00",
+      "completedAt": "2026-11-04T17:19:12+07:00",
       "feedback": {
         "resolved": true,
         "rating": 4,
-        "tags": ["Xử lý nhanh"],
+        "tags": ["Được báo tin đầy đủ"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-09T12:19:12+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-05T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-05T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-05T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        },
-        {
-          "at": "2026-11-09T11:19:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-09T12:19:12+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0005",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.962,
-      "lng": 106.81099999999999,
-      "address": "32 Đường Huỳnh Văn Nghệ",
-      "createdAt": "2026-11-06T08:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-11T08:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "4493",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-10T07:02:24+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Chưa triệt để"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-10T08:02:24+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-06T08:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-06T08:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-06T08:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        },
-        {
-          "at": "2026-11-10T07:02:24+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-10T08:02:24+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0006",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/4.jpg"],
-      "photosApproved": true,
-      "lat": 10.9535,
-      "lng": 106.827,
-      "address": "16 Đường 30 Tháng 4",
-      "createdAt": "2026-11-07T14:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-12T14:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "6746",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-11T07:02:24+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Làm đúng chỗ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-11T08:02:24+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-07T14:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-07T14:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-07T14:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        },
-        {
-          "at": "2026-11-11T07:02:24+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-11T08:02:24+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0007",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.945,
-      "lng": 106.8155,
-      "address": "117 Đường Hà Huy Giáp",
-      "createdAt": "2026-11-08T07:00:00+07:00",
-      "status": "hoan_thanh",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-13T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "2779",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-10T15:52:48+07:00",
-      "timeline": [
-        {
-          "at": "2026-11-08T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-08T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-08T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        },
-        {
-          "at": "2026-11-10T15:52:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        }
-      ]
-    },
-    {
-      "id": "TB-0008",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.950299999999999,
-      "lng": 106.8223,
-      "address": "15 Đường Cách Mạng Tháng Tám",
-      "createdAt": "2026-11-23T07:42:00+07:00",
-      "status": "da_tiep_nhan",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-28T08:12:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "8984",
-      "onBehalf": false,
-      "followers": ["0912000001", "0912000002"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T07:42:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T08:12:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        }
-      ]
-    },
-    {
-      "id": "TB-0009",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.95225,
-      "lng": 106.824,
-      "address": "45 Đường Hưng Đạo Vương",
-      "createdAt": "2026-11-17T08:47:00+07:00",
-      "status": "da_giao",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
-      "dueAt": "2026-11-22T09:17:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "7942",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-17T08:47:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-17T09:17:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-17T09:47:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
-        }
-      ]
-    },
-    {
-      "id": "TB-0010",
-      "category": "mat_duong",
-      "photos": ["/demo-photos/mat_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.952,
-      "lng": 106.824,
-      "address": "45 Đường Hưng Đạo Vương",
-      "createdAt": "2026-11-23T15:15:00+07:00",
-      "status": "moi",
-      "priority": "binh_thuong",
-      "department": "",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "5325",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T15:15:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        }
-      ]
-    },
-    {
-      "id": "TB-0011",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.951,
-      "lng": 106.832,
-      "address": "119 Đường Võ Thị Sáu",
-      "createdAt": "2026-11-09T19:30:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-13T07:30:00+07:00",
-      "anonymous": true,
-      "subscribedLater": false,
-      "secretCode": "6443",
-      "onBehalf": false,
-      "followers": [],
-      "anonymousFollows": 1,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-13T07:01:12+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Ảnh kết quả chưa rõ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-13T08:01:12+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-09T19:30:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-10T07:30:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-10T08:00:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-13T07:01:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-13T08:01:12+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0012",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.946,
-      "lng": 106.841,
-      "address": "69 Đường Phạm Văn Thuận",
-      "createdAt": "2026-11-10T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-13T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "8250",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-13T08:55:12+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 5,
-        "tags": ["Xử lý nhanh"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-13T09:55:12+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-10T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-10T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-10T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-13T08:55:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-13T09:55:12+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0013",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.962,
-      "lng": 106.828,
-      "address": "134 Đường Nguyễn Ái Quốc",
-      "createdAt": "2026-11-11T10:45:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-14T11:05:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "9227",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-15T07:09:00+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 5,
-        "tags": ["Sạch sẽ, gọn gàng"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-15T08:09:00+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-11T10:45:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-11T11:05:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-11T11:35:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-15T07:09:00+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-15T08:09:00+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0014",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/4.jpg"],
-      "photosApproved": true,
-      "lat": 10.958,
-      "lng": 106.83800000000001,
-      "address": "11 Đường Dương Tử Giang",
-      "createdAt": "2026-11-12T09:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-15T09:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "5974",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-14T07:04:48+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 5,
-        "tags": ["Làm đúng chỗ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-14T08:04:48+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-12T09:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-12T09:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-12T09:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-14T07:04:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-14T08:04:48+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0015",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.9565,
-      "lng": 106.81949999999999,
-      "address": "76 Đường Trịnh Hoài Đức",
-      "createdAt": "2026-11-13T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-16T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "1639",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-17T08:55:12+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Ảnh kết quả chưa rõ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-17T09:55:12+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-13T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-13T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-13T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-17T08:55:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-17T09:55:12+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0016",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.9565,
-      "lng": 106.8245,
-      "address": "32 Đường Cách Mạng Tháng Tám",
-      "createdAt": "2026-11-14T18:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-18T07:30:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "7488",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-17T07:12:00+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Xử lý nhanh"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-17T08:12:00+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-14T18:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-15T07:30:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-15T08:00:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-17T07:12:00+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-17T08:12:00+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0017",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.9455,
-      "lng": 106.818,
-      "address": "134 Đường Hưng Đạo Vương",
-      "createdAt": "2026-11-01T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-04T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "9494",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-04T12:31:12+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Chưa triệt để"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-04T13:31:12+07:00"
+        "at": "2026-11-04T18:19:12+07:00"
       },
       "timeline": [
         {
@@ -922,16 +45,16 @@
           "at": "2026-11-01T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
         },
         {
-          "at": "2026-11-04T12:31:12+07:00",
+          "at": "2026-11-04T17:19:12+07:00",
           "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-04T13:31:12+07:00",
+          "at": "2026-11-04T18:19:12+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -939,34 +62,265 @@
       ]
     },
     {
-      "id": "TB-0018",
+      "id": "TB-0002",
       "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/4.jpg"],
+      "photos": ["/demo-photos/den_duong/1.jpg"],
       "photosApproved": true,
-      "lat": 10.945,
-      "lng": 106.821,
-      "address": "94 Đường Nguyễn Văn Trị",
-      "createdAt": "2026-11-02T07:00:00+07:00",
-      "status": "dong",
+      "lat": 10.961,
+      "lng": 106.83399999999999,
+      "address": "140 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-01T08:30:00+07:00",
+      "status": "hoan_thanh",
       "priority": "binh_thuong",
       "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-05T07:20:00+07:00",
+      "dueAt": "2026-11-04T08:50:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "8644",
+      "secretCode": "4875",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-06T09:38:24+07:00",
+      "completedAt": "2026-11-04T07:03:36+07:00",
+      "timeline": [
+        {
+          "at": "2026-11-01T08:30:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-01T08:50:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-01T09:20:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-04T07:03:36+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        }
+      ]
+    },
+    {
+      "id": "TB-0003",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.958,
+      "lng": 106.83800000000001,
+      "address": "86 Đường Dương Tử Giang",
+      "createdAt": "2026-11-01T09:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-04T09:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "6639",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-03T07:04:48+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Làm đúng chỗ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-03T08:04:48+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-01T09:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-01T09:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-01T09:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-03T07:04:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-03T08:04:48+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0004",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.9535,
+      "lng": 106.827,
+      "address": "26 Đường 30 Tháng 4",
+      "createdAt": "2026-11-01T14:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-06T14:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7669",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-05T07:02:24+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Làm đúng chỗ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-05T08:02:24+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-01T14:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-01T14:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-01T14:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
+        },
+        {
+          "at": "2026-11-05T07:02:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-05T08:02:24+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0005",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9475,
+      "lng": 106.824,
+      "address": "127 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-01T17:15:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-04T07:30:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7440",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-05T07:10:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Được báo tin đầy đủ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-05T08:10:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-01T17:15:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-02T07:30:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-02T08:00:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-05T07:10:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-05T08:10:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0006",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.947,
+      "lng": 106.8195,
+      "address": "28 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-02T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-04T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1090",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-05T13:28:48+07:00",
       "feedback": {
         "resolved": true,
         "rating": 3,
-        "tags": ["Thiếu thông báo"],
+        "tags": ["Chưa triệt để"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-06T10:38:24+07:00"
+        "at": "2026-11-05T14:28:48+07:00"
       },
       "timeline": [
         {
@@ -983,16 +337,16 @@
           "at": "2026-11-02T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-06T09:38:24+07:00",
+          "at": "2026-11-05T13:28:48+07:00",
           "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-06T10:38:24+07:00",
+          "at": "2026-11-05T14:28:48+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -1000,34 +354,95 @@
       ]
     },
     {
-      "id": "TB-0019",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "id": "TB-0007",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
       "photosApproved": true,
-      "lat": 10.950999999999999,
-      "lng": 106.8315,
-      "address": "122 Đường Phan Đình Phùng",
-      "createdAt": "2026-11-03T07:00:00+07:00",
+      "lat": 10.947000000000001,
+      "lng": 106.8215,
+      "address": "141 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-02T07:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-06T07:20:00+07:00",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-04T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "5300",
+      "secretCode": "4840",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-06T11:19:12+07:00",
+      "completedAt": "2026-11-06T12:16:48+07:00",
       "feedback": {
         "resolved": true,
-        "rating": 4,
-        "tags": ["Được báo tin đầy đủ"],
+        "rating": 3,
+        "tags": ["Xử lý chậm"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-06T12:19:12+07:00"
+        "at": "2026-11-06T13:16:48+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-02T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-02T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-02T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-06T12:16:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-06T13:16:48+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0008",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9525,
+      "lng": 106.8215,
+      "address": "52 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-03T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-05T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3080",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-05T17:19:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Sạch sẽ, gọn gàng"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-05T18:19:12+07:00"
       },
       "timeline": [
         {
@@ -1044,16 +459,16 @@
           "at": "2026-11-03T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-06T11:19:12+07:00",
+          "at": "2026-11-05T17:19:12+07:00",
           "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-06T12:19:12+07:00",
+          "at": "2026-11-05T18:19:12+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -1061,34 +476,34 @@
       ]
     },
     {
-      "id": "TB-0020",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/2.jpg"],
+      "id": "TB-0009",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
       "photosApproved": true,
-      "lat": 10.958,
-      "lng": 106.813,
-      "address": "11 Đường Huỳnh Văn Nghệ",
+      "lat": 10.9455,
+      "lng": 106.831,
+      "address": "130 Đường 30 Tháng 4",
       "createdAt": "2026-11-04T07:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-07T07:20:00+07:00",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-06T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "1086",
+      "secretCode": "5570",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-08T07:43:12+07:00",
+      "completedAt": "2026-11-06T08:26:24+07:00",
       "feedback": {
         "resolved": true,
-        "rating": 3,
-        "tags": ["Xử lý chậm"],
+        "rating": 4,
+        "tags": ["Được báo tin đầy đủ"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-08T08:43:12+07:00"
+        "at": "2026-11-06T09:26:24+07:00"
       },
       "timeline": [
         {
@@ -1105,16 +520,16 @@
           "at": "2026-11-04T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-08T07:43:12+07:00",
+          "at": "2026-11-06T08:26:24+07:00",
           "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-08T08:43:12+07:00",
+          "at": "2026-11-06T09:26:24+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -1122,13 +537,135 @@
       ]
     },
     {
-      "id": "TB-0021",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/3.jpg"],
+      "id": "TB-0010",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
       "photosApproved": true,
-      "lat": 10.9495,
-      "lng": 106.82900000000001,
-      "address": "72 Đường 30 Tháng 4",
+      "lat": 10.9415,
+      "lng": 106.819,
+      "address": "59 Đường 30 Tháng 4",
+      "createdAt": "2026-11-04T07:15:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-06T07:35:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7081",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-07T07:00:36+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Được báo tin đầy đủ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-07T08:00:36+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-04T07:15:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-04T07:35:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-04T08:05:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-07T07:00:36+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-07T08:00:36+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0011",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.964,
+      "lng": 106.834,
+      "address": "132 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-04T11:45:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-06T12:05:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2116",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-08T07:11:24+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Được báo tin đầy đủ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-08T08:11:24+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-04T11:45:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-04T12:05:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-04T12:35:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-08T07:11:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-08T08:11:24+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0012",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.958,
+      "lng": 106.813,
+      "address": "31 Đường Huỳnh Văn Nghệ",
       "createdAt": "2026-11-05T07:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
@@ -1137,7 +674,68 @@
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "9173",
+      "secretCode": "2847",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-09T07:43:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Xử lý chậm"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-09T08:43:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-05T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-05T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-05T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-09T07:43:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-09T08:43:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0013",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9495,
+      "lng": 106.82900000000001,
+      "address": "122 Đường 30 Tháng 4",
+      "createdAt": "2026-11-05T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-08T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1523",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
@@ -1146,8 +744,8 @@
       "completedAt": "2026-11-08T07:28:48+07:00",
       "feedback": {
         "resolved": true,
-        "rating": 5,
-        "tags": ["Sạch sẽ, gọn gàng"],
+        "rating": 3,
+        "tags": ["Chưa triệt để"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
         "at": "2026-11-08T08:28:48+07:00"
       },
@@ -1183,307 +781,216 @@
       ]
     },
     {
-      "id": "TB-0022",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/4.jpg"],
+      "id": "TB-0014",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/2.jpg"],
       "photosApproved": true,
       "lat": 10.955,
-      "lng": 106.8175,
-      "address": "72 Đường Hà Huy Giáp",
-      "createdAt": "2026-11-06T07:00:00+07:00",
-      "status": "hoan_thanh",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-09T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "8027",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-09T08:40:48+07:00",
-      "timeline": [
-        {
-          "at": "2026-11-06T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-06T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-06T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-09T08:40:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        }
-      ]
-    },
-    {
-      "id": "TB-0023",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.961,
-      "lng": 106.83399999999999,
-      "address": "122 Đường Võ Thị Sáu",
-      "createdAt": "2026-11-07T08:30:00+07:00",
-      "status": "hoan_thanh",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-10T08:50:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "5783",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-10T07:03:36+07:00",
-      "timeline": [
-        {
-          "at": "2026-11-07T08:30:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-07T08:50:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-07T09:20:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        },
-        {
-          "at": "2026-11-10T07:03:36+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        }
-      ]
-    },
-    {
-      "id": "TB-0024",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.9493,
-      "lng": 106.821,
-      "address": "12 Đường Phan Đình Phùng",
-      "createdAt": "2026-11-23T10:35:00+07:00",
-      "status": "da_tiep_nhan",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-26T11:05:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "8227",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T10:35:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T11:05:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        }
-      ]
-    },
-    {
-      "id": "TB-0025",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.949,
-      "lng": 106.821,
-      "address": "12 Đường Phan Đình Phùng",
-      "createdAt": "2026-11-23T15:50:00+07:00",
-      "status": "cho_xac_minh",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-26T16:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "7881",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T15:50:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T16:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-23T16:50:00+07:00",
-          "status": "cho_xac_minh",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao tình nguyện viên kiểm tra tại chỗ"
-        }
-      ]
-    },
-    {
-      "id": "TB-0026",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.942,
-      "lng": 106.829,
-      "address": "20 Đường Phạm Văn Thuận",
-      "createdAt": "2026-11-23T08:42:00+07:00",
-      "status": "moi",
-      "priority": "binh_thuong",
-      "department": "",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "3134",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T08:42:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        }
-      ]
-    },
-    {
-      "id": "TB-0027",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.958,
-      "lng": 106.83,
-      "address": "25 Đường Nguyễn Ái Quốc",
-      "createdAt": "2026-11-19T08:15:00+07:00",
-      "status": "da_giao",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-22T08:45:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "3246",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-19T08:15:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-19T08:45:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-19T09:15:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        }
-      ]
-    },
-    {
-      "id": "TB-0028",
-      "category": "den_duong",
-      "photos": ["/demo-photos/den_duong/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.953999999999999,
-      "lng": 106.84,
-      "address": "7 Đường Dương Tử Giang",
-      "createdAt": "2026-11-23T08:45:00+07:00",
-      "status": "da_giao",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
-      "dueAt": "2026-11-26T09:15:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "4431",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T08:45:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T09:15:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-23T09:45:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
-        }
-      ]
-    },
-    {
-      "id": "TB-0029",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.9525,
-      "lng": 106.8215,
-      "address": "4 Đường Trịnh Hoài Đức",
-      "createdAt": "2026-11-08T07:00:00+07:00",
+      "lng": 106.823,
+      "address": "93 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-05T13:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
       "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-10T07:20:00+07:00",
+      "dueAt": "2026-11-07T13:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "8701",
+      "secretCode": "5985",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-10T17:19:12+07:00",
+      "completedAt": "2026-11-09T07:14:24+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Xử lý nhanh"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-09T08:14:24+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-05T13:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-05T13:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-05T13:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
+        },
+        {
+          "at": "2026-11-09T07:14:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-09T08:14:24+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0015",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.9525,
+      "lng": 106.82650000000001,
+      "address": "8 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-06T12:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-08T12:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3218",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-08T07:12:00+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Làm đúng chỗ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-08T08:12:00+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-06T12:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-06T12:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-06T12:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
+        },
+        {
+          "at": "2026-11-08T07:12:00+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-08T08:12:00+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0016",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.956999999999999,
+      "lng": 106.8215,
+      "address": "118 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-07T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-09T07:20:00+07:00",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "4700",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-10T16:21:36+07:00",
       "feedback": {
         "resolved": true,
         "rating": 4,
         "tags": ["Sạch sẽ, gọn gàng"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-10T18:19:12+07:00"
+        "at": "2026-11-10T17:21:36+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-07T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-07T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-07T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-10T16:21:36+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-10T17:21:36+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0017",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.955,
+      "lng": 106.82950000000001,
+      "address": "96 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-08T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-13T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3737",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-12T11:19:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Xử lý chậm"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-12T12:19:12+07:00"
       },
       "timeline": [
         {
@@ -1500,16 +1007,16 @@
           "at": "2026-11-08T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
         },
         {
-          "at": "2026-11-10T17:19:12+07:00",
+          "at": "2026-11-12T11:19:12+07:00",
           "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
+          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-10T18:19:12+07:00",
+          "at": "2026-11-12T12:19:12+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -1517,60 +1024,108 @@
       ]
     },
     {
-      "id": "TB-0030",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
+      "id": "TB-0018",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/4.jpg"],
       "photosApproved": true,
-      "lat": 10.9525,
-      "lng": 106.82650000000001,
-      "address": "34 Đường Cách Mạng Tháng Tám",
-      "createdAt": "2026-11-09T12:00:00+07:00",
-      "status": "dong",
+      "lat": 10.955,
+      "lng": 106.8175,
+      "address": "61 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-08T07:00:00+07:00",
+      "status": "hoan_thanh",
       "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-11T12:20:00+07:00",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-11T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "4875",
+      "secretCode": "8701",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-11T08:40:48+07:00",
+      "timeline": [
+        {
+          "at": "2026-11-08T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-08T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-08T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-11T08:40:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        }
+      ]
+    },
+    {
+      "id": "TB-0019",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.957,
+      "lng": 106.836,
+      "address": "79 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-08T07:15:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-10T07:35:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5227",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-11T07:12:00+07:00",
+      "completedAt": "2026-11-10T07:00:36+07:00",
       "feedback": {
         "resolved": true,
-        "rating": 5,
-        "tags": ["Làm đúng chỗ"],
+        "rating": 3,
+        "tags": ["Chưa triệt để"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-11T08:12:00+07:00"
+        "at": "2026-11-10T08:00:36+07:00"
       },
       "timeline": [
         {
-          "at": "2026-11-09T12:00:00+07:00",
+          "at": "2026-11-08T07:15:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-09T12:20:00+07:00",
+          "at": "2026-11-08T07:35:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-09T12:50:00+07:00",
+          "at": "2026-11-08T08:05:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
           "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-11T07:12:00+07:00",
+          "at": "2026-11-10T07:00:36+07:00",
           "status": "hoan_thanh",
           "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-11T08:12:00+07:00",
+          "at": "2026-11-10T08:00:36+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -1578,74 +1133,257 @@
       ]
     },
     {
-      "id": "TB-0031",
+      "id": "TB-0020",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.962,
+      "lng": 106.81099999999999,
+      "address": "117 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-09T08:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-14T08:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1959",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-13T07:02:24+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Chưa triệt để"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-13T08:02:24+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-09T08:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-09T08:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-09T08:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
+        },
+        {
+          "at": "2026-11-13T07:02:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-13T08:02:24+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0021",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9455,
+      "lng": 106.818,
+      "address": "60 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-10T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-13T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5783",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-13T12:31:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Sạch sẽ, gọn gàng"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-13T13:31:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-10T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-10T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-10T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-13T12:31:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-13T13:31:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0022",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.947,
+      "lng": 106.827,
+      "address": "38 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-10T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-12T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3197",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-13T08:40:48+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Xử lý chậm"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-13T09:40:48+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-10T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-10T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-10T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-13T08:40:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-13T09:40:48+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0023",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.946,
+      "lng": 106.841,
+      "address": "32 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-11T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-14T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7488",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-14T08:55:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Xử lý nhanh"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-14T09:55:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-11T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-11T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-11T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-14T08:55:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-14T09:55:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0024",
       "category": "ngap_nuoc",
       "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
       "photosApproved": true,
       "lat": 10.955499999999999,
       "lng": 106.82,
-      "address": "28 Đường Hưng Đạo Vương",
-      "createdAt": "2026-11-10T13:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-12T13:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "6862",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-13T07:14:24+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Được báo tin đầy đủ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-13T08:14:24+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-10T13:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-10T13:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-10T13:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        },
-        {
-          "at": "2026-11-13T07:14:24+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-13T08:14:24+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0032",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.955,
-      "lng": 106.823,
-      "address": "119 Đường Nguyễn Văn Trị",
+      "address": "27 Đường Hưng Đạo Vương",
       "createdAt": "2026-11-11T13:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
@@ -1654,19 +1392,19 @@
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "5641",
+      "secretCode": "2579",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-15T07:14:24+07:00",
+      "completedAt": "2026-11-14T07:14:24+07:00",
       "feedback": {
         "resolved": true,
-        "rating": 3,
-        "tags": ["Xử lý chậm"],
+        "rating": 5,
+        "tags": ["Được báo tin đầy đủ"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-15T08:14:24+07:00"
+        "at": "2026-11-14T08:14:24+07:00"
       },
       "timeline": [
         {
@@ -1686,13 +1424,13 @@
           "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-15T07:14:24+07:00",
+          "at": "2026-11-14T07:14:24+07:00",
           "status": "hoan_thanh",
           "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-15T08:14:24+07:00",
+          "at": "2026-11-14T08:14:24+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -1700,35 +1438,149 @@
       ]
     },
     {
-      "id": "TB-0033",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
+      "id": "TB-0025",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/3.jpg"],
       "photosApproved": true,
-      "lat": 10.947,
-      "lng": 106.8195,
-      "address": "117 Đường Phan Đình Phùng",
+      "lat": 10.9465,
+      "lng": 106.8225,
+      "address": "116 Đường Cách Mạng Tháng Tám",
       "createdAt": "2026-11-12T07:00:00+07:00",
       "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-17T07:20:00+07:00",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "1051",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-14T12:16:48+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Sạch sẽ, gọn gàng"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-14T13:16:48+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-12T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-12T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
+        },
+        {
+          "at": "2026-11-14T12:16:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-14T13:16:48+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0026",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.945,
+      "lng": 106.821,
+      "address": "138 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-12T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-15T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8227",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-16T09:38:24+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Làm đúng chỗ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-16T10:38:24+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-12T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-12T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-16T09:38:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-16T10:38:24+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0027",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.968,
+      "lng": 106.832,
+      "address": "51 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-12T07:00:00+07:00",
+      "status": "hoan_thanh",
       "priority": "binh_thuong",
       "department": "Phòng KT-HT&ĐT – Đội thoát nước",
       "dueAt": "2026-11-14T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "9650",
+      "secretCode": "8508",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-15T13:28:48+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Chưa triệt để"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-15T14:28:48+07:00"
-      },
+      "completedAt": "2026-11-15T11:19:12+07:00",
       "timeline": [
         {
           "at": "2026-11-12T07:00:00+07:00",
@@ -1747,305 +1599,7 @@
           "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-15T13:28:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-15T14:28:48+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0034",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
-      "photosApproved": true,
-      "lat": 10.954,
-      "lng": 106.815,
-      "address": "12 Đường Huỳnh Văn Nghệ",
-      "createdAt": "2026-11-13T20:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-16T07:30:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "7769",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-17T07:02:24+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Thiếu thông báo"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-17T08:02:24+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-13T20:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-14T07:30:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-14T08:00:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        },
-        {
-          "at": "2026-11-17T07:02:24+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-17T08:02:24+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0035",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.9455,
-      "lng": 106.831,
-      "address": "112 Đường 30 Tháng 4",
-      "createdAt": "2026-11-14T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-16T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "2045",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-16T08:26:24+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Ảnh kết quả chưa rõ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-16T09:26:24+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-14T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-14T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-14T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        },
-        {
-          "at": "2026-11-16T08:26:24+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-16T09:26:24+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0036",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.951,
-      "lng": 106.8195,
-      "address": "5 Đường Hà Huy Giáp",
-      "createdAt": "2026-11-01T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-03T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "5400",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-05T09:24:00+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Xử lý nhanh"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-05T10:24:00+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-01T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-01T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-01T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        },
-        {
-          "at": "2026-11-05T09:24:00+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-05T10:24:00+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0037",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.957,
-      "lng": 106.836,
-      "address": "64 Đường Võ Thị Sáu",
-      "createdAt": "2026-11-02T07:15:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-04T07:35:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "2754",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-04T07:00:36+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Chưa triệt để"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-04T08:00:36+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-02T07:15:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-02T07:35:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-02T08:05:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        },
-        {
-          "at": "2026-11-04T07:00:36+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-04T08:00:36+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0038",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
-      "photosApproved": true,
-      "lat": 10.952,
-      "lng": 106.83099999999999,
-      "address": "16 Đường Phạm Văn Thuận",
-      "createdAt": "2026-11-03T07:00:00+07:00",
-      "status": "hoan_thanh",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-05T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "3978",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-05T09:09:36+07:00",
-      "timeline": [
-        {
-          "at": "2026-11-03T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-03T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-03T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        },
-        {
-          "at": "2026-11-05T09:09:36+07:00",
+          "at": "2026-11-15T11:19:12+07:00",
           "status": "hoan_thanh",
           "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
@@ -2053,609 +1607,60 @@
       ]
     },
     {
-      "id": "TB-0039",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.968,
-      "lng": 106.832,
-      "address": "146 Đường Nguyễn Ái Quốc",
-      "createdAt": "2026-11-04T07:00:00+07:00",
-      "status": "hoan_thanh",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-06T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "3080",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-07T11:19:12+07:00",
-      "timeline": [
-        {
-          "at": "2026-11-04T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-04T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-04T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        },
-        {
-          "at": "2026-11-07T11:19:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        }
-      ]
-    },
-    {
-      "id": "TB-0040",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.95,
-      "lng": 106.828,
-      "address": "42 Đường Dương Tử Giang",
-      "createdAt": "2026-11-23T09:17:00+07:00",
-      "status": "moi",
-      "priority": "binh_thuong",
-      "department": "",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "5839",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T09:17:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        }
-      ]
-    },
-    {
-      "id": "TB-0041",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.948500000000001,
-      "lng": 106.8235,
-      "address": "6 Đường Trịnh Hoài Đức",
-      "createdAt": "2026-11-23T12:13:00+07:00",
-      "status": "da_tiep_nhan",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-25T12:43:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "8579",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T12:13:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T12:43:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        }
-      ]
-    },
-    {
-      "id": "TB-0042",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.9485,
-      "lng": 106.8285,
-      "address": "22 Đường Cách Mạng Tháng Tám",
-      "createdAt": "2026-11-23T09:32:00+07:00",
-      "status": "cho_xac_minh",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-25T10:02:00+07:00",
-      "anonymous": true,
-      "subscribedLater": false,
-      "secretCode": "6312",
-      "onBehalf": false,
-      "followers": [],
-      "anonymousFollows": 1,
-      "timeline": [
-        {
-          "at": "2026-11-23T09:32:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T10:02:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-23T10:32:00+07:00",
-          "status": "cho_xac_minh",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao tình nguyện viên kiểm tra tại chỗ"
-        }
-      ]
-    },
-    {
-      "id": "TB-0043",
-      "category": "ngap_nuoc",
-      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.9515,
-      "lng": 106.822,
-      "address": "74 Đường Hưng Đạo Vương",
-      "createdAt": "2026-11-23T07:05:00+07:00",
-      "status": "da_giao",
-      "priority": "binh_thuong",
-      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
-      "dueAt": "2026-11-25T07:35:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "3672",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "timeline": [
-        {
-          "at": "2026-11-23T07:05:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T07:35:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-23T08:05:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
-        }
-      ]
-    },
-    {
-      "id": "TB-0044",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.951,
-      "lng": 106.825,
-      "address": "93 Đường Nguyễn Văn Trị",
-      "createdAt": "2026-11-05T19:15:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-08T07:30:00+07:00",
-      "anonymous": true,
-      "subscribedLater": false,
-      "secretCode": "2625",
-      "onBehalf": false,
-      "followers": [],
-      "anonymousFollows": 1,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-08T07:00:36+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Xử lý nhanh"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-08T08:00:36+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-05T19:15:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-06T07:30:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-06T08:00:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-08T07:00:36+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-08T08:00:36+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0045",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.956999999999999,
-      "lng": 106.8215,
-      "address": "27 Đường Phan Đình Phùng",
-      "createdAt": "2026-11-06T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-08T07:20:00+07:00",
-      "anonymous": true,
-      "subscribedLater": false,
-      "secretCode": "7029",
-      "onBehalf": false,
-      "followers": [],
-      "anonymousFollows": 1,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-09T16:21:36+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 5,
-        "tags": ["Sạch sẽ, gọn gàng"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-09T17:21:36+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-06T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-06T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-06T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-09T16:21:36+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-09T17:21:36+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0046",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/4.jpg"],
-      "photosApproved": true,
-      "lat": 10.964,
-      "lng": 106.817,
-      "address": "130 Đường Huỳnh Văn Nghệ",
-      "createdAt": "2026-11-07T13:45:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-09T14:05:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "5570",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-10T07:01:48+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Làm đúng chỗ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-10T08:01:48+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-07T13:45:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-07T14:05:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-07T14:35:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-10T07:01:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-10T08:01:48+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0047",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/1.jpg"],
-      "photosApproved": true,
-      "lat": 10.9415,
-      "lng": 106.819,
-      "address": "88 Đường 30 Tháng 4",
-      "createdAt": "2026-11-08T07:15:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-10T07:35:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "7937",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-11T07:00:36+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Được báo tin đầy đủ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-11T08:00:36+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-08T07:15:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-08T07:35:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-08T08:05:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-11T07:00:36+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-11T08:00:36+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0048",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.947000000000001,
-      "lng": 106.8215,
-      "address": "71 Đường Hà Huy Giáp",
-      "createdAt": "2026-11-09T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-11T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "9234",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-13T12:16:48+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Xử lý nhanh"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-13T13:16:48+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-09T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-09T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-09T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-13T12:16:48+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-13T13:16:48+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0049",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/3.jpg"],
-      "photosApproved": true,
-      "lat": 10.953,
-      "lng": 106.838,
-      "address": "102 Đường Võ Thị Sáu",
-      "createdAt": "2026-11-10T13:30:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-12T13:50:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "1963",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-14T07:01:12+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Sạch sẽ, gọn gàng"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-14T08:01:12+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-10T13:30:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-10T13:50:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-10T14:20:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-14T07:01:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-14T08:01:12+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0050",
+      "id": "TB-0028",
       "category": "rac_thai",
       "photos": ["/demo-photos/rac_thai/4.jpg"],
       "photosApproved": true,
       "lat": 10.948,
       "lng": 106.833,
-      "address": "90 Đường Phạm Văn Thuận",
-      "createdAt": "2026-11-11T07:00:00+07:00",
+      "address": "102 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-12T07:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
       "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-13T07:20:00+07:00",
+      "dueAt": "2026-11-14T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "3546",
+      "secretCode": "3822",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-15T13:28:48+07:00",
+      "completedAt": "2026-11-16T13:28:48+07:00",
       "feedback": {
         "resolved": true,
         "rating": 3,
         "tags": ["Thiếu thông báo"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-15T14:28:48+07:00"
+        "at": "2026-11-16T14:28:48+07:00"
       },
       "timeline": [
         {
-          "at": "2026-11-11T07:00:00+07:00",
+          "at": "2026-11-12T07:00:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-11T07:20:00+07:00",
+          "at": "2026-11-12T07:20:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-11T07:50:00+07:00",
+          "at": "2026-11-12T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
           "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
         },
         {
-          "at": "2026-11-15T13:28:48+07:00",
+          "at": "2026-11-16T13:28:48+07:00",
           "status": "hoan_thanh",
           "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-15T14:28:48+07:00",
+          "at": "2026-11-16T14:28:48+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -2663,83 +1668,70 @@
       ]
     },
     {
-      "id": "TB-0051",
+      "id": "TB-0029",
       "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photos": ["/demo-photos/rac_thai/4.jpg"],
       "photosApproved": true,
-      "lat": 10.964,
-      "lng": 106.834,
-      "address": "32 Đường Nguyễn Ái Quốc",
-      "createdAt": "2026-11-12T11:45:00+07:00",
-      "status": "dong",
+      "lat": 10.96,
+      "lng": 106.819,
+      "address": "37 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-12T08:30:00+07:00",
+      "status": "hoan_thanh",
       "priority": "binh_thuong",
       "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-14T12:05:00+07:00",
+      "dueAt": "2026-11-14T08:50:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "8508",
+      "secretCode": "8666",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-16T07:11:24+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
-        "tags": ["Được báo tin đầy đủ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-16T08:11:24+07:00"
-      },
+      "completedAt": "2026-11-14T07:03:36+07:00",
       "timeline": [
         {
-          "at": "2026-11-12T11:45:00+07:00",
+          "at": "2026-11-12T08:30:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-12T12:05:00+07:00",
+          "at": "2026-11-12T08:50:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-12T12:35:00+07:00",
+          "at": "2026-11-12T09:20:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
           "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
         },
         {
-          "at": "2026-11-16T07:11:24+07:00",
+          "at": "2026-11-14T07:03:36+07:00",
           "status": "hoan_thanh",
           "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-16T08:11:24+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
         }
       ]
     },
     {
-      "id": "TB-0052",
+      "id": "TB-0030",
       "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photos": ["/demo-photos/rac_thai/3.jpg"],
       "photosApproved": true,
-      "lat": 10.959999999999999,
-      "lng": 106.83,
-      "address": "1 Đường Dương Tử Giang",
-      "createdAt": "2026-11-13T13:30:00+07:00",
+      "lat": 10.953,
+      "lng": 106.838,
+      "address": "56 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-12T13:30:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
       "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-15T13:50:00+07:00",
+      "dueAt": "2026-11-14T13:50:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "7213",
+      "secretCode": "6924",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
@@ -2748,7 +1740,68 @@
       "completedAt": "2026-11-16T07:01:12+07:00",
       "feedback": {
         "resolved": true,
-        "rating": 5,
+        "rating": 3,
+        "tags": ["Chưa triệt để"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-16T08:01:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-12T13:30:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-12T13:50:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-12T14:20:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-16T07:01:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-16T08:01:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0031",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.959999999999999,
+      "lng": 106.83,
+      "address": "90 Đường Dương Tử Giang",
+      "createdAt": "2026-11-13T13:30:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-15T13:50:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "4760",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-16T07:01:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
         "tags": ["Xử lý nhanh"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
         "at": "2026-11-16T08:01:12+07:00"
@@ -2785,121 +1838,60 @@
       ]
     },
     {
-      "id": "TB-0053",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/3.jpg"],
+      "id": "TB-0032",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
       "photosApproved": true,
-      "lat": 10.9585,
-      "lng": 106.82549999999999,
-      "address": "116 Đường Trịnh Hoài Đức",
-      "createdAt": "2026-11-14T07:00:00+07:00",
+      "lat": 10.954,
+      "lng": 106.815,
+      "address": "111 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-13T20:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-16T07:20:00+07:00",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-16T07:30:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "4403",
+      "secretCode": "6579",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-17T08:26:24+07:00",
+      "completedAt": "2026-11-17T07:02:24+07:00",
       "feedback": {
         "resolved": true,
         "rating": 5,
-        "tags": ["Sạch sẽ, gọn gàng"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-17T09:26:24+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-14T07:00:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-14T07:20:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-14T07:50:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-17T08:26:24+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-17T09:26:24+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0054",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/4.jpg"],
-      "photosApproved": true,
-      "lat": 10.9445,
-      "lng": 106.8165,
-      "address": "149 Đường Cách Mạng Tháng Tám",
-      "createdAt": "2026-11-01T16:30:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-03T16:50:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "9805",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-05T07:08:24+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 4,
         "tags": ["Làm đúng chỗ"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-05T08:08:24+07:00"
+        "at": "2026-11-17T08:02:24+07:00"
       },
       "timeline": [
         {
-          "at": "2026-11-01T16:30:00+07:00",
+          "at": "2026-11-13T20:00:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-01T16:50:00+07:00",
+          "at": "2026-11-14T07:30:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-01T17:20:00+07:00",
+          "at": "2026-11-14T08:00:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-05T07:08:24+07:00",
+          "at": "2026-11-17T07:02:24+07:00",
           "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-05T08:08:24+07:00",
+          "at": "2026-11-17T08:02:24+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -2907,121 +1899,60 @@
       ]
     },
     {
-      "id": "TB-0055",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "id": "TB-0033",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/2.jpg"],
       "photosApproved": true,
-      "lat": 10.9475,
-      "lng": 106.824,
-      "address": "116 Đường Hưng Đạo Vương",
-      "createdAt": "2026-11-02T17:15:00+07:00",
+      "lat": 10.951,
+      "lng": 106.8195,
+      "address": "138 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-15T07:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-05T07:30:00+07:00",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-17T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "5327",
+      "secretCode": "6122",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-06T07:10:12+07:00",
-      "feedback": {
-        "resolved": true,
-        "rating": 3,
-        "tags": ["Ảnh kết quả chưa rõ"],
-        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-06T08:10:12+07:00"
-      },
-      "timeline": [
-        {
-          "at": "2026-11-02T17:15:00+07:00",
-          "status": "moi",
-          "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-03T07:30:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-03T08:00:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-06T07:10:12+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
-        },
-        {
-          "at": "2026-11-06T08:10:12+07:00",
-          "status": "dong",
-          "actor": "Người dân",
-          "note": "Đã xác nhận kết quả"
-        }
-      ]
-    },
-    {
-      "id": "TB-0056",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/2.jpg"],
-      "photosApproved": true,
-      "lat": 10.947,
-      "lng": 106.827,
-      "address": "131 Đường Nguyễn Văn Trị",
-      "createdAt": "2026-11-03T07:00:00+07:00",
-      "status": "dong",
-      "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-05T07:20:00+07:00",
-      "reporterPhone": "0909000068",
-      "anonymous": false,
-      "subscribedLater": false,
-      "secretCode": "7387",
-      "onBehalf": false,
-      "followers": ["0909000068"],
-      "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-06T08:40:48+07:00",
+      "completedAt": "2026-11-19T09:24:00+07:00",
       "feedback": {
         "resolved": true,
         "rating": 4,
         "tags": ["Xử lý nhanh"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-06T09:40:48+07:00"
+        "at": "2026-11-19T10:24:00+07:00"
       },
       "timeline": [
         {
-          "at": "2026-11-03T07:00:00+07:00",
+          "at": "2026-11-15T07:00:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-03T07:20:00+07:00",
+          "at": "2026-11-15T07:20:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-03T07:50:00+07:00",
+          "at": "2026-11-15T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
         },
         {
-          "at": "2026-11-06T08:40:48+07:00",
+          "at": "2026-11-19T09:24:00+07:00",
           "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-06T09:40:48+07:00",
+          "at": "2026-11-19T10:24:00+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -3029,60 +1960,108 @@
       ]
     },
     {
-      "id": "TB-0057",
+      "id": "TB-0034",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.952,
+      "lng": 106.83099999999999,
+      "address": "49 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-15T07:00:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-17T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3546",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/ngap_nuoc.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-17T09:09:36+07:00",
+      "timeline": [
+        {
+          "at": "2026-11-15T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-15T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
+        },
+        {
+          "at": "2026-11-17T09:09:36+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội thoát nước",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        }
+      ]
+    },
+    {
+      "id": "TB-0035",
       "category": "rac_thai",
       "photos": ["/demo-photos/rac_thai/3.jpg"],
       "photosApproved": true,
       "lat": 10.953,
       "lng": 106.82350000000001,
-      "address": "57 Đường Phan Đình Phùng",
-      "createdAt": "2026-11-04T07:00:00+07:00",
+      "address": "93 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-15T07:00:00+07:00",
       "status": "dong",
       "priority": "binh_thuong",
       "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-06T07:20:00+07:00",
+      "dueAt": "2026-11-17T07:20:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "7277",
+      "secretCode": "6485",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
       "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-08T14:12:00+07:00",
+      "completedAt": "2026-11-19T14:12:00+07:00",
       "feedback": {
         "resolved": true,
         "rating": 3,
         "tags": ["Chưa triệt để"],
         "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
-        "at": "2026-11-08T15:12:00+07:00"
+        "at": "2026-11-19T15:12:00+07:00"
       },
       "timeline": [
         {
-          "at": "2026-11-04T07:00:00+07:00",
+          "at": "2026-11-15T07:00:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-04T07:20:00+07:00",
+          "at": "2026-11-15T07:20:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-04T07:50:00+07:00",
+          "at": "2026-11-15T07:50:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
           "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
         },
         {
-          "at": "2026-11-08T14:12:00+07:00",
+          "at": "2026-11-19T14:12:00+07:00",
           "status": "hoan_thanh",
           "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
           "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
         },
         {
-          "at": "2026-11-08T15:12:00+07:00",
+          "at": "2026-11-19T15:12:00+07:00",
           "status": "dong",
           "actor": "Người dân",
           "note": "Đã xác nhận kết quả"
@@ -3090,18 +2069,1071 @@
       ]
     },
     {
-      "id": "TB-0058",
+      "id": "TB-0036",
       "category": "rac_thai",
       "photos": ["/demo-photos/rac_thai/4.jpg"],
       "photosApproved": true,
-      "lat": 10.96,
-      "lng": 106.819,
-      "address": "146 Đường Huỳnh Văn Nghệ",
-      "createdAt": "2026-11-05T08:30:00+07:00",
+      "lat": 10.964,
+      "lng": 106.817,
+      "address": "60 Đường Huỳnh Văn Nghệ",
+      "createdAt": "2026-11-15T13:45:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-17T14:05:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7998",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-18T07:01:48+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Làm đúng chỗ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-18T08:01:48+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-15T13:45:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T14:05:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-15T14:35:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-18T07:01:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-18T08:01:48+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0037",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.9445,
+      "lng": 106.8165,
+      "address": "24 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-15T16:30:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-17T16:50:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5764",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-19T07:08:24+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Làm đúng chỗ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-19T08:08:24+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-15T16:30:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-15T16:50:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-15T17:20:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-19T07:08:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-19T08:08:24+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0038",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9565,
+      "lng": 106.81949999999999,
+      "address": "11 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-16T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-19T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1086",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-20T08:55:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Ảnh kết quả chưa rõ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-20T09:55:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-16T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-16T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-16T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-20T08:55:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-20T09:55:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0039",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.950999999999999,
+      "lng": 106.8315,
+      "address": "114 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-16T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-19T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2481",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-19T11:19:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Ảnh kết quả chưa rõ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-19T12:19:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-16T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-16T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-16T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-19T11:19:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-19T12:19:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0040",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.9585,
+      "lng": 106.82549999999999,
+      "address": "129 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-16T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-18T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9223",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-19T08:26:24+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Chưa triệt để"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-19T09:26:24+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-16T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-16T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-16T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-19T08:26:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-19T09:26:24+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0041",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.95225,
+      "lng": 106.824,
+      "address": "45 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-17T15:54:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-22T16:24:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5126",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-17T15:54:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-17T16:24:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-17T16:54:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
+        }
+      ]
+    },
+    {
+      "id": "TB-0042",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/4.jpg"],
+      "photosApproved": true,
+      "lat": 10.949499999999999,
+      "lng": 106.83,
+      "address": "3 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-18T07:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-23T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1664",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-22T14:40:48+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Làm đúng chỗ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-22T15:40:48+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-18T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-18T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-18T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
+        },
+        {
+          "at": "2026-11-22T14:40:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-22T15:40:48+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0043",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.945,
+      "lng": 106.8155,
+      "address": "121 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-18T07:00:00+07:00",
+      "status": "hoan_thanh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-23T07:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7942",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/mat_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-20T15:52:48+07:00",
+      "timeline": [
+        {
+          "at": "2026-11-18T07:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-18T07:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-18T07:50:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội duy tu đường"
+        },
+        {
+          "at": "2026-11-20T15:52:48+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội duy tu đường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        }
+      ]
+    },
+    {
+      "id": "TB-0044",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/3.jpg"],
+      "photosApproved": true,
+      "lat": 10.962,
+      "lng": 106.828,
+      "address": "128 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-18T10:45:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-21T11:05:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "1428",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-22T07:09:00+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Sạch sẽ, gọn gàng"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-22T08:09:00+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-18T10:45:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-18T11:05:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-18T11:35:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-22T07:09:00+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-22T08:09:00+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0045",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.958,
+      "lng": 106.83,
+      "address": "14 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-18T14:29:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-21T14:59:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "4385",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-18T14:29:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-18T14:59:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-18T15:29:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        }
+      ]
+    },
+    {
+      "id": "TB-0046",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.9565,
+      "lng": 106.8245,
+      "address": "118 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-19T18:00:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-23T07:30:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "7444",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-22T07:12:00+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 4,
+        "tags": ["Xử lý nhanh"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-22T08:12:00+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-19T18:00:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-20T07:30:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-20T08:00:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-22T07:12:00+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-22T08:12:00+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0047",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.951,
+      "lng": 106.832,
+      "address": "16 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-19T19:30:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-23T07:30:00+07:00",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "1628",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/den_duong.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-23T07:01:12+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 3,
+        "tags": ["Ảnh kết quả chưa rõ"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-23T08:01:12+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-19T19:30:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-20T07:30:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-20T08:00:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        },
+        {
+          "at": "2026-11-23T07:01:12+07:00",
+          "status": "hoan_thanh",
+          "actor": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-23T08:01:12+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0048",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9515,
+      "lng": 106.821,
+      "address": "40 Đường 30 Tháng 4",
+      "createdAt": "2026-11-20T10:30:00+07:00",
       "status": "hoan_thanh",
       "priority": "binh_thuong",
       "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-07T08:50:00+07:00",
+      "dueAt": "2026-11-22T10:50:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5881",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-23T07:08:24+07:00",
+      "timeline": [
+        {
+          "at": "2026-11-20T10:30:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-20T10:50:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-20T11:20:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-23T07:08:24+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        }
+      ]
+    },
+    {
+      "id": "TB-0049",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/2.jpg"],
+      "photosApproved": true,
+      "lat": 10.951,
+      "lng": 106.825,
+      "address": "117 Đường Nguyễn Văn Trị",
+      "createdAt": "2026-11-20T19:15:00+07:00",
+      "status": "dong",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-23T07:30:00+07:00",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "2900",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
+      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
+      "completedAt": "2026-11-23T07:00:36+07:00",
+      "feedback": {
+        "resolved": true,
+        "rating": 5,
+        "tags": ["Xử lý nhanh"],
+        "comment": "Cảm ơn phường đã khắc phục nhanh chóng",
+        "at": "2026-11-23T08:00:36+07:00"
+      },
+      "timeline": [
+        {
+          "at": "2026-11-20T19:15:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-21T07:30:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-21T08:00:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-23T07:00:36+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+        },
+        {
+          "at": "2026-11-23T08:00:36+07:00",
+          "status": "dong",
+          "actor": "Người dân",
+          "note": "Đã xác nhận kết quả"
+        }
+      ]
+    },
+    {
+      "id": "TB-0050",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.956,
+      "lng": 106.83200000000001,
+      "address": "111 Đường Dương Tử Giang",
+      "createdAt": "2026-11-22T07:18:00+07:00",
+      "status": "mo_lai",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-24T07:48:00+07:00",
+      "completedAt": "2026-11-22T09:18:00+07:00",
+      "anonymous": true,
+      "subscribedLater": true,
+      "secretCode": "8356",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-22T07:18:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-22T07:48:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-22T08:18:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+        },
+        {
+          "at": "2026-11-22T09:18:00+07:00",
+          "status": "hoan_thanh",
+          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+          "note": "Đã hoàn thành kiểm tra và thu gom rác"
+        },
+        {
+          "at": "2026-11-22T10:18:00+07:00",
+          "status": "mo_lai",
+          "actor": "Người dân",
+          "note": "Rác vẫn còn tồn đọng ở góc hẻm chưa được dọn sạch"
+        }
+      ],
+      "feedback": {
+        "resolved": false,
+        "comment": "Chưa xử lý dứt điểm, rác vẫn còn ở góc hẻm",
+        "at": "2026-11-22T10:18:00+07:00"
+      }
+    },
+    {
+      "id": "TB-0051",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.953999999999999,
+      "lng": 106.84,
+      "address": "4 Đường Dương Tử Giang",
+      "createdAt": "2026-11-22T07:26:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-25T07:56:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3978",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-22T07:26:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-22T07:56:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-22T08:26:00+07:00",
+          "status": "da_giao",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao Phòng KT-HT&ĐT – Đội chiếu sáng công cộng"
+        }
+      ]
+    },
+    {
+      "id": "TB-0052",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.949,
+      "lng": 106.826,
+      "address": "109 Đường Võ Thị Sáu",
+      "createdAt": "2026-11-22T08:50:00+07:00",
+      "status": "da_tiep_nhan",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-24T09:20:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5761",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-22T08:50:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-22T09:20:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        }
+      ]
+    },
+    {
+      "id": "TB-0053",
+      "category": "rac_thai",
+      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.944,
+      "lng": 106.835,
+      "address": "103 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-22T10:25:00+07:00",
+      "status": "cho_xac_minh",
+      "priority": "binh_thuong",
+      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
+      "dueAt": "2026-11-24T10:55:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "8877",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-22T10:25:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-22T10:55:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-22T11:25:00+07:00",
+          "status": "cho_xac_minh",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao tình nguyện viên kiểm tra tại chỗ"
+        }
+      ]
+    },
+    {
+      "id": "TB-0054",
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.950299999999999,
+      "lng": 106.8223,
+      "address": "15 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-22T11:35:00+07:00",
+      "status": "da_tiep_nhan",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội duy tu đường",
+      "dueAt": "2026-11-27T12:05:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "3617",
+      "onBehalf": false,
+      "followers": ["0912000001", "0912000002"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-22T11:35:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-22T12:05:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        }
+      ]
+    },
+    {
+      "id": "TB-0055",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9493,
+      "lng": 106.821,
+      "address": "12 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-22T13:38:00+07:00",
+      "status": "da_tiep_nhan",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-25T14:08:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "2657",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-22T13:38:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-22T14:08:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        }
+      ]
+    },
+    {
+      "id": "TB-0056",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9485,
+      "lng": 106.8285,
+      "address": "58 Đường Cách Mạng Tháng Tám",
+      "createdAt": "2026-11-22T14:40:00+07:00",
+      "status": "cho_xac_minh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-24T15:10:00+07:00",
+      "anonymous": true,
+      "subscribedLater": false,
+      "secretCode": "6539",
+      "onBehalf": false,
+      "followers": [],
+      "anonymousFollows": 1,
+      "timeline": [
+        {
+          "at": "2026-11-22T14:40:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
+        },
+        {
+          "at": "2026-11-22T15:10:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-22T15:40:00+07:00",
+          "status": "cho_xac_minh",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao tình nguyện viên kiểm tra tại chỗ"
+        }
+      ]
+    },
+    {
+      "id": "TB-0057",
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.9515,
+      "lng": 106.822,
+      "address": "105 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-23T07:23:00+07:00",
+      "status": "da_giao",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-25T07:53:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
@@ -3109,31 +3141,61 @@
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-07T07:03:36+07:00",
       "timeline": [
         {
-          "at": "2026-11-05T08:30:00+07:00",
+          "at": "2026-11-23T07:23:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-05T08:50:00+07:00",
+          "at": "2026-11-23T07:53:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-05T09:20:00+07:00",
+          "at": "2026-11-23T08:23:00+07:00",
           "status": "da_giao",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
+          "note": "Giao Phòng KT-HT&ĐT – Đội thoát nước"
+        }
+      ]
+    },
+    {
+      "id": "TB-0058",
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
+      "photosApproved": true,
+      "lat": 10.949,
+      "lng": 106.821,
+      "address": "12 Đường Phan Đình Phùng",
+      "createdAt": "2026-11-23T07:44:00+07:00",
+      "status": "cho_xac_minh",
+      "priority": "binh_thuong",
+      "department": "Phòng KT-HT&ĐT – Đội chiếu sáng công cộng",
+      "dueAt": "2026-11-26T08:14:00+07:00",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "9650",
+      "onBehalf": false,
+      "followers": ["0909000068"],
+      "anonymousFollows": 0,
+      "timeline": [
+        {
+          "at": "2026-11-23T07:44:00+07:00",
+          "status": "moi",
+          "actor": "Người dân"
         },
         {
-          "at": "2026-11-07T07:03:36+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+          "at": "2026-11-23T08:14:00+07:00",
+          "status": "da_tiep_nhan",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
+        },
+        {
+          "at": "2026-11-23T08:44:00+07:00",
+          "status": "cho_xac_minh",
+          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
+          "note": "Giao tình nguyện viên kiểm tra tại chỗ"
         }
       ]
     },
@@ -3142,46 +3204,37 @@
       "category": "rac_thai",
       "photos": ["/demo-photos/rac_thai/1.jpg"],
       "photosApproved": true,
-      "lat": 10.9515,
-      "lng": 106.821,
-      "address": "128 Đường 30 Tháng 4",
-      "createdAt": "2026-11-06T10:30:00+07:00",
-      "status": "hoan_thanh",
+      "lat": 10.959999999999999,
+      "lng": 106.836,
+      "address": "80 Đường Nguyễn Ái Quốc",
+      "createdAt": "2026-11-23T08:45:00+07:00",
+      "status": "can_bo_sung",
       "priority": "binh_thuong",
       "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-08T10:50:00+07:00",
+      "dueAt": "2026-11-25T09:15:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "2900",
+      "secretCode": "1723",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
-      "resultPhotos": ["/demo-photos/after/rac_thai.jpg"],
-      "resultNote": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường",
-      "completedAt": "2026-11-09T07:08:24+07:00",
       "timeline": [
         {
-          "at": "2026-11-06T10:30:00+07:00",
+          "at": "2026-11-23T08:45:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-06T10:50:00+07:00",
+          "at": "2026-11-23T09:15:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         },
         {
-          "at": "2026-11-06T11:20:00+07:00",
-          "status": "da_giao",
+          "at": "2026-11-23T09:45:00+07:00",
+          "status": "can_bo_sung",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-09T07:08:24+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường"
+          "note": "Vui lòng chụp thêm ảnh rõ góc nhìn từ đầu hẻm để đội thu gom dễ xác định vị trí rác"
         }
       ]
     },
@@ -3192,21 +3245,21 @@
       "photosApproved": true,
       "lat": 10.957,
       "lng": 106.8235,
-      "address": "93 Đường Hà Huy Giáp",
-      "createdAt": "2026-11-23T10:25:00+07:00",
+      "address": "107 Đường Hà Huy Giáp",
+      "createdAt": "2026-11-23T13:25:00+07:00",
       "status": "moi",
       "priority": "binh_thuong",
       "department": "",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "4103",
+      "secretCode": "1834",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "timeline": [
         {
-          "at": "2026-11-23T10:25:00+07:00",
+          "at": "2026-11-23T13:25:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         }
@@ -3214,197 +3267,144 @@
     },
     {
       "id": "TB-0061",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "category": "den_duong",
+      "photos": ["/demo-photos/den_duong/1.jpg"],
       "photosApproved": true,
-      "lat": 10.949,
-      "lng": 106.826,
-      "address": "94 Đường Võ Thị Sáu",
-      "createdAt": "2026-11-23T14:43:00+07:00",
-      "status": "da_tiep_nhan",
+      "lat": 10.942,
+      "lng": 106.829,
+      "address": "29 Đường Phạm Văn Thuận",
+      "createdAt": "2026-11-23T14:18:00+07:00",
+      "status": "moi",
       "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-25T15:13:00+07:00",
+      "department": "",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "4018",
+      "secretCode": "1695",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "timeline": [
         {
-          "at": "2026-11-23T14:43:00+07:00",
+          "at": "2026-11-23T14:18:00+07:00",
           "status": "moi",
           "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T15:13:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
         }
       ]
     },
     {
       "id": "TB-0062",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
       "photosApproved": true,
-      "lat": 10.944,
-      "lng": 106.835,
-      "address": "48 Đường Phạm Văn Thuận",
-      "createdAt": "2026-11-23T08:38:00+07:00",
-      "status": "cho_xac_minh",
+      "lat": 10.95,
+      "lng": 106.828,
+      "address": "25 Đường Dương Tử Giang",
+      "createdAt": "2026-11-23T16:05:00+07:00",
+      "status": "moi",
       "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-25T09:08:00+07:00",
+      "department": "",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "5077",
+      "secretCode": "4403",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "timeline": [
         {
-          "at": "2026-11-23T08:38:00+07:00",
+          "at": "2026-11-23T16:05:00+07:00",
           "status": "moi",
           "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T09:08:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-23T09:38:00+07:00",
-          "status": "cho_xac_minh",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao tình nguyện viên kiểm tra tại chỗ"
         }
       ]
     },
     {
       "id": "TB-0063",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "category": "ngap_nuoc",
+      "photos": ["/demo-photos/ngap_nuoc/1.jpg"],
       "photosApproved": true,
-      "lat": 10.959999999999999,
-      "lng": 106.836,
-      "address": "47 Đường Nguyễn Ái Quốc",
-      "createdAt": "2026-11-23T07:26:00+07:00",
-      "status": "can_bo_sung",
+      "lat": 10.948500000000001,
+      "lng": 106.8235,
+      "address": "104 Đường Trịnh Hoài Đức",
+      "createdAt": "2026-11-23T16:34:00+07:00",
+      "status": "da_tiep_nhan",
       "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-25T07:56:00+07:00",
+      "department": "Phòng KT-HT&ĐT – Đội thoát nước",
+      "dueAt": "2026-11-25T17:04:00+07:00",
       "reporterPhone": "0909000068",
       "anonymous": false,
       "subscribedLater": false,
-      "secretCode": "2085",
+      "secretCode": "9918",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "timeline": [
         {
-          "at": "2026-11-23T07:26:00+07:00",
+          "at": "2026-11-23T16:34:00+07:00",
           "status": "moi",
           "actor": "Người dân"
         },
         {
-          "at": "2026-11-23T07:56:00+07:00",
+          "at": "2026-11-23T17:04:00+07:00",
           "status": "da_tiep_nhan",
           "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-23T08:26:00+07:00",
-          "status": "can_bo_sung",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Vui lòng chụp thêm ảnh rõ góc nhìn từ đầu hẻm để đội thu gom dễ xác định vị trí rác"
         }
       ]
     },
     {
       "id": "TB-0064",
-      "category": "rac_thai",
-      "photos": ["/demo-photos/rac_thai/1.jpg"],
+      "category": "mat_duong",
+      "photos": ["/demo-photos/mat_duong/1.jpg"],
       "photosApproved": true,
-      "lat": 10.956,
-      "lng": 106.83200000000001,
-      "address": "113 Đường Dương Tử Giang",
-      "createdAt": "2026-11-23T12:37:00+07:00",
-      "status": "mo_lai",
+      "lat": 10.952,
+      "lng": 106.824,
+      "address": "45 Đường Hưng Đạo Vương",
+      "createdAt": "2026-11-23T16:49:00+07:00",
+      "status": "moi",
       "priority": "binh_thuong",
-      "department": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-      "dueAt": "2026-11-25T13:07:00+07:00",
-      "completedAt": "2026-11-23T14:37:00+07:00",
-      "anonymous": true,
-      "subscribedLater": true,
-      "secretCode": "2313",
+      "department": "",
+      "reporterPhone": "0909000068",
+      "anonymous": false,
+      "subscribedLater": false,
+      "secretCode": "5974",
       "onBehalf": false,
       "followers": ["0909000068"],
       "anonymousFollows": 0,
       "timeline": [
         {
-          "at": "2026-11-23T12:37:00+07:00",
+          "at": "2026-11-23T16:49:00+07:00",
           "status": "moi",
           "actor": "Người dân"
-        },
-        {
-          "at": "2026-11-23T13:07:00+07:00",
-          "status": "da_tiep_nhan",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận"
-        },
-        {
-          "at": "2026-11-23T13:37:00+07:00",
-          "status": "da_giao",
-          "actor": "Nguyễn Văn Minh – Cán bộ tiếp nhận",
-          "note": "Giao Bộ phận Môi trường – Đội vệ sinh môi trường"
-        },
-        {
-          "at": "2026-11-23T14:37:00+07:00",
-          "status": "hoan_thanh",
-          "actor": "Bộ phận Môi trường – Đội vệ sinh môi trường",
-          "note": "Đã hoàn thành kiểm tra và thu gom rác"
-        },
-        {
-          "at": "2026-11-23T15:37:00+07:00",
-          "status": "mo_lai",
-          "actor": "Người dân",
-          "note": "Rác vẫn còn tồn đọng ở góc hẻm chưa được dọn sạch"
         }
-      ],
-      "feedback": {
-        "resolved": false,
-        "comment": "Chưa xử lý dứt điểm, rác vẫn còn ở góc hẻm",
-        "at": "2026-11-23T15:37:00+07:00"
-      }
+      ]
     }
   ],
   "volunteerTasks": [
     {
       "id": "NV-001",
-      "reportId": "TB-0025",
+      "reportId": "TB-0058",
       "type": "xac_minh",
       "assignee": null,
       "status": "cho_nhan"
     },
     {
       "id": "NV-002",
-      "reportId": "TB-0042",
+      "reportId": "TB-0056",
       "type": "xac_minh",
       "assignee": null,
       "status": "cho_nhan"
     },
     {
       "id": "NV-003",
-      "reportId": "TB-0062",
+      "reportId": "TB-0053",
       "type": "xac_minh",
       "assignee": null,
       "status": "cho_nhan"
     },
     {
       "id": "NV-004",
-      "reportId": "TB-0064",
+      "reportId": "TB-0050",
       "type": "nghiem_thu",
       "assignee": null,
       "status": "cho_nhan"

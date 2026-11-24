@@ -263,7 +263,6 @@ const moLaiReport = reports.find((r) => r.status === 'mo_lai');
 const moLaiTask = volunteerTasks.find((t) => t.id === 'NV-004');
 const moLaiTaskMatch =
   !!moLaiReport &&
-  moLaiReport.id === 'TB-0064' &&
   moLaiReport.feedback?.resolved === false &&
   !!moLaiTask &&
   moLaiTask.type === 'nghiem_thu' &&

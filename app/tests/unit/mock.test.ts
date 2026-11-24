@@ -185,17 +185,16 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
       expect(choXacMinh.some((r) => r.id === task.reportId)).toBe(true);
     }
 
-    // Task NV-004 nghiệm thu cho TB-0064 mo_lai
+    // Task NV-004 nghiệm thu cho hồ sơ mo_lai
     const moLaiReport = reports.find((r) => r.status === 'mo_lai');
     expect(moLaiReport).toBeDefined();
-    expect(moLaiReport?.id).toBe('TB-0064');
     expect(moLaiReport?.feedback?.resolved).toBe(false);
 
     const nghiemThuTask = volunteerTasks.find((t) => t.id === 'NV-004');
     expect(nghiemThuTask).toBeDefined();
     expect(nghiemThuTask?.type).toBe('nghiem_thu');
     expect(nghiemThuTask?.status).toBe('cho_nhan');
-    expect(nghiemThuTask?.reportId).toBe('TB-0064');
+    expect(nghiemThuTask?.reportId).toBe(moLaiReport?.id);
 
     // Mọi mục timeline do cán bộ/bộ phận thực hiện có giờ trong 07:00–17:30
     for (const r of reports) {

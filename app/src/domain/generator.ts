@@ -208,29 +208,47 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
     }
 
     for (const item of resolvedItems) {
-      const idStr = `TB-${reportIdCounter.toString().padStart(4, '0')}`;
+      const tempId = `TEMP-${reportIdCounter.toString().padStart(4, '0')}`;
       reportIdCounter++;
 
       const coord = getDispersedCoord();
       const durationDays = durations[durationIndex++]!;
       const durationMs = durationDays * 24 * 60 * 60 * 1000;
-      const dayOffset = (durationIndex % 14) + 1; // Ngày 1 -> 14 tháng 11
 
-      // Tìm createdAt (06:00 - 21:00) sao cho completedAt (createdAt + durationMs) rơi vào giờ hành chính (07:00 - 17:30)
+      // Tìm createdAt (06:00 - 21:00) rải ngẫu nhiên trong 01-23/11 sao cho completedAt rơi vào giờ HC và <= demoNow
+      const demoNowMs = new Date('2026-11-24T09:00:00+07:00').getTime();
+      const nov1Ms = new Date('2026-11-01T00:00:00+07:00').getTime();
+      const maxDayAllowed = Math.max(
+        1,
+        Math.min(23, Math.floor((demoNowMs - durationMs - nov1Ms) / (24 * 3600 * 1000)))
+      );
+      const startDay = 1 + Math.floor(rand() * maxDayAllowed);
+
       let chosenCreatedMs = 0;
       let chosenCompletedMs = 0;
-      for (let h = 7; h <= 20; h++) {
-        for (const m of [0, 15, 30, 45]) {
-          const cStr = `2026-11-${dayOffset.toString().padStart(2, '0')}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00+07:00`;
-          const cMs = new Date(cStr).getTime();
-          const compMs = cMs + durationMs;
-          if (isOfficeHours(compMs) && isCitizenHours(cMs)) {
-            chosenCreatedMs = cMs;
-            chosenCompletedMs = compMs;
-            break;
+
+      for (let offset = 0; offset < maxDayAllowed; offset++) {
+        const d = ((startDay + offset - 1) % maxDayAllowed) + 1;
+        for (let h = 7; h <= 20; h++) {
+          for (const m of [0, 15, 30, 45]) {
+            const cStr = `2026-11-${d.toString().padStart(2, '0')}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00+07:00`;
+            const cMs = new Date(cStr).getTime();
+            const compMs = cMs + durationMs;
+            if (isOfficeHours(compMs) && isCitizenHours(cMs) && compMs <= demoNowMs) {
+              chosenCreatedMs = cMs;
+              chosenCompletedMs = compMs;
+              break;
+            }
           }
+          if (chosenCreatedMs) break;
         }
         if (chosenCreatedMs) break;
+      }
+
+      // Fallback an toàn nếu không tìm thấy
+      if (!chosenCreatedMs) {
+        chosenCreatedMs = new Date('2026-11-02T08:00:00+07:00').getTime();
+        chosenCompletedMs = chosenCreatedMs + durationMs;
       }
 
       const createdAt = toIsoOffset7(chosenCreatedMs);
@@ -290,7 +308,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       }
 
       reports.push({
-        id: idStr,
+        id: tempId,
         category,
         photos: [`/demo-photos/${category}/${((reportIdCounter % 4) + 1).toString()}.jpg`],
         photosApproved: true,
@@ -327,7 +345,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
 
     // B. Tạo hồ sơ chưa hoàn tất (mở)
     for (const openItem of open) {
-      const idStr = `TB-${reportIdCounter.toString().padStart(4, '0')}`;
+      const tempId = `TEMP-${reportIdCounter.toString().padStart(4, '0')}`;
       reportIdCounter++;
 
       let lat: number;
@@ -359,9 +377,15 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       // Thời gian tạo: hồ sơ quá hạn chọn ngày sớm để dueAt < demoNow
       let dayOffset: number;
       if (openItem.overdue) {
-        dayOffset = category === 'mat_duong' ? 17 : 19;
+        dayOffset =
+          category === 'mat_duong' ? 16 + Math.floor(rand() * 2) : 18 + Math.floor(rand() * 2);
       } else {
-        dayOffset = 23;
+        // Hồ sơ không quá hạn: nếu có hạn xử lý (từ da_tiep_nhan trở đi), chọn ngày 22-23 để tiepNhan + defaultDays >= demoNow
+        if (openItem.status === 'moi') {
+          dayOffset = 21 + Math.floor(rand() * 3); // 21, 22, 23
+        } else {
+          dayOffset = 22 + Math.floor(rand() * 2); // 22, 23
+        }
       }
 
       const hour = Math.floor(rand() * 10) + 7; // 07:00 -> 16:00
@@ -466,7 +490,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       const secretCode = (1000 + Math.floor(rand() * 9000)).toString();
 
       reports.push({
-        id: idStr,
+        id: tempId,
         category,
         photos: [`/demo-photos/${category}/1.jpg`],
         photosApproved: true,
@@ -495,7 +519,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         const taskId = `NV-${(volunteerTasks.length + 1).toString().padStart(3, '0')}`;
         volunteerTasks.push({
           id: taskId,
-          reportId: idStr,
+          reportId: tempId,
           type: 'xac_minh',
           assignee: null,
           status: 'cho_nhan',
@@ -503,7 +527,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       } else if (openItem.status === 'mo_lai') {
         volunteerTasks.push({
           id: 'NV-004',
-          reportId: idStr,
+          reportId: tempId,
           type: 'nghiem_thu',
           assignee: null,
           status: 'cho_nhan',
@@ -512,8 +536,46 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
     }
   }
 
-  // Sắp xếp lại theo id từ TB-0001 đến TB-0064
-  reports.sort((a, b) => a.id.localeCompare(b.id));
+  // Sắp xếp 64 hồ sơ theo createdAt tăng dần rồi mới đánh mã TB-0001 -> TB-0064
+  reports.sort((a, b) => {
+    const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (diff !== 0) return diff;
+    return a.id.localeCompare(b.id);
+  });
+
+  const oldToNew = new Map<string, string>();
+  for (let idx = 0; idx < reports.length; idx++) {
+    const r = reports[idx]!;
+    const newId = `TB-${(idx + 1).toString().padStart(4, '0')}`;
+    oldToNew.set(r.id, newId);
+    r.id = newId;
+  }
+
+  // Cập nhật mọi tham chiếu ID trong volunteerTasks
+  for (const task of volunteerTasks) {
+    if (oldToNew.has(task.reportId)) {
+      task.reportId = oldToNew.get(task.reportId)!;
+    }
+  }
+
+  // Cập nhật mọi tham chiếu ID trong mergedInto, suspectedDuplicateOf và timeline
+  for (const r of reports) {
+    if (r.mergedInto && oldToNew.has(r.mergedInto)) {
+      r.mergedInto = oldToNew.get(r.mergedInto)!;
+    }
+    if (r.suspectedDuplicateOf && Array.isArray(r.suspectedDuplicateOf)) {
+      r.suspectedDuplicateOf = r.suspectedDuplicateOf.map((id) => oldToNew.get(id) || id);
+    }
+    for (const entry of r.timeline) {
+      if (entry.note) {
+        for (const [oldId, newId] of oldToNew.entries()) {
+          if (entry.note.includes(oldId)) {
+            entry.note = entry.note.replaceAll(oldId, newId);
+          }
+        }
+      }
+    }
+  }
 
   return { reports, volunteerTasks };
 }
