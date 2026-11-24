@@ -134,7 +134,7 @@ interface AppStoreContextValue {
   dispatch: Dispatch<AppAction>;
 }
 
-const AppStoreContext = createContext<AppStoreContextValue | null>(null);
+export const AppStoreContext = createContext<AppStoreContextValue | null>(null);
 
 export function AppStoreProvider({
   children,
