@@ -138,13 +138,6 @@ export function A01Inbox() {
               <Plus className="h-4 w-4" />
               <span>Tạo phản ánh hộ</span>
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/demo')}
-              className="text-xs font-semibold text-primary hover:underline ml-2"
-            >
-              ← Đổi vai trò
-            </button>
           </div>
         </div>
 

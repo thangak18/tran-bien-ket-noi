@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, ChevronRight, MapPin } from 'lucide-react';
+import { CheckCircle2, ChevronRight, MapPin } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { getCategoryConfig } from '@/store/officerActions';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -48,14 +48,6 @@ export function V01Tasks() {
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-md items-center gap-2 px-4 lg:max-w-5xl">
-          <button
-            type="button"
-            onClick={() => navigate('/demo')}
-            aria-label="Đổi vai trò"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
           <h1 className="text-base font-bold text-gray-900" data-testid="screen-title">
             Nhiệm vụ của tôi
           </h1>
