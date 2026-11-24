@@ -210,10 +210,10 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 ### Q6 – Frontend DataSource & Tích hợp (G2-07)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-07a | Lớp trừu tượng `DataSource` (`types.ts`, `LocalDataSource.ts`, `ApiDataSource.ts`, `index.ts`), chọn qua `VITE_DATA_SOURCE=local\|api` | G2-04f, G2-05c | 16.1, AC-DATA-1 | DS-001, DS-002 | 2.5h |
-| [ ] | G2-07b | Tích hợp gọi API qua `src/lib/api.ts`: token, headers, map lỗi sang tiếng Việt. Trạng thái async (đang gửi, lỗi, thử lại) | G2-07a | 16.2 | API-CLIENT-001 → 004 | 2.5h |
-| [ ] | G2-07c | Tải ảnh trực tiếp lên Supabase Storage qua signed URL tại C02/C04, C06, A03, V02 | G2-06b, G2-07b | 15, 16.2 | PHOTO-CLIENT-001 | 2h |
-| [ ] | G2-07d | Đồng bộ thiết bị, làm mới định kỳ 30s hoặc khi tab active ở A01/C05, lưu trữ `deviceReports` dạng `{code, ownerToken}` | G2-07b | 16.2 | SYNC-001, SYNC-002 | 2h |
+| [x] (25/11) | G2-07a | Lớp trừu tượng `DataSource` (`types.ts`, `LocalDataSource.ts`, `ApiDataSource.ts`, `index.ts`), chọn qua `VITE_DATA_SOURCE=local\|api` | G2-04f, G2-05c | 16.1, AC-DATA-1 | DS-001, DS-002 | 2.5h |
+| [x] (25/11) | G2-07b | Tích hợp gọi API qua `src/lib/api.ts`: token, headers, map lỗi sang tiếng Việt. Trạng thái async (đang gửi, lỗi, thử lại) | G2-07a | 16.2 | API-CLIENT-001 → 004 | 2.5h |
+| [x] (25/11) | G2-07c | Tải ảnh trực tiếp lên Supabase Storage qua signed URL tại C02/C04, C06, A03, V02 | G2-06b, G2-07b | 15, 16.2 | PHOTO-CLIENT-001 | 2h |
+| [x] (25/11) | G2-07d | Đồng bộ thiết bị, làm mới định kỳ 30s hoặc khi tab active ở A01/C05, lưu trữ `deviceReports` dạng `{code, ownerToken}` | G2-07b | 16.2 | SYNC-001, SYNC-002 | 2h |
 
 ### Sửa Test Redesign cũ (G2-09)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
