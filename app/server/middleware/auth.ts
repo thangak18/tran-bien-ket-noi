@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { env } from '../env';
 import { AppError } from './errorHandler';
 import { sqlClient } from '../db/client';
+import type { AppEnv } from '../types';
 
 const citizenSecretKey = new TextEncoder().encode(env.CITIZEN_JWT_SECRET);
 
@@ -43,7 +44,7 @@ export function hashPepper(val: string): string {
 /**
  * Middleware bắt buộc xác thực Người dân (Bearer token 30 ngày)
  */
-export const requireCitizenAuth = createMiddleware(async (c, next) => {
+export const requireCitizenAuth = createMiddleware<AppEnv>(async (c, next) => {
   const authHeader = c.req.header('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     throw new AppError('UNAUTHORIZED', 'Yêu cầu đăng nhập người dân', 401);
@@ -61,7 +62,7 @@ export const requireCitizenAuth = createMiddleware(async (c, next) => {
 /**
  * Middleware tùy chọn xác thực Người dân (nếu có token thì nạp, không thì bỏ qua)
  */
-export const optionalCitizenAuth = createMiddleware(async (c, next) => {
+export const optionalCitizenAuth = createMiddleware<AppEnv>(async (c, next) => {
   const authHeader = c.req.header('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
@@ -79,7 +80,7 @@ export const optionalCitizenAuth = createMiddleware(async (c, next) => {
  * Middleware bắt buộc xác thực Cán bộ / Tình nguyện viên
  */
 export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
-  return createMiddleware(async (c, next) => {
+  return createMiddleware<AppEnv>(async (c, next) => {
     const authHeader = c.req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       throw new AppError('UNAUTHORIZED', 'Yêu cầu đăng nhập tài khoản cán bộ / TNV', 401);
@@ -87,7 +88,6 @@ export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
     const token = authHeader.slice(7);
 
     let staffUserId: string | null = null;
-    let staffRole: 'can_bo' | 'tnv' | null = null;
 
     // Trong DEMO_MODE hoặc dev, hỗ trợ token tiện ích dạng `mock_can_bo` hoặc `mock_tnv` hoặc JWT Supabase
     if (env.DEMO_MODE && (token === 'mock_can_bo' || token.startsWith('can_bo_'))) {

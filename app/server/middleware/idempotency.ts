@@ -1,5 +1,4 @@
 import { createMiddleware } from 'hono/factory';
-import { sqlClient } from '../db/client';
 
 // Simple in-memory / cache table for Idempotency-Key
 const idempotencyCache = new Map<string, { status: number; body: any; at: number }>();

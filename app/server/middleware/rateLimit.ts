@@ -10,13 +10,6 @@ export function hashIp(ip: string): string {
  * Rate limit OTP: tối đa 5 yêu cầu trong 10 phút cho mỗi số điện thoại (AC-API-7)
  */
 export async function checkOtpRateLimit(phone: string): Promise<void> {
-  const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-  const [row] = await sqlClient`
-    SELECT count(*)::int as attempts
-    FROM phone_otps
-    WHERE phone = ${phone} AND expires_at > ${tenMinsAgo}::timestamptz;
-  `;
-
   // phone_otps tracks current active OTP, attempts column tracks failures
   const [active] = await sqlClient`
     SELECT attempts FROM phone_otps WHERE phone = ${phone} LIMIT 1;

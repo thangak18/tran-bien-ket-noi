@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { requireStaffAuth, StaffProfile } from '../middleware/auth';
 import { maskPhone } from '../../src/domain/privacy';
 import { getDemoNow } from '../clock';
+import type { AppEnv } from '../types';
 
-export const volunteerRoutes = new Hono();
+export const volunteerRoutes = new Hono<AppEnv>();
 
 // Tất cả route tình nguyện viên yêu cầu vai trò tnv hoặc can_bo
 volunteerRoutes.use('*', requireStaffAuth(['tnv', 'can_bo']));

@@ -19,6 +19,8 @@ import { A02Panel } from './screens/officer/A02Panel';
 import { A03Result } from './screens/officer/A03Result';
 import { V01Tasks } from './screens/volunteer/V01Tasks';
 import { V02Verify } from './screens/volunteer/V02Verify';
+import { LoginScreen } from './screens/auth/LoginScreen';
+import { ForbiddenScreen } from './screens/auth/ForbiddenScreen';
 import { DemoHub } from './screens/demo/DemoHub';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
 
@@ -123,6 +125,8 @@ export default function App() {
         <Route path="/can-bo/:id/ket-qua" element={<A03Result />} />
         <Route path="/tnv" element={<V01Tasks />} />
         <Route path="/tnv/:taskId" element={<V02Verify />} />
+        <Route path="/dang-nhap" element={<LoginScreen />} />
+        <Route path="/khong-co-quyen" element={<ForbiddenScreen />} />
         <Route path="/demo" element={<DemoHub />} />
         {import.meta.env.DEV && <Route path="/dev/ui" element={<DevUiGallery />} />}
       </Routes>

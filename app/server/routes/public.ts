@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { getDemoNow } from '../clock';
+import type { AppEnv } from '../types';
 
-export const publicRoutes = new Hono();
+export const publicRoutes = new Hono<AppEnv>();
 
 // Helper to format DB report into public response
 function formatPublicReportRow(r: any, photos: any[] = [], timeline: any[] = []) {
@@ -247,15 +247,15 @@ publicRoutes.get('/kpi', async (c) => {
   const byStatus: Record<string, number> = {};
   for (const r of statusRows) byStatus[r.status] = r.count;
 
-  const total = totalRow.count;
-  const resolved = resolvedRow.count;
+  const total = totalRow?.count ?? 0;
+  const resolved = resolvedRow?.count ?? 0;
   const resolutionRate = total > 0 ? (resolved / total) * 100 : 0;
-  const avgDays = parseFloat(avgRow.avg_days || '3.2');
+  const avgDays = parseFloat(avgRow?.avg_days || '3.2');
 
   return c.json({
     total,
     resolved,
-    overdue: overdueRow.count,
+    overdue: overdueRow?.count ?? 0,
     avgResolutionDays: parseFloat(avgDays.toFixed(1)),
     resolutionRate: parseFloat(resolutionRate.toFixed(1)),
     byCategory,

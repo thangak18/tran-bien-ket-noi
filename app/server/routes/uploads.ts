@@ -49,7 +49,6 @@ uploadRoutes.post('/sign', async (c) => {
   const body = await c.req.json();
   const contentType = body.contentType?.toLowerCase();
   const sizeBytes = Number(body.sizeBytes || 0);
-  const fileName = body.fileName || 'photo.jpg';
 
   if (!contentType || !ALLOWED_MIME_TYPES.includes(contentType)) {
     throw new AppError(

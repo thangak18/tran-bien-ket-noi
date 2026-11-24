@@ -8,8 +8,9 @@ import { officerRoutes } from './routes/officer';
 import { volunteerRoutes } from './routes/volunteer';
 import { cronRoutes } from './routes/cron';
 import { uploadRoutes } from './routes/uploads';
+import type { AppEnv } from './types';
 
-const subApp = new Hono();
+const subApp = new Hono<AppEnv>();
 subApp.route('/public', publicRoutes);
 subApp.route('/citizen', citizenRoutes);
 subApp.route('/officer', officerRoutes);
@@ -27,7 +28,7 @@ subApp.get('/health', (c) => {
   });
 });
 
-export const app = new Hono();
+export const app = new Hono<AppEnv>();
 
 // Global Middlewares
 app.use('*', corsMiddleware);

@@ -203,9 +203,9 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 ### Q5 – Scripts Vận hành & Màn Đăng nhập (G2-10)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-10a | CLI scripts nhân viên & SLA: `staff:create`, `staff:disable`, `staff:enable`, `staff:reset-password`, `staff:list`, `config:set-sla` | G2-05a | 14, AC-OPS-1,2,3 | OPS-001 → 005 | 2h |
-| [ ] | G2-10b | CLI scripts demo: `demo:reset`, `demo:clock` (từ chối khi `DEMO_MODE !== 'true'`) | G2-10a | 14, AC-OPS-4 | OPS-006, OPS-007 | 1.5h |
-| [ ] | G2-10c | Màn hình `/dang-nhap` và phân quyền route: responsive CB desktop / TNV mobile, chuyển trang theo vai trò, trang `/khong-co-quyen`, đăng xuất | G2-05a | 8, 13.2, AC-LOGIN-1 → 6 | LOGIN-001 → 006 | 2.5h |
+| [x] | G2-10a | CLI scripts nhân viên & SLA: `staff:create`, `staff:disable`, `staff:enable`, `staff:reset-password`, `staff:list`, `config:set-sla` | G2-05a | 14, AC-OPS-1,2,3 | OPS-001 → 005 | 2h |
+| [x] | G2-10b | CLI scripts demo: `demo:reset`, `demo:clock` (từ chối khi `DEMO_MODE !== 'true'`) | G2-10a | 14, AC-OPS-4 | OPS-006, OPS-007 | 1.5h |
+| [x] | G2-10c | Màn hình `/dang-nhap` và phân quyền route: responsive CB desktop / TNV mobile, chuyển trang theo vai trò, trang `/khong-co-quyen`, đăng xuất | G2-05a | 8, 13.2, AC-LOGIN-1 → 6 | LOGIN-001 → 006 | 2.5h |
 
 ### Q6 – Frontend DataSource & Tích hợp (G2-07)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |

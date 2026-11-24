@@ -32,12 +32,13 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
   try {
     // 1. DV-001: 64 hồ sơ tháng 11/2026
     const [row01] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true;`;
+    const count01 = row01?.count ?? 0;
     checks.push({
       id: 'DV-001',
       name: '64 hồ sơ tháng 11/2026 (is_seed = true)',
       expected: '64',
-      actual: `${row01.count}`,
-      passed: row01.count === 64,
+      actual: `${count01}`,
+      passed: count01 === 64,
     });
 
     // 2. DV-002: Theo loại: 18 / 15 / 21 / 10
@@ -69,12 +70,14 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
       SELECT count(*)::int as count FROM reports
       WHERE is_seed = true AND status NOT IN ('hoan_thanh', 'dong');
     `;
+    const resolvedCount = rowResolved?.count ?? 0;
+    const openCount = rowOpen?.count ?? 0;
     checks.push({
       id: 'DV-003',
       name: 'Đã xử lý 47, chưa hoàn tất 17',
       expected: '47 đã xử lý / 17 chưa xong',
-      actual: `${rowResolved.count} / ${rowOpen.count}`,
-      passed: rowResolved.count === 47 && rowOpen.count === 17,
+      actual: `${resolvedCount} / ${openCount}`,
+      passed: resolvedCount === 47 && openCount === 17,
     });
 
     // 4. DV-004: Trung bình xử lý = 3,2 ngày (sai số ≤ 0,005)
@@ -83,7 +86,7 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
       FROM reports
       WHERE is_seed = true AND status IN ('hoan_thanh', 'dong');
     `;
-    const avgDays = parseFloat(rowAvg.avg_days || '0');
+    const avgDays = parseFloat(rowAvg?.avg_days || '0');
     const diffDays = Math.abs(avgDays - 3.2);
     checks.push({
       id: 'DV-004',
@@ -96,12 +99,14 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
     // 5. DV-005: Chi tiết 47 hồ sơ đã xử lý: 40 dong + 7 hoan_thanh
     const [rowDong] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'dong';`;
     const [rowHoanThanh] = await sql`SELECT count(*)::int as count FROM reports WHERE is_seed = true AND status = 'hoan_thanh';`;
+    const dongCount = rowDong?.count ?? 0;
+    const hoanThanhCount = rowHoanThanh?.count ?? 0;
     checks.push({
       id: 'DV-005',
       name: 'Đã xử lý: 40 đóng, 7 hoàn thành',
       expected: '40 dong / 7 hoan_thanh',
-      actual: `${rowDong.count} dong / ${rowHoanThanh.count} hoan_thanh`,
-      passed: rowDong.count === 40 && rowHoanThanh.count === 7,
+      actual: `${dongCount} dong / ${hoanThanhCount} hoan_thanh`,
+      passed: dongCount === 40 && hoanThanhCount === 7,
     });
 
     // 6. DV-006: Phân bổ 17 hồ sơ chưa hoàn tất theo spec 5.2 (moi:4, tiep_nhan:4, cho_xm:3, da_giao:4, bo_sung:1, mo_lai:1)
@@ -141,12 +146,13 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
         AND due_at IS NOT NULL
         AND due_at < ${demoNow}::timestamptz;
     `;
+    const overdueCount = rowOverdue?.count ?? 0;
     checks.push({
       id: 'DV-007',
       name: 'Đúng 2 hồ sơ da_giao quá hạn tại DEMO_NOW',
       expected: '2',
-      actual: `${rowOverdue.count}`,
-      passed: rowOverdue.count === 2,
+      actual: `${overdueCount}`,
+      passed: overdueCount === 2,
     });
 
     // 8. DV-008: Đúng 6 hồ sơ ẩn danh, phone null, 1 có subscribed_later
@@ -157,12 +163,15 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
         count(*) FILTER (WHERE subscribed_later = true)::int as sub_count
       FROM reports WHERE is_seed = true AND anonymous = true;
     `;
+    const anonCount = rowAnon?.count ?? 0;
+    const anonPhoneCount = rowAnon?.phone_count ?? 0;
+    const anonSubCount = rowAnon?.sub_count ?? 0;
     checks.push({
       id: 'DV-008',
       name: 'Đúng 6 hồ sơ ẩn danh, SĐT null, 1 có subscribed_later',
       expected: '6 ẩn danh, 0 SĐT, 1 đăng ký nhận tin',
-      actual: `${rowAnon.count} ẩn danh, ${rowAnon.phone_count} SĐT, ${rowAnon.sub_count} đăng ký nhận tin`,
-      passed: rowAnon.count === 6 && rowAnon.phone_count === 0 && rowAnon.sub_count === 1,
+      actual: `${anonCount} ẩn danh, ${anonPhoneCount} SĐT, ${anonSubCount} đăng ký nhận tin`,
+      passed: anonCount === 6 && anonPhoneCount === 0 && anonSubCount === 1,
     });
 
     // 9. DV-009: Đúng 2 cụm phản ánh nghi trùng lặp
@@ -170,12 +179,13 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
       SELECT count(DISTINCT report_id)::int as count
       FROM report_duplicate_flags;
     `;
+    const dupCount = rowDupFlags?.count ?? 0;
     checks.push({
       id: 'DV-009',
       name: 'Cụm phản ánh nghi trùng lặp được gắn cờ',
       expected: '>= 2 hồ sơ có cờ trùng lặp',
-      actual: `${rowDupFlags.count}`,
-      passed: rowDupFlags.count >= 2,
+      actual: `${dupCount}`,
+      passed: dupCount >= 2,
     });
 
     // 10. DV-010: Hồ sơ demo mat_duong da_tiep_nhan có >= 2 followers
@@ -200,24 +210,26 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
       SELECT count(*)::int as count FROM reports
       WHERE is_seed = true AND (secret_code_hash IS NULL OR length(secret_code_hash) < 16);
     `;
+    const secretMissingCount = rowSecret?.count ?? 0;
     checks.push({
       id: 'DV-011',
       name: 'Mọi hồ sơ có secret_code_hash an toàn',
       expected: '0 hồ sơ thiếu hash',
-      actual: `${rowSecret.count} hồ sơ thiếu hash`,
-      passed: rowSecret.count === 0,
+      actual: `${secretMissingCount} hồ sơ thiếu hash`,
+      passed: secretMissingCount === 0,
     });
 
     // 12. DV-012: 4 volunteer tasks đúng loại và hồ sơ
     const [rowTasks] = await sql`
       SELECT count(*)::int as count FROM volunteer_tasks;
     `;
+    const tasksCount = rowTasks?.count ?? 0;
     checks.push({
       id: 'DV-012',
       name: 'Đúng 4 volunteer tasks trong cơ sở dữ liệu',
       expected: '4',
-      actual: `${rowTasks.count}`,
-      passed: rowTasks.count === 4,
+      actual: `${tasksCount}`,
+      passed: tasksCount === 4,
     });
 
     // 13. DV-013: Mọi timeline đúng thứ tự thời gian tăng dần
@@ -245,12 +257,13 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
           OR (EXTRACT(HOUR FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') = 17 AND EXTRACT(MINUTE FROM at AT TIME ZONE 'Asia/Ho_Chi_Minh') > 30)
         );
     `;
+    const invalidOfficeCount = rowOfficeHours?.invalid_count ?? 0;
     checks.push({
       id: 'DV-014',
       name: 'Các mốc timeline cán bộ/bộ phận rơi vào giờ hành chính (07:00–17:30)',
       expected: '0 mục ngoài giờ hành chính',
-      actual: `${rowOfficeHours.invalid_count} mục ngoài giờ hành chính`,
-      passed: rowOfficeHours.invalid_count === 0,
+      actual: `${invalidOfficeCount} mục ngoài giờ hành chính`,
+      passed: invalidOfficeCount === 0,
     });
 
     // 15. DV-015: Trigger bất biến report_timeline
@@ -287,33 +300,32 @@ export async function runDbVerify(connectionString: string = DATABASE_URL): Prom
     console.log('\n--- KẾT QUẢ KIỂM TRA BẤT BIẾN DB ---');
     let allPassed = true;
     for (const c of checks) {
-      const statusIcon = c.passed ? '✅ PASS' : '❌ FAIL';
-      console.log(`${statusIcon} [${c.id}] ${c.name}`);
-      console.log(`   Mong đợi: ${c.expected}`);
-      console.log(`   Thực tế:  ${c.actual}`);
-      if (!c.passed) allPassed = false;
+      if (c.passed) {
+        console.log(`✅ PASS [${c.id}] ${c.name}\n   Mong đợi: ${c.expected}\n   Thực tế:  ${c.actual}`);
+      } else {
+        allPassed = false;
+        console.log(`❌ FAIL [${c.id}] ${c.name}\n   Mong đợi: ${c.expected}\n   Thực tế:  ${c.actual}`);
+      }
     }
 
     if (allPassed) {
-      console.log('\n🎉 TOÀN BỘ 16 BẤT BIẾN CƠ SỞ DỮ LIỆU ĐỀU ĐẠT CHUẨN!');
+      console.log('\n🎉 TOÀN BỘ 16 BẤT BIẾN CƠ SỞ DỮ LIỆU ĐỀU ĐẠT CHUẨN!\n');
     } else {
-      console.error('\n⚠️ CÓ BẤT BIẾN KHÔNG ĐẠT!');
+      console.log('\n⚠️ CÓ BẤT BIẾN KHÔNG ĐẠT!\n');
     }
 
     return { passed: allPassed, checks };
+  } catch (err: any) {
+    console.error('❌ Lỗi kiểm tra database:', err);
+    throw err;
   } finally {
     await sql.end();
   }
 }
 
-// Chạy trực tiếp nếu là file chính
+// Nếu gọi trực tiếp từ CLI
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  runDbVerify()
-    .then((res) => {
-      if (!res.passed) process.exit(1);
-    })
-    .catch((err) => {
-      console.error('Lỗi khi chạy db:verify:', err);
-      process.exit(1);
-    });
+  runDbVerify().then((res) => {
+    if (!res.passed) process.exit(1);
+  });
 }

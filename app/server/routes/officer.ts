@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { requireStaffAuth, StaffProfile } from '../middleware/auth';
 import { maskPhone } from '../../src/domain/privacy';
 import { getDemoNow } from '../clock';
+import type { AppEnv } from '../types';
 
-export const officerRoutes = new Hono();
+export const officerRoutes = new Hono<AppEnv>();
 
 // Tất cả route cán bộ yêu cầu vai trò can_bo
 officerRoutes.use('*', requireStaffAuth(['can_bo']));
@@ -101,10 +101,10 @@ officerRoutes.get('/kpi', async (c) => {
   `;
 
   return c.json({
-    total: totalRow.count,
-    resolved: resolvedRow.count,
-    overdue: overdueRow.count,
-    pendingAcceptance: pendingRow.count,
+    total: totalRow?.count ?? 0,
+    resolved: resolvedRow?.count ?? 0,
+    overdue: overdueRow?.count ?? 0,
+    pendingAcceptance: pendingRow?.count ?? 0,
     evaluatedAt: now,
   });
 });
@@ -173,6 +173,10 @@ officerRoutes.post('/reports/:id/assign-volunteer', async (c) => {
     VALUES (${taskCode}, ${report.id}, ${taskType}, 'cho_nhan')
     RETURNING id, code;
   `;
+
+  if (!newTask) {
+    throw new AppError('INTERNAL_SERVER_ERROR', 'Không thể tạo nhiệm vụ tình nguyện viên', 500);
+  }
 
   if (taskType === 'xac_minh') {
     await sqlClient`

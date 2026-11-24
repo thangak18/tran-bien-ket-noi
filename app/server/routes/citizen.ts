@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import crypto from 'node:crypto';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
@@ -18,9 +17,9 @@ import {
 } from '../middleware/rateLimit';
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { getDemoNow } from '../clock';
-import { env } from '../env';
+import type { AppEnv } from '../types';
 
-export const citizenRoutes = new Hono();
+export const citizenRoutes = new Hono<AppEnv>();
 
 /**
  * 1. POST /citizen/otp/request - Yêu cầu mã OTP (Mô phỏng 123456)
@@ -174,6 +173,10 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
     )
     RETURNING id, code;
   `;
+
+  if (!newReport) {
+    throw new AppError('INTERNAL_SERVER_ERROR', 'Không thể tạo hồ sơ phản ánh', 500);
+  }
 
   // Lưu ảnh
   const photos = Array.isArray(body.photos) ? body.photos : [];
