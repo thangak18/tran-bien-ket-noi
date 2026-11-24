@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Report, VolunteerTask } from '../src/domain/types';
-import { haversineMeters } from '../src/domain/duplicates';
+import { haversineMeters } from '../src/domain/geo';
 import { isOverdue } from '../src/domain/sorting';
-import { DEMO_NOW } from '../src/domain/constants';
+import { DEMO_NOW, ALL_FEEDBACK_TAGS } from '../src/domain/constants';
 import { WARD_CENTER } from '../src/data/streets';
 
 const mockPath = path.resolve(process.cwd(), 'src/data/mock.json');
@@ -241,7 +241,15 @@ checks.push({
 // DV-012
 const dongAllHaveRating = reports
   .filter((r) => r.status === 'dong')
-  .every((r) => r.feedback?.rating && r.feedback.rating >= 1 && r.feedback.rating <= 5);
+  .every(
+    (r) =>
+      r.feedback?.rating &&
+      r.feedback.rating >= 1 &&
+      r.feedback.rating <= 5 &&
+      Array.isArray(r.feedback.tags) &&
+      r.feedback.tags.length > 0 &&
+      r.feedback.tags.every((t) => ALL_FEEDBACK_TAGS.includes(t))
+  );
 const hoanThanhNoFeedback = reports
   .filter((r) => r.status === 'hoan_thanh')
   .every((r) => !r.feedback);
@@ -252,7 +260,7 @@ const tasksMatch =
 
 checks.push({
   id: 'DV-012',
-  name: '40 hồ sơ đóng có rating; 7 HT không feedback; 3 tasks cho_xac_minh',
+  name: '40 hồ sơ đóng có rating 1–5 và tags thuộc bộ chip; 7 HT không feedback; 3 tasks cho_xac_minh',
   expected: 'Đầy đủ điều kiện',
   actual: dongAllHaveRating && hoanThanhNoFeedback && tasksMatch ? 'Đạt' : 'Không đạt',
   passed: dongAllHaveRating && hoanThanhNoFeedback && tasksMatch,

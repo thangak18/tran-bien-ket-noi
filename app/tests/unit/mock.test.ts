@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { generateMockData } from '@/domain/generator';
-import { haversineMeters } from '@/domain/duplicates';
+import { haversineMeters } from '@/domain/geo';
 import { isOverdue } from '@/domain/sorting';
-import { DEMO_NOW } from '@/domain/constants';
+import { DEMO_NOW, ALL_FEEDBACK_TAGS } from '@/domain/constants';
 import { WARD_CENTER } from '@/data/streets';
 
 describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
@@ -157,13 +157,18 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
     }
   });
 
-  it('DV-012: 40 hồ sơ dong có rating 1-5; 7 hoan_thanh không có feedback; 3 tasks khớp 3 cho_xac_minh', () => {
+  it('DV-012: 40 hồ sơ dong có rating 1-5 và tags thuộc bộ chip; 7 hoan_thanh không có feedback; 3 tasks khớp 3 cho_xac_minh', () => {
     const dongReports = reports.filter((r) => r.status === 'dong');
     expect(dongReports).toHaveLength(40);
     for (const r of dongReports) {
       expect(r.feedback?.rating).toBeDefined();
       expect(r.feedback!.rating).toBeGreaterThanOrEqual(1);
       expect(r.feedback!.rating).toBeLessThanOrEqual(5);
+      expect(Array.isArray(r.feedback?.tags)).toBe(true);
+      expect(r.feedback!.tags!.length).toBeGreaterThan(0);
+      for (const tag of r.feedback!.tags!) {
+        expect(ALL_FEEDBACK_TAGS).toContain(tag);
+      }
     }
 
     const hoanThanhReports = reports.filter((r) => r.status === 'hoan_thanh');

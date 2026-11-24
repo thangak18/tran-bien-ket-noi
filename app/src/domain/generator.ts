@@ -1,5 +1,6 @@
 import { Report, VolunteerTask, Category, Status } from './types';
 import { STREETS, WARD_CENTER } from '../data/streets';
+import { FEEDBACK_POSITIVE_TAGS, FEEDBACK_NEGATIVE_TAGS } from './constants';
 
 /**
  * Hàm PRNG Mulberry32 (plan 2, UT-019)
@@ -180,6 +181,16 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
 
       const secretCode = (1000 + Math.floor(rand() * 9000)).toString();
       const rating = item.isDong ? Math.floor(rand() * 3) + 3 : undefined; // 3, 4, 5
+      let tags: string[] | undefined = undefined;
+      if (item.isDong) {
+        if (rating! >= 4) {
+          const idx = (reportIdCounter - 1) % FEEDBACK_POSITIVE_TAGS.length;
+          tags = [FEEDBACK_POSITIVE_TAGS[idx]!];
+        } else {
+          const idx = (reportIdCounter - 1) % FEEDBACK_NEGATIVE_TAGS.length;
+          tags = [FEEDBACK_NEGATIVE_TAGS[idx]!];
+        }
+      }
 
       reports.push({
         id: idStr,
@@ -207,6 +218,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
           ? {
               resolved: true,
               rating,
+              tags,
               comment: 'Cảm ơn phường đã khắc phục nhanh chóng',
               at: completedAt,
             }
