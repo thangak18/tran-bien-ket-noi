@@ -15,6 +15,7 @@ import { submitReport } from '@/store/citizenActions';
 import { Category } from '@/domain/types';
 import { PhoneOtpSheet } from '@/components/citizen/PhoneOtpSheet';
 import { nearestStreet } from '@/data/streets';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 const CATEGORY_ITEMS: { key: Category; label: string; icon: React.ReactNode }[] = [
   { key: 'den_duong', label: 'Đèn đường', icon: <Lightbulb className="h-6 w-6 text-amber-500" /> },
@@ -32,7 +33,9 @@ export function C04Confirm() {
   const { state, dispatch } = useAppStore();
 
   const photos = state.draft?.photos || [];
-  const primaryPhoto = photos[0] || '/demo-photos/mat_duong/1.jpg';
+  const primaryPhoto = photos[0] || '';
+  const [primaryImgError, setPrimaryImgError] = useState(false);
+  const [thumbErrors, setThumbErrors] = useState<Record<number, boolean>>({});
 
   const [category, setCategory] = useState<Category | null>(state.draft?.category || null);
   const [address, setAddress] = useState<string>(state.draft?.address || '');
@@ -176,7 +179,22 @@ export function C04Confirm() {
       {/* Ảnh lớn phía trên + Dải ảnh nhỏ */}
       <div className="px-4 pb-3">
         <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-md">
-          <img src={primaryPhoto} alt="Hiện trường" className="h-full w-full object-cover" />
+          {primaryPhoto && !primaryImgError ? (
+            <img
+              src={primaryPhoto}
+              alt="Hiện trường"
+              className="h-full w-full object-cover"
+              onError={() => setPrimaryImgError(true)}
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-gray-800 text-gray-400">
+              <CategoryIcon
+                category={category || 'mat_duong'}
+                className="h-10 w-10 text-gray-400"
+              />
+              <span className="text-xs font-medium text-gray-300 mt-1.5">Chưa có ảnh</span>
+            </div>
+          )}
         </div>
 
         {/* Dải ảnh nhỏ + nút "+" */}
@@ -184,9 +202,24 @@ export function C04Confirm() {
           {photos.map((p, idx) => (
             <div
               key={idx}
-              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/20"
+              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/20 bg-gray-800"
             >
-              <img src={p} alt={`Ảnh ${idx + 1}`} className="h-full w-full object-cover" />
+              {p && !thumbErrors[idx] ? (
+                <img
+                  src={p}
+                  alt={`Ảnh ${idx + 1}`}
+                  className="h-full w-full object-cover"
+                  onError={() => setThumbErrors((prev) => ({ ...prev, [idx]: true }))}
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center bg-gray-800 text-gray-400">
+                  <CategoryIcon
+                    category={category || 'mat_duong'}
+                    className="h-4 w-4 text-gray-400"
+                  />
+                  <span className="text-[7px] font-medium text-gray-400">Chưa có ảnh</span>
+                </div>
+              )}
             </div>
           ))}
 

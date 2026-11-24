@@ -65,7 +65,11 @@ export const StatusChip: React.FC<StatusChipProps> = ({
   size = 'md',
 }) => {
   const config = STATUS_CONFIGS[status] || STATUS_CONFIGS.moi;
-  const label = variant === 'officer' ? config.officerLabel : config.publicLabel;
+  let label = variant === 'officer' ? config.officerLabel : config.publicLabel;
+  // Chip trạng thái chỉ hiện nhãn ngắn: cho_xac_minh -> chip "Đã tiếp nhận"
+  if (status === 'cho_xac_minh' && variant === 'public') {
+    label = 'Đã tiếp nhận';
+  }
   const icon = ICONS[config.icon] || <Send className="h-3.5 w-3.5" />;
   const colorClass = STATUS_STYLES[status] || COLOR_STYLES[config.color] || COLOR_STYLES.gray;
 
@@ -73,12 +77,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold select-none ${colorClass} ${sizeClass} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold select-none whitespace-nowrap ${colorClass} ${sizeClass} ${className}`}
     >
       <span className="inline-flex items-center flex-shrink-0" aria-hidden="true">
         {icon}
       </span>
-      <span>{label}</span>
+      <span className="whitespace-nowrap">{label}</span>
     </span>
   );
 };

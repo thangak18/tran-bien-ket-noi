@@ -332,8 +332,10 @@ function ReportItem({
       {/* Nội dung trung tâm */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <span className="text-[11px] text-gray-400 font-medium">{timeAgo}</span>
+          <div className="min-w-0">
+            <span className="text-[11px] text-gray-400 font-medium whitespace-nowrap">
+              {timeAgo}
+            </span>
             <h4 className="truncate text-xs font-bold text-gray-900 leading-snug">{typeUpper}</h4>
           </div>
 
@@ -348,6 +350,14 @@ function ReportItem({
           <span>{report.address}</span>
           <span className="ml-1 text-gray-400">· {formatDistance(distMeters)}</span>
         </p>
+
+        {/* Dòng phụ nhỏ cho hồ sơ đang xác minh tại chỗ */}
+        {report.status === 'cho_xac_minh' && (
+          <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-amber-700 whitespace-nowrap">
+            <Search className="h-3 w-3 shrink-0" />
+            <span>Đang kiểm tra tại chỗ</span>
+          </p>
+        )}
       </div>
     </div>
   );

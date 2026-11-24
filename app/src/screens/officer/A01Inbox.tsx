@@ -18,6 +18,21 @@ export function A01Inbox() {
 
   const now = state.settings.demoNow;
 
+  // 4 số KPI tính từ dữ liệu
+  const totalCount = state.reports.length;
+  const resolvedCount = useMemo(
+    () => state.reports.filter((r) => r.status === 'hoan_thanh' || r.status === 'dong').length,
+    [state.reports]
+  );
+  const overdueCount = useMemo(
+    () => state.reports.filter((r) => isOverdue(r, now)).length,
+    [state.reports, now]
+  );
+  const dueSoonCount = useMemo(
+    () => state.reports.filter((r) => isDueSoon(r, now)).length,
+    [state.reports, now]
+  );
+
   // Sắp xếp mặc định: quá hạn -> sắp hạn -> mới -> còn lại
   const sortedReports = useMemo(() => {
     return sortInbox(state.reports, now);
@@ -50,15 +65,25 @@ export function A01Inbox() {
   }, [sortedReports, searchTerm, activeTab]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-4 py-3 shadow-2xs">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900" data-testid="screen-title">
-              Hộp tiếp nhận cán bộ
-            </h1>
-            <p className="text-xs text-gray-500">UBND Phường Trấn Biên · Cán bộ điều phối</p>
+    <div className="min-h-screen bg-[#F5F7FB] pb-16 font-sans">
+      {/* Header đồng bộ desktop */}
+      <header className="sticky top-0 z-20 border-b border-[#E5E7EB] bg-white px-4 py-3 shadow-soft">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold text-base shadow-soft">
+              TB
+            </div>
+            <div>
+              <h1
+                className="text-base font-bold text-gray-900 leading-tight"
+                data-testid="screen-title"
+              >
+                Cổng cán bộ · Phường Trấn Biên
+              </h1>
+              <p className="text-xs text-gray-500 font-medium">
+                Hộp tiếp nhận & điều phối xử lý hiện trường
+              </p>
+            </div>
           </div>
 
           <button
@@ -71,7 +96,7 @@ export function A01Inbox() {
         </div>
 
         {/* Thanh tìm kiếm & Tabs */}
-        <div className="mx-auto mt-3 max-w-4xl space-y-2.5">
+        <div className="mx-auto mt-3 max-w-[1200px] space-y-2.5">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input
@@ -121,8 +146,36 @@ export function A01Inbox() {
         </div>
       </header>
 
-      {/* Danh sách hồ sơ */}
-      <main className="mx-auto max-w-4xl px-4 py-4 space-y-2.5">
+      {/* Danh sách hồ sơ & Hàng 4 thẻ KPI */}
+      <main className="mx-auto max-w-[1200px] px-4 py-4 space-y-4">
+        {/* Hàng 4 thẻ KPI */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft">
+            <span className="text-xs font-medium text-gray-500">Tổng phản ánh</span>
+            <div className="mt-1 text-2xl font-bold text-gray-900">{totalCount}</div>
+            <span className="text-[11px] text-gray-400">Tháng 11/2026</span>
+          </div>
+
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft">
+            <span className="text-xs font-medium text-emerald-600">Đã xử lý</span>
+            <div className="mt-1 text-2xl font-bold text-emerald-600">{resolvedCount}</div>
+            <span className="text-[11px] text-emerald-700 font-medium">
+              {((resolvedCount / (totalCount || 1)) * 100).toFixed(1)}% hoàn tất
+            </span>
+          </div>
+
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft">
+            <span className="text-xs font-medium text-red-600">Quá hạn</span>
+            <div className="mt-1 text-2xl font-bold text-red-600">{overdueCount}</div>
+            <span className="text-[11px] text-red-500">Cần xử lý gấp</span>
+          </div>
+
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft">
+            <span className="text-xs font-medium text-amber-600">Sắp đến hạn</span>
+            <div className="mt-1 text-2xl font-bold text-amber-600">{dueSoonCount}</div>
+            <span className="text-[11px] text-amber-600">Trong 24 giờ tới</span>
+          </div>
+        </div>
         {filteredReports.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
             Không tìm thấy hồ sơ phản ánh nào phù hợp.
