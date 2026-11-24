@@ -270,7 +270,7 @@ export function C04Confirm() {
                     {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
                       'Mặt đường'}
                   </span>{' '}
-                  (94%)
+                  · Gợi ý mô phỏng
                 </span>
               </div>
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
@@ -395,6 +395,20 @@ export function C04Confirm() {
               </div>
             </div>
           </div>
+
+          {/* B2 Cảnh báo trùng: Thẻ cam nằm trong sheet, ngay trên nút Gửi */}
+          {topDup && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 shadow-soft space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>Có sự cố tương tự gần đây ({Math.round(topDup.distanceMeters)}m)</span>
+              </div>
+              <p className="text-[11px] text-amber-800 leading-snug">
+                Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý. Bạn có thể tiếp
+                tục gửi hoặc theo dõi hồ sơ này.
+              </p>
+            </div>
+          )}
 
           {/* B2 Cảnh báo trùng: Thẻ cam nằm trong sheet, ngay trên nút Gửi */}
           {topDup && (
@@ -578,7 +592,7 @@ export function C04Confirm() {
                         {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
                           'Mặt đường'}
                       </span>{' '}
-                      (94%)
+                      · Gợi ý mô phỏng
                     </span>
                   </div>
                   <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
