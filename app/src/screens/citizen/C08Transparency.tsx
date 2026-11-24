@@ -49,7 +49,7 @@ export function C08Transparency() {
         <div className="w-10" />
       </header>
 
-      <main className="mx-auto max-w-md px-4 py-4 space-y-6">
+      <main className="mx-auto max-w-md lg:max-w-[1100px] px-4 py-4 space-y-6">
         {/* Banner giới thiệu */}
         <div className="rounded-3xl bg-linear-to-br from-primary-900 to-primary-700 p-5 text-white shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-200">
@@ -62,8 +62,8 @@ export function C08Transparency() {
           </p>
         </div>
 
-        {/* 4 Thẻ KPI */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* 4 Thẻ KPI - 1 hàng trên desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* KPI 1: Tổng số */}
           <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-2xs">
             <div className="flex items-center gap-2 text-gray-500">
@@ -180,7 +180,7 @@ export function C08Transparency() {
             <span className="text-xs text-gray-400">Hình ảnh đối chứng</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {recentCompleted.map((r) => (
               <div
                 key={r.id}

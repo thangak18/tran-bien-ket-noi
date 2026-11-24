@@ -69,7 +69,6 @@ export function C04Confirm() {
             });
           },
           () => {
-            // Lỗi hoặc từ chối GPS -> để trống để hiện trạng thái "Chưa xác định"
             setLat(null);
             setLng(null);
             setAddress('');
@@ -117,7 +116,6 @@ export function C04Confirm() {
     dispatch({ type: 'HYDRATE', payload: res.state });
     dispatch({ type: 'CLEAR_DRAFT' });
 
-    // Chuyển về tab Cá nhân với state thông báo thành công
     navigate('/?tab=ca-nhan', {
       replace: true,
       state: {
@@ -135,11 +133,9 @@ export function C04Confirm() {
 
     const cleanPhone = phone.trim().replace(/\s+/g, '');
     if (cleanPhone) {
-      // Có SĐT -> mở OTP
       setOtpTargetPhone(cleanPhone);
       setIsOtpOpen(true);
     } else {
-      // Không có SĐT -> Gửi ẩn danh
       executeSubmit('', true);
     }
   };
@@ -149,273 +145,502 @@ export function C04Confirm() {
     executeSubmit(verifiedPhone, false);
   };
 
-  // Xác định trạng thái nút gửi
   const hasLocation = Boolean(lat && address);
   const hasCategory = Boolean(category);
 
   return (
-    <div className="min-h-screen bg-[#111111] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#F5F7FB] flex flex-col justify-between font-sans">
       {/* Hidden test identifier */}
       <h1 data-testid="screen-title" className="sr-only">
         Bước 3: Xác nhận & gửi
       </h1>
 
-      {/* Header ← + "{n}/5 ảnh" */}
-      <header className="relative z-10 flex h-14 items-center justify-between px-4 pt-2 text-white">
-        <button
-          type="button"
-          onClick={() => navigate('/bao-su-co/anh')}
-          aria-label="Quay lại"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+      {/* ======================================================== */}
+      {/* 1. BỐ CỤC MOBILE & TABLET (< 1024px)                     */}
+      {/* ======================================================== */}
+      <div className="flex-1 flex flex-col justify-between bg-[#111111] lg:hidden">
+        {/* Header ← + "{n}/5 ảnh" */}
+        <header className="relative z-10 flex h-14 items-center justify-between px-4 pt-2 text-white">
+          <button
+            type="button"
+            onClick={() => navigate('/bao-su-co/anh')}
+            aria-label="Quay lại"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
 
-        <h2 className="text-sm font-semibold tracking-wide">Xác nhận gửi</h2>
+          <h2 className="text-sm font-semibold tracking-wide">Xác nhận gửi</h2>
 
-        <span className="text-xs font-medium text-gray-300">{photos.length || 1}/5 ảnh</span>
-      </header>
+          <span className="text-xs font-medium text-gray-300">{photos.length || 1}/5 ảnh</span>
+        </header>
 
-      {/* Ảnh lớn phía trên + Dải ảnh nhỏ */}
-      <div className="px-4 pb-3">
-        <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-md">
-          {primaryPhoto && !primaryImgError ? (
-            <img
-              src={primaryPhoto}
-              alt="Hiện trường"
-              className="h-full w-full object-cover"
-              onError={() => setPrimaryImgError(true)}
-            />
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center bg-gray-800 text-gray-400">
-              <CategoryIcon
-                category={category || 'mat_duong'}
-                className="h-10 w-10 text-gray-400"
+        {/* Ảnh lớn phía trên + Dải ảnh nhỏ */}
+        <div className="px-4 pb-3">
+          <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-md">
+            {primaryPhoto && !primaryImgError ? (
+              <img
+                src={primaryPhoto}
+                alt="Hiện trường"
+                className="h-full w-full object-cover"
+                onError={() => setPrimaryImgError(true)}
               />
-              <span className="text-xs font-medium text-gray-300 mt-1.5">Chưa có ảnh</span>
-            </div>
-          )}
-        </div>
-
-        {/* Dải ảnh nhỏ + nút "+" */}
-        <div className="mt-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {photos.map((p, idx) => (
-            <div
-              key={idx}
-              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/20 bg-gray-800"
-            >
-              {p && !thumbErrors[idx] ? (
-                <img
-                  src={p}
-                  alt={`Ảnh ${idx + 1}`}
-                  className="h-full w-full object-cover"
-                  onError={() => setThumbErrors((prev) => ({ ...prev, [idx]: true }))}
-                />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center bg-gray-800 text-gray-400">
-                  <CategoryIcon
-                    category={category || 'mat_duong'}
-                    className="h-4 w-4 text-gray-400"
-                  />
-                  <span className="text-[7px] font-medium text-gray-400">Chưa có ảnh</span>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {photos.length < 5 && (
-            <button
-              type="button"
-              onClick={() => addPhotoInputRef.current?.click()}
-              aria-label="Thêm ảnh"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-400 bg-white/10 text-gray-300 hover:bg-white/20"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-          )}
-
-          <input
-            ref={addPhotoInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleAddPhoto}
-          />
-        </div>
-      </div>
-
-      {/* Sheet trắng bo góc trên */}
-      <div className="rounded-t-[24px] bg-white p-5 shadow-2xl flex-1 flex flex-col justify-between space-y-4">
-        <div className="space-y-4">
-          {/* 1. Thanh bước nhỏ ① Ảnh ✓ ② Vị trí ③ Loại (BẮT BUỘC) */}
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2 text-[11px] font-semibold text-gray-400">
-            <span className="text-emerald-600 flex items-center gap-1">① Ảnh ✓</span>
-            <span className="h-0.5 w-6 bg-gray-200" />
-            <span className={hasLocation ? 'text-primary font-bold' : 'text-gray-400'}>
-              ② Vị trí {hasLocation && '✓'}
-            </span>
-            <span className="h-0.5 w-6 bg-gray-200" />
-            <span className={hasCategory ? 'text-primary font-bold' : 'text-gray-400'}>
-              ③ Loại {hasCategory && '✓'}
-            </span>
-          </div>
-
-          {/* 2. Loại phản ánh (Lưới 2x2 tile) */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-              Loại phản ánh <span className="text-red-500">*</span>
-            </h3>
-
-            <div className="grid grid-cols-2 gap-2">
-              {CATEGORY_ITEMS.map((item) => {
-                const isSelected = category === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setCategory(item.key)}
-                    className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${
-                      isSelected
-                        ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
-                        : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
-                    }`}
-                  >
-                    <div className="flex h-8 w-8 items-center justify-center shrink-0">
-                      {item.icon}
-                    </div>
-                    <span
-                      className={`text-xs font-bold leading-tight ${
-                        isSelected ? 'text-primary' : 'text-gray-800'
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 3. Vị trí phản ánh */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-              Vị trí phản ánh <span className="text-red-500">*</span>
-            </h3>
-
-            {hasLocation ? (
-              <div className="flex items-center justify-between rounded-card border border-[#E5E7EB] bg-white p-3 shadow-soft">
-                <div className="flex items-start gap-2.5 overflow-hidden">
-                  <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-gray-900">{address}</p>
-                    <p className="text-[11px] text-gray-500">
-                      {isGpsAuto ? 'Tự động GPS' : `${lat?.toFixed(4)}, ${lng?.toFixed(4)}`}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/bao-su-co/vi-tri')}
-                  className="rounded-btn px-2.5 py-1 text-xs font-bold text-primary hover:bg-[#EFF4FF] transition-colors shrink-0"
-                >
-                  Đổi
-                </button>
-              </div>
             ) : (
-              <div className="flex items-center justify-between rounded-card border border-amber-300 bg-amber-50 p-3 shadow-soft">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-bold text-amber-900">Chưa xác định được vị trí</p>
-                    <p className="text-[11px] text-amber-700">
-                      Nhấn để chọn trên bản đồ hoặc nhập đường
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/bao-su-co/vi-tri')}
-                  className="rounded-btn bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 shadow-soft shrink-0"
-                >
-                  Chọn
-                </button>
+              <div className="flex h-full w-full flex-col items-center justify-center bg-gray-800 text-gray-400">
+                <CategoryIcon
+                  category={category || 'mat_duong'}
+                  className="h-10 w-10 text-gray-400"
+                />
+                <span className="text-xs font-medium text-gray-300 mt-1.5">Chưa có ảnh</span>
               </div>
             )}
           </div>
 
-          {/* 4. Mô tả & Liên hệ */}
-          <div className="space-y-3">
-            <div>
-              <label
-                htmlFor="report-desc"
-                className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1"
+          {/* Dải ảnh nhỏ + nút "+" */}
+          <div className="mt-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {photos.map((p, idx) => (
+              <div
+                key={idx}
+                className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/20 bg-gray-800"
               >
-                Mô tả (tùy chọn)
-              </label>
-              <textarea
-                id="report-desc"
-                rows={2}
-                maxLength={300}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Mô tả ngắn (tùy chọn, ≤ 300 ký tự)..."
-                className="w-full rounded-card border border-[#E5E7EB] bg-gray-50/50 p-2.5 text-xs text-gray-900 placeholder-gray-400 focus:border-primary focus:bg-white focus:outline-none"
-              />
-            </div>
+                {p && !thumbErrors[idx] ? (
+                  <img
+                    src={p}
+                    alt={`Ảnh ${idx + 1}`}
+                    className="h-full w-full object-cover"
+                    onError={() => setThumbErrors((prev) => ({ ...prev, [idx]: true }))}
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center bg-gray-800 text-gray-400">
+                    <CategoryIcon
+                      category={category || 'mat_duong'}
+                      className="h-4 w-4 text-gray-400"
+                    />
+                    <span className="text-[7px] font-medium text-gray-400">Chưa có ảnh</span>
+                  </div>
+                )}
+              </div>
+            ))}
 
-            <div>
-              <label
-                htmlFor="report-phone"
-                className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1"
+            {photos.length < 5 && (
+              <button
+                type="button"
+                onClick={() => addPhotoInputRef.current?.click()}
+                aria-label="Thêm ảnh"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-400 bg-white/10 text-gray-300 hover:bg-white/20"
               >
-                Số điện thoại nhận tin
-              </label>
-              <input
-                id="report-phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Số điện thoại nhận tin (VD: 0909 000 068)"
-                className="w-full rounded-card border border-[#E5E7EB] bg-gray-50/50 p-2.5 text-xs text-gray-900 placeholder-gray-400 focus:border-primary focus:bg-white focus:outline-none"
-              />
-              <p className="mt-1 text-[11px] text-gray-500">
-                Để trống = gửi ẩn danh. SĐT không hiển thị công khai.
-              </p>
-            </div>
+                <Plus className="h-5 w-5" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* 5. Nút "Gửi phản ánh" */}
-        <div className="pt-2">
-          {!hasLocation ? (
-            <button
-              type="button"
-              disabled
-              className="w-full rounded-btn bg-gray-200 py-3 text-xs font-bold text-gray-400 cursor-not-allowed text-center"
-            >
-              Chọn vị trí để gửi
-            </button>
-          ) : !hasCategory ? (
-            <button
-              type="button"
-              disabled
-              className="w-full rounded-btn bg-gray-200 py-3 text-xs font-bold text-gray-400 cursor-not-allowed text-center"
-            >
-              Chọn loại để gửi
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleStartSubmit}
-              className="w-full rounded-btn bg-primary py-3 text-xs font-bold text-white shadow-soft hover:bg-primary-hover active:scale-95 transition-all text-center"
-            >
-              Gửi phản ánh
-            </button>
-          )}
+        {/* Sheet trắng bo góc trên */}
+        <div className="rounded-t-[24px] bg-white p-5 shadow-2xl flex-1 flex flex-col justify-between space-y-4">
+          <div className="space-y-4">
+            {/* 1. Thanh bước nhỏ ① Ảnh ✓ ② Vị trí ③ Loại (BẮT BUỘC) */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2 text-[11px] font-semibold text-gray-400">
+              <span className="text-emerald-600 flex items-center gap-1">① Ảnh ✓</span>
+              <span className="h-0.5 w-6 bg-gray-200" />
+              <span className={hasLocation ? 'text-primary font-bold' : 'text-gray-400'}>
+                ② Vị trí {hasLocation && '✓'}
+              </span>
+              <span className="h-0.5 w-6 bg-gray-200" />
+              <span className={hasCategory ? 'text-primary font-bold' : 'text-gray-400'}>
+                ③ Loại {hasCategory && '✓'}
+              </span>
+            </div>
+
+            {/* 2. Loại phản ánh (Lưới 2x2 tile) */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                Loại phản ánh <span className="text-red-500">*</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-2">
+                {CATEGORY_ITEMS.map((item) => {
+                  const isSelected = category === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setCategory(item.key)}
+                      className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${
+                        isSelected
+                          ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
+                          : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
+                      }`}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center shrink-0">
+                        {item.icon}
+                      </div>
+                      <span className="text-xs font-bold text-gray-900">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. Vị trí phản ánh */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Vị trí <span className="text-red-500">*</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => navigate('/bao-su-co/vi-tri')}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  {hasLocation ? 'Đổi vị trí' : 'Chọn vị trí'}
+                </button>
+              </div>
+
+              {hasLocation ? (
+                <div className="flex items-center gap-2.5 rounded-card border border-[#E5E7EB] bg-gray-50 p-3 shadow-soft">
+                  <MapPin className="h-5 w-5 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-gray-800">{address}</p>
+                    <p className="text-[11px] text-gray-400">
+                      {isGpsAuto ? 'Vị trí hiện tại qua GPS' : 'Vị trí đã chọn trên bản đồ'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-card border-2 border-dashed border-amber-300 bg-amber-50/70 p-3.5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-800">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Chưa xác định vị trí</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-amber-700">
+                    Vui lòng bật GPS hoặc chọn vị trí trên bản đồ để phường tiếp nhận.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/bao-su-co/vi-tri')}
+                    className="mt-2.5 inline-flex items-center gap-1.5 rounded-btn bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-soft hover:bg-amber-700"
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>Chọn vị trí ngay</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Mô tả chi tiết & SĐT */}
+            <div className="space-y-3">
+              <div>
+                <label
+                  htmlFor="report-desc"
+                  className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1"
+                >
+                  Mô tả (tùy chọn)
+                </label>
+                <textarea
+                  id="report-desc"
+                  rows={2}
+                  maxLength={300}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Mô tả ngắn (tùy chọn, ≤ 300 ký tự)..."
+                  className="w-full rounded-card border border-[#E5E7EB] bg-gray-50/50 p-2.5 text-xs text-gray-900 placeholder-gray-400 focus:border-primary focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="report-phone"
+                  className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1"
+                >
+                  Số điện thoại nhận tin
+                </label>
+                <input
+                  id="report-phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Số điện thoại nhận tin (VD: 0909 000 068)"
+                  className="w-full rounded-card border border-[#E5E7EB] bg-gray-50/50 p-2.5 text-xs text-gray-900 placeholder-gray-400 focus:border-primary focus:bg-white focus:outline-none"
+                />
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Để trống = gửi ẩn danh. SĐT không hiển thị công khai.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Nút "Gửi phản ánh" */}
+          <div className="pt-2">
+            {!hasLocation ? (
+              <button
+                type="button"
+                disabled
+                className="w-full rounded-btn bg-gray-200 py-3 text-xs font-bold text-gray-400 cursor-not-allowed text-center"
+              >
+                Chọn vị trí để gửi
+              </button>
+            ) : !hasCategory ? (
+              <button
+                type="button"
+                disabled
+                className="w-full rounded-btn bg-gray-200 py-3 text-xs font-bold text-gray-400 cursor-not-allowed text-center"
+              >
+                Chọn loại để gửi
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleStartSubmit}
+                className="w-full rounded-btn bg-primary py-3 text-xs font-bold text-white shadow-soft hover:bg-primary-hover active:scale-95 transition-all text-center"
+              >
+                Gửi phản ánh
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* ======================================================== */}
+      {/* 2. BỐ CỤC DESKTOP (>= 1024px): 1 Thẻ trắng max 960px 2 cột */}
+      {/* ======================================================== */}
+      <div className="hidden lg:block w-full max-w-[960px] mx-auto py-8 px-4 flex-1">
+        <div className="rounded-card border border-[#E5E7EB] bg-white p-6 shadow-soft">
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Gửi phản ánh hiện trường</h2>
+              <p className="text-xs text-gray-500">
+                UBND Phường Trấn Biên tiếp nhận và điều phối giải quyết nhanh chóng
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-900"
+            >
+              ✕ Huỷ bỏ
+            </button>
+          </div>
+
+          <div className="grid grid-cols-12 gap-8">
+            {/* CỘT TRÁI (5/12): Ảnh */}
+            <div className="col-span-5 flex flex-col gap-3">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Hình ảnh hiện trường
+              </label>
+
+              {photos.length === 0 ? (
+                /* Ô tải ảnh kéo thả / bấm chọn */
+                <div
+                  onClick={() => addPhotoInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center h-64 rounded-card border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-primary hover:bg-[#EFF4FF]/50 transition-all cursor-pointer"
+                >
+                  <Plus className="h-8 w-8 text-primary mb-2" />
+                  <p className="text-xs font-bold text-gray-800">Chọn ảnh hoặc kéo thả vào đây</p>
+                  <p className="text-[11px] text-gray-400 mt-1">Hỗ trợ tối đa 5 ảnh (PNG, JPG)</p>
+                </div>
+              ) : (
+                /* Ảnh lớn đã chọn + dải thumbnail */
+                <div>
+                  <div className="relative h-60 w-full overflow-hidden rounded-card border border-gray-200 bg-gray-100 shadow-soft">
+                    {primaryPhoto && !primaryImgError ? (
+                      <img
+                        src={primaryPhoto}
+                        alt="Hiện trường"
+                        className="h-full w-full object-cover"
+                        onError={() => setPrimaryImgError(true)}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center bg-gray-100 text-gray-400">
+                        <CategoryIcon
+                          category={category || 'mat_duong'}
+                          className="h-10 w-10 text-gray-400"
+                        />
+                        <span className="text-xs font-medium text-gray-500 mt-1.5">
+                          Chưa có ảnh
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnail nhỏ */}
+                  <div className="mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    {photos.map((p, idx) => (
+                      <div
+                        key={idx}
+                        className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-200"
+                      >
+                        <img
+                          src={p}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ))}
+
+                    {photos.length < 5 && (
+                      <button
+                        type="button"
+                        onClick={() => addPhotoInputRef.current?.click()}
+                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-gray-500 hover:border-primary hover:text-primary"
+                      >
+                        <Plus className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* CỘT PHẢI (7/12): Form thông tin */}
+            <div className="col-span-7 flex flex-col justify-between space-y-4">
+              <div className="space-y-4">
+                {/* 1. Thanh bước nhỏ */}
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2 text-[11px] font-semibold text-gray-400">
+                  <span
+                    className={
+                      photos.length > 0
+                        ? 'text-emerald-600 flex items-center gap-1'
+                        : 'text-gray-400'
+                    }
+                  >
+                    ① Ảnh {photos.length > 0 && '✓'}
+                  </span>
+                  <span className="h-0.5 w-6 bg-gray-200" />
+                  <span className={hasLocation ? 'text-primary font-bold' : 'text-gray-400'}>
+                    ② Vị trí {hasLocation && '✓'}
+                  </span>
+                  <span className="h-0.5 w-6 bg-gray-200" />
+                  <span className={hasCategory ? 'text-primary font-bold' : 'text-gray-400'}>
+                    ③ Loại {hasCategory && '✓'}
+                  </span>
+                </div>
+
+                {/* 2. Loại sự cố 2x2 */}
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                    Loại phản ánh <span className="text-red-500">*</span>
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {CATEGORY_ITEMS.map((item) => {
+                      const isSelected = category === item.key;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setCategory(item.key)}
+                          className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${
+                            isSelected
+                              ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
+                              : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
+                          }`}
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center shrink-0">
+                            {item.icon}
+                          </div>
+                          <span className="text-xs font-bold text-gray-900">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. Vị trí */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                      Vị trí <span className="text-red-500">*</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/bao-su-co/vi-tri')}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      {hasLocation ? 'Đổi vị trí' : 'Chọn vị trí'}
+                    </button>
+                  </div>
+
+                  {hasLocation ? (
+                    <div className="flex items-center gap-2.5 rounded-card border border-[#E5E7EB] bg-gray-50 p-3 shadow-soft">
+                      <MapPin className="h-5 w-5 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold text-gray-800">{address}</p>
+                        <p className="text-[11px] text-gray-400">
+                          {isGpsAuto ? 'Vị trí hiện tại qua GPS' : 'Vị trí đã chọn trên bản đồ'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-card border-2 border-dashed border-amber-300 bg-amber-50/70 p-3 text-center">
+                      <span className="text-xs font-bold text-amber-800">Chưa xác định vị trí</span>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/bao-su-co/vi-tri')}
+                        className="ml-3 inline-flex items-center gap-1 text-xs font-bold text-primary underline"
+                      >
+                        Chọn trên bản đồ →
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Mô tả & SĐT */}
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Mô tả chi tiết (tuỳ chọn)
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Ghi chú chi tiết về sự cố (vd: trước số nhà 12, sụt lún sâu...)"
+                      rows={2}
+                      className="w-full rounded-card border border-[#E5E7EB] bg-gray-50 p-2.5 text-xs text-gray-800 placeholder-gray-400 focus:border-primary focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Số điện thoại nhận tin (để trống nếu gửi ẩn danh)
+                    </label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Nhập số điện thoại của bạn..."
+                      className="w-full rounded-card border border-[#E5E7EB] bg-gray-50 p-2.5 text-xs text-gray-800 placeholder-gray-400 focus:border-primary focus:bg-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Nút gửi Desktop */}
+              <div className="pt-4">
+                <button
+                  type="button"
+                  disabled={!category || !hasLocation}
+                  onClick={handleStartSubmit}
+                  className={`w-full rounded-btn py-3 text-xs font-bold text-white shadow-soft transition-all ${
+                    category && hasLocation
+                      ? 'bg-primary hover:bg-primary-hover active:scale-[0.99]'
+                      : 'bg-gray-300 cursor-not-allowed text-gray-500'
+                  }`}
+                >
+                  Gửi phản ánh ngay
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={addPhotoInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAddPhoto}
+      />
 
       {/* Sheet OTP khi có SĐT */}
       <PhoneOtpSheet

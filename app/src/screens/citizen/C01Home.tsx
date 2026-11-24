@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Search, Map, CheckCircle2, Copy } from 'lucide-react';
+import { Search, Map, CheckCircle2, Copy, ArrowRight, Camera } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { StatusChip } from '@/components/common/StatusChip';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -8,6 +8,8 @@ import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { WARD_CENTER } from '@/data/streets';
 import { haversineMeters } from '@/domain/geo';
 import { formatDistance } from '@/domain/format';
+import { computeKpi } from '@/domain/kpi';
+import { MapView } from '@/components/map/MapView';
 import { Report, Category } from '@/domain/types';
 
 function formatDaysAgo(dateStr: string, nowStr: string): string {
@@ -91,18 +93,35 @@ export function C01Home() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [reports]);
 
+  // KPI tháng 11 cho sidebar desktop
+  const kpi = useMemo(() => computeKpi(reports, '2026-11', now), [reports, now]);
+
+  // Marker cho bản đồ nhỏ desktop
+  const mapMarkers = useMemo(() => {
+    return reports.slice(0, 25).map((r) => ({
+      id: r.id,
+      lat: r.lat,
+      lng: r.lng,
+      category: r.category,
+      status: r.status,
+      title: r.address,
+      onClick: (id: string) => navigate(`/phan-anh/${id}`),
+    }));
+  }, [reports, navigate]);
+
   return (
-    <div className="flex flex-col gap-3 px-4 pt-4 pb-6 min-h-screen">
+    <div className="flex flex-col gap-4 px-4 pt-4 pb-8 min-h-screen w-full max-w-[1200px] mx-auto md:p-6">
       {/* Hidden test identifier */}
       <h1 data-testid="screen-title" className="sr-only">
         Trang chủ
       </h1>
 
-      {/* Header: "Phản ánh" + icon tìm kiếm + icon bản đồ */}
+      {/* Header: "Phản ánh" + icon tìm kiếm/bản đồ (mobile) hoặc segmented (desktop) */}
       <header className="flex items-center justify-between py-1">
-        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Phản ánh</h2>
+        <h2 className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">Phản ánh</h2>
 
-        <div className="flex items-center gap-2">
+        {/* Mobile controls */}
+        <div className="flex items-center gap-2 lg:hidden">
           <button
             type="button"
             aria-label="Tìm kiếm phản ánh"
@@ -120,154 +139,114 @@ export function C01Home() {
             <Map className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Desktop segmented control */}
+        <div className="hidden lg:flex rounded-xl bg-gray-200/70 p-1 w-64 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => handleTabChange('cong-dong')}
+            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
+              activeTab === 'cong-dong'
+                ? 'bg-white text-primary shadow-soft'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Cộng đồng
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange('ca-nhan')}
+            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
+              activeTab === 'ca-nhan'
+                ? 'bg-white text-primary shadow-soft'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Cá nhân {myReports.length > 0 && `(${myReports.length})`}
+          </button>
+        </div>
       </header>
 
-      {/* Segmented Control: "Cộng đồng" | "Cá nhân" */}
-      <div className="flex rounded-xl bg-gray-200/70 p-1">
-        <button
-          type="button"
-          onClick={() => handleTabChange('cong-dong')}
-          className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
-            activeTab === 'cong-dong'
-              ? 'bg-white text-primary shadow-soft'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Cộng đồng
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabChange('ca-nhan')}
-          className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
-            activeTab === 'ca-nhan'
-              ? 'bg-white text-primary shadow-soft'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Cá nhân {myReports.length > 0 && `(${myReports.length})`}
-        </button>
-      </div>
-
-      {/* Băng xanh lá thông báo gửi thành công (nếu có) */}
-      {justSubmitted && (
-        <div className="rounded-card border border-emerald-300 bg-emerald-50 p-3.5 shadow-soft">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold text-emerald-900">
-                  ✓ Gửi phản ánh #{justSubmitted.reportId} thành công!
-                </p>
-                <p className="text-[11px] text-emerald-700 mt-0.5">
-                  Phường Trấn Biên đã tiếp nhận yêu cầu.
-                </p>
-                {justSubmitted.anonymous && justSubmitted.secretCode && (
-                  <p className="text-[11px] font-semibold text-emerald-800 mt-1">
-                    Mã bí mật: <span className="font-mono">{justSubmitted.secretCode}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => navigate(`/phan-anh/${justSubmitted.reportId}`)}
-                className="rounded-btn bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 shadow-soft"
-              >
-                Xem
-              </button>
-              {justSubmitted.anonymous && (
-                <button
-                  type="button"
-                  onClick={() => handleCopyLink(justSubmitted.reportId, justSubmitted.secretCode)}
-                  className="inline-flex items-center gap-1 rounded-btn border border-emerald-300 bg-white px-2 py-0.5 text-[10px] font-medium text-emerald-800"
-                >
-                  <Copy className="h-3 w-3" />
-                  <span>{copiedLink ? 'Đã lưu' : 'Lưu link'}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* NỘI DUNG TAB CỘNG ĐỒNG */}
-      {activeTab === 'cong-dong' && (
-        <div className="space-y-2.5">
-          {communityReports.map((report) => (
-            <ReportItem
-              key={report.id}
-              report={report}
-              now={now}
-              onClick={() => navigate(`/phan-anh/${report.id}`)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* NỘI DUNG TAB CÁ NHÂN */}
-      {activeTab === 'ca-nhan' && (
-        <div className="space-y-3">
-          {/* 3 Pill lọc */}
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+      {/* Bố cục 2 cột trên Desktop (>= 1024px) */}
+      <div className="flex flex-col lg:flex-row lg:items-start lg:gap-8">
+        {/* CỘT TRÁI (2/3 trên desktop, full trên mobile/tablet) */}
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          {/* Segmented Control cho Mobile & Tablet */}
+          <div className="flex rounded-xl bg-gray-200/70 p-1 lg:hidden">
             <button
               type="button"
-              onClick={() => setMyFilter('all')}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                myFilter === 'all'
-                  ? 'bg-primary text-white'
-                  : 'bg-white border border-[#E5E7EB] text-gray-600 hover:bg-gray-50'
+              onClick={() => handleTabChange('cong-dong')}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+                activeTab === 'cong-dong'
+                  ? 'bg-white text-primary shadow-soft'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Tất cả ({myReports.length})
+              Cộng đồng
             </button>
             <button
               type="button"
-              onClick={() => setMyFilter('processing')}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                myFilter === 'processing'
-                  ? 'bg-primary text-white'
-                  : 'bg-white border border-[#E5E7EB] text-gray-600 hover:bg-gray-50'
+              onClick={() => handleTabChange('ca-nhan')}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+                activeTab === 'ca-nhan'
+                  ? 'bg-white text-primary shadow-soft'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Đang xử lý ({countMyProcessing})
-            </button>
-            <button
-              type="button"
-              onClick={() => setMyFilter('resolved')}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                myFilter === 'resolved'
-                  ? 'bg-primary text-white'
-                  : 'bg-white border border-[#E5E7EB] text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              Đã xử lý ({countMyResolved})
+              Cá nhân {myReports.length > 0 && `(${myReports.length})`}
             </button>
           </div>
 
-          {/* Trạng thái trống của tab Cá nhân */}
-          {filteredMyReports.length === 0 ? (
-            <div className="mt-6 flex flex-col items-center justify-center rounded-card border border-[#E5E7EB] bg-white p-8 text-center shadow-soft">
-              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#EFF4FF] text-primary font-bold text-2xl shadow-soft">
-                0
-              </div>
-              <h3 className="text-base font-bold text-gray-900">Bạn chưa gửi phản ánh nào</h3>
-              <p className="mt-1.5 text-xs text-gray-500 max-w-[260px] leading-relaxed">
-                Phản ánh bạn gửi từ máy này sẽ xuất hiện tại đây để theo dõi tiến độ.
-              </p>
+          {/* Băng xanh lá thông báo gửi thành công (nếu có) */}
+          {justSubmitted && (
+            <div className="rounded-card border border-emerald-300 bg-emerald-50 p-3.5 shadow-soft">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-emerald-900">
+                      ✓ Gửi phản ánh #{justSubmitted.reportId} thành công!
+                    </p>
+                    <p className="text-[11px] text-emerald-700 mt-0.5">
+                      Phường Trấn Biên đã tiếp nhận yêu cầu.
+                    </p>
+                    {justSubmitted.anonymous && justSubmitted.secretCode && (
+                      <p className="text-[11px] font-semibold text-emerald-800 mt-1">
+                        Mã bí mật: <span className="font-mono">{justSubmitted.secretCode}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => navigate('/bao-su-co/anh')}
-                className="mt-5 rounded-btn bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-primary-hover active:scale-95"
-              >
-                Gửi phản ánh ngay
-              </button>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/phan-anh/${justSubmitted.reportId}`)}
+                    className="rounded-btn bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 shadow-soft"
+                  >
+                    Xem
+                  </button>
+                  {justSubmitted.anonymous && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleCopyLink(justSubmitted.reportId, justSubmitted.secretCode)
+                      }
+                      className="inline-flex items-center gap-1 rounded-btn border border-emerald-300 bg-white px-2 py-0.5 text-[10px] font-medium text-emerald-800"
+                    >
+                      <Copy className="h-3 w-3" />
+                      <span>{copiedLink ? 'Đã lưu' : 'Lưu link'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-2.5">
-              {filteredMyReports.map((report) => (
+          )}
+
+          {/* NỘI DUNG TAB CỘNG ĐỒNG */}
+          {activeTab === 'cong-dong' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {communityReports.map((report) => (
                 <ReportItem
                   key={report.id}
                   report={report}
@@ -277,8 +256,160 @@ export function C01Home() {
               ))}
             </div>
           )}
+
+          {/* NỘI DUNG TAB CÁ NHÂN */}
+          {activeTab === 'ca-nhan' && (
+            <div className="space-y-3">
+              {/* 3 Pill lọc */}
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setMyFilter('all')}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                    myFilter === 'all'
+                      ? 'bg-primary text-white'
+                      : 'bg-white border border-[#E5E7EB] text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Tất cả ({myReports.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMyFilter('processing')}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                    myFilter === 'processing'
+                      ? 'bg-primary text-white'
+                      : 'bg-white border border-[#E5E7EB] text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Đang xử lý ({countMyProcessing})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMyFilter('resolved')}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                    myFilter === 'resolved'
+                      ? 'bg-primary text-white'
+                      : 'bg-white border border-[#E5E7EB] text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Đã xử lý ({countMyResolved})
+                </button>
+              </div>
+
+              {/* Trạng thái trống của tab Cá nhân */}
+              {filteredMyReports.length === 0 ? (
+                <div className="mt-6 flex flex-col items-center justify-center rounded-card border border-[#E5E7EB] bg-white p-8 text-center shadow-soft">
+                  <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#EFF4FF] text-primary font-bold text-2xl shadow-soft">
+                    0
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900">Bạn chưa gửi phản ánh nào</h3>
+                  <p className="mt-1.5 text-xs text-gray-500 max-w-[260px] leading-relaxed">
+                    Phản ánh bạn gửi từ máy này sẽ xuất hiện tại đây để theo dõi tiến độ.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate('/bao-su-co/anh')}
+                    className="mt-5 rounded-btn bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-primary-hover active:scale-95"
+                  >
+                    Gửi phản ánh ngay
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {filteredMyReports.map((report) => (
+                    <ReportItem
+                      key={report.id}
+                      report={report}
+                      now={now}
+                      onClick={() => navigate(`/phan-anh/${report.id}`)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* CỘT PHẢI (1/3 trên desktop - sticky) */}
+        <aside className="hidden lg:flex flex-col gap-4 w-[360px] shrink-0 sticky top-20 self-start">
+          {/* Thẻ 1: Tháng 11 tại phường - 4 KPI */}
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-5 shadow-soft">
+            <h3 className="text-sm font-bold text-gray-900">Tháng 11 tại phường</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Tiến độ giải quyết phản ánh hiện trường</p>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-gray-50 p-2.5 border border-gray-100">
+                <span className="text-[11px] text-gray-500">Tổng phản ánh</span>
+                <div className="mt-0.5 text-xl font-bold text-gray-900">{kpi.total}</div>
+              </div>
+              <div className="rounded-lg bg-emerald-50 p-2.5 border border-emerald-100">
+                <span className="text-[11px] text-emerald-700">Đã xử lý</span>
+                <div className="mt-0.5 text-xl font-bold text-emerald-700">
+                  {kpi.resolved}{' '}
+                  <span className="text-xs font-medium">({kpi.resolvedPercent}%)</span>
+                </div>
+              </div>
+              <div className="rounded-lg bg-amber-50 p-2.5 border border-amber-100">
+                <span className="text-[11px] text-amber-700">Chưa hoàn tất</span>
+                <div className="mt-0.5 text-xl font-bold text-amber-700">{kpi.open}</div>
+              </div>
+              <div className="rounded-lg bg-blue-50 p-2.5 border border-blue-100">
+                <span className="text-[11px] text-blue-700">Thời gian TB</span>
+                <div className="mt-0.5 text-xl font-bold text-blue-700">
+                  {kpi.avgDays ?? 3.2} <span className="text-xs font-medium">ngày</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('/minh-bach')}
+              className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+            >
+              <span>Xem bảng minh bạch</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Thẻ 2: Bản đồ nhỏ */}
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-gray-900">Bản đồ phản ánh</h3>
+              <button
+                type="button"
+                onClick={() => navigate('/quanh-day')}
+                className="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5"
+              >
+                <span>Mở bản đồ</span>
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="h-[280px] w-full rounded-xl overflow-hidden border border-gray-100">
+              <MapView center={[WARD_CENTER.lat, WARD_CENTER.lng]} zoom={14} markers={mapMarkers} />
+            </div>
+          </div>
+
+          {/* Thẻ 3: Kêu gọi hành động */}
+          <div className="rounded-card bg-primary p-5 text-white shadow-soft">
+            <div className="flex items-center gap-2 mb-2">
+              <Camera className="h-5 w-5 text-white/90" />
+              <h4 className="text-sm font-bold">Báo sự cố nhanh</h4>
+            </div>
+            <p className="text-xs text-white/90 leading-relaxed">
+              Thấy chỗ hư hỏng? Chụp một tấm, phường sẽ lo.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/bao-su-co/anh')}
+              className="mt-3.5 w-full rounded-btn bg-white py-2 text-xs font-bold text-primary shadow-soft hover:bg-gray-50 active:scale-95 transition-all text-center"
+            >
+              Gửi phản ánh
+            </button>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

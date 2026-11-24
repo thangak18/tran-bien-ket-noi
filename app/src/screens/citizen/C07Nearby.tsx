@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { MapView, MapMarker } from '@/components/map/MapView';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -54,14 +54,14 @@ export function C07Nearby() {
       title: `${r.id}: ${r.address}`,
       onClick: (id: string) => {
         setSelectedReportId(id);
-        // Cuộn thẻ tương ứng vào khung nhìn
         const cardElem = document.getElementById(`carousel-card-${id}`);
         cardElem?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        const listElem = document.getElementById(`list-card-${id}`);
+        listElem?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       },
     }));
   }, [sortedReports]);
 
-  // Đặt selectedReportId ban đầu là thẻ đầu tiên
   useEffect(() => {
     if (!selectedReportId && sortedReports.length > 0) {
       setSelectedReportId(sortedReports[0]!.id);
@@ -69,138 +69,264 @@ export function C07Nearby() {
   }, [selectedReportId, sortedReports]);
 
   return (
-    <div className="relative flex h-screen flex-col bg-background select-none overflow-hidden pb-16">
+    <div className="relative flex min-h-screen flex-col bg-background select-none font-sans">
       {/* Hidden test identifier */}
       <h1 data-testid="screen-title" className="sr-only">
         Bản đồ quanh tôi
       </h1>
 
-      {/* Header: "← Quanh đây · {n} vụ" + chip "1 km" */}
-      <header className="z-20 border-b border-[#E5E7EB] bg-white px-4 py-2.5 shadow-soft">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              aria-label="Quay lại"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <h2 className="text-sm font-bold text-gray-900">
-              Quanh đây · {sortedReports.length} vụ
-            </h2>
+      {/* ======================================================== */}
+      {/* 1. BỐ CỤC MOBILE (< 1024px)                             */}
+      {/* ======================================================== */}
+      <div className="flex flex-1 flex-col lg:hidden pb-16 h-screen overflow-hidden">
+        {/* Header mobile */}
+        <header className="z-20 border-b border-[#E5E7EB] bg-white px-4 py-2.5 shadow-soft">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                aria-label="Quay lại"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <h2 className="text-sm font-bold text-gray-900">
+                Quanh đây · {sortedReports.length} vụ
+              </h2>
+            </div>
+
+            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-primary border border-blue-200">
+              1 km
+            </span>
           </div>
 
-          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-primary border border-blue-200">
-            1 km
-          </span>
-        </div>
+          {/* Chip lọc */}
+          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                selectedCategory === 'all'
+                  ? 'bg-primary text-white font-semibold'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Tất cả ({state.reports.length})
+            </button>
 
-        {/* Chip lọc Tất cả / 4 loại cuộn ngang */}
-        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('all')}
-            className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              selectedCategory === 'all'
-                ? 'bg-primary text-white font-semibold'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            {CATEGORY_CONFIGS.map((cfg) => {
+              const isSel = selectedCategory === cfg.key;
+              return (
+                <button
+                  key={cfg.key}
+                  type="button"
+                  onClick={() => setSelectedCategory(cfg.key as Category)}
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    isSel
+                      ? 'bg-primary text-white font-semibold'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <CategoryIcon category={cfg.key as Category} className="h-3.5 w-3.5" />
+                  <span>{cfg.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </header>
+
+        {/* Bản đồ lớn + Carousel đáy */}
+        <main className="relative flex-1">
+          <MapView
+            center={[userLat, userLng]}
+            zoom={15}
+            markers={markers}
+            selectedMarkerId={selectedReportId || undefined}
+            className="h-full w-full"
+          />
+
+          <div
+            ref={carouselRef}
+            className="absolute bottom-2 left-0 right-0 z-1000 flex gap-2.5 overflow-x-auto px-4 pb-2 snap-x no-scrollbar"
           >
-            Tất cả ({state.reports.length})
-          </button>
+            {sortedReports.map((report) => {
+              const isSelected = report.id === selectedReportId;
+              const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
+              const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
 
-          {CATEGORY_CONFIGS.map((cfg) => {
-            const isSel = selectedCategory === cfg.key;
-            return (
+              return (
+                <div
+                  key={report.id}
+                  id={`carousel-card-${report.id}`}
+                  onClick={() => {
+                    setSelectedReportId(report.id);
+                    navigate(`/phan-anh/${report.id}`);
+                  }}
+                  className={`flex w-[290px] shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-card border bg-white p-2.5 shadow-lg snap-center transition-all ${
+                    isSelected
+                      ? 'border-2 border-primary ring-2 ring-blue-400/20'
+                      : 'border-[#E5E7EB] hover:border-gray-300'
+                  }`}
+                >
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
+                    <img
+                      src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
+                      alt="Sự cố"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
+                      }}
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="truncate text-xs font-bold text-gray-900">
+                        {catConfig?.label || report.category}
+                      </span>
+                      <StatusChip status={report.status} variant="public" size="sm" />
+                    </div>
+
+                    <p className="mt-1 truncate text-xs text-gray-500">
+                      <span>{report.address}</span>
+                      <span className="ml-1 text-gray-400">· {formatDistance(distMeters)}</span>
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </main>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 2. BỐ CỤC DESKTOP (>= 1024px): Danh sách 380px + Bản đồ  */}
+      {/* ======================================================== */}
+      <div className="hidden lg:flex flex-1 h-[calc(100vh-64px)] w-full overflow-hidden">
+        {/* TRÁI (380px): Danh sách cuộn dọc */}
+        <aside className="w-[380px] shrink-0 border-r border-[#E5E7EB] bg-white flex flex-col h-full shadow-soft z-10">
+          {/* Header & Filter */}
+          <div className="p-4 border-b border-gray-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-900">
+                Sự cố quanh đây ({sortedReports.length})
+              </h2>
+              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-primary border border-blue-200">
+                Bán kính 1 km
+              </span>
+            </div>
+
+            {/* Chip lọc */}
+            <div className="flex flex-wrap gap-1.5">
               <button
-                key={cfg.key}
                 type="button"
-                onClick={() => setSelectedCategory(cfg.key as Category)}
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  isSel
+                onClick={() => setSelectedCategory('all')}
+                className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                  selectedCategory === 'all'
                     ? 'bg-primary text-white font-semibold'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <CategoryIcon category={cfg.key as Category} className="h-3.5 w-3.5" />
-                <span>{cfg.label}</span>
+                Tất cả ({state.reports.length})
               </button>
-            );
-          })}
-        </div>
-      </header>
 
-      {/* Bản đồ lớn */}
-      <main className="relative flex-1">
-        <MapView
-          center={[userLat, userLng]}
-          zoom={15}
-          markers={markers}
-          selectedMarkerId={selectedReportId || undefined}
-          className="h-full w-full"
-        />
+              {CATEGORY_CONFIGS.map((cfg) => {
+                const isSel = selectedCategory === cfg.key;
+                return (
+                  <button
+                    key={cfg.key}
+                    type="button"
+                    onClick={() => setSelectedCategory(cfg.key as Category)}
+                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      isSel
+                        ? 'bg-primary text-white font-semibold'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <CategoryIcon category={cfg.key as Category} className="h-3 w-3" />
+                    <span>{cfg.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        {/* Carousel thẻ ngang ở đáy (ảnh + loại + địa chỉ · khoảng cách) */}
-        <div
-          ref={carouselRef}
-          className="absolute bottom-2 left-0 right-0 z-1000 flex gap-2.5 overflow-x-auto px-4 pb-2 snap-x no-scrollbar"
-        >
-          {sortedReports.map((report) => {
-            const isSelected = report.id === selectedReportId;
-            const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
-            const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
+          {/* Danh sách thẻ cuộn dọc */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+            {sortedReports.map((report) => {
+              const isSelected = report.id === selectedReportId;
+              const catConfig = CATEGORY_CONFIGS.find((c) => c.key === report.category);
+              const distMeters = haversineMeters(userLat, userLng, report.lat, report.lng);
 
-            return (
-              <div
-                key={report.id}
-                id={`carousel-card-${report.id}`}
-                onClick={() => {
-                  setSelectedReportId(report.id);
-                  navigate(`/phan-anh/${report.id}`);
-                }}
-                className={`flex w-[290px] shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-card border bg-white p-2.5 shadow-lg snap-center transition-all ${
-                  isSelected
-                    ? 'border-2 border-primary ring-2 ring-blue-400/20'
-                    : 'border-[#E5E7EB] hover:border-gray-300'
-                }`}
-              >
-                {/* Ảnh 56px */}
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
-                  <img
-                    src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
-                    alt="Sự cố"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
-                    }}
-                  />
-                </div>
-
-                {/* Chi tiết */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="truncate text-xs font-bold text-gray-900">
-                      {catConfig?.label || report.category}
-                    </span>
-                    <StatusChip status={report.status} variant="public" size="sm" />
+              return (
+                <div
+                  key={report.id}
+                  id={`list-card-${report.id}`}
+                  onClick={() => {
+                    setSelectedReportId(report.id);
+                  }}
+                  onDoubleClick={() => navigate(`/phan-anh/${report.id}`)}
+                  className={`flex cursor-pointer items-start gap-3 rounded-card border p-3 transition-all ${
+                    isSelected
+                      ? 'border-2 border-primary bg-[#EFF4FF]/50 shadow-soft'
+                      : 'border-[#E5E7EB] bg-white hover:border-gray-300 shadow-2xs'
+                  }`}
+                >
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-gray-100 bg-gray-100">
+                    <img
+                      src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
+                      alt="Sự cố"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect fill="%23f3f4f6" width="60" height="60"/><text fill="%239ca3af" font-size="10" dy="3.5" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
+                      }}
+                    />
                   </div>
 
-                  <p className="mt-0.5 truncate text-[11px] text-gray-600">{report.address}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="truncate text-xs font-bold text-gray-900">
+                        {catConfig?.label || report.category}
+                      </span>
+                      <StatusChip status={report.status} variant="public" size="sm" />
+                    </div>
 
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    Cách {formatDistance(distMeters)}
-                  </p>
+                    <p className="mt-1 truncate text-xs text-gray-500">
+                      <span>{report.address}</span>
+                      <span className="ml-1 text-gray-400">· {formatDistance(distMeters)}</span>
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/phan-anh/${report.id}`);
+                      }}
+                      className="mt-2 text-[11px] font-semibold text-primary hover:underline"
+                    >
+                      Xem chi tiết →
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </aside>
 
-                <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
-              </div>
-            );
-          })}
-        </div>
-      </main>
+        {/* PHẢI: Bản đồ toàn diện */}
+        <main className="flex-1 h-full relative">
+          <MapView
+            center={[userLat, userLng]}
+            zoom={15}
+            markers={markers}
+            selectedMarkerId={selectedReportId || undefined}
+            className="h-full w-full"
+          />
+        </main>
+      </div>
     </div>
   );
 }

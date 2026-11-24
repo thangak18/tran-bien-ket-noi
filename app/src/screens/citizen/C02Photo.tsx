@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Image as ImageIcon, ZapOff } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
@@ -7,6 +7,13 @@ export function C02Photo() {
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
   const [photo, setPhoto] = useState<string>(state.draft?.photos?.[0] || '');
+
+  // Trên desktop (>= 1024px): chuyển thẳng sang màn xác nhận gửi 2 cột
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      navigate('/bao-su-co/xac-nhan', { replace: true });
+    }
+  }, [navigate]);
 
   const fileCameraInputRef = useRef<HTMLInputElement>(null);
   const fileGalleryInputRef = useRef<HTMLInputElement>(null);

@@ -9,6 +9,7 @@ import { DelayChip } from '@/components/common/DelayChip';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { BeforeAfter } from '@/components/citizen/BeforeAfter';
 import { RatingSheet } from '@/components/citizen/RatingSheet';
+import { MapView } from '@/components/map/MapView';
 import { formatLatestUpdate, computeDelayDays } from '@/domain/latestUpdate';
 import { formatDateTime } from '@/domain/format';
 
@@ -96,7 +97,7 @@ export function C06Detail() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16">
+    <div className="min-h-screen bg-[#F5F7FB] pb-16 font-sans">
       {/* Hidden test identifier */}
       <h1 data-testid="screen-title" className="sr-only">
         Chi tiết phản ánh
@@ -121,7 +122,10 @@ export function C06Detail() {
         <StatusChip status={report.status} variant="public" size="sm" />
       </header>
 
-      <main className="mx-auto max-w-md px-4 py-3 space-y-3">
+      {/* ======================================================== */}
+      {/* 1. BỐ CỤC MOBILE & TABLET (< 1024px)                     */}
+      {/* ======================================================== */}
+      <main className="mx-auto max-w-md px-4 py-3 space-y-3 lg:hidden">
         {/* 1. Ảnh lớn bo 12px */}
         <div className="relative h-52 w-full overflow-hidden rounded-card border border-[#E5E7EB] bg-gray-100 shadow-soft">
           <img
@@ -144,10 +148,8 @@ export function C06Detail() {
             <StatusChip status={report.status} variant="public" size="sm" />
           </div>
 
-          {/* Thanh tiến trình 4 bước có nhãn dưới */}
           <ProgressBar report={report} />
 
-          {/* Câu LatestUpdate + DelayChip nếu chậm */}
           <div className="rounded-xl bg-[#EFF4FF] p-3 text-xs text-[#1D4ED8] space-y-1">
             <p className="font-semibold leading-relaxed">{latestUpdateSentence}</p>
             {delayDays > 0 && <DelayChip report={report} now={now} />}
@@ -170,7 +172,7 @@ export function C06Detail() {
           </div>
         </div>
 
-        {/* 4. (hoan_thanh/dong) Thẻ "Ảnh Trước / Sau xử lý (Chạm để phóng to)" */}
+        {/* 4. (hoan_thanh/dong) Thẻ "Ảnh Trước / Sau xử lý" */}
         {(report.status === 'hoan_thanh' || report.status === 'dong') && (
           <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft space-y-2.5">
             <h3 className="text-xs font-bold text-gray-900">
@@ -187,14 +189,13 @@ export function C06Detail() {
           </div>
         )}
 
-        {/* 5. (hoan_thanh) Thẻ "Vấn đề đã được giải quyết chưa?": 5 sao + 2 nút ngang */}
+        {/* 5. (hoan_thanh) Thẻ Đánh giá */}
         {report.status === 'hoan_thanh' && (
           <div className="rounded-card border border-primary-200 bg-[#EFF4FF]/60 p-4 shadow-soft space-y-3 text-center">
             <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
               Vấn đề đã được giải quyết chưa?
             </h3>
 
-            {/* 5 sao */}
             <div className="flex items-center justify-center gap-2 pt-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -213,13 +214,11 @@ export function C06Detail() {
               ))}
             </div>
 
-            {/* Dòng {n}/5 sao · {nhãn} (Chạm để chọn) */}
             <p className="text-xs font-bold text-gray-700">
               {selectedRating}/5 sao · {STAR_LABELS[selectedRating] || 'Hài lòng'}{' '}
               <span className="font-normal text-gray-400">(Chạm để chọn)</span>
             </p>
 
-            {/* 2 nút ngang: "Đã giải quyết" (xanh lá) / "Chưa giải quyết" (viền) */}
             <div className="grid grid-cols-2 gap-2.5 pt-2">
               <button
                 type="button"
@@ -240,7 +239,7 @@ export function C06Detail() {
           </div>
         )}
 
-        {/* 6. Thẻ "Lịch sử cập nhật": danh sách gạch đầu dòng "• dd/MM HH:mm · {câu}" mới nhất trên cùng */}
+        {/* 6. Thẻ "Lịch sử cập nhật" */}
         <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft space-y-2.5">
           <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
             Lịch sử cập nhật
@@ -261,6 +260,177 @@ export function C06Detail() {
             })}
           </ul>
         </div>
+      </main>
+
+      {/* ======================================================== */}
+      {/* 2. BỐ CỤC DESKTOP (>= 1024px): 1100px 2 CỘT (3/5 vs 2/5)  */}
+      {/* ======================================================== */}
+      <main className="hidden lg:flex max-w-[1100px] w-full mx-auto px-6 py-6 gap-8 items-start">
+        {/* CỘT TRÁI (3/5): Ảnh lớn + Trước/Sau + Lịch sử */}
+        <div className="w-3/5 space-y-5">
+          {/* Ảnh lớn */}
+          <div className="relative h-72 w-full overflow-hidden rounded-card border border-[#E5E7EB] bg-gray-100 shadow-soft">
+            <img
+              src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
+              alt="Hiện trường"
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360" viewBox="0 0 600 360"><rect fill="%23f3f4f6" width="600" height="360"/><text fill="%239ca3af" font-family="sans-serif" font-size="16" dy="6" font-weight="bold" x="50%" y="50%" text-anchor="middle">Ảnh hiện trường sự cố</text></svg>';
+              }}
+            />
+          </div>
+
+          {/* Trước / Sau xử lý */}
+          {(report.status === 'hoan_thanh' || report.status === 'dong') && (
+            <div className="rounded-card border border-[#E5E7EB] bg-white p-5 shadow-soft space-y-3">
+              <h3 className="text-sm font-bold text-gray-900">
+                Ảnh Trước / Sau xử lý{' '}
+                <span className="text-xs font-normal text-gray-400">(Chạm để phóng to)</span>
+              </h3>
+              <BeforeAfter
+                beforePhotos={report.photos}
+                afterPhotos={report.resultPhotos}
+                beforeTime={report.createdAt}
+                afterTime={report.completedAt}
+                category={report.category}
+              />
+            </div>
+          )}
+
+          {/* Lịch sử cập nhật */}
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-5 shadow-soft space-y-3">
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+              Lịch sử cập nhật tiến độ
+            </h3>
+
+            <ul className="space-y-3 text-xs text-gray-700">
+              {timelineReversed.map((entry, index) => {
+                const formattedTime = formatDateTime(entry.at);
+                const note = entry.note || entry.status;
+                return (
+                  <li key={index} className="flex items-start gap-2.5 leading-relaxed">
+                    <span className="text-primary font-bold mt-0.5">•</span>
+                    <div>
+                      <strong className="text-gray-900">{formattedTime}</strong>
+                      <span className="text-gray-400 mx-1.5">|</span>
+                      <span>{note}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+
+        {/* CỘT PHẢI (2/5): Sticky trạng thái + địa chỉ & bản đồ nhỏ + đánh giá */}
+        <aside className="w-2/5 space-y-4 sticky top-20 self-start">
+          {/* Thẻ trạng thái */}
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-5 shadow-soft space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Mã phản ánh #{report.id}
+                </span>
+                <h3 className="text-base font-bold text-gray-900 mt-0.5">
+                  {catConfig.label} · {report.description || 'Ghi nhận hiện trường'}
+                </h3>
+              </div>
+              <StatusChip status={report.status} variant="public" size="sm" />
+            </div>
+
+            <ProgressBar report={report} />
+
+            <div className="rounded-xl bg-[#EFF4FF] p-3.5 text-xs text-[#1D4ED8] space-y-1">
+              <p className="font-semibold leading-relaxed">{latestUpdateSentence}</p>
+              {delayDays > 0 && <DelayChip report={report} now={now} />}
+            </div>
+          </div>
+
+          {/* Thẻ địa chỉ & bản đồ nhỏ */}
+          <div className="rounded-card border border-[#E5E7EB] bg-white p-4 shadow-soft space-y-3">
+            <div className="flex items-start gap-2.5">
+              <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <div className="text-xs font-bold text-gray-900 leading-snug">{report.address}</div>
+                <div className="flex items-center gap-1 text-[11px] text-gray-500 mt-1">
+                  <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>
+                    {report.followers && report.followers.length > 0 ? report.followers.length : 1}{' '}
+                    người cùng báo vấn đề này
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bản đồ nhỏ */}
+            <div className="h-44 w-full rounded-xl overflow-hidden border border-gray-100">
+              <MapView
+                center={[report.lat, report.lng]}
+                zoom={15}
+                markers={[
+                  {
+                    id: report.id,
+                    lat: report.lat,
+                    lng: report.lng,
+                    category: report.category,
+                    status: report.status,
+                    title: report.address,
+                  },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Khối đánh giá nếu hoan_thanh */}
+          {report.status === 'hoan_thanh' && (
+            <div className="rounded-card border border-primary-200 bg-[#EFF4FF]/60 p-5 shadow-soft space-y-3.5 text-center">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                Vấn đề đã được giải quyết chưa?
+              </h3>
+
+              <div className="flex items-center justify-center gap-2 pt-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setSelectedRating(star)}
+                    aria-label={`Chọn ${star} sao`}
+                    className="p-1 transition-transform hover:scale-110 active:scale-95"
+                  >
+                    <Star
+                      className={`h-7 w-7 ${
+                        star <= selectedRating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-xs font-bold text-gray-700">
+                {selectedRating}/5 sao · {STAR_LABELS[selectedRating] || 'Hài lòng'}
+              </p>
+
+              <div className="grid grid-cols-2 gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={handleResolve}
+                  className="rounded-btn bg-[#16A34A] py-2.5 text-xs font-bold text-white shadow-soft hover:bg-[#15803D] active:scale-95 transition-all text-center"
+                >
+                  Đã giải quyết
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleUnresolved}
+                  className="rounded-btn border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 shadow-soft hover:bg-gray-50 active:scale-95 transition-all text-center"
+                >
+                  Chưa giải quyết
+                </button>
+              </div>
+            </div>
+          )}
+        </aside>
       </main>
 
       {/* Sheet đánh giá chi tiết tuỳ chọn */}
