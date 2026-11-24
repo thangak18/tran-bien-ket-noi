@@ -116,4 +116,43 @@ describe('UT-013 – Latest update & delay (spec 3.4c, 3.6a)', () => {
     const msg = formatLatestUpdate(report, now);
     expect(msg).not.toContain('Dự kiến');
   });
+
+  it('5. can_bo_sung: lý do lấy từ note của timeline can_bo_sung; không có thì dùng "cung cấp thêm thông tin" (không dùng locationNote)', () => {
+    // Trường hợp có note trong timeline can_bo_sung
+    const rWithNote: Report = {
+      ...baseReport,
+      status: 'can_bo_sung',
+      locationNote: 'Gần cột điện số 5 (không được dùng)',
+      timeline: [
+        ...baseReport.timeline,
+        {
+          at: '2026-11-21T09:00:00+07:00',
+          status: 'can_bo_sung',
+          actor: 'Cán bộ Minh',
+          note: 'Chụp lại ảnh góc rộng hơn',
+        },
+      ],
+    };
+    expect(formatLatestUpdate(rWithNote, now)).toBe(
+      'Phường cần bạn bổ sung: Chụp lại ảnh góc rộng hơn.'
+    );
+
+    // Trường hợp timeline không có note và có locationNote
+    const rWithoutNote: Report = {
+      ...baseReport,
+      status: 'can_bo_sung',
+      locationNote: 'Gần cột điện số 5 (không được dùng)',
+      timeline: [
+        ...baseReport.timeline,
+        {
+          at: '2026-11-21T09:00:00+07:00',
+          status: 'can_bo_sung',
+          actor: 'Cán bộ Minh',
+        },
+      ],
+    };
+    expect(formatLatestUpdate(rWithoutNote, now)).toBe(
+      'Phường cần bạn bổ sung: cung cấp thêm thông tin.'
+    );
+  });
 });
