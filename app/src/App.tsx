@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { AppStoreProvider } from './store/AppStore';
+import { AppStoreProvider, useAppStore } from './store/AppStore';
+import { applySeniorMode } from './lib/senior';
 import { CitizenLayout } from './layouts/CitizenLayout';
 import { C01Home } from './screens/citizen/C01Home';
 import { C02Photo } from './screens/citizen/C02Photo';
@@ -19,9 +21,20 @@ import { V02Verify } from './screens/volunteer/V02Verify';
 import { DemoHub } from './screens/demo/DemoHub';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
 
+/** Đồng bộ lớp CSS chữ lớn với cài đặt đã lưu (kể cả sau khi tải lại trang) */
+function SeniorSync() {
+  const { state } = useAppStore();
+  const enabled = Boolean(state.settings.seniorMode);
+  useEffect(() => {
+    applySeniorMode(enabled);
+  }, [enabled]);
+  return null;
+}
+
 export default function App() {
   return (
     <AppStoreProvider>
+      <SeniorSync />
       <Routes>
         <Route
           path="/"
