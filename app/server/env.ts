@@ -21,6 +21,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   DATABASE_URL_DIRECT: z.string().optional(),
   CITIZEN_JWT_SECRET: z.string().min(32, 'CITIZEN_JWT_SECRET must be at least 32 characters'),
+  SUPABASE_JWT_SECRET: z.string().min(32, 'SUPABASE_JWT_SECRET must be at least 32 characters'),
   OWNER_KEY_PEPPER: z.string().min(1, 'OWNER_KEY_PEPPER is required'),
   CRON_SECRET: z.string().min(1, 'CRON_SECRET is required'),
   SUPABASE_URL: z.string().default('http://127.0.0.1:54321'),

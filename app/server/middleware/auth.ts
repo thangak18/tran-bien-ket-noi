@@ -7,6 +7,7 @@ import { sqlClient } from '../db/client';
 import type { AppEnv } from '../types';
 
 const citizenSecretKey = new TextEncoder().encode(env.CITIZEN_JWT_SECRET);
+const staffSecretKey = new TextEncoder().encode(env.SUPABASE_JWT_SECRET);
 
 export interface CitizenTokenPayload {
   phone: string;
@@ -35,6 +36,27 @@ export async function verifyCitizenToken(token: string): Promise<CitizenTokenPay
     throw new AppError('UNAUTHORIZED', 'Mã xác thực người dân không hợp lệ', 401);
   }
   return { phone: payload.phone, role: 'citizen' };
+}
+
+export async function createStaffToken(userId: string, role: 'can_bo' | 'tnv'): Promise<string> {
+  return await new SignJWT({ sub: userId, role })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1d')
+    .sign(staffSecretKey);
+}
+
+export async function verifyStaffToken(token: string): Promise<{ sub: string; role?: string }> {
+  try {
+    const { payload } = await jwtVerify(token, staffSecretKey);
+    if (!payload.sub || typeof payload.sub !== 'string') {
+      throw new AppError('UNAUTHORIZED', 'Mã xác thực nhân viên không hợp lệ', 401);
+    }
+    return { sub: payload.sub, role: payload.role as string | undefined };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError('UNAUTHORIZED', 'Mã xác thực nhân viên không hợp lệ hoặc đã hết hạn', 401);
+  }
 }
 
 export function hashPepper(val: string): string {
@@ -87,37 +109,8 @@ export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
     }
     const token = authHeader.slice(7);
 
-    let staffUserId: string | null = null;
-
-    // Trong DEMO_MODE hoặc dev, hỗ trợ token tiện ích dạng `mock_can_bo` hoặc `mock_tnv` hoặc JWT Supabase
-    if (env.DEMO_MODE && (token === 'mock_can_bo' || token.startsWith('can_bo_'))) {
-      staffUserId = '11111111-1111-1111-1111-111111111111';
-    } else if (env.DEMO_MODE && (token === 'mock_tnv' || token.startsWith('tnv_'))) {
-      staffUserId = '22222222-2222-2222-2222-222222222222';
-    } else {
-      // Thử decode Supabase JWT
-      try {
-        const { payload } = await jwtVerify(
-          token,
-          new TextEncoder().encode(env.SUPABASE_SERVICE_ROLE_KEY || 'secret')
-        );
-        staffUserId = payload.sub as string;
-      } catch {
-        // Fallback kiểm tra nếu token là uuid trực tiếp của staff
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          token
-        );
-        if (isUuid) {
-          staffUserId = token;
-        } else {
-          throw new AppError('UNAUTHORIZED', 'Mã xác thực nhân viên không hợp lệ', 401);
-        }
-      }
-    }
-
-    if (!staffUserId) {
-      throw new AppError('UNAUTHORIZED', 'Không thể xác định danh tính nhân viên', 401);
-    }
+    // Xác thực mã hóa nghiêm ngặt: không chấp nhận UUID thô, không chấp nhận mock token
+    const { sub: staffUserId } = await verifyStaffToken(token);
 
     // Tra cứu staff_profiles trong DB
     const [profile] = await sqlClient`

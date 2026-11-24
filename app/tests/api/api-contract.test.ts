@@ -1,9 +1,11 @@
 /**
  * @vitest-environment node
  */
+// @vitest-environment node
 import { describe, it, expect, beforeAll } from 'vitest';
 import { app } from '../../server/app';
 import { env } from '../../server/env';
+import { createStaffToken } from '../../server/middleware/auth';
 
 describe('API Contract & Security Suite', () => {
   beforeAll(async () => {
@@ -198,8 +200,9 @@ describe('API Contract & Security Suite', () => {
 
   describe('API-VOL & API-OFF: Staff Access & Masking', () => {
     it('API-VOL-001: Volunteer tasks endpoint returns tasks with masked reporter phone', async () => {
+      const tnvToken = await createStaffToken('22222222-2222-2222-2222-222222222222', 'tnv');
       const res = await app.request('/volunteer/tasks', {
-        headers: { Authorization: 'Bearer mock_tnv' },
+        headers: { Authorization: `Bearer ${tnvToken}` },
       });
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -219,8 +222,9 @@ describe('API Contract & Security Suite', () => {
       expect(noAuth.status).toBe(401);
 
       // With auth
+      const staffToken = await createStaffToken('11111111-1111-1111-1111-111111111111', 'can_bo');
       const res = await app.request('/officer/reports?limit=5', {
-        headers: { Authorization: 'Bearer mock_can_bo' },
+        headers: { Authorization: `Bearer ${staffToken}` },
       });
       expect(res.status).toBe(200);
       const data = await res.json();
