@@ -156,3 +156,20 @@ T-001 → T-010 → T-011 → T-012 → T-019 → T-020 → T-021/T-022 → T-03
 3. Figma có bắt buộc không.
 4. Hạn nộp bài → quy đổi phase sang ngày cụ thể.
 5. Ngưỡng trùng 50 m / 14 ngày – chỉ cần chốt khi mở B2.
+
+
+---
+
+## Giai đoạn 2 – Sản phẩm hoàn chỉnh (mở 25/11/2026)
+
+Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6. Mỗi bước tách thành task có ID (`G2-xxx`) trước khi code.
+
+- [ ] G2-01 Chốt stack với chủ dự án (đề xuất: Supabase + Vercel Functions + Drizzle/Prisma)
+- [ ] G2-02 Cập nhật `spec.md` / `plan.md`: API, schema, phân quyền, luồng đăng nhập
+- [ ] G2-03 Schema + migration PostgreSQL/PostGIS, seed từ `mock.json`, test bất biến trên DB
+- [ ] G2-04 API reports / volunteer tasks / notifications / feedback, kiểm tra chuyển trạng thái phía server
+- [ ] G2-05 Auth: cán bộ, TNV (tài khoản + vai trò); người dân OTP hoặc ẩn danh (`secretCode`, link `?k=`)
+- [ ] G2-06 Lưu ảnh lên Storage (nén phía client)
+- [ ] G2-07 Frontend chuyển từ localStorage sang API; tách chế độ demo
+- [ ] G2-08 Dịch vụ thật OTP/SMS, AI gợi ý loại – chờ chủ dự án quyết
+- [ ] G2-09 Cập nhật 17 test cũ theo UI redesign

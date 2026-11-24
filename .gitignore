@@ -9,3 +9,4 @@ test-results/
 coverage/
 Claude outputs/
 .vercel
+.wt/

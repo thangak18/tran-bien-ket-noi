@@ -2,14 +2,14 @@
 
 ## Phạm vi
 
-- Chỉ làm **UI/UX prototype**: React frontend + dữ liệu mẫu.
-- **Không** tạo backend, database, serverless function, API route.
-- **Không** gọi dịch vụ ngoài, trừ: tile OpenStreetMap, Geolocation API, Web Speech API của trình duyệt.
-- AI, OTP, SMS/Zalo đều là **mô phỏng** và phải hiển thị nhãn "Mô phỏng" trên UI.
+- **Giai đoạn 1 (đã nộp 24/11/2026):** UI/UX prototype, dữ liệu mẫu + localStorage.
+- **Giai đoạn 2 (từ 25/11/2026): sản phẩm hoàn chỉnh** – được phép tạo backend, database (PostgreSQL + PostGIS), API, xác thực, lưu ảnh. Kế hoạch và các quyết định ở `CLAUDE.md` mục 6.
+- Dịch vụ ngoài (OTP/SMS/Zalo, AI nhận diện ảnh) chỉ tích hợp thật khi chủ dự án đồng ý; nếu chưa, vẫn là **mô phỏng** và phải có nhãn "Mô phỏng" trên UI.
+- Không đưa khoá bí mật (API key, DB URL) vào code hay git; dùng biến môi trường (`.env.local`, Vercel env).
 
 ## Ưu tiên
 
-- Chỉ làm task lõi (P0–P8 trong `docs/tasks.md`). **Không** code, không viết test cho AC gắn nhãn `[BONUS – HOÃN]` hay task trong mục Backlog Bonus cho tới khi chủ dự án mở lại.
+- Giai đoạn 2: làm theo thứ tự ở `CLAUDE.md` mục 6.4; cập nhật `docs/spec.md`, `docs/plan.md`, `docs/tasks.md` trước khi code phần mới.
 - Trước khi làm bất kỳ màn hình nào, đọc `docs/ui-ux-guidelines.md` (khoảnh khắc người dùng, wireframe, component pattern).
 
 ## Nguồn sự thật
