@@ -315,4 +315,28 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
       }
     }
   });
+
+  it('Phân bổ giờ gửi: trong 06:00–21:00, không giờ gửi nào lặp quá 2 lần', () => {
+    const timeCounts = new Map<string, number>();
+    for (const r of reports) {
+      const match = r.createdAt.match(/T(\d{2}):(\d{2})/);
+      expect(match).toBeDefined();
+      const h = parseInt(match![1]!, 10);
+      const m = parseInt(match![2]!, 10);
+      expect(h).toBeGreaterThanOrEqual(6);
+      expect(h).toBeLessThanOrEqual(21);
+      if (h === 21) {
+        expect(m).toBe(0);
+      }
+      const timeStr = `${match![1]}:${match![2]}`;
+      timeCounts.set(timeStr, (timeCounts.get(timeStr) || 0) + 1);
+    }
+
+    for (const [timeStr, count] of timeCounts.entries()) {
+      expect(
+        count,
+        `Giờ gửi ${timeStr} bị lặp ${count} lần (tối đa cho phép: 2)`
+      ).toBeLessThanOrEqual(2);
+    }
+  });
 });

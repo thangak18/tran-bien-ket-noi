@@ -154,6 +154,7 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
   let reportIdCounter = 1;
   const reports: Report[] = [];
   const volunteerTasks: VolunteerTask[] = [];
+  const createdTimeCounts = new Map<string, number>();
 
   // Tọa độ cụm trùng 1 (mat_duong, khoảng cách ~28m)
   const cluster1Base = { lat: 10.952, lng: 106.824 };
@@ -215,37 +216,49 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
       const durationDays = durations[durationIndex++]!;
       const durationMs = durationDays * 24 * 60 * 60 * 1000;
 
-      // Tìm createdAt (06:00 - 21:00) rải ngẫu nhiên trong 01-23/11 sao cho completedAt rơi vào giờ HC và <= demoNow
+      // Tìm createdAt (06:00 - 21:00, phút bất kỳ) rải ngẫu nhiên trong 01-23/11 sao cho completedAt rơi vào giờ HC (07:00-17:30) và <= demoNow
       const demoNowMs = new Date('2026-11-24T09:00:00+07:00').getTime();
       const nov1Ms = new Date('2026-11-01T00:00:00+07:00').getTime();
       const maxDayAllowed = Math.max(
         1,
         Math.min(23, Math.floor((demoNowMs - durationMs - nov1Ms) / (24 * 3600 * 1000)))
       );
-      const startDay = 1 + Math.floor(rand() * maxDayAllowed);
+
+      const remMin = Math.round((durationMs % (24 * 3600 * 1000)) / 60000);
+      const validMinutes: number[] = [];
+      for (let m = 360; m <= 1260; m++) {
+        const compMin = (m + remMin) % 1440;
+        if (compMin >= 420 && compMin <= 1050) {
+          validMinutes.push(m);
+        }
+      }
 
       let chosenCreatedMs = 0;
       let chosenCompletedMs = 0;
+      let attempts = 0;
 
-      for (let offset = 0; offset < maxDayAllowed; offset++) {
-        const d = ((startDay + offset - 1) % maxDayAllowed) + 1;
-        for (let h = 7; h <= 20; h++) {
-          for (const m of [0, 15, 30, 45]) {
-            const cStr = `2026-11-${d.toString().padStart(2, '0')}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00+07:00`;
-            const cMs = new Date(cStr).getTime();
-            const compMs = cMs + durationMs;
-            if (isOfficeHours(compMs) && isCitizenHours(cMs) && compMs <= demoNowMs) {
-              chosenCreatedMs = cMs;
-              chosenCompletedMs = compMs;
-              break;
-            }
+      while (attempts < 2000) {
+        attempts++;
+        const day = 1 + Math.floor(rand() * maxDayAllowed);
+        const min = validMinutes[Math.floor(rand() * validMinutes.length)]!;
+        const h = Math.floor(min / 60);
+        const m = min % 60;
+        const hhmm = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
+        if ((createdTimeCounts.get(hhmm) || 0) < 2) {
+          const cStr = `2026-11-${day.toString().padStart(2, '0')}T${hhmm}:00+07:00`;
+          const cMs = new Date(cStr).getTime();
+          const compMs = cMs + durationMs;
+          if (compMs <= demoNowMs && isOfficeHours(compMs) && isCitizenHours(cMs)) {
+            chosenCreatedMs = cMs;
+            chosenCompletedMs = compMs;
+            createdTimeCounts.set(hhmm, (createdTimeCounts.get(hhmm) || 0) + 1);
+            break;
           }
-          if (chosenCreatedMs) break;
         }
-        if (chosenCreatedMs) break;
       }
 
-      // Fallback an toàn nếu không tìm thấy
+      // Fallback an toàn nếu không tìm thấy sau 2000 lượt
       if (!chosenCreatedMs) {
         chosenCreatedMs = new Date('2026-11-02T08:00:00+07:00').getTime();
         chosenCompletedMs = chosenCreatedMs + durationMs;
@@ -388,9 +401,22 @@ export function generateMockData(seed: number = DEFAULT_SEED): GeneratedData {
         }
       }
 
-      const hour = Math.floor(rand() * 10) + 7; // 07:00 -> 16:00
-      const minute = Math.floor(rand() * 50) + 5;
-      const createdAt = `2026-11-${dayOffset.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+07:00`;
+      let chosenHhmm = '';
+      let openAttempts = 0;
+      while (openAttempts < 1000) {
+        openAttempts++;
+        const min = 360 + Math.floor(rand() * (1260 - 360 + 1));
+        const h = Math.floor(min / 60);
+        const m = min % 60;
+        const hhmm = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        if ((createdTimeCounts.get(hhmm) || 0) < 2) {
+          chosenHhmm = hhmm;
+          createdTimeCounts.set(hhmm, (createdTimeCounts.get(hhmm) || 0) + 1);
+          break;
+        }
+      }
+      if (!chosenHhmm) chosenHhmm = '08:15';
+      const createdAt = `2026-11-${dayOffset.toString().padStart(2, '0')}T${chosenHhmm}:00+07:00`;
       const createdMs = new Date(createdAt).getTime();
 
       let department = '';
