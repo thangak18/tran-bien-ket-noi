@@ -1,13 +1,12 @@
 import { Report } from './types';
 import { formatDate } from './format';
-import { DEMO_NOW } from './constants';
 
 /**
  * Tính số ngày chậm hạn công khai theo spec 3.6a (làm tròn lên)
  * Chỉ áp dụng cho các trạng thái: da_tiep_nhan, cho_xac_minh, da_giao, mo_lai
  * Nếu chưa quá hạn hoặc trạng thái khác (như hoan_thanh, dong) -> 0
  */
-export function computeDelayDays(report: Report, now: string = DEMO_NOW): number {
+export function computeDelayDays(report: Report, now: string): number {
   const activeStatuses = ['da_tiep_nhan', 'cho_xac_minh', 'da_giao', 'mo_lai'];
   if (!activeStatuses.includes(report.status)) {
     return 0;
@@ -31,7 +30,7 @@ export function computeDelayDays(report: Report, now: string = DEMO_NOW): number
 /**
  * Tạo câu "Cập nhật mới nhất" theo bảng spec 3.4c + chậm hạn 3.6a
  */
-export function formatLatestUpdate(report: Report, now: string = DEMO_NOW): string {
+export function formatLatestUpdate(report: Report, now: string): string {
   const delay = computeDelayDays(report, now);
   const delayText = delay > 0 ? ` Việc xử lý đang chậm hơn dự kiến ${delay} ngày.` : '';
 
@@ -76,8 +75,7 @@ export function formatLatestUpdate(report: Report, now: string = DEMO_NOW): stri
 
     case 'can_bo_sung': {
       const lastEntry = [...report.timeline].reverse().find((t) => t.status === 'can_bo_sung');
-      const reason =
-        lastEntry?.note || report.locationNote || 'cung cấp thêm thông tin và ảnh rõ nét hơn';
+      const reason = lastEntry?.note || 'cung cấp thêm thông tin';
       return `Phường cần bạn bổ sung: ${reason}.`;
     }
 

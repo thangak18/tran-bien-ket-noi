@@ -1,6 +1,6 @@
 import { AppState } from './AppStore';
 import { Category, Notification, Report, VolunteerTask } from '../domain/types';
-import { CATEGORY_CONFIGS, DEFAULT_DEADLINES, DEMO_NOW } from '../domain/constants';
+import { CATEGORY_CONFIGS, DEFAULT_DEADLINES } from '../domain/constants';
 import { computePriority } from '../domain/sorting';
 import { buildNotification } from '../domain/notifications';
 import { formatDate } from '../domain/format';
@@ -40,14 +40,16 @@ function getNextTaskId(tasks: VolunteerTask[]): string {
 export function acceptReport(
   state: AppState,
   reportId: string,
-  params?: {
-    department?: string;
-    dueAt?: string;
-    category?: Category;
-    note?: string;
-    actor?: string;
-  },
-  now: string = DEMO_NOW
+  params:
+    | {
+        department?: string;
+        dueAt?: string;
+        category?: Category;
+        note?: string;
+        actor?: string;
+      }
+    | undefined,
+  now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
   if (!report) {
@@ -119,7 +121,7 @@ export function assignVolunteer(
     note?: string;
     actor?: string;
   },
-  now: string = DEMO_NOW
+  now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
   if (!report) {
@@ -172,7 +174,7 @@ export function submitVerification(
     photo: string;
     note?: string;
   },
-  now: string = DEMO_NOW
+  now: string
 ): AppState {
   const task = state.volunteerTasks.find((t) => t.id === taskId);
   if (!task) {
@@ -241,7 +243,7 @@ export function assignDepartment(
     note?: string;
     actor?: string;
   },
-  now: string = DEMO_NOW
+  now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
   if (!report) {
@@ -304,7 +306,7 @@ export function completeReport(
     completedAt?: string;
     actor?: string;
   },
-  now: string = DEMO_NOW
+  now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
   if (!report) {
@@ -379,7 +381,7 @@ export function requestSupplement(
     reason: string;
     actor?: string;
   },
-  now: string = DEMO_NOW
+  now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
   if (!report) {
@@ -440,7 +442,7 @@ export function transferAgency(
     reason: string;
     actor?: string;
   },
-  now: string = DEMO_NOW
+  now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
   if (!report) {
@@ -477,11 +479,13 @@ export function transferAgency(
 export function closeReport(
   state: AppState,
   reportId: string,
-  params?: {
-    reason?: string;
-    actor?: string;
-  },
-  now: string = DEMO_NOW
+  params:
+    | {
+        reason?: string;
+        actor?: string;
+      }
+    | undefined,
+  now: string
 ): AppState {
   const report = state.reports.find((r) => r.id === reportId);
   if (!report) {
@@ -516,11 +520,13 @@ export function mergeReports(
   state: AppState,
   mainId: string,
   childIds: string[],
-  params?: {
-    actor?: string;
-    note?: string;
-  },
-  now: string = DEMO_NOW
+  params:
+    | {
+        actor?: string;
+        note?: string;
+      }
+    | undefined,
+  now: string
 ): AppState {
   const main = state.reports.find((r) => r.id === mainId);
   if (!main) {
@@ -638,11 +644,13 @@ export function splitReportAction(
   state: AppState,
   mainId: string,
   childId: string,
-  params?: {
-    actor?: string;
-    note?: string;
-  },
-  now: string = DEMO_NOW
+  params:
+    | {
+        actor?: string;
+        note?: string;
+      }
+    | undefined,
+  now: string
 ): AppState {
   const main = state.reports.find((r) => r.id === mainId);
   const child = state.reports.find((r) => r.id === childId);
@@ -734,7 +742,7 @@ export function createOnBehalf(
     department?: string;
     dueAt?: string;
   },
-  now: string = DEMO_NOW
+  now: string
 ): { state: AppState; report: Report; notification: Notification } {
   // Tìm ID lớn nhất hiện tại
   let maxId = 0;
