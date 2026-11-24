@@ -1,15 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Image as ImageIcon, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Camera, Image as ImageIcon, ZapOff } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { StepHeader } from '@/components/common/StepHeader';
-import { Button } from '@/components/ui/Button';
 
 export function C02Photo() {
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
   const [photo, setPhoto] = useState<string>(state.draft?.photos?.[0] || '');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fileCameraInputRef = useRef<HTMLInputElement>(null);
+  const fileGalleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -19,114 +19,135 @@ export function C02Photo() {
         const result = event.target?.result as string;
         if (result) {
           setPhoto(result);
+          dispatch({
+            type: 'SET_DRAFT',
+            payload: { photos: [result] },
+          });
+          navigate('/bao-su-co/xac-nhan');
         }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleUseSamplePhoto = () => {
-    // Ảnh mẫu mặt đường hư hỏng để thao tác nhanh
-    setPhoto('/demo-photos/mat_duong/1.jpg');
-  };
-
-  const handleContinue = () => {
-    if (!photo) return;
+  const handleUseSample = () => {
+    const sample = '/demo-photos/mat_duong/1.jpg';
+    setPhoto(sample);
     dispatch({
       type: 'SET_DRAFT',
-      payload: {
-        photos: [photo],
-      },
+      payload: { photos: [sample] },
     });
-    navigate('/bao-su-co/vi-tri');
+    navigate('/bao-su-co/xac-nhan');
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 pb-8">
+    <div className="relative flex h-screen w-full flex-col justify-between bg-[#111111] text-white select-none overflow-hidden">
+      {/* Hidden test identifier */}
       <h1 data-testid="screen-title" className="sr-only">
         Bước 1: Chụp ảnh
       </h1>
-      <StepHeader currentStep={1} title="Chụp ảnh" onCancel={() => navigate('/')} />
 
-      <main className="flex-1 px-4 py-4 flex flex-col justify-between max-w-md mx-auto w-full">
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+      {/* Background ảnh nếu đã có */}
+      {photo && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-30"
+          style={{ backgroundImage: `url(${photo})` }}
+        />
+      )}
 
-          {!photo ? (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-primary-light/60 bg-white p-6 text-center cursor-pointer hover:border-primary hover:bg-primary-50/20 transition-all shadow-2xs"
-            >
-              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary-50 text-primary">
-                <Camera className="h-10 w-10" />
-              </div>
-              <p className="text-base font-semibold text-gray-900">Chạm để chụp ảnh</p>
-              <p className="mt-1 text-xs text-gray-500 max-w-[240px]">
-                Camera sẽ mở ngay để bạn chụp chỗ bị hư hỏng
-              </p>
-            </div>
-          ) : (
-            <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
-              <img
-                src={photo}
-                alt="Hiện trường sự cố"
-                className="h-80 w-full object-cover"
-                onError={(e) => {
-                  // Fallback nếu ảnh không tải được
-                  (e.target as HTMLImageElement).src =
-                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect fill="%23f3f4f6" width="400" height="300"/><text fill="%239ca3af" font-family="sans-serif" font-size="16" dy="10.5" font-weight="bold" x="50%" y="50%" text-anchor="middle">Ảnh hiện trường mẫu</text></svg>';
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setPhoto('')}
-                className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-xs hover:bg-black/75"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Chụp lại
-              </button>
-            </div>
-          )}
+      {/* Header: ← "Chụp phản ánh" + "0/5 ảnh" */}
+      <header className="relative z-10 flex h-14 items-center justify-between px-4 pt-2">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
+          aria-label="Quay lại"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
 
-          <div className="mt-4 rounded-2xl bg-amber-50/80 border border-amber-200/60 p-3 text-xs text-amber-800">
-            <span className="font-semibold">Mẹo:</span> Lùi xa một chút để thấy cả xung quanh chỗ bị
-            hư giúp cán bộ dễ nhận diện vị trí.
-          </div>
+        <h2 className="text-sm font-semibold tracking-wide">Chụp phản ánh</h2>
 
-          {!photo && (
-            <div className="mt-4 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                <ImageIcon className="h-4 w-4 text-gray-500" />
-                Chọn ảnh từ thư viện máy
-              </button>
-              <button
-                type="button"
-                onClick={handleUseSamplePhoto}
-                className="text-xs text-primary font-medium py-1.5 hover:underline text-center"
-              >
-                ⚡ Dùng nhanh ảnh mẫu để thử nghiệm
-              </button>
-            </div>
-          )}
+        <span className="text-xs font-medium text-gray-400">{photo ? '1' : '0'}/5 ảnh</span>
+      </header>
+
+      {/* Giữa màn hình: Khung ngắm 4 góc trắng */}
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
+        <div className="relative flex h-64 w-64 items-center justify-center">
+          {/* Góc trên trái */}
+          <div className="absolute top-0 left-0 h-6 w-6 border-t-3 border-l-3 border-white rounded-tl-[4px]" />
+          {/* Góc trên phải */}
+          <div className="absolute top-0 right-0 h-6 w-6 border-t-3 border-r-3 border-white rounded-tr-[4px]" />
+          {/* Góc dưới trái */}
+          <div className="absolute bottom-0 left-0 h-6 w-6 border-b-3 border-l-3 border-white rounded-bl-[4px]" />
+          {/* Góc dưới phải */}
+          <div className="absolute bottom-0 right-0 h-6 w-6 border-b-3 border-r-3 border-white rounded-br-[4px]" />
+
+          {/* Dấu tâm ngắm nhỏ */}
+          <div className="h-2 w-2 rounded-full bg-white/40" />
         </div>
 
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <Button fullWidth size="lg" disabled={!photo} onClick={handleContinue}>
-            Tiếp tục
-          </Button>
-        </div>
+        <p className="mt-4 text-xs font-medium text-gray-300">Đưa sự cố vào khung hình để chụp</p>
+
+        {/* Nút dùng ảnh mẫu thử nghiệm nhanh */}
+        <button
+          type="button"
+          onClick={handleUseSample}
+          className="mt-3 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-blue-300 backdrop-blur-xs hover:bg-white/20"
+        >
+          ⚡ Dùng ảnh mẫu nhanh
+        </button>
       </main>
+
+      {/* Thanh đáy bo tròn tối */}
+      <footer className="relative z-10 flex items-center justify-around rounded-t-[28px] bg-black/80 px-8 py-6 backdrop-blur-lg">
+        {/* Nút đèn pin (trang trí, disabled) */}
+        <button
+          type="button"
+          disabled
+          aria-label="Bật đèn flash"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-gray-500 cursor-not-allowed"
+        >
+          <ZapOff className="h-5 w-5" />
+        </button>
+
+        {/* Nút chụp tròn lớn primary (56-64px) */}
+        <button
+          type="button"
+          aria-label="Chụp ảnh sự cố"
+          onClick={() => fileCameraInputRef.current?.click()}
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-blue-500/30 transition-transform active:scale-90 ring-4 ring-white/20"
+        >
+          <Camera className="h-7 w-7" />
+        </button>
+
+        {/* Nút thư viện ảnh */}
+        <button
+          type="button"
+          aria-label="Chọn ảnh từ thư viện"
+          onClick={() => fileGalleryInputRef.current?.click()}
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+        >
+          <ImageIcon className="h-5 w-5" />
+        </button>
+
+        {/* Hidden inputs */}
+        <input
+          ref={fileCameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <input
+          ref={fileGalleryInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </footer>
     </div>
   );
 }
