@@ -30,7 +30,7 @@ Ký hiệu trạng thái: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong (gh
 | [x] (24/11) | T-015 | `domain/kpi.ts`: `computeKpi(reports, month)` → tổng, theo loại, đã xử lý, chưa hoàn tất, TB ngày, quá hạn, sắp hạn | T-014 | spec 5.1, AC-C08-1, AC-A01-2 | UT-015 |
 | [x] (24/11) | T-016 | `domain/privacy.ts`: `maskPhone`, `toPublicReport` (bỏ SĐT, `secretCode`, followers → `followerCount`, timeline bỏ actor) | T-010 | spec 4.1 | UT-016 |
 | [x] (24/11) | T-016b | `domain/access.ts`: `hasOwnerAccess`, `followerCount`, `canSendAnonymous` (quota 5/ngày) | T-010 | spec 3.4a, 3.4b, 3.6 | UT-016b |
-| [ ] | T-017 | `domain/format.ts` + `domain/notifications.ts` | T-011 | spec 3.4, 7.6 | UT-017 |
+| [x] (24/11) | T-017 | `domain/format.ts` + `domain/notifications.ts` | T-011 | spec 3.4, 7.6 | UT-017 |
 | [ ] | T-018 | `data/streets.ts`: ≥ 10 đường trong phường với tọa độ gần đúng; `nearestStreet(lat,lng)` | T-010 | spec 5.3, AC-C03-5 | UT-018 |
 | [ ] | T-019 | `scripts/generate-mock.ts` (seed cố định) + `scripts/verify-mock.ts`; commit `mock.json` | T-012 → T-018 | spec 5 | UT-019, DV-001 → DV-012, DV-014 |
 
