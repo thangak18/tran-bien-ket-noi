@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Category, Status } from '@/domain/types';
@@ -118,17 +118,33 @@ export const MapView: React.FC<MapViewProps> = ({
 }) => {
   const [showLegend, setShowLegend] = useState(false);
   const [tileErrorOccurred, setTileErrorOccurred] = useState(false);
+  const tilesLoadedRef = useRef(0);
+  const tilesErrorRef = useRef(0);
 
   useEffect(() => {
     if (simulateTileError) {
       setTileErrorOccurred(true);
       onTileError?.();
+      return;
     }
+
+    // Chỉ hiện banner khi KHÔNG tải được tile nào trong 8 giây đầu và có lỗi tile
+    const timer = setTimeout(() => {
+      if (tilesLoadedRef.current === 0 && tilesErrorRef.current > 0) {
+        setTileErrorOccurred(true);
+        onTileError?.();
+      }
+    }, 8000);
+
+    return () => clearTimeout(timer);
   }, [simulateTileError, onTileError]);
 
+  const handleTileLoad = () => {
+    tilesLoadedRef.current += 1;
+  };
+
   const handleTileError = () => {
-    setTileErrorOccurred(true);
-    onTileError?.();
+    tilesErrorRef.current += 1;
   };
 
   return (
@@ -142,11 +158,14 @@ export const MapView: React.FC<MapViewProps> = ({
       }}
       className={`relative h-full w-full overflow-hidden bg-slate-100 ${className}`}
     >
-      {/* Fallback khi tile lỗi */}
+      {/* Fallback khi tile lỗi (không che nút zoom ở góc trên bên trái) */}
       {tileErrorOccurred && (
-        <div className="absolute inset-x-4 top-4 z-[1000] flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3.5 text-sm text-amber-950 shadow-md">
+        <div
+          data-testid="tile-error-banner"
+          className="absolute left-14 right-4 top-3 z-[1000] flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 shadow-md"
+        >
           <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-          <div className="flex-1">
+          <div className="flex-1 text-xs sm:text-sm">
             <span className="font-semibold">Không thể tải bản đồ.</span> Vui lòng kiểm tra kết nối
             mạng hoặc chuyển sang xem dạng danh sách.
           </div>
@@ -159,6 +178,7 @@ export const MapView: React.FC<MapViewProps> = ({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           eventHandlers={{
+            load: handleTileLoad,
             tileerror: handleTileError,
           }}
         />
