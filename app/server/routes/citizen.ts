@@ -17,6 +17,7 @@ import {
 } from '../middleware/rateLimit';
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { getDemoNow } from '../clock';
+import { executeTransition } from '../services/transition';
 import type { AppEnv } from '../types';
 
 export const citizenRoutes = new Hono<AppEnv>();
@@ -362,22 +363,28 @@ citizenRoutes.post('/reports/:id/feedback', async (c) => {
 
   if (resolved) {
     // Đã giải quyết -> chuyển trạng thái dong
-    await sqlClient`
-      UPDATE reports SET status = 'dong' WHERE id = ${report.id};
-    `;
-    await sqlClient`
-      INSERT INTO report_timeline (report_id, at, status, actor_type, actor_label, note)
-      VALUES (${report.id}, ${now}::timestamptz, 'dong', 'citizen', 'Người dân', 'Đã xác nhận kết quả hài lòng');
-    `;
+    await executeTransition({
+      reportId: report.id,
+      targetStatus: 'dong',
+      actor: {
+        role: 'system',
+        actorType: 'citizen',
+        actorLabel: 'Người dân',
+      },
+      params: { note: 'Đã xác nhận kết quả hài lòng' },
+    });
   } else {
     // Chưa giải quyết -> chuyển trạng thái mo_lai và tạo nhiệm vụ nghiệm thu cho TNV (Spec 3.3, 3.4c, DV-012)
-    await sqlClient`
-      UPDATE reports SET status = 'mo_lai' WHERE id = ${report.id};
-    `;
-    await sqlClient`
-      INSERT INTO report_timeline (report_id, at, status, actor_type, actor_label, note)
-      VALUES (${report.id}, ${now}::timestamptz, 'mo_lai', 'citizen', 'Người dân', ${comment || 'Chưa hài lòng với kết quả xử lý, yêu cầu mở lại'});
-    `;
+    await executeTransition({
+      reportId: report.id,
+      targetStatus: 'mo_lai',
+      actor: {
+        role: 'system',
+        actorType: 'citizen',
+        actorLabel: 'Người dân',
+      },
+      params: { note: comment || 'Chưa hài lòng với kết quả xử lý, yêu cầu mở lại' },
+    });
 
     // Tạo Volunteer Task nghiệm thu
     const [maxTask] = await sqlClient`
@@ -410,27 +417,26 @@ citizenRoutes.post('/reports/:id/supplement', async (c) => {
   const codeOrId = c.req.param('id');
   const body = await c.req.json();
   const note = body.note?.trim();
-  const now = await getDemoNow();
 
   const [report] = await sqlClient`
     SELECT id, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
   `;
 
   if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
-  if (report.status !== 'can_bo_sung') {
-    throw new AppError('INVALID_STATE', 'Hồ sơ hiện không ở trạng thái cần bổ sung thông tin', 400);
-  }
 
-  await sqlClient`
-    UPDATE reports SET status = 'da_tiep_nhan' WHERE id = ${report.id};
-  `;
+  const result = await executeTransition({
+    reportId: report.id,
+    targetStatus: 'moi',
+    actor: {
+      role: 'ND',
+      actorType: 'citizen',
+      actorLabel: 'Người dân',
+    },
+    params: { note: note || 'Đã bổ sung thông tin theo yêu cầu' },
+    clientVersion: body.version,
+  });
 
-  await sqlClient`
-    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_label, note)
-    VALUES (${report.id}, ${now}::timestamptz, 'da_tiep_nhan', 'citizen', 'Người dân', ${note || 'Đã bổ sung thông tin theo yêu cầu'});
-  `;
-
-  return c.json({ success: true, newStatus: 'da_tiep_nhan' });
+  return c.json({ success: true, newStatus: result.report.status, version: result.version });
 });
 
 /**

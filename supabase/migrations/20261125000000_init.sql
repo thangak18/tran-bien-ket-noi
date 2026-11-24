@@ -84,7 +84,7 @@ DO $$ BEGIN
   CREATE TYPE report_status AS ENUM (
     'moi', 'da_tiep_nhan', 'cho_xac_minh', 'da_giao',
     'hoan_thanh', 'dong', 'mo_lai', 'can_bo_sung',
-    'da_gop', 'chuyen_co_quan_khac', 'khong_xac_nhan'
+    'da_gop', 'chuyen_co_quan', 'chuyen_co_quan_khac', 'khong_xac_nhan'
   );
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 

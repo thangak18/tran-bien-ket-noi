@@ -4,6 +4,7 @@ import { AppError } from '../middleware/errorHandler';
 import { requireStaffAuth, StaffProfile } from '../middleware/auth';
 import { maskPhone } from '../../src/domain/privacy';
 import { getDemoNow } from '../clock';
+import { executeTransition } from '../services/transition';
 import type { AppEnv } from '../types';
 
 export const officerRoutes = new Hono<AppEnv>();
@@ -116,34 +117,27 @@ officerRoutes.get('/kpi', async (c) => {
 officerRoutes.post('/reports/:id/accept', async (c) => {
   const codeOrId = c.req.param('id');
   const staff = c.get('staff') as StaffProfile;
-  const now = await getDemoNow();
+  const body = await c.req.json().catch(() => ({}));
 
-  const [report] = await sqlClient`
-    SELECT id, code, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
-  `;
+  const result = await executeTransition({
+    reportId: codeOrId,
+    targetStatus: 'da_tiep_nhan',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ phường Trấn Biên',
+      staffId: staff.userId,
+    },
+    params: { note: 'Đã tiếp nhận phản ánh' },
+    clientVersion: body.version,
+  });
 
-  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
-  if (report.status !== 'moi') {
-    throw new AppError(
-      'INVALID_STATE',
-      `Không thể tiếp nhận hồ sơ đang ở trạng thái "${report.status}"`,
-      400
-    );
-  }
-
-  await sqlClient`
-    UPDATE reports SET status = 'da_tiep_nhan' WHERE id = ${report.id};
-  `;
-
-  await sqlClient`
-    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-    VALUES (
-      ${report.id}, ${now}::timestamptz, 'da_tiep_nhan', 'staff', ${staff.userId}::uuid,
-      ${staff.displayName}, 'Đã tiếp nhận phản ánh'
-    );
-  `;
-
-  return c.json({ success: true, newStatus: 'da_tiep_nhan' });
+  return c.json({
+    success: true,
+    newStatus: result.report.status,
+    code: result.report.code,
+    version: result.version,
+  });
 });
 
 /**
@@ -154,12 +148,29 @@ officerRoutes.post('/reports/:id/assign-volunteer', async (c) => {
   const body = await c.req.json();
   const taskType = body.type === 'nghiem_thu' ? 'nghiem_thu' : 'xac_minh';
   const staff = c.get('staff') as StaffProfile;
-  const now = await getDemoNow();
 
+  // Nếu là xác minh thì chuyển trạng thái hồ sơ sang cho_xac_minh
+  let resultVersion = body.version;
+  if (taskType === 'xac_minh') {
+    const result = await executeTransition({
+      reportId: codeOrId,
+      targetStatus: 'cho_xac_minh',
+      actor: {
+        role: 'CB',
+        actorType: 'staff',
+        actorLabel: staff.displayName || 'Cán bộ tiếp nhận',
+        staffId: staff.userId,
+      },
+      params: { note: 'Chuyển tình nguyện viên xác minh hiện trường' },
+      clientVersion: body.version,
+    });
+    resultVersion = result.version;
+  }
+
+  // Tra cứu id report
   const [report] = await sqlClient`
-    SELECT id, code, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
+    SELECT id FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
   `;
-
   if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
 
   // Sinh mã task NV-xxx
@@ -183,22 +194,10 @@ officerRoutes.post('/reports/:id/assign-volunteer', async (c) => {
     throw new AppError('INTERNAL_SERVER_ERROR', 'Không thể tạo nhiệm vụ tình nguyện viên', 500);
   }
 
-  if (taskType === 'xac_minh') {
-    await sqlClient`
-      UPDATE reports SET status = 'cho_xac_minh' WHERE id = ${report.id};
-    `;
-    await sqlClient`
-      INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-      VALUES (
-        ${report.id}, ${now}::timestamptz, 'cho_xac_minh', 'staff', ${staff.userId}::uuid,
-        ${staff.displayName}, 'Chuyển tình nguyện viên xác minh hiện trường'
-      );
-    `;
-  }
-
   return c.json({
     success: true,
     task: { id: newTask.code, uuid: newTask.id, type: taskType },
+    version: resultVersion,
   });
 });
 
@@ -216,40 +215,45 @@ officerRoutes.post('/reports/:id/assign-dept', async (c) => {
     throw new AppError('VALIDATION_ERROR', 'Vui lòng chọn đơn vị tiếp nhận xử lý', 400);
   }
 
-  const [report] = await sqlClient`
-    SELECT id, code, category, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
-  `;
-
-  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
-
-  // Tính SLA
-  const [slaRow] = await sqlClient`
-    SELECT sla_days FROM category_settings WHERE category = ${report.category} LIMIT 1;
-  `;
-  const slaDays = slaRow?.sla_days || 3;
-  const dueAt =
-    body.dueAt || new Date(new Date(now).getTime() + slaDays * 24 * 60 * 60 * 1000).toISOString();
-
   const [dept] = await sqlClient`
     SELECT name FROM departments WHERE id = ${departmentId} LIMIT 1;
   `;
   const deptName = dept?.name || departmentId;
 
-  await sqlClient`
-    UPDATE reports
-    SET status = 'da_giao', department_id = ${departmentId}, due_at = ${dueAt}::timestamptz
-    WHERE id = ${report.id};
+  // Tính SLA
+  const [rep] = await sqlClient`
+    SELECT category FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
   `;
-
-  await sqlClient`
-    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-    VALUES (
-      ${report.id}, ${now}::timestamptz, 'da_giao', 'staff', ${staff.userId}::uuid,
-      ${staff.displayName}, ${`Giao xử lý: ${deptName}`}
-    );
+  const [slaRow] = await sqlClient`
+    SELECT sla_days FROM category_settings WHERE category = ${rep?.category} LIMIT 1;
   `;
+  const slaDays = slaRow?.sla_days || 3;
+  const dueAt =
+    body.dueAt || new Date(new Date(now).getTime() + slaDays * 24 * 60 * 60 * 1000).toISOString();
 
-  return c.json({ success: true, newStatus: 'da_giao', dueAt });
+  const result = await executeTransition({
+    reportId: codeOrId,
+    targetStatus: 'da_giao',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ phân xử lý',
+      staffId: staff.userId,
+    },
+    params: {
+      departmentId,
+      dueAt,
+      note: `Giao xử lý: ${deptName}`,
+    },
+    clientVersion: body.version,
+  });
+
+  return c.json({
+    success: true,
+    newStatus: result.report.status,
+    dueAt,
+    version: result.version,
+  });
 });
 
 /**
@@ -260,42 +264,34 @@ officerRoutes.post('/reports/:id/complete', async (c) => {
   const body = await c.req.json();
   const resultNote =
     body.resultNote?.trim() || 'Đã hoàn thành kiểm tra và khắc phục sự cố tại hiện trường';
-  const resultPhotos = Array.isArray(body.resultPhotos) ? body.resultPhotos : [];
+  const resultPhotos = Array.isArray(body.resultPhotos)
+    ? body.resultPhotos
+    : Array.isArray(body.photos)
+      ? body.photos
+      : ['/demo-photos/after/rac_thai.jpg'];
   const staff = c.get('staff') as StaffProfile;
-  const now = await getDemoNow();
 
-  const [report] = await sqlClient`
-    SELECT id, code, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
-  `;
+  const result = await executeTransition({
+    reportId: codeOrId,
+    targetStatus: 'hoan_thanh',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ xử lý',
+      staffId: staff.userId,
+    },
+    params: {
+      resultNote,
+      resultPhotos,
+    },
+    clientVersion: body.version,
+  });
 
-  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
-
-  await sqlClient`
-    UPDATE reports
-    SET status = 'hoan_thanh', completed_at = ${now}::timestamptz, result_note = ${resultNote}
-    WHERE id = ${report.id};
-  `;
-
-  // Lưu ảnh kết quả
-  let sort = 0;
-  for (const p of resultPhotos) {
-    if (typeof p === 'string' && p.trim()) {
-      await sqlClient`
-        INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
-        VALUES (${report.id}, 'after', ${p.trim()}, ${sort++}, 'upload');
-      `;
-    }
-  }
-
-  await sqlClient`
-    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-    VALUES (
-      ${report.id}, ${now}::timestamptz, 'hoan_thanh', 'staff', ${staff.userId}::uuid,
-      ${staff.displayName}, ${resultNote}
-    );
-  `;
-
-  return c.json({ success: true, newStatus: 'hoan_thanh' });
+  return c.json({
+    success: true,
+    newStatus: result.report.status,
+    version: result.version,
+  });
 });
 
 /**
@@ -307,27 +303,25 @@ officerRoutes.post('/reports/:id/reject', async (c) => {
   const reason =
     body.reason?.trim() || 'Thông tin phản ánh không có căn cứ thực tế tại hiện trường';
   const staff = c.get('staff') as StaffProfile;
-  const now = await getDemoNow();
 
-  const [report] = await sqlClient`
-    SELECT id, code, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
-  `;
+  const result = await executeTransition({
+    reportId: codeOrId,
+    targetStatus: 'khong_xac_nhan',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ tiếp nhận',
+      staffId: staff.userId,
+    },
+    params: { note: reason },
+    clientVersion: body.version,
+  });
 
-  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
-
-  await sqlClient`
-    UPDATE reports SET status = 'khong_xac_nhan' WHERE id = ${report.id};
-  `;
-
-  await sqlClient`
-    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-    VALUES (
-      ${report.id}, ${now}::timestamptz, 'khong_xac_nhan', 'staff', ${staff.userId}::uuid,
-      ${staff.displayName}, ${reason}
-    );
-  `;
-
-  return c.json({ success: true, newStatus: 'khong_xac_nhan' });
+  return c.json({
+    success: true,
+    newStatus: result.report.status,
+    version: result.version,
+  });
 });
 
 /**
@@ -336,38 +330,41 @@ officerRoutes.post('/reports/:id/reject', async (c) => {
 officerRoutes.post('/reports/:id/merge', async (c) => {
   const codeOrId = c.req.param('id');
   const body = await c.req.json();
-  const targetIdOrCode = body.targetReportId;
+  const targetIdOrCode = body.targetReportId || body.targetCode;
   const staff = c.get('staff') as StaffProfile;
-  const now = await getDemoNow();
 
-  const [sourceReport] = await sqlClient`
-    SELECT id, code, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
-  `;
+  if (!targetIdOrCode) {
+    throw new AppError('BAD_REQUEST', 'Thiếu targetReportId để gộp hồ sơ', 400);
+  }
+
   const [targetReport] = await sqlClient`
-    SELECT id, code, status FROM reports WHERE code = ${targetIdOrCode} OR id::text = ${targetIdOrCode} LIMIT 1;
+    SELECT id, code FROM reports WHERE code = ${targetIdOrCode} OR id::text = ${targetIdOrCode} LIMIT 1;
   `;
 
-  if (!sourceReport || !targetReport) {
-    throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ nguồn hoặc hồ sơ đích', 404);
+  if (!targetReport) {
+    throw new AppError('NOT_FOUND', `Không tìm thấy hồ sơ đích ${targetIdOrCode}`, 404);
   }
 
-  if (sourceReport.id === targetReport.id) {
-    throw new AppError('INVALID_OPERATION', 'Không thể tự gộp hồ sơ vào chính nó', 400);
-  }
+  const result = await executeTransition({
+    reportId: codeOrId,
+    targetStatus: 'da_gop',
+    actor: {
+      role: 'CB',
+      actorType: 'staff',
+      actorLabel: staff.displayName || 'Cán bộ tiếp nhận',
+      staffId: staff.userId,
+    },
+    params: {
+      mergedInto: targetReport.id,
+      note: `Đã gộp vào phản ánh ${targetReport.code}`,
+    },
+    clientVersion: body.version,
+  });
 
-  await sqlClient`
-    UPDATE reports
-    SET status = 'da_gop', merged_into = ${targetReport.id}, status_before_merge = ${sourceReport.status}
-    WHERE id = ${sourceReport.id};
-  `;
-
-  await sqlClient`
-    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-    VALUES (
-      ${sourceReport.id}, ${now}::timestamptz, 'da_gop', 'staff', ${staff.userId}::uuid,
-      ${staff.displayName}, ${`Đã gộp vào phản ánh ${targetReport.code}`}
-    );
-  `;
-
-  return c.json({ success: true, newStatus: 'da_gop', mergedInto: targetReport.code });
+  return c.json({
+    success: true,
+    newStatus: result.report.status,
+    mergedInto: targetReport.code,
+    version: result.version,
+  });
 });
