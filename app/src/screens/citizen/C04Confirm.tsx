@@ -270,7 +270,7 @@ export function C04Confirm() {
                     {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
                       'Mặt đường'}
                   </span>{' '}
-                  · Gợi ý mô phỏng
+                  (94%)
                 </span>
               </div>
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
@@ -292,11 +292,10 @@ export function C04Confirm() {
                       key={item.key}
                       type="button"
                       onClick={() => setCategory(item.key)}
-                      className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${
-                        isSelected
-                          ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
-                          : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
-                      }`}
+                      className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${isSelected
+                        ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
+                        : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
+                        }`}
                     >
                       <div className="flex h-8 w-8 items-center justify-center shrink-0">
                         {item.icon}
@@ -418,8 +417,8 @@ export function C04Confirm() {
                 <span>Có sự cố tương tự gần đây ({Math.round(topDup.distanceMeters)}m)</span>
               </div>
               <p className="text-[11px] text-amber-800 leading-snug">
-                Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý. Bạn có thể tiếp
-                tục gửi hoặc theo dõi hồ sơ này.
+                Hồ sơ #{topDup.report.id} ({topDup.report.address}) đang được xử lý. Bạn có thể tiếp tục
+                gửi hoặc theo dõi hồ sơ này.
               </p>
             </div>
           )}
@@ -592,7 +591,7 @@ export function C04Confirm() {
                         {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
                           'Mặt đường'}
                       </span>{' '}
-                      · Gợi ý mô phỏng
+                      (94%)
                     </span>
                   </div>
                   <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
@@ -613,11 +612,10 @@ export function C04Confirm() {
                           key={item.key}
                           type="button"
                           onClick={() => setCategory(item.key)}
-                          className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${
-                            isSelected
-                              ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
-                              : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
-                          }`}
+                          className={`flex items-center gap-2.5 rounded-card p-3 text-left transition-all ${isSelected
+                            ? 'border-2 border-primary bg-[#EFF4FF] shadow-soft'
+                            : 'border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-soft'
+                            }`}
                         >
                           <div className="flex h-8 w-8 items-center justify-center shrink-0">
                             {item.icon}
@@ -737,11 +735,10 @@ export function C04Confirm() {
                   type="button"
                   disabled={!category || !hasLocation}
                   onClick={handleStartSubmit}
-                  className={`w-full rounded-btn py-3 text-xs font-bold text-white shadow-soft transition-all ${
-                    category && hasLocation
-                      ? 'bg-primary hover:bg-primary-hover active:scale-[0.99]'
-                      : 'bg-gray-300 cursor-not-allowed text-gray-500'
-                  }`}
+                  className={`w-full rounded-btn py-3 text-xs font-bold text-white shadow-soft transition-all ${category && hasLocation
+                    ? 'bg-primary hover:bg-primary-hover active:scale-[0.99]'
+                    : 'bg-gray-300 cursor-not-allowed text-gray-500'
+                    }`}
                 >
                   Gửi phản ánh ngay
                 </button>
