@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { formatDays, formatDistance, formatDate } from '@/domain/format';
 import { buildNotification, shouldNotifyOnTransition } from '@/domain/notifications';
+import { haversineMeters } from '@/domain/geo';
 
 describe('UT-017 – Format & notifications (spec 3.4, 7.6)', () => {
   it('1. formatDays(3.2) = "3,2 ngày"; formatDistance(950) = "950 m"; formatDistance(1250) = "1,3 km"', () => {
@@ -69,5 +70,11 @@ describe('UT-017 – Format & notifications (spec 3.4, 7.6)', () => {
     expect(shouldNotifyOnTransition('cho_xac_minh', 'da_tiep_nhan')).toBe(false);
     expect(shouldNotifyOnTransition('moi', 'da_tiep_nhan')).toBe(true);
     expect(shouldNotifyOnTransition('da_giao', 'hoan_thanh')).toBe(true);
+  });
+
+  it('5. haversineMeters giữa 2 điểm cách nhau 0,0004° vĩ độ ≈ 44,5 m (sai số ±1 m)', () => {
+    const d = haversineMeters(10.95, 106.82, 10.9504, 106.82);
+    expect(d).toBeGreaterThanOrEqual(43.5);
+    expect(d).toBeLessThanOrEqual(45.5);
   });
 });
