@@ -179,26 +179,26 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 ### Q2 – Lõi API Hono (G2-04)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-04a | Khung Hono `server/app.ts`, `api/[...path].ts`, `env.ts` (zod fail sớm), `clock.ts` (real/fixed). Middleware: CORS, Request-Id, Error handler, Zod validator | G2-03d | 12.1, 12.8, AC-API-2,3,4 | API-001, API-002 | 2h |
-| [ ] | G2-04b | Middleware RateLimit bằng bảng Postgres (`AC-API-7`) và Idempotency-Key (`AC-API-6`) | G2-04a | 12.1, 13.4, AC-API-6,7 | IDEM-001, CONC-002 | 2h |
-| [ ] | G2-04c | Routes `/public/*`: reports, by code, kpi, config, recent-results. PostGIS ST_DWithin, serializer `toPublicReport` lọc SĐT/mã/hash | G2-04a | 12.2, AC-API-1, AC-AUTH-6 | API-PUB-001 → 005, LEAK-001 | 2.5h |
-| [ ] | G2-04d | Routes `/citizen/*`: otp/request, verify, gửi phản ánh ẩn danh/SĐT, claim, lookup, owner, feedback, supplement, follow, subscribe | G2-04b, G2-04c | 12.3, AC-DATA-3,5 | API-CIT-001 → 010 | 3h |
-| [ ] | G2-04e | Routes `/officer/*`: reports, kpi, accept, assign-volunteer, assign-dept, complete, ngoại lệ, gộp/tách, gửi hộ. Giao dịch FOR UPDATE + transition | G2-04d | 12.4, 3.3, 3.6 | API-OFF-001 → 012, CONC-001 | 3h |
-| [ ] | G2-04f | Routes `/volunteer/*`: tasks theo GPS, chi tiết, claim mở (khóa dòng), nộp kết quả. Kích hoạt chuyển trạng thái 3.3, che SĐT | G2-04e | 12.5, AC-V01, AC-V02 | API-VOL-001 → 004 | 2.5h |
-| [ ] | G2-04g | Cron route `/cron/daily`: bảo vệ bằng `CRON_SECRET`, tự đóng hồ sơ sau 7 ngày, dọn pending_uploads, dọn OTP và access_attempts hết hạn | G2-04f | 12.7, AC-API-8 | CRON-001 → 004 | 2h |
+| [x] | G2-04a | Khung Hono `server/app.ts`, `api/[...path].ts`, `env.ts` (zod fail sớm), `clock.ts` (real/fixed). Middleware: CORS, Request-Id, Error handler, Zod validator | G2-03d | 12.1, 12.8, AC-API-2,3,4 | API-001, API-002 | 2h |
+| [x] | G2-04b | Middleware RateLimit bằng bảng Postgres (`AC-API-7`) và Idempotency-Key (`AC-API-6`) | G2-04a | 12.1, 13.4, AC-API-6,7 | IDEM-001, CONC-002 | 2h |
+| [x] | G2-04c | Routes `/public/*`: reports, by code, kpi, config, recent-results. PostGIS ST_DWithin, serializer `toPublicReport` lọc SĐT/mã/hash | G2-04a | 12.2, AC-API-1, AC-AUTH-6 | API-PUB-001 → 005, LEAK-001 | 2.5h |
+| [x] | G2-04d | Routes `/citizen/*`: otp/request, verify, gửi phản ánh ẩn danh/SĐT, claim, lookup, owner, feedback, supplement, follow, subscribe | G2-04b, G2-04c | 12.3, AC-DATA-3,5 | API-CIT-001 → 010 | 3h |
+| [x] | G2-04e | Routes `/officer/*`: reports, kpi, accept, assign-volunteer, assign-dept, complete, ngoại lệ, gộp/tách, gửi hộ. Giao dịch FOR UPDATE + transition | G2-04d | 12.4, 3.3, 3.6 | API-OFF-001 → 012, CONC-001 | 3h |
+| [x] | G2-04f | Routes `/volunteer/*`: tasks theo GPS, chi tiết, claim mở (khóa dòng), nộp kết quả. Kích hoạt chuyển trạng thái 3.3, che SĐT | G2-04e | 12.5, AC-V01, AC-V02 | API-VOL-001 → 004 | 2.5h |
+| [x] | G2-04g | Cron route `/cron/daily`: bảo vệ bằng `CRON_SECRET`, tự đóng hồ sơ sau 7 ngày, dọn pending_uploads, dọn OTP và access_attempts hết hạn | G2-04f | 12.7, AC-API-8 | CRON-001 → 004 | 2h |
 
 ### Q3 – Xác thực & Quyền riêng tư (G2-05)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-05a | Middleware xác thực nhân viên qua Supabase Auth JWT, tra `staff_profiles` mỗi request, `is_active=false` → 403. Kiểm soát ma trận quyền 13.5 | G2-04f | 13.1, 13.2, 13.5 | AUTHZ-001 → 015 | 2.5h |
-| [ ] | G2-05b | Xác thực người dân: OTP mock (123456, 5 phút, 5 lần sai), JWT 30 ngày qua jose HS256 | G2-05a | 13.3, 10.3 | AUTH-CIT-001 → 004 | 2h |
-| [ ] | G2-05c | Quyền chủ sở hữu hồ sơ ẩn danh: secretCode 4 số + ownerToken 256-bit hash kèm pepper, claim/lookup, chống dò brute force và quota | G2-05b | 13.4, AC-AUTH-4,5,7,8 | AUTH-ANON-001 → 006, LEAK-002 | 2.5h |
+| [x] | G2-05a | Middleware xác thực nhân viên qua Supabase Auth JWT, tra `staff_profiles` mỗi request, `is_active=false` → 403. Kiểm soát ma trận quyền 13.5 | G2-04f | 13.1, 13.2, 13.5 | AUTHZ-001 → 015 | 2.5h |
+| [x] | G2-05b | Xác thực người dân: OTP mock (123456, 5 phút, 5 lần sai), JWT 30 ngày qua jose HS256 | G2-05a | 13.3, 10.3 | AUTH-CIT-001 → 004 | 2h |
+| [x] | G2-05c | Quyền chủ sở hữu hồ sơ ẩn danh: secretCode 4 số + ownerToken 256-bit hash kèm pepper, claim/lookup, chống dò brute force và quota | G2-05b | 13.4, AC-AUTH-4,5,7,8 | AUTH-ANON-001 → 006, LEAK-002 | 2.5h |
 
 ### Q4 – Lưu trữ ảnh (G2-06)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
-| [ ] | G2-06a | Route `POST /uploads/sign`: cấp signed URL PUT lên bucket riêng tư `report-photos`, giới hạn 1.5MB, kiểm mime-type | G2-04a | 15, AC-PHOTO-1,4 | PHOTO-001, PHOTO-002 | 2h |
-| [ ] | G2-06b | Gắn ảnh vào hồ sơ: kiểm tra magic bytes, kích thước thật server-side, URL ký đọc ngắn hạn 1 giờ có kiểm soát quyền | G2-06a | 15, AC-PHOTO-2,3 | PHOTO-003, PHOTO-004 | 2h |
+| [x] | G2-06a | Route `POST /uploads/sign`: cấp signed URL PUT lên bucket riêng tư `report-photos`, giới hạn 1.5MB, kiểm mime-type | G2-04a | 15, AC-PHOTO-1,4 | PHOTO-001, PHOTO-002 | 2h |
+| [x] | G2-06b | Gắn ảnh vào hồ sơ: kiểm tra magic bytes, kích thước thật server-side, URL ký đọc ngắn hạn 1 giờ có kiểm soát quyền | G2-06a | 15, AC-PHOTO-2,3 | PHOTO-003, PHOTO-004 | 2h |
 
 ### Q5 – Scripts Vận hành & Màn Đăng nhập (G2-10)
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
