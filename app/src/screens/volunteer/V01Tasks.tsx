@@ -1,91 +1,173 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Users, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2, ChevronRight, MapPin } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
+import { getCategoryConfig } from '@/store/officerActions';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
+import type { VolunteerTask } from '@/domain/types';
+
+export const VOLUNTEERS = ['Lê Thảo Vy', 'Trần Quốc Bảo', 'Phạm Ngọc Hân'];
+export const TNV_KEY = 'tbkn:tnv';
+
+export function getCurrentVolunteer(): string {
+  try {
+    return localStorage.getItem(TNV_KEY) || VOLUNTEERS[0]!;
+  } catch {
+    return VOLUNTEERS[0]!;
+  }
+}
 
 export function V01Tasks() {
   const navigate = useNavigate();
-  const { state } = useAppStore();
+  const location = useLocation();
+  const { state, dispatch } = useAppStore();
+  const [me, setMe] = useState(getCurrentVolunteer());
+  const [tab, setTab] = useState<'todo' | 'done'>('todo');
+  const toast = (location.state as { toast?: string } | null)?.toast;
 
-  const tasks = state.volunteerTasks || [];
+  const pickVolunteer = (name: string) => {
+    setMe(name);
+    try {
+      localStorage.setItem(TNV_KEY, name);
+    } catch {
+      /* bỏ qua */
+    }
+  };
+
+  const mine = state.volunteerTasks.filter((t) => t.assignee === me || t.assignee === null);
+  const todo = mine.filter((t) => t.status !== 'xong');
+  const done = mine.filter((t) => t.status === 'xong' && t.assignee === me);
+  const list = tab === 'todo' ? todo : done;
+
+  const claim = (t: VolunteerTask) => {
+    dispatch({ type: 'UPDATE_TASK', payload: { ...t, assignee: me, status: 'dang_lam' } });
+    navigate(`/tnv/${t.id}`);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-
-        <h1 className="text-sm font-bold text-gray-900" data-testid="screen-title">
-          Nhiệm vụ tình nguyện viên
-        </h1>
-
-        <div className="w-10" />
+    <div className="min-h-screen bg-background pb-20">
+      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-md items-center gap-2 px-4 lg:max-w-5xl">
+          <button
+            type="button"
+            onClick={() => navigate('/demo')}
+            aria-label="Đổi vai trò"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-base font-bold text-gray-900" data-testid="screen-title">
+            Nhiệm vụ của tôi
+          </h1>
+          <span className="ml-auto hidden text-xs font-semibold text-primary lg:block">
+            Cổng tình nguyện viên · Trấn Biên
+          </span>
+        </div>
       </header>
 
-      <main className="mx-auto max-w-md px-4 py-4 space-y-4">
-        <div className="rounded-3xl bg-gradient-to-r from-emerald-700 to-teal-800 p-4 text-white shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-200">
-            <Users className="h-4 w-4" />
-            <span>Đồng hành cùng Trấn Biên</span>
+      <main className="mx-auto max-w-md space-y-4 px-4 py-4 lg:max-w-5xl">
+        {toast && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800"
+          >
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            {toast}
           </div>
-          <h2 className="mt-1 text-base font-bold">Xác minh & Nghiệm thu hiện trường</h2>
-          <p className="mt-1 text-xs text-emerald-100/90 leading-relaxed">
-            Hỗ trợ phường xác minh nhanh các điểm sự cố và ghi nhận kết quả xử lý.
-          </p>
+        )}
+
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Chọn tình nguyện viên">
+          {VOLUNTEERS.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => pickVolunteer(v)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                me === v
+                  ? 'bg-primary text-white'
+                  : 'border border-gray-200 bg-white text-gray-600 hover:border-primary-300'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
         </div>
 
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase text-gray-500">
-            Danh sách nhiệm vụ ({tasks.length})
-          </h3>
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1">
+          {(
+            [
+              ['todo', `Cần làm (${todo.length})`],
+              ['done', `Đã xong (${done.length})`],
+            ] as const
+          ).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setTab(k)}
+              className={`rounded-lg py-2 text-sm font-semibold ${
+                tab === k ? 'bg-white text-primary shadow-sm' : 'text-gray-500'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-          {tasks.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center text-xs text-gray-500">
-              Hiện tại không có nhiệm vụ nào cần xác minh.
-            </div>
-          ) : (
-            tasks.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => navigate(`/tnv/${t.id}`)}
-                className="cursor-pointer rounded-2xl border border-gray-200 bg-white p-3.5 shadow-2xs hover:border-emerald-300 transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-gray-900">{t.id}</span>
-                    <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                      {t.type === 'xac_minh' ? 'Xác minh sự cố' : 'Nghiệm thu kết quả'}
+        {list.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">
+            Hiện chưa có nhiệm vụ
+          </div>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {list.map((t) => {
+              const r = state.reports.find((x) => x.id === t.reportId);
+              if (!r) return null;
+              const verify = t.type === 'xac_minh';
+              return (
+                <div
+                  key={t.id}
+                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  data-testid="task-card"
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${
+                        verify ? 'bg-primary-50 text-primary-700' : 'bg-purple-50 text-purple-700'
+                      }`}
+                    >
+                      {verify ? 'Xác minh ban đầu' : 'Nghiệm thu sau xử lý'}
                     </span>
+                    <span className="font-mono text-xs text-gray-500">{r.id}</span>
                   </div>
-                  <span className="text-[11px] text-gray-400">
-                    Hồ sơ: <span className="font-mono font-medium text-gray-700">{t.reportId}</span>
-                  </span>
+                  <div className="mt-2 flex items-center gap-2 text-sm font-bold text-gray-900">
+                    <CategoryIcon category={r.category} className="h-5 w-5" />
+                    {getCategoryConfig(r.category).label}
+                  </div>
+                  <p className="mt-1 flex items-start gap-1 text-xs text-gray-600">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    {r.address}
+                  </p>
+                  {t.status === 'xong' ? (
+                    <p className="mt-3 text-xs font-semibold text-emerald-700">
+                      Đã gửi kết quả cho cán bộ
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        t.status === 'cho_nhan' ? claim(t) : navigate(`/tnv/${t.id}`)
+                      }
+                      className="mt-3 flex w-full items-center justify-center gap-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
+                    >
+                      {t.status === 'cho_nhan' ? 'Nhận việc' : 'Làm tiếp'}
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
-
-                <div className="mt-2 text-xs text-gray-600 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-gray-400" />
-                    <span>
-                      {t.status === 'cho_nhan'
-                        ? 'Chờ nhận'
-                        : t.status === 'dang_lam'
-                          ? 'Đang làm'
-                          : 'Hoàn thành'}
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-1 font-semibold text-emerald-600">
-                    <span>Thực hiện</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -14,10 +14,16 @@ import { useAppStore } from '@/store/AppStore';
 import {
   acceptReport,
   assignDepartment,
+  assignVolunteer,
+  closeReport,
   getCategoryConfig,
   mergeReports,
+  requestSupplement,
   splitReportAction,
+  transferAgency,
 } from '@/store/officerActions';
+import { VOLUNTEERS } from '@/screens/volunteer/V01Tasks';
+import { Modal } from '@/components/ui/Modal';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { formatDateShort, formatDateTime } from '@/domain/format';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -42,6 +48,10 @@ export function A02Panel() {
   const [selectedDept, setSelectedDept] = useState(defaultDept);
   const [officerNote, setOfficerNote] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [modal, setModal] = useState<'tnv' | 'supplement' | 'transfer' | null>(null);
+  const [reason, setReason] = useState('');
+  const [agency, setAgency] = useState('');
+  const [tnv, setTnv] = useState('');
 
   // B2 Gộp/tách hồ sơ (spec 3.5)
   const similarReports = useMemo(() => {
@@ -107,6 +117,21 @@ export function A02Panel() {
     }
   };
 
+  const flash = (msg: string) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(''), 3000);
+  };
+  const run = (fn: () => ReturnType<typeof acceptReport>, msg: string) => {
+    try {
+      dispatch({ type: 'HYDRATE', payload: fn() });
+      setModal(null);
+      setReason('');
+      flash(msg);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleMerge = (childId: string) => {
     try {
       const newState = mergeReports(state, report.id, [childId], undefined, state.settings.demoNow);
@@ -134,6 +159,10 @@ export function A02Panel() {
       console.error(err);
     }
   };
+  const now = state.settings.demoNow;
+  const verifyTask = state.volunteerTasks.find((t) => t.reportId === report.id && t.result);
+  const canRoute = ['moi', 'da_tiep_nhan', 'cho_xac_minh'].includes(report.status);
+  const reasonOk = reason.trim().length >= 10;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -337,6 +366,176 @@ export function A02Panel() {
             </div>
           )}
         </div>
+
+        {/* Hành động bổ sung: TNV / bổ sung / chuyển / đóng */}
+        {(canRoute || report.status === 'hoan_thanh') && (
+          <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
+            <h3 className="text-sm font-bold text-gray-900">Thao tác khác</h3>
+            {report.status === 'moi' && report.anonymous && (
+              <p className="rounded-xl bg-amber-50 p-2.5 text-xs font-medium text-amber-800">
+                Hồ sơ ẩn danh: nên giao TNV xác minh trước khi xử lý.
+              </p>
+            )}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(report.status === 'moi' || report.status === 'da_tiep_nhan') && (
+                <Button variant="outline" onClick={() => setModal('tnv')}>
+                  Giao TNV xác minh
+                </Button>
+              )}
+              {canRoute && (
+                <>
+                  <Button variant="outline" onClick={() => setModal('supplement')}>
+                    Yêu cầu bổ sung
+                  </Button>
+                  <Button variant="outline" onClick={() => setModal('transfer')}>
+                    Chuyển cơ quan khác
+                  </Button>
+                </>
+              )}
+              {report.status === 'hoan_thanh' && (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    run(() => closeReport(state, report.id, undefined, now), 'Đã đóng hồ sơ')
+                  }
+                >
+                  Đóng hồ sơ
+                </Button>
+              )}
+            </div>
+            {report.status === 'cho_xac_minh' && !verifyTask && (
+              <p className="text-xs text-gray-500">
+                Đang chờ tình nguyện viên gửi kết quả xác minh.
+              </p>
+            )}
+          </div>
+        )}
+
+        {verifyTask?.result && (
+          <div
+            className="rounded-3xl border border-primary-200 bg-white p-4 shadow-2xs space-y-2"
+            data-testid="verify-result"
+          >
+            <h3 className="text-sm font-bold text-gray-900">Kết quả xác minh</h3>
+            <p className="text-xs text-gray-600">
+              TNV: <b>{verifyTask.assignee}</b> · Sự cố:{' '}
+              <b>
+                {
+                  {
+                    co: 'Có tồn tại',
+                    khong: 'Không tồn tại',
+                    khong_tim_thay: 'Không tìm thấy vị trí',
+                  }[verifyTask.result.exists]
+                }
+              </b>
+              {verifyTask.result.severity && (
+                <>
+                  {' '}
+                  · Mức độ:{' '}
+                  <b>
+                    {
+                      { nhe: 'Nhẹ', trung_binh: 'Trung bình', nguy_hiem: 'Nguy hiểm' }[
+                        verifyTask.result.severity
+                      ]
+                    }
+                  </b>
+                </>
+              )}
+            </p>
+            {verifyTask.result.note && (
+              <p className="text-xs italic text-gray-500">"{verifyTask.result.note}"</p>
+            )}
+            <img
+              src={verifyTask.result.photo}
+              alt="Ảnh TNV"
+              className="h-40 w-full rounded-xl object-cover bg-gray-100"
+            />
+          </div>
+        )}
+
+        <Modal
+          isOpen={modal !== null}
+          onClose={() => setModal(null)}
+          title={
+            modal === 'tnv'
+              ? 'Giao TNV xác minh'
+              : modal === 'supplement'
+                ? 'Yêu cầu bổ sung'
+                : 'Chuyển cơ quan khác'
+          }
+          footer={
+            modal === 'tnv' ? (
+              <Button
+                fullWidth
+                onClick={() =>
+                  run(
+                    () => assignVolunteer(state, report.id, { assignee: tnv || null }, now),
+                    'Đã giao tình nguyện viên xác minh'
+                  )
+                }
+              >
+                Xác nhận giao
+              </Button>
+            ) : (
+              <Button
+                fullWidth
+                disabled={!reasonOk || (modal === 'transfer' && !agency.trim())}
+                onClick={() =>
+                  modal === 'supplement'
+                    ? run(
+                        () => requestSupplement(state, report.id, { reason: reason.trim() }, now),
+                        'Đã gửi yêu cầu bổ sung'
+                      )
+                    : run(
+                        () =>
+                          transferAgency(
+                            state,
+                            report.id,
+                            { agency: agency.trim(), reason: reason.trim() },
+                            now
+                          ),
+                        'Đã chuyển cơ quan khác'
+                      )
+                }
+              >
+                Xác nhận
+              </Button>
+            )
+          }
+        >
+          {modal === 'tnv' ? (
+            <select
+              value={tnv}
+              onChange={(e) => setTnv(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 p-2.5 text-sm"
+            >
+              <option value="">Để TNV gần nhất nhận</option>
+              {VOLUNTEERS.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="space-y-2">
+              {modal === 'transfer' && (
+                <input
+                  value={agency}
+                  onChange={(e) => setAgency(e.target.value)}
+                  placeholder="Tên cơ quan tiếp nhận"
+                  className="w-full rounded-xl border border-gray-300 p-2.5 text-sm"
+                />
+              )}
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={3}
+                placeholder="Lý do (tối thiểu 10 ký tự)"
+                className="w-full rounded-xl border border-gray-300 p-2.5 text-sm"
+              />
+            </div>
+          )}
+        </Modal>
 
         {/* Khối Phản ánh tương tự & Gộp hồ sơ (spec 3.5, B2) */}
         <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
