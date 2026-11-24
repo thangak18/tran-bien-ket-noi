@@ -9,6 +9,8 @@ import { C05Mine } from './screens/citizen/C05Mine';
 import { C06Detail } from './screens/citizen/C06Detail';
 import { C07Nearby } from './screens/citizen/C07Nearby';
 import { C08Transparency } from './screens/citizen/C08Transparency';
+import { ProfileScreen } from './screens/citizen/ProfileScreen';
+import { SearchScreen } from './screens/citizen/SearchScreen';
 import { A01Inbox } from './screens/officer/A01Inbox';
 import { A02Panel } from './screens/officer/A02Panel';
 import { A03Result } from './screens/officer/A03Result';
@@ -82,6 +84,22 @@ export default function App() {
           element={
             <CitizenLayout>
               <C08Transparency />
+            </CitizenLayout>
+          }
+        />
+        <Route
+          path="/ho-so"
+          element={
+            <CitizenLayout>
+              <ProfileScreen />
+            </CitizenLayout>
+          }
+        />
+        <Route
+          path="/tim-kiem"
+          element={
+            <CitizenLayout>
+              <SearchScreen />
             </CitizenLayout>
           }
         />
