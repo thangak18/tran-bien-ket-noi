@@ -281,7 +281,10 @@ Kết quả sắp xếp theo khoảng cách tăng dần, tối đa 3.
 ### 5.3. Quy tắc sinh
 
 - Generator có seed cố định → dữ liệu giống nhau mỗi lần build.
-- `createdAt` trong 01/11–23/11/2026; `completedAt ≤ demoNow`.
+- `createdAt` trong 01/11–23/11/2026, giờ trong khoảng 06:00–21:00, phân tán ngẫu nhiên theo seed; `completedAt ≤ demoNow`.
+- **Timeline đầy đủ:** mỗi hồ sơ có timeline đi qua đủ các bước theo bảng 3.3 tới trạng thái hiện tại, thời điểm tăng dần, có `note` ngắn ở bước giao bộ phận ("Giao {bộ phận}") – vì C06 hiển thị trọn "Hành trình phản ánh" (DV-015).
+- **Bộ phận và hạn:** hồ sơ `moi` chưa có `department`; từ lúc tiếp nhận trở đi có `department` theo bảng 3.1 và `dueAt` = thời điểm tiếp nhận + hạn mặc định của loại; 2 hồ sơ quá hạn được chọn để `dueAt < demoNow` (DV-016).
+- Mọi thời điểm ghi theo định dạng ISO có `+07:00`.
 - Thời gian xử lý từng hồ sơ trong khoảng 0,5–8 ngày; hồ sơ cuối được hiệu chỉnh để tổng đúng 150,4 ngày.
 - Tọa độ trong khung ranh giới gần đúng của phường Trấn Biên: lat 10.925–10.975, lng 106.790–106.860 [KC – kiểm tra trên bản đồ, loại điểm rơi xuống sông].
 - Tâm phường dùng làm mặc định bản đồ: `10.950, 106.822` [KC].

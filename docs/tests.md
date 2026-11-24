@@ -41,8 +41,11 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 5. TNV không thể chuyển bất kỳ trạng thái nào trực tiếp (`canTransition(..., 'TNV')` luôn false).
 6. `progressStep`: moi→1, da_tiep_nhan→2, cho_xac_minh→2, da_giao→3, mo_lai→3, hoan_thanh→4, dong→4, da_gop→`exception`.
 7. Chuyển sang `can_bo_sung`, `chuyen_co_quan` không có lý do hoặc lý do < 10 ký tự → lỗi.
-8. `publicTimeline` hồ sơ `da_tiep_nhan` có `dueAt` → trả 4 mốc: 2 mốc `done` có giờ, mốc "Đang xử lý" `upcoming`, mốc "Đã xử lý" `upcoming` kèm `expected = dueAt`.
-9. `publicTimeline` hồ sơ `dong` → 4 mốc đều `done`.
+8. `publicTimeline` hồ sơ `da_tiep_nhan` có `dueAt` → mốc 1 `done` (có giờ), mốc 2 `current` (có giờ), mốc 3 `upcoming`, mốc 4 `upcoming` kèm `expected = dueAt`. Quy tắc chung: bước n của trạng thái hiện tại là `current`, các bước < n là `done`, > n là `upcoming`.
+9. `publicTimeline` hồ sơ `dong` → 4 mốc đều `done`, mỗi mốc có giờ lấy từ timeline.
+10. `publicTimeline` hồ sơ `moi` → mốc 1 `current`, 3 mốc còn lại `upcoming`.
+11. Trạng thái ngoại lệ (`can_bo_sung`, `chuyen_co_quan`, `khong_xac_nhan`, `da_gop`): bước được tính theo trạng thái thường gần nhất trong timeline; một mốc chỉ `done` khi timeline thực sự có mục tương ứng (ví dụ `can_bo_sung` ngay từ `moi` → mốc 2 KHÔNG được `done`).
+12. `mo_lai` → mốc 3 `current`; mốc 4 `upcoming` (không hiển thị giờ `completedAt` cũ cho mốc 4).
 
 ### UT-013 – Latest update & delay
 1. Mỗi trạng thái trong 3.4c sinh đúng câu, thay hết biến (không còn ký tự `{`).
@@ -159,6 +162,8 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 | DV-011 | Mọi `id` duy nhất, dạng `TB-\d{4}`, liên tục 0001–0064 |
 | DV-012 | 40 hồ sơ `dong` có `feedback.rating` 1–5 và `tags` thuộc bộ chip; 7 hồ sơ `hoan_thanh` không có feedback; 3 VolunteerTask khớp 3 hồ sơ `cho_xac_minh` |
 | DV-013 | Mọi đường dẫn ảnh trong mock tồn tại trong `public/demo-photos/`; mỗi loại ≥ 4 ảnh |
+| DV-015 | Timeline mạch lạc: mục cuối của `timeline` có `status` = `status` hiện tại; timeline đi qua đủ các bước trước đó theo bảng chuyển 3.3 (ví dụ `dong` phải có `moi → da_tiep_nhan → da_giao → hoan_thanh → dong`; `cho_xac_minh` phải có `moi → da_tiep_nhan → cho_xac_minh` hoặc `moi → cho_xac_minh`); thời điểm tăng dần; `hoan_thanh` trong timeline trùng `completedAt` |
+| DV-016 | `department` rỗng ở hồ sơ `moi`; mọi trạng thái từ `da_tiep_nhan` trở đi có `department` đúng bộ phận gợi ý của loại (spec 3.1) và có `dueAt` = thời điểm tiếp nhận + hạn mặc định của loại (spec 3.1), trừ 2 hồ sơ quá hạn được chỉnh để quá hạn; mọi thời điểm ghi cùng định dạng `+07:00` |
 | DV-014 | Đúng 6 hồ sơ `anonymous` (3 rác thải, 1 mỗi loại còn lại), có ở cả nhóm đã xử lý và chưa hoàn tất; không có `reporterPhone`; đúng 1 hồ sơ `subscribedLater`; mọi hồ sơ có `secretCode` 4 số |
 
 `verify-mock` in bảng kết quả và **exit 1** nếu bất kỳ dòng nào sai.
