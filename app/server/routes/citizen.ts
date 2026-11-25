@@ -12,8 +12,12 @@ import {
   checkAnonQuota,
   checkLookupRateLimit,
   checkOtpRateLimit,
+  checkOtpSendLimit,
+  checkPhoneDailyLimit,
+  hashIp,
   recordAnonSubmission,
   recordFailedLookup,
+  recordOtpSend,
 } from '../middleware/rateLimit';
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { getDemoNow } from '../clock';
@@ -37,7 +41,10 @@ citizenRoutes.post('/otp/request', async (c) => {
     );
   }
 
+  const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
   await checkOtpRateLimit(phone);
+  await checkOtpSendLimit(phone);
+  await recordOtpSend(phone, ip);
 
   const otpCode = '123456'; // Chuẩn mô phỏng Spec 13.1
   const codeHash = hashPepper(otpCode);
@@ -141,6 +148,8 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
   if (isAnonymous) {
     await checkAnonQuota(deviceId, ip);
     await recordAnonSubmission(deviceId, ip);
+  } else if (citizenPhone) {
+    await checkPhoneDailyLimit(citizenPhone);
   }
 
   // Sinh mã bí mật 4 số ngẫu nhiên
@@ -150,69 +159,74 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
   // Sinh ownerToken ngẫu nhiên
   const ownerToken = crypto.randomBytes(24).toString('hex');
   const ownerTokenHash = hashPepper(ownerToken);
-
-  // Lấy mã số tiếp theo TB-xxxx
-  const [maxRow] = await sqlClient`
-    SELECT code FROM reports WHERE code ~ '^TB-[0-9]{4}$' ORDER BY code DESC LIMIT 1;
-  `;
-  let nextNum = 65;
-  if (maxRow?.code) {
-    const parsed = parseInt(maxRow.code.replace('TB-', ''), 10);
-    if (!isNaN(parsed)) nextNum = parsed + 1;
-  }
-  const nextCode = `TB-${nextNum.toString().padStart(4, '0')}`;
   const now = await getDemoNow();
-
   const pointWkt = `POINT(${lng} ${lat})`;
-
-  const [newReport] = await sqlClient`
-    INSERT INTO reports (
-      code, category, status, priority, location, address, location_note,
-      description, created_at, reporter_phone, anonymous, subscribed_later,
-      on_behalf, secret_code_hash, owner_token_hash, anonymous_follows,
-      photos_approved, is_seed, version
-    ) VALUES (
-      ${nextCode}, ${category}, 'moi', 'binh_thuong', ST_GeographyFromText(${pointWkt}),
-      ${address}, ${locationNote}, ${description}, ${now}::timestamptz,
-      ${isAnonymous ? null : citizenPhone}, ${isAnonymous}, false, false,
-      ${secretHash}, ${ownerTokenHash}, 0, true, false, 1
-    )
-    RETURNING id, code;
-  `;
-
-  if (!newReport) {
-    throw new AppError('INTERNAL_SERVER_ERROR', 'Không thể tạo hồ sơ phản ánh', 500);
-  }
-
-  // Lưu ảnh
   const photos = Array.isArray(body.photos) ? body.photos : [];
-  let sortOrder = 0;
-  for (const p of photos) {
-    if (typeof p === 'string' && p.trim()) {
-      await sqlClient`
-        INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
-        VALUES (${newReport.id}, 'before', ${p.trim()}, ${sortOrder++}, 'upload');
+
+  // Tạo hồ sơ trong giao dịch với khoá advisory để đảm bảo mã số TB-xxxx không bao giờ bị trùng lặp khi chạy đồng thời
+  const newReport = await sqlClient.begin(async (tx) => {
+    await tx`SELECT pg_advisory_xact_lock(1001);`;
+
+    const [maxRow] = await tx`
+      SELECT code FROM reports WHERE code ~ '^TB-[0-9]{4}$' ORDER BY code DESC LIMIT 1;
+    `;
+    let nextNum = 65;
+    if (maxRow?.code) {
+      const parsed = parseInt(maxRow.code.replace('TB-', ''), 10);
+      if (!isNaN(parsed)) nextNum = parsed + 1;
+    }
+    const nextCode = `TB-${nextNum.toString().padStart(4, '0')}`;
+
+    const [created] = await tx`
+      INSERT INTO reports (
+        code, category, status, priority, location, address, location_note,
+        description, created_at, reporter_phone, anonymous, subscribed_later,
+        on_behalf, secret_code_hash, owner_token_hash, anonymous_follows,
+        photos_approved, is_seed, version
+      ) VALUES (
+        ${nextCode}, ${category}, 'moi', 'binh_thuong', ST_GeographyFromText(${pointWkt}),
+        ${address}, ${locationNote}, ${description}, ${now}::timestamptz,
+        ${isAnonymous ? null : citizenPhone}, ${isAnonymous}, false, false,
+        ${secretHash}, ${ownerTokenHash}, 0, true, false, 1
+      )
+      RETURNING id, code;
+    `;
+
+    if (!created) {
+      throw new AppError('INTERNAL_SERVER_ERROR', 'Không thể tạo hồ sơ phản ánh', 500);
+    }
+
+    // Lưu ảnh
+    let sortOrder = 0;
+    for (const p of photos) {
+      if (typeof p === 'string' && p.trim()) {
+        await tx`
+          INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
+          VALUES (${created.id}, 'before', ${p.trim()}, ${sortOrder++}, 'upload');
+        `;
+      }
+    }
+
+    // Lưu timeline khởi tạo
+    await tx`
+      INSERT INTO report_timeline (report_id, at, status, actor_type, actor_label, note)
+      VALUES (
+        ${created.id}, ${now}::timestamptz, 'moi', 'citizen', 'Người dân',
+        'Gửi phản ánh thành công'
+      );
+    `;
+
+    // Nếu người dân có số điện thoại, ghi nhận follower
+    if (!isAnonymous && citizenPhone) {
+      await tx`
+        INSERT INTO report_followers (report_id, phone, source)
+        VALUES (${created.id}, ${citizenPhone}, 'reporter')
+        ON CONFLICT DO NOTHING;
       `;
     }
-  }
 
-  // Lưu timeline khởi tạo
-  await sqlClient`
-    INSERT INTO report_timeline (report_id, at, status, actor_type, actor_label, note)
-    VALUES (
-      ${newReport.id}, ${now}::timestamptz, 'moi', 'citizen', 'Người dân',
-      'Gửi phản ánh thành công'
-    );
-  `;
-
-  // Nếu người dân có số điện thoại, ghi nhận follower
-  if (!isAnonymous && citizenPhone) {
-    await sqlClient`
-      INSERT INTO report_followers (report_id, phone, source)
-      VALUES (${newReport.id}, ${citizenPhone}, 'reporter')
-      ON CONFLICT DO NOTHING;
-    `;
-  }
+    return created;
+  });
 
   return c.json(
     {
@@ -384,16 +398,18 @@ citizenRoutes.post('/reports/:id/feedback', async (c) => {
     );
   }
 
+  // Kiểm tra xem đã có đánh giá chưa (tối đa 1 lần/phản ánh - L7)
+  const [existingFeedback] = await sqlClient`
+    SELECT report_id FROM feedback WHERE report_id = ${report.id} LIMIT 1;
+  `;
+  if (existingFeedback) {
+    throw new AppError('ALREADY_RATED', 'Phản ánh này đã được đánh giá, không thể gửi lại', 400);
+  }
+
   // Lưu feedback
   await sqlClient`
     INSERT INTO feedback (report_id, resolved, rating, tags, comment, at)
-    VALUES (${report.id}, ${resolved}, ${rating}, ${sqlClient.json(tags)}, ${comment}, ${now}::timestamptz)
-    ON CONFLICT (report_id) DO UPDATE SET
-      resolved = EXCLUDED.resolved,
-      rating = EXCLUDED.rating,
-      tags = EXCLUDED.tags,
-      comment = EXCLUDED.comment,
-      at = EXCLUDED.at;
+    VALUES (${report.id}, ${resolved}, ${rating}, ${JSON.stringify(tags)}::jsonb, ${comment}, ${now}::timestamptz);
   `;
 
   if (resolved) {
@@ -489,12 +505,34 @@ citizenRoutes.post('/reports/:id/follow', optionalCitizenAuth, async (c) => {
   if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
 
   if (citizenPhone && /^0[0-9]{9}$/.test(citizenPhone)) {
+    const [existing] = await sqlClient`
+      SELECT 1 FROM report_followers WHERE report_id = ${report.id} AND phone = ${citizenPhone} LIMIT 1;
+    `;
+    if (existing) {
+      throw new AppError('ALREADY_FOLLOWED', 'Số điện thoại này đã theo dõi phản ánh này rồi', 400);
+    }
     await sqlClient`
       INSERT INTO report_followers (report_id, phone, source)
-      VALUES (${report.id}, ${citizenPhone}, 'also_me')
-      ON CONFLICT DO NOTHING;
+      VALUES (${report.id}, ${citizenPhone}, 'also_me');
     `;
   } else {
+    const deviceId = c.req.header('X-Device-Id') || 'web-browser';
+    const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
+    const anonIdentifier = 'anon:' + hashIp(deviceId + ':' + ip);
+    const [existing] = await sqlClient`
+      SELECT 1 FROM report_followers WHERE report_id = ${report.id} AND phone = ${anonIdentifier} LIMIT 1;
+    `;
+    if (existing) {
+      throw new AppError(
+        'ALREADY_FOLLOWED',
+        'Thiết bị hoặc IP này đã theo dõi phản ánh này rồi',
+        400
+      );
+    }
+    await sqlClient`
+      INSERT INTO report_followers (report_id, phone, source)
+      VALUES (${report.id}, ${anonIdentifier}, 'also_me');
+    `;
     await sqlClient`
       UPDATE reports SET anonymous_follows = anonymous_follows + 1 WHERE id = ${report.id};
     `;
@@ -652,6 +690,7 @@ citizenRoutes.get('/reports/:code/owner', optionalCitizenAuth, async (c) => {
     followerCount: Number(report.follower_count || 1) + Number(report.anonymous_follows || 0),
     anonymous: report.anonymous,
     subscribedLater: report.subscribed_later,
+    reporterPhone: report.reporter_phone || undefined,
     maskedPhone: report.reporter_phone ? maskPhone(report.reporter_phone) : undefined,
     timeline: timeline.map((t) => ({
       at: t.at,

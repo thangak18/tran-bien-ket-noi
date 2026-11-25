@@ -2,7 +2,6 @@ import { Hono, type Context } from 'hono';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { requireStaffAuth, StaffProfile } from '../middleware/auth';
-import { maskPhone } from '../../src/domain/privacy';
 import { getDemoNow } from '../clock';
 import type { AppEnv } from '../types';
 
@@ -83,7 +82,6 @@ volunteerRoutes.get('/tasks', async (c) => {
     address: t.report_address,
     lat: Number(t.report_lat),
     lng: Number(t.report_lng),
-    reporterPhone: maskPhone(t.report_phone), // TNV chỉ thấy SĐT che (Spec 4.1, AC-V02)
     distanceMeters: t.distance_meters ? Math.round(Number(t.distance_meters)) : undefined,
     result:
       t.result_exists != null
@@ -142,7 +140,6 @@ volunteerRoutes.get('/tasks/:id', async (c) => {
     photos: photos.map((p) => p.storage_path),
     lat: Number(t.report_lat),
     lng: Number(t.report_lng),
-    reporterPhone: maskPhone(t.report_phone),
     assigneeName: t.assignee_name,
   });
 });

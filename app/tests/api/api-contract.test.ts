@@ -98,7 +98,7 @@ describe('API Contract & Security Suite', () => {
 
   describe('API-CIT: Citizen Endpoints & Auth', () => {
     it('API-CIT-001: OTP flow: request -> verify -> receive JWT', async () => {
-      const testPhone = '0901234567';
+      const testPhone = `090${Math.floor(1000000 + Math.random() * 8999999)}`;
 
       // 1. Request OTP
       const reqRes = await app.request('/citizen/otp/request', {

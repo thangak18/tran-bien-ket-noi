@@ -18,7 +18,7 @@
     "config:set-sla": "tsx scripts/staff.ts set-sla",
     "demo:reset": "tsx scripts/ops.ts reset",
     "demo:clock": "tsx scripts/ops.ts clock",
-    "test": "vitest run",
+    "test": "vitest run --no-file-parallelism",
     "test:e2e": "playwright test",
     "lint": "eslint . && prettier --check .",
     "verify": "npm run lint && tsc --noEmit && npm run test && npm run mock:verify"

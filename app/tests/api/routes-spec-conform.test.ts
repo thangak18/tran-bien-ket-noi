@@ -17,17 +17,18 @@ describe('Spec 12 Route Conformance Test Suite (/api/v1)', () => {
     volunteerToken = await createStaffToken('22222222-2222-2222-2222-222222222222', 'tnv');
 
     // Tạo token cho người dân qua OTP endpoint
+    const randomCitizenPhone = `090${Math.floor(1000000 + Math.random() * 8999999)}`;
     const reqRes = await app.request('/api/v1/citizen/otp/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: '0901234567' }),
+      body: JSON.stringify({ phone: randomCitizenPhone }),
     });
     expect(reqRes.status).toBe(200);
 
     const verifyRes = await app.request('/api/v1/citizen/otp/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: '0901234567', code: '123456' }),
+      body: JSON.stringify({ phone: randomCitizenPhone, code: '123456' }),
     });
     expect(verifyRes.status).toBe(200);
     const verifyData = await verifyRes.json();

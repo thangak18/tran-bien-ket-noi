@@ -43,7 +43,7 @@ export async function checkLookupRateLimit(reportId: string, ip: string): Promis
 
   if (row && row.count >= 5) {
     throw new AppError(
-      'RATE_LIMIT_EXCEEDED',
+      'TOO_MANY_ATTEMPTS',
       'Đã vượt quá số lần thử tra cứu cho phép. Vui lòng thử lại sau 15 phút.',
       429
     );
@@ -87,4 +87,52 @@ export async function recordAnonSubmission(deviceId: string, ip: string): Promis
     INSERT INTO anonymous_submissions (device_id, ip_hash, created_at)
     VALUES (${deviceId}, ${ipHash}, now());
   `;
+}
+
+/**
+ * Giới hạn gửi OTP: tối đa 5 lần gửi OTP / số điện thoại / giờ (L7)
+ */
+export async function checkOtpSendLimit(phone: string): Promise<void> {
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const [row] = await sqlClient`
+    SELECT count(*)::int as count
+    FROM access_attempts
+    WHERE report_id = ${'otp_request:' + phone}
+      AND at > ${oneHourAgo}::timestamptz;
+  `;
+  if (row && row.count >= 5) {
+    throw new AppError(
+      'TOO_MANY_ATTEMPTS',
+      'Đã vượt quá giới hạn 5 lần gửi mã OTP trong 1 giờ cho số điện thoại này. Vui lòng thử lại sau.',
+      429
+    );
+  }
+}
+
+export async function recordOtpSend(phone: string, ip: string): Promise<void> {
+  const ipHash = hashIp(ip);
+  await sqlClient`
+    INSERT INTO access_attempts (report_id, ip_hash, at)
+    VALUES (${'otp_request:' + phone}, ${ipHash}, now());
+  `;
+}
+
+/**
+ * Giới hạn tạo phản ánh có số điện thoại: tối đa 10 lần / số / ngày (L7)
+ */
+export async function checkPhoneDailyLimit(phone: string): Promise<void> {
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const [row] = await sqlClient`
+    SELECT count(*)::int as count
+    FROM reports
+    WHERE reporter_phone = ${phone}
+      AND created_at > ${oneDayAgo}::timestamptz;
+  `;
+  if (row && row.count >= 10) {
+    throw new AppError(
+      'RATE_LIMIT_EXCEEDED',
+      'Số điện thoại của bạn đã đạt giới hạn gửi 10 phản ánh trong 24 giờ.',
+      429
+    );
+  }
 }
