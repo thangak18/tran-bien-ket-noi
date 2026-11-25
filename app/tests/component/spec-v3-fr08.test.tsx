@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AppStoreProvider, AppState } from '@/store/AppStore';
@@ -7,6 +7,7 @@ import { C04Confirm } from '@/screens/citizen/C04Confirm';
 import { C01Home } from '@/screens/citizen/C01Home';
 import mockData from '@/data/mock.json';
 import { Report } from '@/domain/types';
+import App from '@/App';
 
 const reports = mockData.reports as Report[];
 // Hồ sơ có SĐT, còn đang xử lý: nút "Tôi cũng gặp" được phép hiện (trừ với người gửi).
@@ -104,5 +105,34 @@ describe('C01 tab "Của tôi" khi chưa đăng nhập (AC-C01-6, AC-C05-1)', ()
       'Đăng nhập để xem phản ánh của bạn'
     );
     expect(screen.queryByText('Bạn chưa gửi phản ánh nào')).toBeNull();
+  });
+});
+
+describe('ROLE-001 – Nút chuyển cổng hiện ở chế độ API (AC-ROLE-1, spec v3.1)', () => {
+  afterEach(() => {
+    localStorage.clear();
+    vi.unstubAllEnvs();
+  });
+
+  it('chế độ API: có nút "Chuyển cổng nghiệp vụ" với 4 cổng; mở cổng cán bộ khi chưa đăng nhập → /dang-nhap', async () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'api');
+    render(
+      <MemoryRouter initialEntries={['/dang-nhap']}>
+        <App />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Chuyển cổng nghiệp vụ' }));
+    const items = screen.getAllByRole('menuitem').map((el) => el.textContent);
+    expect(items).toEqual([
+      'Cổng Người dân',
+      'Cổng Cán bộ phường',
+      'Cổng Tình nguyện viên',
+      'Cổng Quản trị',
+    ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Cổng Cán bộ phường' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Chuyển cổng nghiệp vụ' })).toBeInTheDocument()
+    );
+    expect(screen.queryByText('Hộp tiếp nhận')).toBeNull();
   });
 });

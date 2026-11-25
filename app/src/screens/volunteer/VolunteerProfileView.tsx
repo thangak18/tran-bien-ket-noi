@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clearSession, isApiMode } from '@/lib/api';
+import { clearStaffSession, isApiMode } from '@/lib/api';
 import {
   ArrowLeft,
   BarChart3,
@@ -125,8 +125,8 @@ export function VolunteerProfileView({
 
   const handleLogout = () => {
     if (isApiMode()) {
-      // Đăng nhập thật: xoá token và tài khoản ở thiết bị rồi về màn đăng nhập.
-      clearSession();
+      // Đăng nhập thật: xoá phiên nhân viên (giữ phiên người dân) rồi về màn đăng nhập.
+      clearStaffSession();
       navigate('/dang-nhap', { replace: true });
       return;
     }

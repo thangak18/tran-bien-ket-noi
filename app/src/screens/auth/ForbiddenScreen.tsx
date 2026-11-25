@@ -1,8 +1,12 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldAlert, ArrowLeft, LogIn } from 'lucide-react';
 
 export function ForbiddenScreen() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Cổng định mở (từ ProtectedRoute). Chỉ nhận đường dẫn nội bộ để không bị chuyển ra trang ngoài.
+  const rawRedirect = searchParams.get('redirect') || '';
+  const redirect = /^\/(?!\/)/.test(rawRedirect) ? rawRedirect : '';
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F5F7FB] px-4 py-8">
@@ -29,7 +33,11 @@ export function ForbiddenScreen() {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/dang-nhap')}
+            onClick={() =>
+              navigate(
+                redirect ? `/dang-nhap?redirect=${encodeURIComponent(redirect)}` : '/dang-nhap'
+              )
+            }
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-bold text-white shadow-sm hover:bg-primary-600"
           >
             <LogIn className="h-4 w-4" />

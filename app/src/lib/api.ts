@@ -59,24 +59,79 @@ export const SESSION_CHANGED_EVENT = 'tb:session-changed';
 /** Sự kiện phát ra khi API trả 401 trên một thao tác cần đăng nhập (giao diện chuyển về /dang-nhap). */
 export const UNAUTHORIZED_EVENT = 'tb:unauthorized';
 
-const SESSION_KEYS = [
+/**
+ * Sự kiện phát ra khi API người dân trả 401 trên phiên người dân đã hết hạn
+ * (giao diện chuyển về /ho-so?login=1&redirect=, spec 13.3a AC-SESSION-3).
+ */
+export const CITIZEN_LOGIN_REQUIRED_EVENT = 'tb:citizen-login-required';
+
+/** Khoá của phiên nhân viên (cán bộ, TNV, quản trị). */
+const STAFF_SESSION_KEYS = [
   'tb_staff_token',
-  'tb_citizen_token',
   'tb_token',
   'tbkn_auth_token',
   'tbkn_user_role',
   'tbkn_user_name',
-  'tbkn_user_phone',
 ];
+
+/** Khoá của phiên người dân (token OTP và SĐT đã đăng nhập). */
+const CITIZEN_SESSION_KEYS = ['tb_citizen_token', 'tbkn_user_phone'];
+
+function removeKeys(keys: string[]) {
+  for (const key of keys) localStorage.removeItem(key);
+}
+
+/** Xoá phiên nhân viên ở thiết bị này; phiên người dân giữ nguyên (AC-SESSION-1, AC-LOGIN-6). */
+export function clearStaffSession() {
+  if (typeof window === 'undefined') return;
+  removeKeys(STAFF_SESSION_KEYS);
+  // Phiên cổng (tên hiển thị của cán bộ/TNV) thuộc phiên nhân viên.
+  clearOfficerSession();
+  clearVolunteerSession();
+  window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT));
+}
+
+/** Xoá phiên người dân ở thiết bị này; phiên nhân viên giữ nguyên (AC-SESSION-1). */
+export function clearCitizenSession() {
+  if (typeof window === 'undefined') return;
+  removeKeys(CITIZEN_SESSION_KEYS);
+  window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT));
+}
 
 /** Xoá toàn bộ phiên đăng nhập (nhân viên và người dân) ở thiết bị này. */
 export function clearSession() {
   if (typeof window === 'undefined') return;
-  for (const key of SESSION_KEYS) localStorage.removeItem(key);
-  // Phiên cổng (tên hiển thị của cán bộ/TNV) cũng bị xoá khi đăng xuất.
-  clearOfficerSession();
-  clearVolunteerSession();
-  window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT));
+  removeKeys(CITIZEN_SESSION_KEYS);
+  clearStaffSession();
+}
+
+/** true khi thiết bị đang giữ token người dân (đã đăng nhập OTP ở chế độ API). */
+export function hasCitizenToken(): boolean {
+  return typeof window !== 'undefined' && Boolean(localStorage.getItem('tb_citizen_token'));
+}
+
+type ApiScope = 'citizen' | 'staff' | 'other';
+
+/** Đường dẫn API dạng `/citizen/...` (bỏ origin và tiền tố /api, /api/v1). */
+function apiPath(endpoint: string): string {
+  let path = endpoint;
+  if (/^https?:\/\//.test(path)) {
+    try {
+      path = new URL(path).pathname;
+    } catch {
+      return path;
+    }
+  }
+  if (!path.startsWith('/')) path = `/${path}`;
+  return path.replace(/^\/api(\/v1)?(?=\/|$)/, '') || '/';
+}
+
+/** API người dân dùng token người dân; API cán bộ/TNV/quản trị/tải ảnh dùng token nhân viên (AC-SESSION-4). */
+function apiScope(endpoint: string): ApiScope {
+  const path = apiPath(endpoint);
+  if (/^\/citizen(\/|$)/.test(path)) return 'citizen';
+  if (/^\/(officer|volunteer|admin|uploads)(\/|$)/.test(path)) return 'staff';
+  return 'other';
 }
 
 /** Báo cho store biết phiên đăng nhập vừa thay đổi (sau khi lưu token mới). */
@@ -125,14 +180,19 @@ export function getDeviceId(): string {
   return deviceId;
 }
 
-export function getAuthToken(): string | null {
+/**
+ * Token gửi kèm cho một API. Có `endpoint` thì chọn đúng loại token theo đường dẫn (AC-SESSION-4):
+ * API người dân không bao giờ nhận token nhân viên và ngược lại.
+ */
+export function getAuthToken(endpoint?: string): string | null {
   if (typeof window === 'undefined') return null;
-  // Ưu tiên token nhân viên, sau đó đến token người dân
-  return (
-    localStorage.getItem('tb_staff_token') ||
-    localStorage.getItem('tb_citizen_token') ||
-    localStorage.getItem('tb_token')
-  );
+  const citizen = localStorage.getItem('tb_citizen_token');
+  const staff = localStorage.getItem('tb_staff_token') || localStorage.getItem('tb_token');
+  const scope = endpoint ? apiScope(endpoint) : 'other';
+  if (scope === 'citizen') return citizen;
+  if (scope === 'staff') return staff;
+  // API công khai, AI gợi ý: server không bắt đăng nhập; giữ thứ tự cũ.
+  return staff || citizen;
 }
 
 export function setCitizenToken(token: string) {
@@ -171,10 +231,13 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     headers.set('Content-Type', 'application/json');
   }
 
-  const token = getAuthToken();
+  const scope = apiScope(endpoint);
+  const token = getAuthToken(endpoint);
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
   }
+  // Có gửi token thì 401 nghĩa là phiên đó đã hết hạn; không gửi token thì 401 chỉ là "cần đăng nhập".
+  const sentToken = headers.has('Authorization');
 
   if (!headers.has('X-Device-Id')) {
     headers.set('X-Device-Id', getDeviceId());
@@ -206,10 +269,15 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
       ? rawMessage || 'Thao tác không thành công.'
       : ERROR_TRANSLATIONS[code] || rawMessage || 'Thao tác không thành công.';
 
-    // 401 ở thao tác cần phiên đăng nhập: xoá phiên hết hạn và báo giao diện chuyển về trang đăng nhập.
-    if (response.status === 401 && !isLoginCall && token && typeof window !== 'undefined') {
-      clearSession();
-      window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT, { detail: { code } }));
+    // 401 trên phiên đã gửi: chỉ xoá phiên của loại API bị từ chối (AC-SESSION-3).
+    if (response.status === 401 && !isLoginCall && sentToken && typeof window !== 'undefined') {
+      if (scope === 'citizen') {
+        clearCitizenSession();
+        window.dispatchEvent(new CustomEvent(CITIZEN_LOGIN_REQUIRED_EVENT, { detail: { code } }));
+      } else if (scope === 'staff') {
+        clearStaffSession();
+        window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT, { detail: { code } }));
+      }
     }
 
     throw new ApiError(

@@ -269,7 +269,6 @@ Nguồn: `spec.md` v3.0 (đặc biệt 3.4a, 3.4b, 7.7, AC-C04-14/15, AC-C06-13/
 | [x] (25/11) | F8-16 | V02 dạng 3 bước (Thực tế → Ảnh/Video → Ghi chú & Gửi); SĐT + nút "Gọi" chỉ khi nhiệm vụ đang giao cho chính TNV và chưa xong; V01, V03 không có SĐT; V03 bản đồ nhiệm vụ | F8-04 | AC-V01-1, AC-V02-1 → 6, AC-V03-1 → 3 | V02-PHONE-001, V02-STEPS-001, V03-001, CT-060, CT-061 |
 | [x] (25/11) | F8-17 | `LocalDataSource` và `ApiDataSource` áp dụng cùng quy tắc: đăng nhập trước khi gửi, "Tôi cũng gặp" một lần/SĐT, quyền chủ theo SĐT, phạm vi SĐT | F8-11, F8-12 | 16.1, AC-DATA-6 | AC-DATA-1 (E2E-01, 03, 05, 07 chạy cả hai chế độ) |
 | [x] (25/11) | F8-18 | Chế độ API: bỏ đường vào `/demo`; vào `/can-bo`, `/tnv`, `/quan-tri` chưa đăng nhập → `/dang-nhap?redirect=` | F8-00 | AC-ROLE-1 | ROLE-001 |
-| [x] (25/11) | F8-20 | Hiện lại `PortalSwitcherFab` ở chế độ API để demo (thêm cổng Quản trị); sai vai trò → `/khong-co-quyen?redirect=`, "Đổi tài khoản" quay về đúng cổng sau khi đăng nhập | F8-18 | AC-ROLE-1 | ROLE-001 |
 | [x] (25/11) | F8-19 | Chạy lại `npm run mock:verify` và `npm run db:verify` xác nhận bất biến dữ liệu (64/47/17/3,2 ngày, 6 ẩn danh) không đổi; `npm run verify` pass | F8-01 → F8-18 | 5.1, 16.3 | DV-001 → DV-016, DB-007 → DB-016 |
 
 
@@ -277,13 +276,14 @@ Nguồn: `spec.md` v3.0 (đặc biệt 3.4a, 3.4b, 7.7, AC-C04-14/15, AC-C06-13/
 | Trạng thái | ID | Việc | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
 | [x] (26/11) | F9-00 | Spec v3.1: mục 13.3a (AC-SESSION-1 → 4), AC-LOGIN-6, AC-API-13, AC-ROLE-1 (nút chuyển cổng ở cả hai chế độ) | – | 13.3a, 12.9, 2 | – |
-| [ ] | F9-01 | Tách phiên: `clearStaffSession()` / `clearCitizenSession()`; đăng nhập/đăng xuất nhân viên không đụng token người dân và ngược lại | F9-00 | AC-SESSION-1, AC-LOGIN-6 | SESSION-001 |
-| [ ] | F9-02 | Chế độ API: không còn token người dân → xoá `settings.phone` khi tải trang và khi phiên đổi | F9-01 | AC-SESSION-2 | SESSION-002 |
-| [ ] | F9-03 | 401 ở API người dân → xoá phiên người dân, chuyển `/ho-so?login=1&redirect=`; 401 ở API nhân viên → giữ hành vi cũ | F9-01 | AC-SESSION-3 | SESSION-003 |
-| [ ] | F9-04 | `apiFetch` chọn token theo đường dẫn: `/citizen/*` dùng token người dân, `/officer/*`, `/volunteer/*`, `/admin/*`, `/uploads/*` dùng token nhân viên | F9-01 | AC-SESSION-4 | SESSION-004 |
-| [ ] | F9-05 | Pool postgres.js cho serverless: `max` 1 trên Vercel, `idle_timeout` 20 giây, `max_lifetime` 5 phút | F9-00 | AC-API-13 | DB-GUARD-002 |
-| [ ] | F9-06 | Nút chuyển cổng `PortalSwitcherFab` hiện ở chế độ API, thêm cổng Quản trị; sai vai trò → `/khong-co-quyen?redirect=`, "Đổi tài khoản" quay về đúng cổng | F9-00 | AC-ROLE-1 | ROLE-001, E2E-DEMO-01 |
-| [ ] | F9-07 | E2E demo chuyển vai trò trên một trình duyệt: người dân gửi → cán bộ → TNV → quay lại người dân vẫn gửi được | F9-01 → F9-06 | 13.3a | E2E-DEMO-01 |
+| [x] (26/11) | F9-01 | Tách phiên: `clearStaffSession()` / `clearCitizenSession()`; đăng nhập/đăng xuất nhân viên không đụng token người dân và ngược lại | F9-00 | AC-SESSION-1, AC-LOGIN-6 | SESSION-001 |
+| [x] (26/11) | F9-02 | Chế độ API: không còn token người dân → xoá `settings.phone` khi tải trang và khi phiên đổi | F9-01 | AC-SESSION-2 | SESSION-002 |
+| [x] (26/11) | F9-03 | 401 ở API người dân → xoá phiên người dân, chuyển `/ho-so?login=1&redirect=`; 401 ở API nhân viên → giữ hành vi cũ | F9-01 | AC-SESSION-3 | SESSION-003 |
+| [x] (26/11) | F9-04 | `apiFetch` chọn token theo đường dẫn: `/citizen/*` dùng token người dân, `/officer/*`, `/volunteer/*`, `/admin/*`, `/uploads/*` dùng token nhân viên | F9-01 | AC-SESSION-4 | SESSION-004 |
+| [x] (26/11) | F9-05 | Pool postgres.js cho serverless: `max` 1 trên Vercel, `idle_timeout` 20 giây, `max_lifetime` 5 phút | F9-00 | AC-API-13 | DB-GUARD-002 |
+| [x] (26/11) | F9-06 | Nút chuyển cổng `PortalSwitcherFab` hiện ở chế độ API, thêm cổng Quản trị; sai vai trò → `/khong-co-quyen?redirect=`, "Đổi tài khoản" quay về đúng cổng | F9-00 | AC-ROLE-1 | ROLE-001, E2E-DEMO-01 |
+| [x] (26/11) | F9-07 | E2E demo chuyển vai trò trên một trình duyệt: người dân gửi → cán bộ → TNV → quay lại người dân vẫn gửi được | F9-01 → F9-06 | 13.3a | E2E-DEMO-01 |
+| [x] (26/11) | F9-08 | Gửi thành công ở chế độ API → xoá bản nháp (lần báo sau bắt đầu lại từ C02); trả chú thích C08 về đúng AC-C08-4; e2e chọn ảnh qua khung chụp (V02, A03) và hộp đối chiếu trùng tự mở ở bước ② | F9-00 | AC-C04-14, AC-C08-4 | C04-DRAFT-001, E2E-DEMO-01 |
 
 > Ghi chú phụ thuộc ngoài nhóm: phần AI của F8-11 dùng chung với G2-12b → G2-12d (cột `reports.ai_suggestion`, `suggestCategory`); nếu G2-12 chưa xong thì F8-11 chỉ giữ `aiSuggestion` trong bản nháp ở chế độ local.
 

@@ -626,4 +626,5 @@ Giữ nguyên `DV-001 → DV-016` và `DB-007 → DB-016`: 64 hồ sơ (18/15/21
 | DB-GUARD-002 | `tests/unit/sql-json-guard.test.ts` | Đọc cấu hình `server/db/client.ts` | Có `prepare: false`, `idle_timeout`, `max_lifetime`; `max` = 1 khi chạy trên Vercel |
 | ROLE-001 | `tests/component/spec-v3-fr08.test.tsx` | Render App ở chế độ API | Có nút "Chuyển cổng nghiệp vụ" với 4 cổng |
 | E2E-DEMO-01 | `tests/e2e-api/demo-role-switch.spec.ts` | Một trình duyệt: người dân đăng nhập OTP và gửi → đăng nhập cán bộ → TNV → quay lại người dân gửi tiếp | Lần gửi thứ hai 201, không phải đăng nhập lại; cán bộ/TNV vào đúng cổng |
+| C04-DRAFT-001 | `tests/component/c04-dup.test.tsx` | Chế độ API, đã đăng nhập, gửi phản ánh thành công | Về trang chủ, bản nháp không còn ảnh |
 

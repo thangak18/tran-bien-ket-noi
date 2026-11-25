@@ -69,6 +69,21 @@ function visibleButton(page: Page, text: string | RegExp) {
 }
 
 /**
+ * Bước 2 → bước 3. Hộp "Đối chiếu phản ánh tương tự" có thể tự mở khi vừa có vị trí (gần hồ sơ cùng loại)
+ * hoặc mở sau khi bấm "Xác nhận vị trí"; cả hai trường hợp đều chọn gửi phản ánh mới.
+ */
+async function confirmLocation(page: Page) {
+  const dupDialog = page.getByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' });
+  const notDuplicate = dupDialog.getByRole('button', { name: /Không phải – gửi phản ánh mới/ });
+  await page.waitForTimeout(500);
+  if (!(await dupDialog.isVisible().catch(() => false))) {
+    await visibleButton(page, 'Xác nhận vị trí').click();
+  }
+  if (await dupDialog.isVisible().catch(() => false)) await notDuplicate.click();
+  await expect(page.getByLabel('Mô tả thêm')).toBeVisible();
+}
+
+/**
  * Gửi phản ánh qua C02 (ảnh) → C04 (3 bước). UI mới bắt buộc đăng nhập SĐT: lần đầu bấm "Gửi phản ánh"
  * sẽ chuyển sang /ho-so để nhập OTP (mô phỏng), rồi quay lại bước 3 để gửi. Trả về phản hồi của API.
  */
@@ -98,11 +113,7 @@ async function submitReport(
 
   // Bước 2: vị trí (GPS giả lập điền sẵn địa chỉ)
   await expect(page.getByLabel('Địa chỉ', { exact: true })).toHaveValue(/Trấn Biên/);
-  await visibleButton(page, 'Xác nhận vị trí').click();
-  const dupDialog = page.getByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' });
-  if (await dupDialog.isVisible().catch(() => false)) {
-    await dupDialog.getByRole('button', { name: /Không phải – gửi phản ánh mới/ }).click();
-  }
+  await confirmLocation(page);
 
   // Bước 3: mô tả. API chưa lưu tiêu đề; mô tả được lưu nên dùng để nhận diện hồ sơ ở các màn sau.
   await page.getByLabel('Mô tả thêm').fill(options.title);
@@ -283,7 +294,9 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     // Wizard 3 bước: Thực tế → Ảnh/Video → Ghi chú & Gửi
     await page.getByRole('button', { name: 'Có', exact: true }).click();
     await page.getByRole('button', { name: 'Trung bình', exact: true }).click();
-    await page.locator('input[type="file"][multiple]').first().setInputFiles(PHOTO_BEFORE);
+    // Ảnh/Video: mở khung chụp rồi chọn ảnh từ thư viện thiết bị (nút thư mục trong khung chụp).
+    await visibleButton(page, 'Chụp ảnh / Quay video tại chỗ').click();
+    await page.getByLabel('Chọn từ thư viện thiết bị').setInputFiles(PHOTO_BEFORE);
     await expect(page.getByLabel('Xoá mục 1')).toBeVisible();
     await visibleButton(page, 'Tiếp tục ghi chú & gửi').click();
     const submit = page.getByRole('button', { name: 'Gửi kết quả xác minh' });
@@ -318,7 +331,8 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
 
     await visibleButton(page, /^Cập nhật kết quả$/).click();
     await page.waitForURL('**/ket-qua');
-    await page.locator('input[type="file"]').first().setInputFiles(PHOTO_AFTER);
+    await visibleButton(page, 'Chụp ảnh / Quay video tại chỗ').click();
+    await page.getByLabel('Chọn từ thư viện thiết bị').setInputFiles(PHOTO_AFTER);
     await page.locator('#a03-result-note').fill('Đã dọn sạch rác và vệ sinh khu vực');
     const confirm = page.getByRole('button', { name: 'Xác nhận hoàn thành' });
     await expect(confirm).toBeEnabled();
