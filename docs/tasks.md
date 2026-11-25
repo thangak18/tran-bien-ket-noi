@@ -233,6 +233,15 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 
 > G2-11g: Đã bổ sung API/component test và Playwright spec. 8 API integration test được skip có cảnh báo vì migration Admin chưa áp dụng; chưa chạy E2E hoặc tạo ảnh review để tránh reset/ghi vào Supabase local đang dùng chung. Cần chạy lại trên DB thử nghiệm riêng sau khi áp migration.
 
+### Q8 – AI Gợi ý Loại Sự cố Bằng DeepSeek (G2-12)
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
+|:---:|---|---|---|---|---|:---:|
+| [x] (25/11) | G2-12a | Cập nhật tài liệu (`spec.md`, `plan.md`, `tasks.md`, `tests.md`) cho tính năng AI gợi ý bằng DeepSeek | G2-11b | B1, AC-C02-5, AC-C04-1, 10.1 | DOC-AI-001 | 1h |
+| [ ] | G2-12b | Migration database bổ sung cột nullable `reports.ai_suggestion` và cập nhật `schema.ts`, xác nhận `db:verify` pass | G2-12a | 10.1, 11 | DB-AI-001 | 1h |
+| [ ] | G2-12c | Cấu hình `env.ts` (`AI_PROVIDER`, `DEEPSEEK_*`) và hiện thực `CategorySuggester` (Mock + DeepSeek) cùng route `POST /api/v1/ai/suggest-category` | G2-12b | 10.1, 12 | AI-UNIT-*, AI-API-* | 2.5h |
+| [ ] | G2-12d | Bổ sung `suggestCategory` vào `DataSource` (Api + Local) và tích hợp giao diện C02/C04 (băng gợi ý, nút Dùng gợi ý, nhãn nguồn, quyền riêng tư) và A02 (xem gợi ý) | G2-12c | AC-C02-5, AC-C04-1 | AI-FE-* | 2.5h |
+| [ ] | G2-12e | Kiểm thử toàn diện: unit tests, API tests, script `npm run ai:try -- <path>` và chụp ảnh màn hình review | G2-12d | B1 | AI-E2E-* | 2h |
+
 ---
 
 ## Giả định tự quyết đêm 25/11

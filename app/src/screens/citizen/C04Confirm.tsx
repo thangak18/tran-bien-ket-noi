@@ -24,7 +24,8 @@ import { CATEGORY_CONFIGS, STATUS_CONFIGS } from '@/domain/constants';
 import { followerCount } from '@/domain/access';
 import { findDuplicates } from '@/domain/duplicates';
 import { formatDateTime, formatDistance, formatRelativeTime } from '@/domain/format';
-import { CATEGORIES, Category, Report } from '@/domain/types';
+import { AiSuggestionData, CATEGORIES, Category, Report } from '@/domain/types';
+import { AiSuggestionBanner } from '@/components/citizen/AiSuggestionBanner';
 import { getCurrentLocation } from '@/lib/geolocation';
 import { compressImage } from '@/lib/image';
 import { isVideoSource } from '@/lib/media';
@@ -158,25 +159,48 @@ export function C04Confirm() {
   // Một lần gửi dùng một Idempotency-Key để nhấn nhanh nhiều lần không tạo hồ sơ trùng.
   const idempotencyKey = useRef<string>(crypto.randomUUID());
 
-  // Gợi ý loại sự cố mô phỏng từ ảnh (chỉ áp dụng cho ảnh, bỏ qua video)
+  // Ảnh đầu tiên (bỏ qua video) dùng để AI gợi ý loại sự cố (B1)
   const imageOnlyPhotos = useMemo(
     () => draft.photos.filter((src) => !isVideoSource(src)),
     [draft.photos]
   );
-
-  const aiSuggestedCategory: Category = useMemo(() => {
-    if (imageOnlyPhotos.length === 0) return 'mat_duong';
-    const order: Category[] = ['mat_duong', 'den_duong', 'ngap_nuoc', 'rac_thai'];
-    return order[(imageOnlyPhotos.length - 1) % order.length] ?? 'mat_duong';
-  }, [imageOnlyPhotos.length]);
+  const aiPhoto = imageOnlyPhotos[0];
 
   const initialStepParam = Number(searchParams.get('step'));
   const [currentStep, setCurrentStep] = useState<WizardStep>(
     initialStepParam === 2 || initialStepParam === 3 ? (initialStepParam as WizardStep) : 1
   );
-  const [selectedCategory, setSelectedCategory] = useState<Category>(
-    draft.category ?? aiSuggestedCategory
-  );
+  const [selectedCategory, setSelectedCategory] = useState<Category>(draft.category ?? 'mat_duong');
+  // AC-C02-5: gợi ý AI chỉ để tham khảo, không bao giờ tự chọn loại thay người dân.
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestionData | null>(null);
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<boolean>(false);
+  useEffect(() => {
+    if (!aiPhoto) {
+      setAiSuggestion(null);
+      setAiLoading(false);
+      setAiError(false);
+      return;
+    }
+    let cancelled = false;
+    setAiLoading(true);
+    setAiError(false);
+    ds.suggestCategory(aiPhoto)
+      .then((res) => {
+        if (cancelled) return;
+        setAiSuggestion(res);
+        setAiLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAiError(true);
+        setAiLoading(false);
+        setAiSuggestion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [aiPhoto, ds]);
   const [activePhotoIndex, setActivePhotoIndex] = useState<number>(0);
   const [isAddressFocused, setIsAddressFocused] = useState<boolean>(false);
   const [osmSuggestions, setOsmSuggestions] = useState<
@@ -683,6 +707,7 @@ export function C04Confirm() {
     locationNote: locationNoteInput.trim() || draft.locationNote,
     title: titleInput.trim() || draft.title?.trim() || undefined,
     description: description.trim() || undefined,
+    aiSuggestion: aiSuggestion ?? undefined,
     ...(anonymous ? {} : { phone }),
     anonymous,
   });
@@ -1264,6 +1289,13 @@ export function C04Confirm() {
                 >
                   Bước 1: Chọn loại phản ánh
                 </h2>
+                <AiSuggestionBanner
+                  loading={aiLoading}
+                  error={aiError}
+                  suggestion={aiSuggestion}
+                  selectedCategory={selectedCategory}
+                  onUse={(cat) => handleSelectCategory(cat)}
+                />
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3">
                   {CATEGORIES.map((cat) => (

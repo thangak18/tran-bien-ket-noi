@@ -1,4 +1,4 @@
-import { Category, Notification, Report, VolunteerTask } from '../domain/types';
+import { AiSuggestionData, Category, Notification, Report, VolunteerTask } from '../domain/types';
 import { SubmitReportPayload } from '../store/citizenActions';
 
 export interface PublicKpiResult {
@@ -237,4 +237,7 @@ export interface DataSource {
 
   /** Tải ảnh lên (trả về URL hoặc đường dẫn ảnh) */
   uploadPhoto(file: Blob | File, filename?: string): Promise<string>;
+
+  /** Gợi ý loại sự cố từ ảnh bằng AI */
+  suggestCategory(image: string): Promise<AiSuggestionData>;
 }

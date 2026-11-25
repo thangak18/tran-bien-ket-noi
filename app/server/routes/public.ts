@@ -118,6 +118,7 @@ function formatPublicReportRow(
     resultNote: r.result_note || undefined,
     followerCount,
     timeline: sanitizedTimeline,
+    aiSuggestion: (r.ai_suggestion as Record<string, unknown> | null) || undefined,
     feedback:
       r.feedback_resolved != null
         ? {

@@ -1,4 +1,11 @@
-import { Category, Feedback, Notification, Report, VolunteerTask } from '../domain/types';
+import {
+  AiSuggestionData,
+  Category,
+  Feedback,
+  Notification,
+  Report,
+  VolunteerTask,
+} from '../domain/types';
 import { canSendAnonymous } from '../domain/access';
 import { computePriority } from '../domain/sorting';
 import { buildNotification } from '../domain/notifications';
@@ -17,6 +24,7 @@ export interface SubmitReportPayload {
   description?: string;
   phone?: string;
   anonymous?: boolean;
+  aiSuggestion?: AiSuggestionData | null;
 }
 
 /**
@@ -88,6 +96,7 @@ export function submitReport(
     onBehalf: false,
     followers,
     anonymousFollows,
+    aiSuggestion: payload.aiSuggestion ?? null,
     timeline: [
       {
         at: now,

@@ -136,3 +136,50 @@ export async function checkPhoneDailyLimit(phone: string): Promise<void> {
     );
   }
 }
+
+/**
+ * Giới hạn gợi ý AI: 10 lượt / 10 phút / IP-thiết bị (B1)
+ */
+export async function checkAiRateLimit(ip: string, deviceId?: string): Promise<void> {
+  const ipHash = hashIp(ip);
+  const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const identifier = deviceId ? `ai_suggest:${deviceId}` : `ai_suggest:${ipHash}`;
+
+  const [row] = await sqlClient`
+    SELECT count(*)::int as count
+    FROM access_attempts
+    WHERE (report_id = ${identifier} OR (report_id LIKE 'ai_suggest:%' AND ip_hash = ${ipHash}))
+      AND at > ${tenMinsAgo}::timestamptz;
+  `;
+
+  if (row && row.count >= 10) {
+    throw new AppError(
+      'TOO_MANY_ATTEMPTS',
+      'Bạn đã yêu cầu phân tích ảnh quá 10 lần trong 10 phút. Vui lòng thử lại sau.',
+      429
+    );
+  }
+}
+
+export async function recordAiAttempt(ip: string, deviceId?: string): Promise<void> {
+  const ipHash = hashIp(ip);
+  const identifier = deviceId ? `ai_suggest:${deviceId}` : `ai_suggest:${ipHash}`;
+  await sqlClient`
+    INSERT INTO access_attempts (report_id, ip_hash, at)
+    VALUES (${identifier}, ${ipHash}, now());
+  `;
+}
+
+/**
+ * Kiểm tra hạn ngạch gợi ý AI toàn hệ thống trong ngày (B1)
+ */
+export async function isAiDailyLimitExceeded(dailyLimit: number): Promise<boolean> {
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const [row] = await sqlClient`
+    SELECT count(*)::int as count
+    FROM access_attempts
+    WHERE report_id LIKE 'ai_suggest:%'
+      AND at > ${oneDayAgo}::timestamptz;
+  `;
+  return Boolean(row && row.count >= dailyLimit);
+}

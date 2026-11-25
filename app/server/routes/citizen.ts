@@ -165,6 +165,18 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
   const now = await getDemoNow();
   const pointWkt = `POINT(${lng} ${lat})`;
   const photos = Array.isArray(body.photos) ? body.photos : [];
+  const aiSuggestion =
+    body.aiSuggestion && typeof body.aiSuggestion === 'object'
+      ? {
+          category: body.aiSuggestion.category || null,
+          confidence: Number(body.aiSuggestion.confidence || 0),
+          provider: body.aiSuggestion.provider === 'deepseek' ? 'deepseek' : 'mock',
+          reason:
+            typeof body.aiSuggestion.reason === 'string'
+              ? body.aiSuggestion.reason.slice(0, 120)
+              : undefined,
+        }
+      : null;
 
   // Tạo hồ sơ trong giao dịch với khoá advisory để đảm bảo mã số TB-xxxx không bao giờ bị trùng lặp khi chạy đồng thời
   const newReport = await sqlClient.begin(async (tx) => {
@@ -185,12 +197,13 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
         code, category, status, priority, location, address, location_note,
         description, created_at, reporter_phone, anonymous, subscribed_later,
         on_behalf, secret_code_hash, owner_token_hash, anonymous_follows,
-        photos_approved, is_seed, version
+        photos_approved, is_seed, version, ai_suggestion
       ) VALUES (
         ${nextCode}, ${category}, 'moi', 'binh_thuong', ST_GeographyFromText(${pointWkt}),
         ${address}, ${locationNote}, ${description}, ${now}::timestamptz,
         ${isAnonymous ? null : citizenPhone}, ${isAnonymous}, false, false,
-        ${secretHash}, ${ownerTokenHash}, 0, true, false, 1
+        ${secretHash}, ${ownerTokenHash}, 0, true, false, 1,
+        ${aiSuggestion ? JSON.stringify(aiSuggestion) : null}::jsonb
       )
       RETURNING id, code;
     `;

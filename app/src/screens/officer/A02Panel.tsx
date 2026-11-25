@@ -623,6 +623,37 @@ export function A02Panel({
                       </div>
                     )}
 
+                    {report.aiSuggestion && (
+                      <div
+                        data-testid="officer-ai-suggestion"
+                        className="rounded-xl border border-sky-200 bg-sky-50 p-2.5 text-xs dark:border-sky-900 dark:bg-sky-950/40"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="font-semibold text-[var(--color-text)]">
+                            AI gợi ý:{' '}
+                            <span className="font-bold text-[#0084E8]">
+                              {report.aiSuggestion.category
+                                ? getCategoryConfig(report.aiSuggestion.category).label
+                                : 'Không nhận diện được'}
+                            </span>{' '}
+                            <span className="font-normal text-text-sub">
+                              (người dân chọn: {getCategoryConfig(report.category).label})
+                            </span>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-[#0084E8] dark:bg-slate-900">
+                            {report.aiSuggestion.provider === 'deepseek'
+                              ? 'DeepSeek AI'
+                              : 'Mô phỏng'}
+                          </span>
+                        </div>
+                        {report.aiSuggestion.reason && (
+                          <div className="mt-1 text-[11px] italic text-text-sub">
+                            Lý do: {report.aiSuggestion.reason}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[var(--color-border)] text-xs text-text-sub">
                       <div className="flex items-center gap-1.5">
                         <Phone className="h-3.5 w-3.5" />
