@@ -1,6 +1,6 @@
 # PLAN – Trấn Biên Kết Nối
 
-Nguồn: `spec.md` v2.0, `ui-ux-guidelines.md`
+Nguồn: `spec.md` v3.0 (25/11/2026, theo FR-08), `ui-ux-guidelines.md`
 
 **Mục 1–9 = giai đoạn 1 (prototype, đã nộp). Mục 10–18 = giai đoạn 2 (backend + database, từ 25/11/2026); nếu mâu thuẫn mục 2 "Không dùng… SDK backend" thì mục 10+ thắng.**
 
@@ -215,8 +215,9 @@ Trình duyệt (SPA React, Vercel static)
    ▼
 Vercel Function  app/api/[...path].ts  (Hono, một điểm vào)
    │  ├─ middleware: CORS, request-id, xác thực, phân quyền, giới hạn tốc độ, zod
-   │  ├─ routes/: public · citizen · officer · volunteer · admin · cron
+   │  ├─ routes/: public · citizen · officer · volunteer · admin · ai · uploads · cron
    │  ├─ services/: nghiệp vụ trong giao dịch (dùng chung src/domain/), staffAdmin dùng chung API/CLI
+   │  ├─ services/ai/: CategorySuggester (DeepSeek hoặc mock, chọn bằng `AI_PROVIDER`)
    │  └─ providers/: OtpProvider, NotificationChannel (mock)  ← điểm cắm dịch vụ thật
    ▼
 Supabase
@@ -234,6 +235,7 @@ Nguyên tắc:
 5. **Giao dịch cho mọi chuyển trạng thái** (spec 12.1); `version` cho xung đột.
 6. **`now` là tham số** (Clock), test không phụ thuộc giờ máy.
 7. **Tách biến môi trường theo môi trường**: `development`, `preview`, `production`; không khoá bí mật trong repo (AGENTS.md).
+9. **Luồng người dân theo FR-08 (spec v3.0).** Xem công khai không cần đăng nhập; gửi, "Tôi cũng gặp", thông báo, đánh giá cần token người dân (SĐT + OTP mô phỏng). Server là nơi chặn: `POST /citizen/reports` thiếu token → 401 `CITIZEN_LOGIN_REQUIRED`; quyền chủ hồ sơ so `reporter_phone` với SĐT trong token; `follow` một lần/SĐT; SĐT đầy đủ chỉ trả cho cán bộ và TNV đúng phạm vi (spec 7.7). Không còn gửi ẩn danh; 6 hồ sơ ẩn danh cũ là dữ liệu lịch sử, giữ nguyên bất biến.
 8. **Dịch vụ AI thật (DeepSeek Vision)**: Tích hợp mô hình `deepseek-flash` qua endpoint OpenAI-compatible `POST /chat/completions`, dùng native `fetch` và `zod` có sẵn (không thêm SDK ngoài), xử lý an toàn với `AbortController` timeout (8s), rate limit theo IP và hạn ngạch toàn hệ thống (500 lượt/ngày). Nhận data URL base64 trực tiếp từ client để có kết quả phân tích tức thì mà không phụ thuộc việc upload ảnh lên storage trước. Hỗ trợ fallback mô phỏng (`MockSuggester`) khi ngoại tuyến hoặc không có API key. AI chỉ đóng vai trò gợi ý, không tự động chọn và không chặn người dân.
 
 ## 11. Thư viện bổ sung (ghi lý do theo AGENTS.md)
@@ -300,6 +302,10 @@ Chỉ liệt kê **tên**; giá trị đặt ở `app/.env.local` (được `.gi
 | `CITIZEN_JWT_SECRET` | server | Khóa bí mật ký JWT 30 ngày cho người dân (chuỗi ngẫu nhiên ≥ 32 bytes) |
 | `OWNER_KEY_PEPPER` | server | Pepper cho mã hoá hash `secretCode`, `ownerToken` và `ip_hash` |
 | `OTP_PROVIDER`, `SMS_PROVIDER` | server | `mock` (mặc định) |
+| `AI_PROVIDER` | server | `mock` (mặc định) \| `deepseek`. `deepseek` bắt buộc có `DEEPSEEK_API_KEY` |
+| `DEEPSEEK_API_KEY` | **server only** | Khoá DeepSeek; không có tiền tố `VITE_`, không vào bundle client hay log |
+| `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` | server | Mặc định `https://api.deepseek.com`, `deepseek-flash`; gọi với `thinking: { type: 'disabled' }` |
+| `AI_TIMEOUT_MS`, `AI_DAILY_LIMIT` | server | Mặc định 8000 ms và 500 lượt/ngày toàn hệ thống |
 | `ALLOW_MOCK_OTP` | server | Phải `true` mới cho phép chạy provider `mock` khi `NODE_ENV=production` |
 | `DEMO_MODE` | server | `true` mới cho phép chạy script `demo:reset` và `demo:clock` |
 | `CRON_SECRET` | server | Khóa bí mật xác thực Vercel Cron khi gọi `/api/v1/cron/*` |
@@ -341,10 +347,12 @@ Chỉ liệt kê **tên**; giá trị đặt ở `app/.env.local` (được `.gi
 | Q6 – Frontend | G2-07 | `DataSource`, `ApiDataSource`, async UI, map lỗi, tách demo | 14h | AC-DATA-1, 2: E2E-01/03/05/07 chạy cả hai chế độ |
 | Q7 – Vận hành | G2-11 | Env, 4 môi trường, cron, CI (Postgres service), hướng dẫn vận hành, kiểm thử bảo mật cuối (quét SĐT/mã) | 5h | Deploy production; checklist mục 17 |
 | Q8 – Quản trị | G2-11c–g | Migration cộng thêm, quyền admin, staffAdmin dùng chung CLI/API, API quản trị + audit log, dashboard và 5 màn hình quản trị responsive | 12h | AC-ADMIN-1 → 10; kiểm thử API/UI và ảnh review |
-| Sau – tuỳ chọn | G2-08, G2-09 | OTP/SMS thật, AI thật (**chờ chủ dự án quyết**); sửa 17 test cũ | – | – |
-| **Tổng** | | | **≈ 54h** | |
+| Q9 – AI gợi ý loại sự cố | G2-12 | `CategorySuggester` (DeepSeek + mock), `POST /ai/suggest-category`, cột `reports.ai_suggestion`, băng gợi ý ở C04, khối gợi ý ở A02 | – | AC-AI-1 → 4; AI-UNIT/API/FE |
+| Q10 – Spec v3.0 (FR-08) | F8-00 → F8-19 | Bắt buộc đăng nhập khi gửi, quyền chủ hồ sơ theo SĐT, "Tôi cũng gặp" 1 lần/SĐT, phạm vi SĐT (A01/A02/V02), C04 không chọn sẵn loại, C09, quét QR, V03 | – | AC-API-10 → 12, AC-AUTH-9, 10; `tests.md` mục 19 |
+| Sau – tuỳ chọn | G2-08, G2-09 | OTP/SMS thật (**chờ chủ dự án quyết**); sửa 17 test cũ (G2-09 đã xong 25/11); chuyển ảnh sang Supabase Storage | – | – |
+| **Tổng Q1–Q8** | | | **≈ 54h** (chưa tính Q9, Q10; chưa ước lượng) | |
 
-Thứ tự phụ thuộc: Q1 → Q2 → (Q3, Q4 song song được) → Q5 → Q6 → Q7. Q6 có thể bắt đầu phần "giao diện đăng nhập + lớp `DataSource`" sớm khi Q2 có hợp đồng ổn định.
+Thứ tự phụ thuộc: Q1 → Q2 → (Q3, Q4 song song được) → Q5 → Q6 → Q7. Admin (Q8) và AI (Q9) làm sau Q7. **Thứ tự việc còn lại (spec v3.0):** Q10 phần server (F8-01 → F8-06) trước, rồi frontend (F8-10 → F8-18), cuối cùng F8-19 (`mock:verify`, `db:verify`, `npm run verify`). F8-11 dùng chung phần AI với G2-12b → G2-12d. Q6 có thể bắt đầu phần "giao diện đăng nhập + lớp `DataSource`" sớm khi Q2 có hợp đồng ổn định.
 
 Cắt giảm khi thiếu thời gian (theo thứ tự): làm mới định kỳ 30 giây (chỉ làm tải lại khi mở màn) → cron dọn ảnh mồ côi (chạy tay). **Không cắt**: kiểm chuyển trạng thái server, phân quyền, che SĐT/mã bí mật, bất biến dữ liệu.
 
@@ -383,6 +391,10 @@ CI (GitHub Actions qua `.github/workflows/ci.yml`):
 - [ ] Mật khẩu tài khoản seed mẫu đã đổi, hoặc tài khoản bị khoá, trước khi mở cho người dùng thật.
 - [ ] Cron chạy thử một lần; `CRON_SECRET` đã đặt.
 - [ ] Sao lưu: bật backup Supabase (gói trả phí) hoặc `pg_dump` định kỳ – ghi cách khôi phục.
+- [ ] Quét tự động theo spec 7.7 và AC-AUTH-6, 10: `/public/*` và `/volunteer/tasks` không SĐT; SĐT đầy đủ chỉ ở `/officer/*` và `/volunteer/tasks/:code` đúng điều kiện (PHONE-001 → 004).
+- [ ] `POST /citizen/reports` không token → 401 `CITIZEN_LOGIN_REQUIRED` (AUTH-CIT-001); không còn đường gửi ẩn danh ở UI và API.
+- [ ] Chủ dự án đã trả lời `spec.md` 17.1 (hạn mức gửi theo SĐT, nhật ký truy cập SĐT, video V02, ảnh sang Storage).
+- [ ] `AI_PROVIDER` và nhãn nguồn gợi ý (DeepSeek hay mô phỏng) đúng môi trường; `DEEPSEEK_API_KEY` không có trong `dist/`.
 - [ ] README và hướng dẫn vận hành cập nhật; xoá câu "chưa có code".
 
 ## 18. Rủi ro kỹ thuật giai đoạn 2
@@ -397,6 +409,8 @@ Xem bảng rủi ro ở `spec.md` mục 17. Bổ sung kỹ thuật:
 | Seed ghi đè dữ liệu thật | `db:seed` từ chối chạy nếu bảng `reports` đã có dòng không phải `is_seed` (trừ cờ `--force` chỉ ở staging) |
 
 ## 19. Ghi chú sau review 25/11/2026
+
+- **Spec v3.0 (FR-08) không thêm thư viện mới.** Quét QR dùng `QrScannerModal` đã có; không đổi danh sách ở mục 11.
 
 - Không thêm `@hono/node-server`: Vite dev server đã có middleware phục vụ `/api` (`vite.config.ts`), đủ cho e2e chế độ API (`playwright.api.config.ts`), nên không có thư viện mới nào ngoài danh sách ở mục 11.
 - PostGIS chạy thật bằng Supabase local; không còn lớp tương thích `cube/earthdistance` (các mục nhắc lớp này ở trên không còn hiệu lực).

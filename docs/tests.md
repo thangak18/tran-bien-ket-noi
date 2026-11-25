@@ -1,6 +1,6 @@
 # TESTS – Trấn Biên Kết Nối
 
-Nguồn: `spec.md` v1.2, `tasks.md`, `ui-ux-guidelines.md`
+Nguồn: `spec.md` v3.0 (25/11/2026, theo FR-08), `tasks.md`, `ui-ux-guidelines.md`
 
 Nguyên tắc: **test viết trước code** cho mỗi task. Test domain và dữ liệu là bắt buộc tự động; UX thiết bị thật là checklist thủ công. Mục 9 (Backlog Bonus) **chưa viết** cho tới khi mở lại bonus.
 
@@ -78,7 +78,7 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 3. Tham số `k` khớp → true; `k` sai → false.
 4. Người lạ không SĐT, không deviceReports, không `k` → false.
 5. `followerCount` = followers.length + anonymousFollows.
-6. `canSendAnonymous`: 4 mục `anonymousLog` trong 24h → true; 5 → false; 5 mục nhưng 1 mục cũ hơn 24h → true.
+6. **[Đã bỏ theo FR-08]** `canSendAnonymous`: 4 mục `anonymousLog` trong 24h → true; 5 → false; 5 mục nhưng 1 mục cũ hơn 24h → true.
 
 ### UT-017 – Format, notifications, geo
 1. `formatDays(3.2)` = "3,2 ngày"; `formatDistance(950)` = "950 m"; `formatDistance(1250)` = "1,3 km".
@@ -103,13 +103,13 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 ### UT-021 – Actions người dân
 1. `submitReport` → id `TB-0065`, status `moi`, followers = [phone], 1 timeline, 1 notification "đã nhận"; `secretCode` 4 số; `deviceReports` thêm `{TB-0065, secretCode}`.
 2. Gửi tiếp → `TB-0066`.
-3. `submitReport({anonymous:true})` → `anonymous` true, `reporterPhone` rỗng, followers rỗng, anonymousFollows 1, **không** sinh notification SMS; `deviceReports` và `anonymousLog` cập nhật.
-4. `submitReport({anonymous:true})` lần thứ 6 trong 24h → lỗi quota, không tạo hồ sơ.
-5. `subscribeLater(id, phone)` trên hồ sơ ẩn danh → followers = [phone], `subscribedLater` true, `anonymous` vẫn true, 1 notification xác nhận; gọi trên hồ sơ không ẩn danh → lỗi.
-6. `unsubscribe` → gỡ phone, `subscribedLater` false.
-7. Sau `subscribeLater`, chuyển hồ sơ sang `hoan_thanh` → phone nhận notification "đã xử lý xong".
-8. `claimByLink(id, k)` đúng → thêm vào `deviceReports`; sai → không đổi state.
-9. `lookupReport(id, code4)` khớp 4 số cuối SĐT hoặc `secretCode` → trả hồ sơ; không khớp → `null`.
+3. **[Đã bỏ theo FR-08]** `submitReport({anonymous:true})` → `anonymous` true, `reporterPhone` rỗng, followers rỗng, anonymousFollows 1, **không** sinh notification SMS; `deviceReports` và `anonymousLog` cập nhật.
+4. **[Đã bỏ theo FR-08]** `submitReport({anonymous:true})` lần thứ 6 trong 24h → lỗi quota, không tạo hồ sơ.
+5. **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** `subscribeLater(id, phone)` trên hồ sơ ẩn danh → followers = [phone], `subscribedLater` true, `anonymous` vẫn true, 1 notification xác nhận; gọi trên hồ sơ không ẩn danh → lỗi.
+6. **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** `unsubscribe` → gỡ phone, `subscribedLater` false.
+7. **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** Sau `subscribeLater`, chuyển hồ sơ sang `hoan_thanh` → phone nhận notification "đã xử lý xong".
+8. **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** `claimByLink(id, k)` đúng → thêm vào `deviceReports`; sai → không đổi state.
+9. **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** `lookupReport(id, code4)` khớp 4 số cuối SĐT hoặc `secretCode` → trả hồ sơ; không khớp → `null`.
 10. `submitFeedback({resolved:true, rating:4, tags:['Xử lý nhanh']})` khi `hoan_thanh` → `dong`, feedback lưu đủ tags.
 11. `submitFeedback({resolved:false})` → `mo_lai` + 1 VolunteerTask `nghiem_thu` + thông báo "kiểm tra lại".
 12. `submitFeedback` khi status ≠ `hoan_thanh` → lỗi.
@@ -184,25 +184,25 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 | CT-036 | PhoneOtpSheet | Có dòng "chỉ dùng để báo tin cho bạn…"; SĐT 9 số → lỗi; `0909000068` → OTP; sai → lỗi; `123456` → `onVerified`; nhãn "Mô phỏng" |
 | CT-037 | BeforeAfter, CategoryTile, LocationRow, ReportCard, LatestUpdate | BeforeAfter không có ảnh sau → ô "Chưa có ảnh sau xử lý"; alt "Trước xử lý"/"Sau xử lý". CategoryTile `aria-pressed`, chọn bằng bàn phím, có ✓ khi chọn. LocationRow có nút "Đổi" khi truyền `onChange`. ReportCard hiện ảnh, loại, mã, StatusChip, câu cập nhật 1 dòng |
 | CT-038 | NotificationBell | Số chưa đọc đúng; mở danh sách → đánh dấu đã đọc; SmsPreview có "Mô phỏng" |
-| CT-039 | TrackingLinkCard, SubscribeCard | Mã bí mật ≥ 28px, QR mã hoá đúng URL `?k=`; "Lưu link" gọi share hoặc toast "Đã sao chép link"; SubscribeCard → OTP → "Đang nhận tin qua 0909 *** 068 · Huỷ" |
+| CT-039 | **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** TrackingLinkCard, SubscribeCard | Mã bí mật ≥ 28px, QR mã hoá đúng URL `?k=`; "Lưu link" gọi share hoặc toast "Đã sao chép link"; SubscribeCard → OTP → "Đang nhận tin qua 0909 *** 068 · Huỷ" |
 | CT-039b | RatingSheet | Có "Chưa đến 30 giây"; 5 sao có nhãn chữ; chọn 5 sao → chip tích cực, chọn 2 sao → chip "Xử lý chậm"…; "Gửi đánh giá" tắt khi chưa chọn sao; trả `{rating, tags, comment}` |
-| CT-040 | C01 | Thứ tự khối đúng AC-C01-1; không có hồ sơ trên máy → ẩn "Phản ánh của bạn"; có 2 hồ sơ → 2 thẻ trượt ngang có ProgressBar; "Quanh đây" đúng 3 mục kèm khoảng cách; dải "47/64" tính từ store và dẫn tới `/minh-bach` |
+| CT-040 | C01 | Thứ tự khối đúng AC-C01-1; không có hồ sơ trên máy → ẩn "Phản ánh của bạn"; có 2 hồ sơ → 2 thẻ trượt ngang có ProgressBar; "Quanh đây" đúng 3 mục kèm khoảng cách; dải "47/64" tính từ store và dẫn tới `/minh-bach` **[FR-08: chưa đăng nhập cũng ẩn khối 'Phản ánh của bạn']** |
 | CT-042 | C02 | Ô chụp có `capture="environment"`, nút "Chọn ảnh có sẵn" không có `capture`; "Tiếp tục" tắt khi 0 ảnh; ảnh thứ 4 bị chặn kèm thông báo; ✕ khi có ảnh → hỏi lưu nháp |
 | CT-043 | C03 | Ảnh đã chụp hiện phía trên; GPS trong phường → ghim + LocationRow có tên đường; GPS ngoài 5 km → banner 2 lựa chọn; denied → câu "Chưa lấy được vị trí…" + ô nhập gợi ý đường; nút "Đúng chỗ này rồi" |
-| CT-044 | C04 xác nhận | "Gửi cho phường" tắt khi chưa chọn loại; không có lựa chọn mức ưu tiên; "Đổi" ở LocationRow về C03 giữ dữ liệu; link "Gửi không để lại số điện thoại" hiện dưới nút chính |
+| CT-044 | C04 xác nhận | "Gửi cho phường" tắt khi chưa chọn loại; không có lựa chọn mức ưu tiên; "Đổi" ở LocationRow về C03 giữ dữ liệu; link "Gửi không để lại số điện thoại" hiện dưới nút chính **[FR-08: bỏ mệnh đề 'link Gửi không để lại số điện thoại hiện dưới nút chính'; nút nay là 'Gửi phản ánh', thêm C04-CAT-001]** |
 | CT-045 | C04 gửi có SĐT | Chưa SĐT → mở OTP; xong → màn thành công có mã `TB-0065`, đoạn "Tiếp theo…", nút "Theo dõi phản ánh"; offline → banner + "Thử lại", draft còn |
-| CT-045b | C04 ẩn danh | Sheet cảnh báo đúng câu chữ; "Gửi ẩn danh" → màn thành công có mã bí mật, QR, "Lưu link theo dõi", dòng nhắc, nút "Nhận tin báo…"; không mở OTP; lần thứ 6 trong ngày → sheet quota |
-| CT-047 | C05 | Không đăng nhập vẫn thấy hồ sơ gửi từ máy này; tab có số đếm khớp dữ liệu; tab "Đã xử lý" chỉ còn bước 4; thẻ chỉ lưu trên máy có nút "Lưu link" + dòng cảnh báo đầu danh sách; tra cứu mã + mã bí mật đúng → mở hồ sơ, sai → lỗi; trống → EmptyState có "Báo sự cố" |
+| CT-045b | **[Đã bỏ theo FR-08]** C04 ẩn danh | Sheet cảnh báo đúng câu chữ; "Gửi ẩn danh" → màn thành công có mã bí mật, QR, "Lưu link theo dõi", dòng nhắc, nút "Nhận tin báo…"; không mở OTP; lần thứ 6 trong ngày → sheet quota |
+| CT-047 | C05 | Không đăng nhập vẫn thấy hồ sơ gửi từ máy này; tab có số đếm khớp dữ liệu; tab "Đã xử lý" chỉ còn bước 4; thẻ chỉ lưu trên máy có nút "Lưu link" + dòng cảnh báo đầu danh sách; tra cứu mã + mã bí mật đúng → mở hồ sơ, sai → lỗi; trống → EmptyState có "Báo sự cố" **[FR-08: câu 'Không đăng nhập vẫn thấy hồ sơ gửi từ máy này' không còn đúng với hồ sơ mới; xem C05-LOGIN-001]** |
 | CT-048 | C06 | Thứ tự khối theo AC-C06-12; hồ sơ `da_giao` quá hạn → DelayChip + câu "chậm hơn dự kiến"; Trước/Sau luôn hiện, ô Sau trống khi chưa xong; `hoan_thanh` → Trước/Sau lên ngay dưới ảnh gốc + khối "Vấn đề đã được giải quyết chưa?"; "Chưa giải quyết" → "Đang xử lý lại"; người ngoài không thấy khu vực hành động; không có tên cá nhân cán bộ |
-| CT-048b | C06 ẩn danh | `/phan-anh/TB-0066?k=<đúng>` ở thiết bị mới → có quyền chủ + thẻ "Nhận tin báo…"; `k` sai → dòng "Link theo dõi không đúng…"; mã bí mật ẩn mặc định, nút "Hiện" |
+| CT-048b | **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** C06 ẩn danh | `/phan-anh/TB-0066?k=<đúng>` ở thiết bị mới → có quyền chủ + thẻ "Nhận tin báo…"; `k` sai → dòng "Link theo dõi không đúng…"; mã bí mật ẩn mặc định, nút "Hiện" |
 | CT-049a | C07 | Mặc định có vòng 1 km; "Toàn phường" bỏ vòng; chip lọc giảm số marker; chạm marker → thẻ nổi có "Xem →"; công tắc Danh sách sắp theo khoảng cách; thanh điều hướng + FAB vẫn hiện; không có SĐT trong DOM |
 | CT-049b | C08 | KPI 64 / 47 (73,4%) / 17 / 3,2 ngày; biểu đồ 4 nhóm; 6 thẻ Trước → Sau có tên bộ phận; chú thích nguồn; không có SĐT trong DOM |
 | CT-050 | A01 | Hai hồ sơ quá hạn lên đầu với chữ "Quá hạn"; tìm "TB-0012" lọc đúng; tab "Đã xử lý" = 47 hàng; lọc Nguồn "Ẩn danh" = 6 hàng có cờ "Ẩn danh" |
-| CT-051 | A02 | Hồ sơ `moi` chỉ hiện nút hợp lệ; bộ phận và hạn điền sẵn đúng loại; "Yêu cầu bổ sung" với lý do 5 ký tự → nút tắt; SĐT dạng che; hồ sơ ẩn danh `moi` có gợi ý "nên giao TNV xác minh…" |
+| CT-051 | A02 | Hồ sơ `moi` chỉ hiện nút hợp lệ; bộ phận và hạn điền sẵn đúng loại; "Yêu cầu bổ sung" với lý do 5 ký tự → nút tắt; SĐT dạng che; hồ sơ ẩn danh `moi` có gợi ý "nên giao TNV xác minh…" **[FR-08: 'SĐT dạng che' đổi thành SĐT đầy đủ + nút Gọi, xem A02-PHONE-001]** |
 | CT-053 | A03 | Không ảnh → Xác nhận tắt + lý do; có ảnh + mô tả → xem trước Trước/Sau; xác nhận → `hoan_thanh` |
 | CT-056 | Bàn phím A01 | Tab tới bảng, mũi tên chọn hàng, Enter mở panel, Esc đóng và trả focus |
 | CT-060 | V01 | TNV "Lê Thảo Vy" thấy nhiệm vụ của mình + nhiệm vụ mở; nhãn "Xác minh ban đầu"/"Nghiệm thu sau xử lý"; tab "Đã xong" |
-| CT-061 | V02 | Thiếu Câu 1 / mức độ / ảnh → Gửi tắt; đủ → gửi, về V01; không có nút đóng hồ sơ |
+| CT-061 | V02 | Thiếu Câu 1 / mức độ / ảnh → Gửi tắt; đủ → gửi, về V01; không có nút đóng hồ sơ **[FR-08: V02 nay 3 bước và có SĐT có điều kiện, xem V02-PHONE-001]** |
 | CT-072 | Reset / demoNow | Reset hỏi xác nhận; đổi demoNow sang 30/11 → số "Quá hạn" ở A01 tăng, DelayChip xuất hiện ở C05 |
 | CT-073 | Nhảy bước | "Tới bước: Đang xử lý" đặt hồ sơ demo về `da_giao` kèm timeline hợp lệ |
 
@@ -217,7 +217,7 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 | E2E-03 | Cán bộ xử lý trọn: A01 mở hồ sơ demo → Giao xử lý → A03 ảnh + mô tả → Hoàn thành | desktop | Hồ sơ `hoan_thanh`; người dân có thông báo "đã xử lý xong"; C06 có ảnh Sau |
 | E2E-05 | Mở lại → nghiệm thu: người dân "Chưa giải quyết" → TNV V01 thấy nhiệm vụ nghiệm thu → V02 gửi → A02 thấy kết quả | mobile + desktop | Task `xong`; A02 hiện kết quả nghiệm thu |
 | E2E-06 | Demo Hub: "Tiếp nhận" ở khung phải | desktop 1440 | Khung trái (C06 hồ sơ đó) đổi sang "Đã tiếp nhận" ≤ 1 giây |
-| E2E-07 | Ẩn danh → nhận tin sau: khung trái gửi ẩn danh → lưu link → CB tiếp nhận → khung trái C05 thấy "Đã tiếp nhận" (không có SMS) → "Nhận tin báo…" + OTP → CB hoàn thành → khung trái có thông báo | Demo Hub | Hồ sơ giữ `anonymous` true; chỉ sau khi đăng ký mới có SMS mô phỏng |
+| E2E-07 | **[Đã bỏ theo FR-08]** (phần gửi ẩn danh). Ẩn danh → nhận tin sau: khung trái gửi ẩn danh → lưu link → CB tiếp nhận → khung trái C05 thấy "Đã tiếp nhận" (không có SMS) → "Nhận tin báo…" + OTP → CB hoàn thành → khung trái có thông báo | Demo Hub | Hồ sơ giữ `anonymous` true; chỉ sau khi đăng ký mới có SMS mô phỏng |
 | E2E-08 | Đánh giá: hồ sơ `hoan_thanh` của người dân → "Đã giải quyết" → 5 sao + 2 chip → Gửi | mobile | Hồ sơ `dong`; C08 cập nhật danh sách "Vừa xử lý xong" |
 
 Mock GPS trong Playwright: `context.setGeolocation({ latitude: 10.9505, longitude: 106.8225 })` + `grantPermissions(['geolocation'])`.
@@ -252,12 +252,12 @@ Mock GPS trong Playwright: `context.setGeolocation({ latitude: 10.9505, longitud
 ### MT-ST – Trạng thái phụ (T-080)
 - [ ] GPS từ chối → nhập địa chỉ.
 - [ ] Mất mạng khi gửi → lưu nháp, thử lại.
-- [ ] Gửi thành công kèm mã (có SĐT / ẩn danh).
+- [ ] Gửi thành công kèm mã (có SĐT / ẩn danh). **[FR-08: chỉ còn nhánh có SĐT]**
 - [ ] Danh sách trống (C05, V01).
 - [ ] Cần bổ sung / đã chuyển / không xác nhận (C06).
 - [ ] Chưa giải quyết → mở lại.
 - [ ] Quá hạn / sắp đến hạn (A01) và "Chậm n ngày" (C01, C05, C06, C07).
-- [ ] Quota gửi ẩn danh; link theo dõi sai mã; đăng ký / huỷ nhận tin.
+- [ ] Quota gửi ẩn danh; link theo dõi sai mã; đăng ký / huỷ nhận tin. **[FR-08: quota ẩn danh đã bỏ; link `?k=` sai mã và đăng ký/huỷ nhận tin chỉ cho hồ sơ ẩn danh cũ]**
 - [ ] Bản đồ lỗi → danh sách (C07).
 
 ---
@@ -278,6 +278,7 @@ Mock GPS trong Playwright: `context.setGeolocation({ latitude: 10.9505, longitud
 - Test trùng lặp (trước là UT-013) chuyển sang BT-B2-1; UT-013 nay là "Cập nhật mới nhất & chậm hạn".
 - E2E-02 ("Tôi cũng gặp") và E2E-04 (gộp/tách) chuyển sang Backlog Bonus.
 - CT-049c, CT-049d gộp vào CT-047 và CT-048b.
+- **Spec v3.0 (FR-08):** các test về gửi ẩn danh được đánh dấu "Đã bỏ theo FR-08" tại chỗ (UT-016b mục 6, UT-021 mục 3 và 4, CT-045b, AUTHZ-013, AUTHZ-014, phần ẩn danh của E2E-07); các test về hồ sơ ẩn danh cũ ghi "Chỉ áp dụng hồ sơ ẩn danh cũ". Test mới ở mục 19.
 
 ---
 
@@ -290,14 +291,14 @@ Chỉ viết khi mở task bonus tương ứng trong `tasks.md`. Danh sách ki�
 | BT-B3-1 | B3 Chữ lớn | Bật → `<html class="senior">`, chữ thân ≥ 20px, nút ≥ 56px, ghi nhớ sau reload |
 | MT-SR | B3 Chữ lớn | Checklist: 1 nút chính/màn, từ ngữ cột Chữ lớn, gửi không cần chạm bản đồ |
 | BT-B2-1 | B2 Trùng | `findDuplicates`: cùng loại ≤ 50 m, ≤ 14 ngày, loại trừ trạng thái đóng/gộp/chuyển/không xác nhận; tối đa 3, sắp theo khoảng cách |
-| BT-B2-2 | B2 Trùng | Hộp nghi trùng ở C04; "Tôi cũng gặp" có SĐT/ẩn danh không tạo hồ sơ mới; followerCount ≥ 3 → ưu tiên cao |
+| BT-B2-2 | B2 Trùng | Hộp nghi trùng ở C04; "Tôi cũng gặp" có SĐT/ẩn danh không tạo hồ sơ mới; followerCount ≥ 3 → ưu tiên cao **[FR-08: 'Tôi cũng gặp' ẩn danh đã bỏ; xem FOLLOW-001 → 004]** |
 | BT-B2-3 | B2 Trùng | Gộp: hồ sơ phụ `da_gop`, followers hợp nhất, thông báo; tách khôi phục trạng thái cũ |
-| BT-E2E-02 | B2 Trùng | Luồng "Tôi cũng gặp" đầu–cuối |
+| BT-E2E-02 | B2 Trùng | Luồng "Tôi cũng gặp" đầu–cuối **[FR-08: 'Tôi cũng gặp' nay thuộc lõi, đăng nhập bắt buộc]** |
 | BT-E2E-04 | B2 Trùng | Gộp rồi tách cụm trùng 1 |
 | BT-B1-1 | B1 AI | Ảnh có trong manifest → gợi ý + nhãn "Mô phỏng"; ảnh lạ → không chọn sẵn |
 | BT-B4-1 | B4 Giọng nói | Không hỗ trợ → không có nút micro; có → chèn chữ vào ô mô tả |
 | BT-B5-1 | B5 Gửi hộ | Modal tạo hộ: thiếu SĐT không lưu; lưu → `onBehalf`, `da_tiep_nhan`, SMS mô phỏng có mã |
-| UX-001 → 004 | Thử nghiệm người dùng | Báo ổ gà; xem trạng thái; báo chưa giải quyết; gửi ẩn danh rồi tìm lại |
+| UX-001 → 004 | Thử nghiệm người dùng | Báo ổ gà; xem trạng thái; báo chưa giải quyết; gửi ẩn danh rồi tìm lại **[FR-08: bỏ tình huống 'gửi ẩn danh rồi tìm lại']** |
 
 ---
 
@@ -322,13 +323,13 @@ Kiểm thử toàn bộ endpoints: thành công (200/201) và các mã lỗi chu
 | API-CIT-002 | `POST /citizen/otp/request` | Xin OTP quá 5 lần/giờ | 429 `TOO_MANY_REQUESTS` |
 | API-CIT-003 | `POST /citizen/otp/verify` | Nhập mã OTP đúng `123456` | 200, cấp JWT người dân hạn 30 ngày |
 | API-CIT-004 | `POST /citizen/otp/verify` | Nhập sai OTP 5 lần | 429 hoặc 400 khoá mã |
-| API-CIT-005 | `POST /citizen/reports` | Gửi hồ sơ có SĐT hoặc ẩn danh | 201, trả `{code, secretCode, ownerToken}` |
+| API-CIT-005 | `POST /citizen/reports` | Gửi hồ sơ có SĐT hoặc ẩn danh | 201, trả `{code, secretCode, ownerToken}` **[FR-08: ẩn danh đã bỏ; xem AUTH-CIT-001, AUTH-CIT-002; không còn trả secretCode/ownerToken cho hồ sơ mới]** |
 | API-CIT-006 | `POST /citizen/reports` | Dữ liệu thiếu loại hoặc vị trí | 422 `UNPROCESSABLE_ENTITY` kèm details |
-| API-CIT-007 | `POST /citizen/reports/lookup` | Tra cứu bằng mã + 4 số cuối SĐT | 200, trả `ownerToken` mới |
-| API-CIT-008 | `POST /citizen/reports/:code/claim` | Mở link `?k=` với mã bí mật | 200, trả `ownerToken` |
-| API-CIT-009 | `GET /citizen/reports/:code/owner` | Chủ hồ sơ xem chi tiết | 200, thấy `secretCode` và SĐT đã che |
+| API-CIT-007 | `POST /citizen/reports/lookup` | Tra cứu bằng mã + 4 số cuối SĐT | 200, trả `ownerToken` mới **[FR-08: chỉ hồ sơ ẩn danh cũ]** |
+| API-CIT-008 | `POST /citizen/reports/:code/claim` | Mở link `?k=` với mã bí mật | 200, trả `ownerToken` **[FR-08: chỉ hồ sơ ẩn danh cũ]** |
+| API-CIT-009 | `GET /citizen/reports/:code/owner` | Chủ hồ sơ xem chi tiết | 200, thấy `secretCode` và SĐT đã che **[FR-08: secretCode chỉ có với hồ sơ ẩn danh cũ; SĐT của chính người gọi]** |
 | API-CIT-010 | `POST /citizen/reports/:code/feedback` | Đánh giá kết quả (hài lòng/chưa giải quyết) | 200, đổi trạng thái sang `dong` hoặc `mo_lai` |
-| API-OFF-001 | `GET /officer/reports` | Cán bộ xem hộp thư tiếp nhận A01 | 200, danh sách đầy đủ, SĐT che `0909 *** 068` |
+| API-OFF-001 | `GET /officer/reports` | Cán bộ xem hộp thư tiếp nhận A01 | 200, danh sách đầy đủ, SĐT che `0909 *** 068` **[FR-08: đổi thành SĐT đầy đủ, xem PHONE-002]** |
 | API-OFF-002 | `GET /officer/reports/:code` | Cán bộ xem chi tiết A02 | 200, lịch sử timeline, kết quả xác minh |
 | API-OFF-003 | `GET /officer/kpi` | KPI cán bộ (quá hạn, sắp đến hạn) | 200, số liệu tính toán động |
 | API-OFF-004 | `POST /officer/reports/:code/accept` | Tiếp nhận hồ sơ `moi` → `da_tiep_nhan` | 200, ghi timeline cán bộ tiếp nhận |
@@ -341,7 +342,7 @@ Kiểm thử toàn bộ endpoints: thành công (200/201) và các mã lỗi chu
 | API-OFF-011 | `POST /officer/reports/:code/split` | Tách hồ sơ đã gộp | 200, khôi phục `status_before_merge` |
 | API-OFF-012 | `POST /officer/reports` | Cán bộ tạo phản ánh hộ dân | 201, cờ `on_behalf=true`, `da_tiep_nhan` |
 | API-VOL-001 | `GET /volunteer/tasks` | TNV xem nhiệm vụ theo GPS | 200, sắp theo khoảng cách tăng dần |
-| API-VOL-002 | `GET /volunteer/tasks/:code` | Chi tiết nhiệm vụ TNV V02 | 200, không chứa SĐT hay mã bí mật của dân |
+| API-VOL-002 | `GET /volunteer/tasks/:code` | Chi tiết nhiệm vụ TNV V02 | 200, không chứa SĐT hay mã bí mật của dân **[FR-08: có `reporterPhone` khi giao cho chính TNV và chưa xong, xem PHONE-004]** |
 | API-VOL-003 | `POST /volunteer/tasks/:code/claim` | TNV nhận nhiệm vụ mở | 200, khoá dòng gán cho TNV này |
 | API-VOL-004 | `POST /volunteer/tasks/:code/result` | Nộp kết quả xác minh 3 câu + ảnh | 200, task `xong`, kích hoạt transition 3.3 |
 
@@ -365,10 +366,10 @@ Sinh trực tiếp từ ma trận phân quyền mục 13.5:
 | AUTHZ-010 | TNV gọi API đóng hồ sơ của cán bộ | 403 `FORBIDDEN` |
 | AUTHZ-011 | Thử dò mã bí mật sai quá 5 lần / 15 phút từ 1 IP | 429 `TOO_MANY_ATTEMPTS` |
 | AUTHZ-012 | Thử dò mã bí mật sai quá 30 lần / 24 giờ trên 1 hồ sơ | Khoá claim/lookup hồ sơ đó 24h (429) |
-| AUTHZ-013 | Gửi ẩn danh quá 5 hồ sơ / ngày / thiết bị | 429 `QUOTA_EXCEEDED` |
-| AUTHZ-014 | Gửi ẩn danh quá 20 hồ sơ / ngày / IP | 429 `QUOTA_EXCEEDED` |
+| AUTHZ-013 | Gửi ẩn danh quá 5 hồ sơ / ngày / thiết bị | 429 `QUOTA_EXCEEDED` **[Đã bỏ theo FR-08]** |
+| AUTHZ-014 | Gửi ẩn danh quá 20 hồ sơ / ngày / IP | 429 `QUOTA_EXCEEDED` **[Đã bỏ theo FR-08]** |
 | AUTHZ-015 | Đổi vai trò trong DB có hiệu lực ngay request kế tiếp | Quyền mới được áp dụng không cần cấp token mới |
-| LEAK-001 | Quét response `/public/*` và `/volunteer/*` tìm SĐT dạng `0\d{9}` | 0 kết quả (SĐT luôn che mặt nạ hoặc null) |
+| LEAK-001 | Quét response `/public/*` và `/volunteer/*` tìm SĐT dạng `0\d{9}` | 0 kết quả (SĐT luôn che mặt nạ hoặc null) **[FR-08: `/volunteer/tasks` (danh sách) vẫn 0 kết quả; `/volunteer/tasks/:code` theo PHONE-004]** |
 | LEAK-002 | Quét response công khai tìm `secretCode`, `ownerToken`, chuỗi hash | 0 kết quả (hoàn toàn bị loại bỏ bởi serializer) |
 | LEAK-003 | Quét toàn bộ server console log tìm chuỗi nhạy cảm | 0 kết quả rò rỉ token, password, secretCode |
 
@@ -458,7 +459,7 @@ Kiểm tra trực tiếp trên PostgreSQL + PostGIS thật bằng `npm run db:ve
 ## 16. Checklist Kiểm tra UI Giai đoạn 2 (UI-G2-*)
 
 - [ ] **UI-G2-01**: Nhãn "Mô phỏng" hiển thị rõ ràng tại: ô nhập OTP, xem trước tin nhắn SMS/Zalo, gợi ý phân loại AI.
-- [ ] **UI-G2-02**: Không hiển thị số điện thoại đầy đủ ở bất kỳ màn hình công khai nào hoặc màn hình TNV (chỉ hiện `0909 *** 068` hoặc nhãn Ẩn danh).
+- [ ] **UI-G2-02**: Không hiển thị số điện thoại ở bất kỳ màn hình công khai nào (C01, C06 người ngoài, C07, C08). SĐT đầy đủ chỉ ở A01, A02 (cán bộ) và V02 (TNV, nhiệm vụ của chính mình và chưa xong); hồ sơ ẩn danh cũ hiện nhãn Ẩn danh. *(Đã sửa theo FR-08/D7; trước đây ghi chỉ hiện `0909 *** 068`.)*
 - [ ] **UI-G2-03**: Nút "Đổi vai trò" ở thanh điều hướng tự động ẩn khi chạy ở chế độ `VITE_DATA_SOURCE=api`.
 - [ ] **UI-G2-04**: Màn hình `/dang-nhap` không bị tràn ngang ở 360px, hiển thị đầy đủ nhãn và form nhập.
 - [ ] **UI-G2-05**: Khi truy cập trái quyền, hiển thị trang `/khong-co-quyen` thân thiện có nút quay về.
@@ -479,7 +480,7 @@ Các test này gọi `app.request` trên DB PostGIS thật và Supabase Auth th�
 | LOGIN-005…006 | `staff-login.test.ts` | Email không tồn tại; tài khoản người dân đúng mật khẩu nhưng không phải nhân viên | 401, cùng mã và cùng thông báo với sai mật khẩu (không lộ email nào tồn tại) |
 | LOGIN-007 | `staff-login.test.ts` | Cách đăng nhập cũ: chỉ `role`, chuỗi con `can_bo`/`cb.`/`minh`, không mật khẩu | 401, không cấp token |
 | LOGIN-008 | `staff-login.test.ts` | Tài khoản bị khoá, mật khẩu đúng | 403 `ACCOUNT_DISABLED` |
-| VOL-000…001 | `tests/api/volunteer-flow.test.ts` | Danh sách, chi tiết, kết quả nhiệm vụ của TNV | Không có SĐT, `secretCode`, `ownerToken` (có test kiểm chứng hàm dò rò rỉ) |
+| VOL-000…001 | `tests/api/volunteer-flow.test.ts` | Danh sách, chi tiết, kết quả nhiệm vụ của TNV | Không có SĐT, `secretCode`, `ownerToken` (có test kiểm chứng hàm dò rò rỉ) **[FR-08: chi tiết nhiệm vụ có SĐT có điều kiện, xem PHONE-004]** |
 | VOL-002…003 | `volunteer-flow.test.ts` | Cán bộ/người dân nhận hoặc nộp nhiệm vụ TNV; TNV nộp thay TNV khác | 403 (AUTHZ-003, AUTHZ-004), nhiệm vụ không đổi |
 | VOL-004 | `volunteer-flow.test.ts` | Thiếu ảnh, thiếu mức độ khi "Có", giá trị lạ | 400, nhiệm vụ vẫn `dang_lam` |
 | VOL-005 | `volunteer-flow.test.ts` | Giao TNV → TNV báo "Có" | Hồ sơ `cho_xac_minh` → `da_tiep_nhan` qua `transition.ts`, version +1, timeline có `actor_staff_id` của TNV; nộp lần hai → 409 |
@@ -542,3 +543,75 @@ Các test này gọi `app.request` trên DB PostGIS thật và Supabase Auth th�
 - **AI-FE-004**: Lỗi AI hoặc confidence < 0.5 hiển thị "Không nhận ra loại sự cố, bạn chọn giúp nhé" và không chặn nút gửi phản ánh.
 - **AI-FE-005**: Dưới ô ảnh hiển thị cam kết quyền riêng tư: "Ảnh được gửi tới dịch vụ AI (DeepSeek) để gợi ý loại sự cố".
 - **AI-FE-006**: Màn hình A02 hiển thị dòng thông tin nếu hồ sơ có trường `aiSuggestion`.
+
+---
+
+## 19. Kiểm thử luồng FR-08 (spec v3.0)
+
+Áp dụng `spec.md` v3.0: gửi phản ánh bắt buộc đăng nhập SĐT (D1), quyền chủ hồ sơ theo SĐT (D3), "Tôi cũng gặp" một lần cho mỗi SĐT (D4), phạm vi hiển thị SĐT (D7), không chọn sẵn loại sự cố (D8). Theo AGENTS.md: viết test trước, xác nhận test fail, rồi mới code (các task tương ứng ở `tasks.md` nhóm "Spec v3.0 – FR-08").
+
+**Lưu ý trùng ID.** `AUTH-CIT-001…004` trước đây chỉ được nhắc ở task G2-05b (OTP, JWT người dân) và chưa có file test; từ v3.0 `AUTH-CIT-001`, `AUTH-CIT-002` là hai case ở 19.1. Phần OTP/JWT dùng `API-CIT-001…004` (mục 10). `OWNER-001…005` đã có trong `tests/api/citizen-owner.test.ts`: `OWNER-001`, `OWNER-002` ở 19.2 **mở rộng** hai case cũ (xem cột "Ghi chú với test hiện có"), `OWNER-003…005` giữ nguyên.
+
+### 19.1. Gửi phản ánh bắt buộc đăng nhập (D1) – `tests/api/auth-citizen.test.ts`
+
+| ID | Tình huống | Kết quả mong đợi |
+|---|---|---|
+| AUTH-CIT-001 | `POST /api/v1/citizen/reports` với body hợp lệ, **không có token người dân** (kể cả khi có `X-Device-Id`, hoặc body có `anonymous: true`) | 401, `error.code = 'CITIZEN_LOGIN_REQUIRED'`, `message = "Vui lòng đăng nhập số điện thoại để gửi phản ánh"`; số dòng `reports` không đổi; không sinh `notifications`; có header `X-Request-Id` |
+| AUTH-CIT-002 | Cùng body, **có token người dân** (sau `otp/verify` với `123456`) | 201, trả `{code}` dạng `TB-\d{4}`; bản ghi DB có `anonymous = false` và `reporter_phone` = đúng SĐT trong token; SĐT đó nằm trong `report_followers` (nguồn `reporter`); phản hồi không có `secretCode`, `ownerToken`; gửi lại cùng `Idempotency-Key` vẫn một hồ sơ (AC-API-6) |
+
+### 19.2. Quyền chủ hồ sơ (D3) – `tests/api/citizen-owner.test.ts`
+
+| ID | Tình huống | Kết quả mong đợi | Ghi chú với test hiện có |
+|---|---|---|---|
+| OWNER-001 | Hồ sơ `hoan_thanh`. Người dân B đã bấm "Tôi cũng gặp" (SĐT B ≠ `reporter_phone`) gọi `POST /citizen/reports/:code/feedback`. Lặp lại với `…/supplement` trên hồ sơ `can_bo_sung` | 403 `FORBIDDEN`; hồ sơ giữ nguyên `hoan_thanh`/`can_bo_sung`, không sinh `feedback`, không sinh nhiệm vụ `nghiem_thu` | Test cũ `OWNER-001` gộp ba case ("không xác thực", "khoá sai", "chỉ Tôi cũng gặp" đều 403). Case "không có token" nay phải **401 `CITIZEN_LOGIN_REQUIRED`** (spec 12.3, câu hỏi mở 17.1 câu 7); hai case còn lại giữ 403 |
+| OWNER-002 | Cùng hồ sơ `hoan_thanh`. Chủ hồ sơ (token có SĐT = `reporter_phone`) gọi `feedback {resolved:true, rating:4, tags:['Xử lý nhanh']}` | 200; hồ sơ `dong`; `feedback` lưu đủ `rating`, `tags`. Chủ hồ sơ gọi `supplement` trên `can_bo_sung` → 200, hồ sơ `moi` | Test cũ `OWNER-002` dùng `X-Report-Key`; với hồ sơ có SĐT, quyền chủ chỉ qua token SĐT. `X-Report-Key` chỉ còn test cho hồ sơ ẩn danh cũ |
+
+### 19.3. "Tôi cũng gặp" một lần cho mỗi SĐT (D4)
+
+| ID | File | Tình huống | Kết quả mong đợi |
+|---|---|---|---|
+| FOLLOW-001 | `tests/api/citizen-follow.test.ts` | `POST /citizen/reports/:code/follow` không token | 401 `CITIZEN_LOGIN_REQUIRED`; `report_followers` và số cùng báo không đổi |
+| FOLLOW-002 | `citizen-follow.test.ts` | Cùng SĐT (có token) gọi `follow` hai lần liên tiếp, và một biến thể gọi đồng thời hai request | Lần 1: 200 `alreadyFollowed:false`, `followerCount` +1. Lần 2: 200 `alreadyFollowed:true`, `followerCount` **không đổi**; DB có đúng 1 dòng `(report_id, phone)` với nguồn `also_me`; `anonymous_follows` không đổi. Người gửi gọi `follow` hồ sơ của chính mình → 403 |
+| FOLLOW-003 | `tests/component/c06-follow.test.tsx` (CT) | C06 của hồ sơ mà SĐT đăng nhập = `reporterPhone` | **Không có** nút "Tôi cũng gặp vấn đề này". Với người khác đã đăng nhập: có nút; sau khi bấm nút đổi thành "Đã ghi nhận bạn cũng gặp vấn đề này"; bấm lần 2 (chế độ local) hiện "Bạn đã báo vấn đề này", số không tăng |
+
+### 19.4. Hiển thị SĐT (D7) – `tests/api/phone-privacy.test.ts`
+
+| ID | Tình huống | Kết quả mong đợi |
+|---|---|---|
+| PHONE-001 | Gọi mọi endpoint `/public/*` (config, reports, reports/:code cho cả 64 hồ sơ seed + 1 hồ sơ mới tạo, kpi, recent-results) | Không khớp regex `0\d{9}` và `0\d{3} \d{3} \d{3}`; không có khoá `reporterPhone`, `reporter_phone`, `followers`, `secretCode`, `ownerToken`; có `followerCount` |
+| PHONE-002 | Token cán bộ gọi `GET /officer/reports/:code` (hồ sơ có SĐT, hồ sơ ẩn danh cũ) và `GET /officer/reports` | Hồ sơ có SĐT: `reporterPhone` là SĐT **đầy đủ**; hồ sơ ẩn danh cũ: `null`; không có `secretCode`, hash, danh sách `followers`. Token admin gọi cùng endpoint → 403 |
+| PHONE-003 | Token TNV gọi `GET /volunteer/tasks` (nhiệm vụ của mình, nhiệm vụ mở, nhiệm vụ đã xong) | Không có SĐT ở bất kỳ phần tử nào (regex + khoá `reporterPhone`) |
+| PHONE-004 | `GET /volunteer/tasks/:code` trong 5 tình huống: (a) giao cho chính TNV, `cho_nhan`/`dang_lam`; (b) giao cho TNV khác; (c) nhiệm vụ mở chưa ai nhận; (d) nhiệm vụ của chính TNV nhưng `xong`; (e) nhiệm vụ mở sau khi chính TNV gọi `claim` | (a) có `reporterPhone` đầy đủ. (b), (c), (d) **không có** trường này và không khớp regex SĐT. (e) có `reporterPhone` (đã thành nhiệm vụ của TNV). Hồ sơ ẩn danh cũ: không có trường ở mọi tình huống. Mọi tình huống không có `secretCode`, `ownerToken`, followers |
+
+### 19.5. Không chọn sẵn loại sự cố (D8)
+
+| ID | File | Tình huống | Kết quả mong đợi |
+|---|---|---|---|
+| C04-CAT-001 | `tests/component/c04-category.test.tsx` (CT) | Mở C04 bước ① với bản nháp có ảnh (kể cả khi `aiSuggestion` đã có `category`) | Không CategoryTile nào có `aria-pressed="true"`; nút "Tiếp tục chọn vị trí" có `disabled` và có dòng chữ nhắc chọn loại; chọn một loại → nút bật; bấm "Dùng gợi ý" mới chọn loại được gợi ý (không tự chọn); `userEvent` chọn loại khác ghi đè lựa chọn trước |
+
+### 19.6. Test bổ sung cho AC mới của spec v3.0
+
+Các ID dưới đây ngoài danh sách yêu cầu ban đầu, thêm để mỗi AC mới có ít nhất một test (AGENTS.md: test trước code).
+
+| ID | Loại | AC | Tình huống | Kết quả mong đợi |
+|---|---|---|---|---|
+| C04-LOGIN-001 | CT | AC-C04-14 | Chưa đăng nhập, bản nháp đủ ảnh, loại, vị trí; bấm "Gửi phản ánh" ở bước ③ | Chuyển tới `/ho-so?login=1&redirect=` + `/bao-su-co/xac-nhan?step=3` (đã mã hoá); bản nháp (gồm `aiSuggestion`) còn nguyên; đăng nhập OTP `123456` xong quay lại bước ③; chưa tự gửi |
+| C06-FOLLOW-LOGIN-001 | CT | AC-C06-13 | Chưa đăng nhập bấm "Tôi cũng gặp" ở C06 | Chuyển `/ho-so?login=1&redirect=/phan-anh/:id`; chưa ghi nhận cho tới khi đăng nhập và bấm lại |
+| C06-RATING-LOGIN-001 | CT | AC-C06-14, AC-C06-8 | Hồ sơ `hoan_thanh`: (a) chưa đăng nhập; (b) đã đăng nhập, không phải chủ; (c) chủ hồ sơ | (a) lời mời đăng nhập thay hai nút, không có nút "Đã giải quyết"/"Chưa giải quyết"; (b) không có khu vực đánh giá; (c) có hai nút |
+| C06-NOTI-001 | CT | AC-C06-15 | C06 khi chưa đăng nhập / đã đăng nhập và là người nhận | Chưa đăng nhập: chỉ lời mời đăng nhập, không có danh sách. Đã là người nhận: dòng "Bạn đang nhận tin báo cho phản ánh này" + thông báo của riêng hồ sơ đó |
+| C05-LOGIN-001 | CT | AC-C05-1 | C05 `/cua-toi` chưa đăng nhập; sau đăng nhập | Chưa đăng nhập: lời mời + form SĐT/OTP + "Tra cứu bằng mã phản ánh", không có danh sách; `?redirect=` ngoại lai (ví dụ `//evil.com`) bị bỏ qua; đăng nhập xong thấy hồ sơ có `reporterPhone` = SĐT |
+| C09-001 | CT | AC-C09-1 → 3 | C09 chưa đăng nhập / đã đăng nhập | Chưa đăng nhập: "Đăng nhập để xem thông báo" + nút "Đăng nhập ngay" → `/ho-so?login=1&redirect=%2Fthong-bao`; đã đăng nhập: danh sách mới nhất trước, tab "Chưa đọc (n)", "Xem tin nhắn mẫu" có nhãn "Mô phỏng" |
+| NOTI-API-001 | API | 12.3 | `GET /citizen/me/notifications` không token | 401 `CITIZEN_LOGIN_REQUIRED` |
+| QR-001 | UT + CT | AC-C01-8 | `parseReportQrPayload` với `https://x/phan-anh/TB-0001?k=1234`, `TB-0007`, chuỗi rác, chuỗi rỗng; khung quét ở C01 | Hai chuỗi đầu → `{id, key?}` đúng và chuyển `/phan-anh/TB-xxxx` (giữ `?k=`); chuỗi rác/rỗng → `null` và hiện "Không nhận diện được mã phản ánh…"; không có camera → vẫn nhập mã được; đóng khung thì tắt camera |
+| A01-PHONE-001 | CT | AC-A01-10 | A01 với hồ sơ có SĐT và hồ sơ ẩn danh cũ | Có cột "SĐT" hiển thị SĐT đầy đủ; hồ sơ ẩn danh cũ ghi "Ẩn danh" |
+| A02-PHONE-001 | CT | AC-A02-11 | A02 với hồ sơ có SĐT / ẩn danh cũ | Có SĐT đầy đủ + nút "Gọi" có `href="tel:…"`; ẩn danh cũ: nhãn "Ẩn danh", không nút "Gọi" |
+| A02-AI-001 | CT | AC-A02-12 | A02 với hồ sơ có `aiSuggestion` / không có | Có: khối "Gợi ý của AI khi gửi" với loại, lý do, nhãn nguồn; không có: không hiện khối. (Trùng ý với AI-FE-006) |
+| V02-PHONE-001 | CT | AC-V02-6 | V02 theo 4 tình huống như PHONE-004 (a)–(d) | (a) SĐT đầy đủ + nút "Gọi"; (b), (c), (d) không có SĐT, không nút "Gọi" |
+| V02-STEPS-001 | CT | AC-V02-1 → 4 | V02 3 bước | Bước ① cần câu 1 (và mức độ khi "Có") mới sang được bước ②; bước ② cần ảnh/video; bước ③ ghi chú tùy chọn rồi "Gửi"; không có nút đóng hồ sơ |
+| V03-001 | CT | AC-V03-1 → 3 | `/tnv/ban-do` | Có marker nhiệm vụ của mình + nhiệm vụ mở, chú giải bằng chữ, thẻ marker không có SĐT hay tên người gửi |
+| AI-DRAFT-001 | CT | AC-C02-5, AC-C04-14 | Có `aiSuggestion` trong bản nháp rồi đăng nhập giữa chừng | `aiSuggestion` còn nguyên sau khi quay lại; `POST /citizen/reports` gửi kèm `aiSuggestion`; DB `reports.ai_suggestion` lưu đúng; chưa đăng nhập vẫn gọi được `POST /ai/suggest-category` |
+| ROLE-001 | CT | AC-ROLE-1 | Chế độ API | Không có `PortalSwitcherFab`, không có đường tới `/demo`; vào `/can-bo` khi chưa đăng nhập → `/dang-nhap?redirect=` |
+
+### 19.7. Bất biến dữ liệu không đổi sau FR-08
+
+Giữ nguyên `DV-001 → DV-016` và `DB-007 → DB-016`: 64 hồ sơ (18/15/21/10), 47 đã xử lý, 17 chưa hoàn tất, trung bình 3,2 ngày (sai số ≤ 0,005), đúng 6 hồ sơ `anonymous` trong đó 1 `subscribedLater`, `reporter_phone` rỗng ở cả 6, mọi hồ sơ có `secret_code_hash`. Hồ sơ tạo bởi AUTH-CIT-002 (từ `TB-0065`) không làm sai các kiểm tra này (`is_seed`).

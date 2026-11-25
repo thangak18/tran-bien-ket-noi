@@ -1,6 +1,6 @@
 # TASKS – Trấn Biên Kết Nối
 
-Nguồn: `spec.md` v1.2, `plan.md`, `ui-ux-guidelines.md`  
+Nguồn: `spec.md` v3.0 (25/11/2026, theo FR-08), `plan.md`, `ui-ux-guidelines.md`  
 Cột **Test** tham chiếu ID trong `tests.md`. Mỗi task: viết test trước → code → `npm run verify` → tick.
 
 Ký hiệu trạng thái: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong (ghi ngày)
@@ -73,7 +73,7 @@ Quy chuẩn từng component: `ui-ux-guidelines.md` mục 5.
 | [ ] | T-043 | C03 Vị trí (ảnh trên + sheet; GPS, ngoài phường, từ chối, nhập địa chỉ, chạm bản đồ, LocationRow) | T-034, T-035, T-041 | AC-C03 (trừ AC-C03-7) | CT-043 |
 | [ ] | T-044 | C04 Loại & xác nhận (ảnh trên + sheet, 4 CategoryTile, LocationRow → C03, mô tả) | T-037, T-041 | AC-C04-1, 2, 13 | CT-044 |
 | [ ] | T-045 | C04 Gửi có SĐT: OTP, màn thành công, mất mạng | T-036, T-021 | AC-C04-5, 6, 9 | CT-045 |
-| [ ] | T-045b | C04 Gửi ẩn danh: link, sheet cảnh báo, màn thành công ẩn danh, quota | T-039, T-045 | AC-C04-10 → 12 | CT-045b |
+| [ ] | T-045b | **[Đã bỏ theo FR-08]** C04 Gửi ẩn danh: link, sheet cảnh báo, màn thành công ẩn danh, quota | T-039, T-045 | ~~AC-C04-10 → 12~~ | ~~CT-045b~~ |
 | [ ] | T-047 | C05 Phản ánh của tôi (danh sách máy này + SĐT, tab trạng thái có số đếm, ReportCard, lưu link, đăng nhập/tra cứu, trống, thông báo) | T-031, T-037, T-038, T-039, T-021 | AC-C05 | CT-047 |
 | [ ] | T-048 | C06 Chi tiết (thứ tự khối, LatestUpdate, Timeline dọc, Trước/Sau, đánh giá, chưa giải quyết, gộp, bổ sung) | T-032, T-037, T-039b, T-021 | AC-C06-1, 3 → 8, 12 | CT-048 |
 | [ ] | T-048b | C06 quyền chủ hồ sơ qua link `?k=`, đăng ký/huỷ nhận tin, link sai, nút Lưu | T-048, T-039 | AC-C06-9 → 11 | CT-048b, E2E-07 |
@@ -152,7 +152,7 @@ T-001 → T-010 → T-011 → T-012 → T-019 → T-020 → T-021/T-022 → T-03
 ## Câu hỏi mở
 
 1. Hạn mặc định theo loại – chờ duyệt.
-2. Giới hạn gửi ẩn danh 5/thiết bị/ngày – chờ duyệt.
+2. ~~Giới hạn gửi ẩn danh 5/thiết bị/ngày~~ **Đã bỏ theo FR-08** (không còn gửi ẩn danh). Thay bằng câu về hạn mức gửi theo SĐT ở mục "Câu hỏi mở spec v3.0" bên dưới.
 3. Figma có bắt buộc không.
 4. Hạn nộp bài → quy đổi phase sang ngày cụ thể.
 5. Ngưỡng trùng 50 m / 14 ngày – chỉ cần chốt khi mở B2.
@@ -191,7 +191,7 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 | Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test | Ước lượng |
 |:---:|---|---|---|---|---|:---:|
 | [x] | G2-05a | Middleware xác thực nhân viên qua Supabase Auth JWT, tra `staff_profiles` mỗi request, `is_active=false` → 403. Kiểm soát ma trận quyền 13.5 | G2-04f | 13.1, 13.2, 13.5 | AUTHZ-001 → 015 | 2.5h |
-| [x] | G2-05b | Xác thực người dân: OTP mock (123456, 5 phút, 5 lần sai), JWT 30 ngày qua jose HS256 | G2-05a | 13.3, 10.3 | AUTH-CIT-001 → 004 | 2h |
+| [x] | G2-05b | Xác thực người dân: OTP mock (123456, 5 phút, 5 lần sai), JWT 30 ngày qua jose HS256 | G2-05a | 13.3, 10.3 | API-CIT-001 → 004 *(đổi từ AUTH-CIT-001 → 004, vì AUTH-CIT-001, 002 nay là test FR-08)* | 2h |
 | [x] | G2-05c | Quyền chủ sở hữu hồ sơ ẩn danh: secretCode 4 số + ownerToken 256-bit hash kèm pepper, claim/lookup, chống dò brute force và quota | G2-05b | 13.4, AC-AUTH-4,5,7,8 | AUTH-ANON-001 → 006, LEAK-002 | 2.5h |
 
 ### Q4 – Lưu trữ ảnh (G2-06)
@@ -244,6 +244,34 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 
 ---
 
+### Q9 – Spec v3.0 – FR-08 (25/11/2026)
+
+Nguồn: `spec.md` v3.0 (đặc biệt 3.4a, 3.4b, 7.7, AC-C04-14/15, AC-C06-13/14/15, AC-C09, AC-A01-10, AC-A02-11/12, AC-V02-6, AC-V03, AC-API-10/11/12, AC-AUTH-9/10), test ở `tests.md` mục 19. Quy trình mỗi task theo AGENTS.md: viết test trước và xác nhận fail → code tối thiểu → `npm run verify` → tick. **Không đổi dữ liệu mẫu:** 64 hồ sơ, 47/17, 3,2 ngày, 6 hồ sơ ẩn danh cũ (1 `subscribedLater`) giữ nguyên.
+
+| Trạng thái | ID | Task | Phụ thuộc | Mục Spec | ID Test |
+|:---:|---|---|---|---|---|
+| [x] (25/11) | F8-00 | Viết lại `spec.md` v3.0; thêm `tests.md` mục 19; thêm nhóm task này; cập nhật `plan.md` | – | toàn bộ | – |
+| **Server** | | | | | |
+| [ ] | F8-01 | `POST /citizen/reports` bắt buộc token người dân: thiếu token → 401 `CITIZEN_LOGIN_REQUIRED` ("Vui lòng đăng nhập số điện thoại để gửi phản ánh"); bỏ nhánh `anonymous`/`X-Device-Id`, `checkAnonQuota`, `recordAnonSubmission`; `reporter_phone` lấy từ token, `anonymous=false`; không trả `secretCode`/`ownerToken` cho hồ sơ mới; giữ `secret_code_hash` (DV-014) | F8-00 | 12.3, AC-API-10, 13.4 | AUTH-CIT-001, AUTH-CIT-002 |
+| [ ] | F8-02 | Quyền chủ hồ sơ theo `reporter_phone` trong `server/services/ownership.ts`: `feedback`/`supplement` — không token 401, không phải chủ (kể cả người "Tôi cũng gặp") 403; giữ đường `ownerToken`/`subscribe_later` chỉ cho hồ sơ `anonymous=true`; `lookup`/`claim` không cấp `ownerToken` cho hồ sơ có SĐT. Cập nhật `tests/api/citizen-owner.test.ts` (OWNER-001: case không token → 401; OWNER-002: chủ bằng token SĐT) | F8-01 | 3.4a, 12.3, 13.3, AC-AUTH-9 | OWNER-001, OWNER-002, API-CIT-007, API-CIT-008 |
+| [ ] | F8-03 | `POST /citizen/reports/:code/follow`: token bắt buộc (401), mỗi SĐT một lần (`alreadyFollowed: true`, số không đổi, an toàn khi gọi đồng thời nhờ khoá `(report_id, phone)`), người gửi gọi → 403, không tăng `anonymous_follows`; `follow` không thêm quyền chủ hồ sơ | F8-01 | 3.4a, 12.3, AC-API-11 | FOLLOW-001, FOLLOW-002 |
+| [ ] | F8-04 | Trả SĐT đúng phạm vi: `/officer/reports`, `/officer/reports/:code` trả `reporterPhone` đầy đủ (ẩn danh cũ `null`); `GET /volunteer/tasks` không có SĐT; `GET /volunteer/tasks/:code` có `reporterPhone` chỉ khi `assignee` là TNV đang gọi và `status ≠ xong`; `/public/*`, `/admin/*` không có. Cập nhật test cũ API-OFF-001, API-VOL-002, VOL-000…001, LEAK-001 | F8-01 | 7.7, 12.1, 12.4, 12.5, AC-API-12, AC-AUTH-6, AC-AUTH-10 | PHONE-001, PHONE-002, PHONE-003, PHONE-004 |
+| [ ] | F8-05 | `/citizen/me/notifications*` thiếu token → 401 `CITIZEN_LOGIN_REQUIRED` (đồng bộ mã lỗi) | F8-01 | 12.3, AC-C09-2 | NOTI-API-001 |
+| [ ] | F8-06 | Cập nhật/loại các test code về gửi ẩn danh (UT-016b mục 6, UT-021 mục 3 và 4, CT-045b, AUTHZ-013, AUTHZ-014, phần ẩn danh của E2E-07): chuyển `skip` có ghi chú "Đã bỏ theo FR-08", không xoá dòng ở `tests.md` | F8-01 | 3.4b | – |
+| **Frontend** | | | | | |
+| [ ] | F8-10 | C04 bước ①: không chọn sẵn loại (kể cả khi AI đã gợi ý); nút "Tiếp tục chọn vị trí" tắt tới khi chọn, kèm dòng chữ nhắc; "Dùng gợi ý" là cách duy nhất AI ảnh hưởng lựa chọn | F8-00 | AC-C04-1, AC-C04-15 | C04-CAT-001, CT-044 |
+| [ ] | F8-11 | C04 bước ③: chưa đăng nhập bấm "Gửi phản ánh" → `/ho-so?login=1&redirect=/bao-su-co/xac-nhan?step=3`, giữ nguyên bản nháp (gồm `aiSuggestion`), quay lại đúng bước ③; gỡ link "Gửi không để lại số điện thoại", sheet cảnh báo, màn thành công ẩn danh, quota ẩn danh; màn thành công không còn mã bí mật/QR `?k=` | F8-01 | AC-C04-5, 6, 13, 14, AC-C02-5 | C04-LOGIN-001, AI-DRAFT-001, CT-045 |
+| [ ] | F8-12 | C06: nút "Tôi cũng gặp" (chưa đăng nhập → `/ho-so?login=1&redirect=/phan-anh/:id`; lần 2 báo "Bạn đã báo vấn đề này"; ẩn với người gửi); khu vực đánh giá hiện lời mời đăng nhập khi chưa đăng nhập; người không phải chủ không thấy đánh giá/mở lại/bổ sung; khối "Tin báo của phản ánh này"; nút "Chia sẻ" + QR | F8-03 | AC-C06-5, 7, 8, 11, 13, 14, 15 | FOLLOW-003, C06-FOLLOW-LOGIN-001, C06-RATING-LOGIN-001, C06-NOTI-001 |
+| [ ] | F8-13 | C01, C05, C09 theo SĐT đăng nhập: "Phản ánh của bạn" ẩn khi chưa đăng nhập; C05 chưa đăng nhập hiện lời mời + tra cứu mã (mở C06 công khai); chuông và C09 chưa đăng nhập hiện lời mời đăng nhập | F8-05 | AC-C01-5, 6, AC-C05-1, 5, 6, 7, AC-C09-1 → 3 | C05-LOGIN-001, C09-001, CT-040, CT-047 |
+| [ ] | F8-14 | C01: nút quét QR → `/phan-anh/:id` (camera, chọn ảnh QR, nhập mã; thông báo lỗi bằng lời) | F8-00 | AC-C01-8 | QR-001 |
+| [ ] | F8-15 | A01 thêm cột "SĐT" đầy đủ; A02 hiện SĐT đầy đủ + nút "Gọi" (`tel:`) và khối gợi ý AI; bỏ nút "Chuyển cơ quan khác" ở A02 | F8-04 | AC-A01-3, 10, AC-A02-1, 3, 11, 12 | A01-PHONE-001, A02-PHONE-001, A02-AI-001, CT-050, CT-051 |
+| [ ] | F8-16 | V02 dạng 3 bước (Thực tế → Ảnh/Video → Ghi chú & Gửi); SĐT + nút "Gọi" chỉ khi nhiệm vụ đang giao cho chính TNV và chưa xong; V01, V03 không có SĐT; V03 bản đồ nhiệm vụ | F8-04 | AC-V01-1, AC-V02-1 → 6, AC-V03-1 → 3 | V02-PHONE-001, V02-STEPS-001, V03-001, CT-060, CT-061 |
+| [ ] | F8-17 | `LocalDataSource` và `ApiDataSource` áp dụng cùng quy tắc: đăng nhập trước khi gửi, "Tôi cũng gặp" một lần/SĐT, quyền chủ theo SĐT, phạm vi SĐT | F8-11, F8-12 | 16.1, AC-DATA-6 | AC-DATA-1 (E2E-01, 03, 05, 07 chạy cả hai chế độ) |
+| [ ] | F8-18 | Chế độ API: bỏ `PortalSwitcherFab` và đường vào `/demo`; vào `/can-bo`, `/tnv`, `/quan-tri` chưa đăng nhập → `/dang-nhap?redirect=` | F8-00 | AC-ROLE-1 | ROLE-001 |
+| [ ] | F8-19 | Chạy lại `npm run mock:verify` và `npm run db:verify` xác nhận bất biến dữ liệu (64/47/17/3,2 ngày, 6 ẩn danh) không đổi; `npm run verify` pass | F8-01 → F8-18 | 5.1, 16.3 | DV-001 → DV-016, DB-007 → DB-016 |
+
+> Ghi chú phụ thuộc ngoài nhóm: phần AI của F8-11 dùng chung với G2-12b → G2-12d (cột `reports.ai_suggestion`, `suggestCategory`); nếu G2-12 chưa xong thì F8-11 chỉ giữ `aiSuggestion` trong bản nháp ở chế độ local.
+
 ## Giả định tự quyết đêm 25/11
 
 | Giả định | Vì sao chọn | Cách đổi lại nếu chủ dự án yêu cầu khác |
@@ -280,3 +308,17 @@ Bổ sung 25/11 (chiều):
 2. Lỗi kiểm tra đầu vào: giữ 400 (hiện tại) hay đổi sang 422 như AC-API-4?
 3. Máy dev không tải được Chromium/WebKit của Playwright; có chấp nhận dùng Google Chrome cài sẵn (`channel: chrome`) cho e2e không?
 
+## Câu hỏi mở spec v3.0 (FR-08)
+
+Chi tiết và cách đã xử lý tạm: `spec.md` mục 17.1 (17 câu). Cần chủ dự án trả lời trước khi mở cho người dùng thật:
+
+1. Hạn mức gửi hồ sơ theo SĐT/ngày: server đang cài 10 hồ sơ/SĐT/24 giờ, spec chưa chốt.
+2. Có ghi nhật ký khi cán bộ/TNV xem SĐT không.
+3. "Tôi cũng gặp" hiện ở trạng thái nào, có cho bỏ không, API trả 403 khi người gửi tự bấm có đúng ý không.
+4. Thiếu token ở `feedback`/`supplement`: 401 (đang ghi trong spec) hay 403 (test `OWNER-001` hiện tại).
+5. Video ở V02: định dạng, kích thước tối đa, nơi lưu.
+6. Cách đánh số "Bước n/3" giữa C02 và wizard C04; quan hệ giữa `/bao-su-co/vi-tri` và bước ② của C04.
+7. Giữ hay xoá API `…/transfer` và trạng thái `chuyen_co_quan` sau khi A02 bỏ nút.
+8. UI đã có phát hiện trùng/tham gia hồ sơ trùng (B2) ở C04 trong khi spec còn đánh dấu hoãn.
+9. Ảnh vẫn lưu data URL trong DB; khi nào chuyển sang Supabase Storage.
+10. Màn đã có trong UI nhưng chưa có AC: `WelcomeScreen`, `/can-bo/thong-ke`, `/can-bo/ho-so`, `/tnv/thong-ke`, `/tnv/ho-so`, `/tim-kiem`.
