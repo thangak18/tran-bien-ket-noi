@@ -417,3 +417,6 @@ Xem bảng rủi ro ở `spec.md` mục 17. Bổ sung kỹ thuật:
 - Script dùng chung `app/scripts/lib` (env bắt buộc, Supabase Auth admin) thay cho các URL/pepper mặc định.
 - E2E chế độ API chạy bằng `npm run test:e2e:api`; dùng Google Chrome cài sẵn (`channel: chrome`, đổi bằng `PW_CHANNEL`).
 
+
+### Ghi chú thư viện thêm (25/11/2026)
+- `esbuild` 0.24.2 (devDependency, cùng bản Vite đang dùng sẵn): `scripts/build-api.mjs` gói server Hono thành `api/_lib/server.mjs` trong `npm run build`. Lý do: Vercel biên dịch từng file `.ts` riêng và giữ import không đuôi; package `"type": "module"` nên Node báo `ERR_MODULE_NOT_FOUND` và mọi API production trả 500.

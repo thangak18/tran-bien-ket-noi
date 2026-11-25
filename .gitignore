@@ -15,3 +15,6 @@ supabase/.temp/
 *.tmp.png
 *.temp.png
 temp-test-*
+
+# Bundle server cho Vercel, sinh bởi scripts/build-api.mjs
+app/api/_lib/
