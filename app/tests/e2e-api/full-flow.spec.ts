@@ -136,7 +136,7 @@ async function publicReport(page: Page, code: string): Promise<Record<string, un
   return (await res.json()) as Record<string, unknown>;
 }
 
-test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)', () => {
+test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local hoặc cloud)', () => {
   const runId = Date.now().toString().slice(-6);
   const phoneTitle = `E2E rác tồn đọng góc đường ${runId}`;
   let phoneReport: { code: string; secretCode: string; ownerToken?: string };

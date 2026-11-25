@@ -11,6 +11,7 @@
     "mock:verify": "vite-node scripts/verify-mock.ts",
     "seed": "tsx scripts/seed.ts",
     "db:verify": "tsx scripts/db-verify.ts",
+    "db:cloud-check": "tsx scripts/cloud-check.ts",
     "staff:list": "tsx scripts/staff.ts list",
     "staff:create": "tsx scripts/staff.ts create",
     "staff:disable": "tsx scripts/staff.ts disable",

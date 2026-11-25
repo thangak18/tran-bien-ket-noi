@@ -94,6 +94,7 @@ Mật khẩu DB có ký tự đặc biệt thì mã hoá URL (ví dụ `#` → `
 Các bước sau khi điền xong (chạy trong `app/`):
 ```bash
 npx supabase db push --db-url "$(grep '^DATABASE_URL_DIRECT=' .env | cut -d= -f2-)" --workdir ..   # áp dụng supabase/migrations (PostGIS)
+npm run db:cloud-check   # chỉ đọc: kết nối 2 pooler, PostGIS, danh sách bảng (đọc riêng app/.env)
 npm run seed          # tạo 4 tài khoản nhân viên mẫu trong Supabase Auth và nạp 64 hồ sơ
 npm run db:verify     # 17 kiểm tra, có PostGIS thật
 npm run dev           # giao diện chế độ API (VITE_DATA_SOURCE=api)
