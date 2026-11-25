@@ -16,7 +16,7 @@ describe('CT-039 & CT-039b – TrackingLinkCard, SubscribeCard và RatingSheet',
         <TrackingLinkCard
           reportId="TB-0065"
           secretCode="4821"
-          origin="http://localhost"
+          origin="https://tranbien.vn"
           showSecretDefault={true}
         />
       );
@@ -36,14 +36,16 @@ describe('CT-039 & CT-039b – TrackingLinkCard, SubscribeCard và RatingSheet',
     it('nút "Lưu link" gọi shareOrCopy và hiển thị thông báo "Đã sao chép link"', async () => {
       const shareSpy = vi.spyOn(shareLib, 'shareOrCopy').mockResolvedValue('copied');
 
-      render(<TrackingLinkCard reportId="TB-0065" secretCode="4821" origin="http://localhost" />);
+      render(
+        <TrackingLinkCard reportId="TB-0065" secretCode="4821" origin="https://tranbien.vn" />
+      );
 
       const saveBtn = screen.getByRole('button', { name: /Lưu link/i });
       fireEvent.click(saveBtn);
 
       expect(shareSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: 'http://localhost/phan-anh/TB-0065?k=4821',
+          url: 'https://tranbien.vn/phan-anh/TB-0065?k=4821',
         })
       );
 
@@ -57,7 +59,7 @@ describe('CT-039 & CT-039b – TrackingLinkCard, SubscribeCard và RatingSheet',
         <TrackingLinkCard
           reportId="TB-0065"
           secretCode="4821"
-          origin="http://localhost"
+          origin="https://tranbien.vn"
           showSecretDefault={false}
         />
       );

@@ -7,43 +7,28 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          50: '#EFF4FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
-          DEFAULT: '#2563EB', // Blue-600
-          hover: '#1D4ED8', // Blue-700
-          dark: '#1D4ED8',
-          light: '#60A5FA',
+          DEFAULT: '#0084E8',
+          hover: '#006EC4',
         },
-        background: '#F5F7FB',
-        surface: '#FFFFFF',
+        background: 'var(--color-bg)',
+        surface: 'var(--color-surface)',
         text: {
-          main: '#111827', // Gray-900
-          sub: '#6B7280', // Gray-500
+          main: 'var(--color-text)',
+          sub: 'var(--color-text-muted)',
         },
         status: {
-          gray: '#6B7280',
-          blue: '#2563EB',
-          orange: '#EA580C',
-          green: '#16A34A',
-          yellow: '#D97706',
-          purple: '#7C3AED',
-          red: '#DC2626',
+          gray: '#64748B', // slate-500
+          blue: '#2563EB', // blue-600
+          orange: '#EA580C', // orange-600
+          green: '#15803D', // green-700
+          yellow: '#D97706', // amber-600
+          purple: '#7C3AED', // violet-600
+          red: '#B91C1C', // red-700 (chỉ CB)
         },
       },
       borderRadius: {
         card: '12px',
         btn: '10px',
-      },
-      boxShadow: {
-        soft: '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
       },
       fontFamily: {
         sans: ['"Be Vietnam Pro"', 'sans-serif'],

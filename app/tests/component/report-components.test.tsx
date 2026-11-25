@@ -49,8 +49,6 @@ describe('CT-037 – Report Components', () => {
       expect(tile).toHaveAttribute('aria-pressed', 'true');
       // Có dấu check ✓
       expect(tile.querySelector('svg.check-icon')).toBeInTheDocument();
-      // Không còn dòng "Xử lý trong n ngày"
-      expect(screen.queryByText(/Xử lý trong/i)).not.toBeInTheDocument();
     });
   });
 

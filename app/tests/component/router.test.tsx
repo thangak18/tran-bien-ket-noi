@@ -12,13 +12,12 @@ describe('T-004 – Router với 14 route spec 8 (E2E-00)', () => {
     { path: '/cua-toi', title: 'Phản ánh của tôi' },
     { path: '/phan-anh/TB-0001', title: 'Chi tiết phản ánh' },
     { path: '/quanh-day', title: 'Bản đồ quanh tôi' },
-    { path: '/minh-bach', title: 'Bảng minh bạch phường' },
+    { path: '/minh-bach', title: 'Bảng thống kê phường' },
     { path: '/can-bo', title: 'Hộp tiếp nhận cán bộ' },
     { path: '/can-bo/TB-0001', title: 'Chi tiết & Giao xử lý' },
     { path: '/can-bo/TB-0001/ket-qua', title: 'Cập nhật kết quả' },
-    { path: '/tnv', title: 'Nhiệm vụ của tôi' },
+    { path: '/tnv', title: 'Nhiệm vụ tình nguyện viên' },
     { path: '/tnv/NV-001', title: 'Xác minh tại chỗ' },
-    { path: '/demo', title: 'Demo Hub' },
   ];
 
   routes.forEach(({ path, title }) => {

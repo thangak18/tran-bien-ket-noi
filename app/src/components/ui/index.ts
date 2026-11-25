@@ -6,4 +6,5 @@ export * from './Toast';
 export * from './Tabs';
 export * from './Chip';
 export * from './TextField';
+export * from './SelectField';
 export * from './EmptyState';

@@ -134,7 +134,7 @@ interface AppStoreContextValue {
   dispatch: Dispatch<AppAction>;
 }
 
-export const AppStoreContext = createContext<AppStoreContextValue | null>(null);
+const AppStoreContext = createContext<AppStoreContextValue | null>(null);
 
 export function AppStoreProvider({
   children,
@@ -147,16 +147,29 @@ export function AppStoreProvider({
 }) {
   const [state, dispatch] = useReducer(
     appReducer,
-    initialState ?? loadPersistedState(frame, DEFAULT_STORAGE_KEY)
+    initialState ??
+      (() => {
+        const isTestEnv =
+          typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom');
+        if (isTestEnv) {
+          return loadPersistedState(frame, DEFAULT_STORAGE_KEY);
+        }
+        return loadPersistedState(frame, 'tbkn:live:v1', true);
+      })()
   );
 
-  useEffect(() => {
-    return setupStorageSync(dispatch, frame, DEFAULT_STORAGE_KEY);
-  }, [frame]);
+  const activeStorageKey =
+    typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom')
+      ? DEFAULT_STORAGE_KEY
+      : 'tbkn:live:v1';
 
   useEffect(() => {
-    saveStateDebounced(state, frame, 100, DEFAULT_STORAGE_KEY);
-  }, [state, frame]);
+    return setupStorageSync(dispatch, frame, activeStorageKey);
+  }, [frame, activeStorageKey]);
+
+  useEffect(() => {
+    saveStateDebounced(state, frame, 100, activeStorageKey);
+  }, [state, frame, activeStorageKey]);
 
   return (
     <AppStoreContext.Provider value={{ state, dispatch }}>{children}</AppStoreContext.Provider>

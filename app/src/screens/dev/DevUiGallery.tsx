@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useContext } from 'react';
+import React, { useState } from 'react';
 import mockData from '@/data/mock.json';
 import { DEMO_NOW, STATUS_CONFIGS, CATEGORY_CONFIGS } from '@/domain/constants';
-import { Category, Status, Report } from '@/domain/types';
+import { Status, Report } from '@/domain/types';
 import { computeDelayDays } from '@/domain/latestUpdate';
-import { AppStoreContext } from '@/store/AppStore';
 import { StatusChip } from '@/components/common/StatusChip';
 import { DelayChip } from '@/components/common/DelayChip';
 import { ProgressBar } from '@/components/common/ProgressBar';
@@ -28,41 +27,22 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Inbox } from 'lucide-react';
 
 export const DevUiGallery: React.FC = () => {
-  const storeContext = useContext(AppStoreContext);
-  const demoNow = storeContext?.state?.settings?.demoNow || DEMO_NOW;
-  const reports: Report[] = storeContext?.state?.reports?.length
-    ? storeContext.state.reports
-    : (mockData.reports as Report[]);
+  const reports = mockData.reports as Report[];
+  const demoNow = DEMO_NOW;
 
-  // Lấy các hồ sơ đại diện theo thuộc tính (không hard-code ID)
+  // Lấy các hồ sơ đại diện theo yêu cầu
   const reportMoi = reports.find((r) => r.status === 'moi')!;
   const reportDaTiepNhan = reports.find((r) => r.status === 'da_tiep_nhan')!;
   const reportQuaHan = reports.find(
     (r) => r.status === 'da_giao' && new Date(r.dueAt || '') < new Date(demoNow)
   )!;
-  const reportDangXuLy =
-    reports.find((r) => r.status === 'da_giao' && !r.completedAt && r.id !== reportQuaHan?.id) ||
-    reportQuaHan;
   const reportMoLai = reports.find((r) => r.status === 'mo_lai')!;
   const reportDong = reports.find((r) => r.status === 'dong')!;
   const reportCanBoSung = reports.find((r) => r.status === 'can_bo_sung')!;
+  const reportTB0009 = reports.find((r) => r.id === 'TB-0009')!;
 
-  // 10 markers cho MapView đảm bảo đủ cả 4 loại sự cố
-  const mapReports = useMemo(() => {
-    const selected: Report[] = [];
-    const categories: Category[] = ['den_duong', 'ngap_nuoc', 'rac_thai', 'mat_duong'];
-    for (const cat of categories) {
-      const found = reports.find((r) => r.category === cat && !selected.some((s) => s.id === r.id));
-      if (found) selected.push(found);
-    }
-    for (const r of reports) {
-      if (selected.length >= 10) break;
-      if (!selected.some((s) => s.id === r.id)) {
-        selected.push(r);
-      }
-    }
-    return selected;
-  }, [reports]);
+  // 10 markers cho MapView
+  const mapReports = reports.slice(0, 10);
 
   // State tương tác demo
   const [selectedCategory, setSelectedCategory] = useState<string>('den_duong');
@@ -84,14 +64,14 @@ export const DevUiGallery: React.FC = () => {
                 DEV ONLY
               </span>
             </div>
-            <p className="text-xs text-gray-500">Mốc thời gian: 24/11/2026 09:00:00 (+07:00)</p>
+            <p className="text-xs text-gray-500">Mốc thời gian: 24/11/2026 12:00:00 (+07:00)</p>
           </div>
           <NotificationBell
             notifications={[
               {
                 id: 'N-DEV-1',
                 phone: '0909000068',
-                reportId: reportDaTiepNhan.id,
+                reportId: 'TB-0010',
                 message: 'Phường đã tiếp nhận phản ánh về đèn đường.',
                 createdAt: '2026-11-24T10:30:00+07:00',
                 read: false,
@@ -100,7 +80,7 @@ export const DevUiGallery: React.FC = () => {
               {
                 id: 'N-DEV-2',
                 phone: '0909000068',
-                reportId: reportDangXuLy.id,
+                reportId: 'TB-0009',
                 message: 'Sự cố mặt đường đã được chuyển giao cho Đội duy tu đường.',
                 createdAt: '2026-11-22T08:15:00+07:00',
                 read: true,
@@ -257,11 +237,7 @@ export const DevUiGallery: React.FC = () => {
               <div className="text-xs font-semibold text-gray-700 mb-2">
                 Hồ sơ đang xử lý (chưa có ảnh sau):
               </div>
-              <BeforeAfter
-                beforePhotos={reportDangXuLy.photos}
-                beforeTime={reportDangXuLy.createdAt}
-                category={reportDangXuLy.category}
-              />
+              <BeforeAfter beforePhotos={reportTB0009.photos} beforeTime={reportTB0009.createdAt} />
             </div>
           </div>
         </section>
@@ -277,21 +253,21 @@ export const DevUiGallery: React.FC = () => {
           <div className="space-y-3">
             <div>
               <div className="text-xs font-semibold text-gray-700 mb-1">
-                Thẻ phản ánh đang xử lý ({reportDangXuLy.id}):
+                Thẻ phản ánh TB-0009 (Mặt đường, quá hạn):
               </div>
-              <ReportCard report={reportDangXuLy} now={demoNow} />
+              <ReportCard report={reportTB0009} now={demoNow} />
             </div>
 
             <div>
               <div className="text-xs font-semibold text-gray-700 mb-1">
-                Thẻ phản ánh đã hoàn thành ({reportDong.id}):
+                Thẻ phản ánh TB-0001 (Đã hoàn thành):
               </div>
               <ReportCard report={reportDong} now={demoNow} />
             </div>
 
             <div>
               <div className="text-xs font-semibold text-gray-700 mb-1">
-                Thẻ phản ánh mới tiếp nhận ({reportMoi.id}):
+                Thẻ phản ánh TB-0010 (Mới tiếp nhận):
               </div>
               <ReportCard report={reportMoi} now={demoNow} />
             </div>
@@ -307,7 +283,7 @@ export const DevUiGallery: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <LatestUpdate report={reportDangXuLy} now={demoNow} />
+            <LatestUpdate report={reportTB0009} now={demoNow} />
             <LatestUpdate report={reportMoLai} now={demoNow} />
             <LatestUpdate report={reportCanBoSung} now={demoNow} />
           </div>
@@ -415,14 +391,14 @@ export const DevUiGallery: React.FC = () => {
 
           <div className="space-y-4">
             <TrackingLinkCard
-              reportId={reportDong.id}
-              secretCode={reportDong.secretCode || '4821'}
-              origin={typeof window !== 'undefined' ? window.location.origin : 'http://localhost'}
+              reportId="TB-0065"
+              secretCode="4821"
+              origin="https://tranbien.vn"
               showSecretDefault={true}
             />
 
             <SubscribeCard
-              reportId={reportDong.id}
+              reportId="TB-0065"
               currentPhone={subscribedPhone}
               onSubscribe={(p) => setSubscribedPhone(p)}
               onUnsubscribe={() => setSubscribedPhone(undefined)}
@@ -447,7 +423,7 @@ export const DevUiGallery: React.FC = () => {
             <SmsPreview
               phone="0909 *** 068"
               sender="UBND P. Tran Bien"
-              message={`UBND P. Tran Bien: Phan anh ${reportDaTiepNhan.id} ve den duong da duoc ${reportDaTiepNhan.department || 'Phong KT-HT&DT'} tiep nhan. Theo doi tai: ${typeof window !== 'undefined' ? window.location.origin : 'http://localhost'}/phan-anh/${reportDaTiepNhan.id}?k=1234`}
+              message="UBND P. Tran Bien: Phan anh TB-0010 ve den duong da duoc Phong KT-HT&DT tiep nhan. Theo doi tai: https://tranbien.vn/phan-anh/TB-0010?k=1234"
               time="10:30 Hôm nay"
             />
           </div>

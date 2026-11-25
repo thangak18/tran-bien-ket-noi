@@ -65,6 +65,7 @@ export interface Report {
   lng: number;
   address: string;
   locationNote?: string;
+  title?: string;
   description?: string;
   createdAt: string; // ISO
   status: Status;
@@ -100,6 +101,7 @@ export interface PublicReport {
   lng: number;
   address: string;
   locationNote?: string;
+  title?: string;
   description?: string;
   createdAt: string;
   status: Status;
@@ -150,11 +152,14 @@ export interface Notification {
   channel: 'app' | 'sms_mo_phong';
 }
 
+export type FontScale = 'small' | 'normal' | 'large' | 'xlarge';
+
 /**
  * Cài đặt ứng dụng theo thiết bị (spec 4.4)
  */
 export interface Settings {
   seniorMode: boolean;
+  fontScale?: FontScale;
   phone?: string;
   demoNow: string; // ISO
   deviceReports: { id: string; secretCode: string }[];
@@ -171,5 +176,6 @@ export interface ReportDraft {
   address?: string;
   locationNote?: string;
   category?: Category;
+  title?: string;
   description?: string;
 }

@@ -1,3 +1,18 @@
+### FR-08 (Bổ sung và fix lỗi luồng logic bị thiếu sót)
+- Cư dân có thể chọn đăng nhập app hoặc không
+- Khi gửi phản ánh họ phải bắt buộc có số điện thoại 
+  + Không có số điện thoại, Cán bộ/TTV không biết hướng liên lạc khi vấn đề không tìm thấy và cần người gửi nội dung gửi bổ sung tài liệu
+  + Lưu trữ hồ sơ, để họ kiểm tra lại (qua phương thức lịch sử của account họ hoặc họ tự nhớ mã để tìm).
+  + Nếu họ không đăng nhập -> Chức năng đánh giá mức độ hài lòng (chỉ hiển thị cho người phản ứng và cần họ đăng nhập)
+- Thêm luồng chặn tôi cũng gặp vấn đề này, hiện trạng 1 người có thể nhấn nhiều lần, chặn chỉ 1 người nhấn 1 lần.
+- Nhận tin báo (chỉ hiển thị cho giao diện đã đăng nhập [yêu cầu làm thêm phần thông báo ở trang hồ sơ])
+- Thêm phần quét QR để nhận diện QR phản ánh và chuyển tới nhanh
+- Loại bị đi chức năng ẩn danh
+  + Số điện thoại chỉ hiển thị cho cán bộ/TTV. Bên bài đăng không có chứa SĐT
+  + Tránh mơ hồ liên hệ khi gặp vấn đề
+  + Bổ sung cột SĐT cho bên Cán Bộ/ TTV liên hệ nếu có vấn đề
+
+
 # PROJECT PROPOSAL
 ## TRẤN BIÊN KẾT NỐI
 **Một phản ánh – Một hành trình minh bạch**

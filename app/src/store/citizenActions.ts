@@ -12,6 +12,7 @@ export interface SubmitReportPayload {
   lng: number;
   address: string;
   locationNote?: string;
+  title?: string;
   description?: string;
   phone?: string;
   anonymous?: boolean;
@@ -72,6 +73,7 @@ export function submitReport(
     lng: payload.lng,
     address: payload.address,
     locationNote: payload.locationNote,
+    title: payload.title,
     description: payload.description,
     createdAt: now,
     status: 'moi',

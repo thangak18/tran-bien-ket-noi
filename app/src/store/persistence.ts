@@ -100,17 +100,27 @@ export function saveStateDebounced(
  */
 export function loadPersistedState(
   frame: string = getFrameId(),
-  storageKey: string = DEFAULT_STORAGE_KEY
+  storageKey: string = DEFAULT_STORAGE_KEY,
+  liveCleanDefault: boolean = false
 ): AppState {
   const initial = getInitialState();
+  const baseState: AppState = liveCleanDefault
+    ? {
+        ...initial,
+        reports: [],
+        volunteerTasks: [],
+        notifications: [],
+      }
+    : initial;
+
   if (typeof window === 'undefined' || !window.localStorage) {
-    return initial;
+    return baseState;
   }
 
-  let reports = initial.reports;
-  let volunteerTasks = initial.volunteerTasks;
-  let notifications = initial.notifications;
-  let draft = initial.draft;
+  let reports = baseState.reports;
+  let volunteerTasks = baseState.volunteerTasks;
+  let notifications = baseState.notifications;
+  let draft = baseState.draft;
 
   try {
     const rawShared = localStorage.getItem(storageKey);
@@ -118,13 +128,13 @@ export function loadPersistedState(
       const parsedShared = JSON.parse(rawShared);
       if (parsedShared && Array.isArray(parsedShared.reports)) {
         reports = parsedShared.reports;
-        volunteerTasks = parsedShared.volunteerTasks ?? initial.volunteerTasks;
+        volunteerTasks = parsedShared.volunteerTasks ?? baseState.volunteerTasks;
         notifications = parsedShared.notifications ?? [];
-        draft = parsedShared.draft ?? initial.draft;
+        draft = parsedShared.draft ?? baseState.draft;
       }
     }
   } catch {
-    // Nếu JSON hỏng, giữ nguyên mock ban đầu
+    // Nếu JSON hỏng, giữ nguyên baseState
   }
 
   let settings: Settings = initial.settings;

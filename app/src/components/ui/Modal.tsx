@@ -50,23 +50,27 @@ export const Modal: React.FC<ModalProps> = ({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        className={`relative z-10 w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${className}`}
+        className={`relative z-10 w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${className}`}
       >
         <div className="flex items-center justify-between pb-3">
-          <h3 className="font-semibold text-gray-900 text-[var(--fs-title)]">{title}</h3>
+          <h3 className="font-semibold text-[var(--color-text)] text-[var(--fs-title)]">{title}</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="py-2 text-[var(--fs-body)] text-gray-600">{children}</div>
+        <div className="py-2 text-[var(--fs-body)] text-[var(--color-text-muted)]">{children}</div>
 
-        {footer && <div className="mt-4 flex justify-end gap-2 border-t pt-3">{footer}</div>}
+        {footer && (
+          <div className="mt-4 flex justify-end gap-2 border-t border-[var(--color-border)] pt-3">
+            {footer}
+          </div>
+        )}
       </div>
     </div>,
     document.body

@@ -1,24 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-export function useIsDesktop(query = '(min-width: 1024px)'): boolean {
+export function useIsDesktop(breakpoint = 1024): boolean {
+  const query = `(min-width: ${breakpoint}px)`;
   const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
     return window.matchMedia(query).matches;
   });
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const media = window.matchMedia(query);
-    const update = (e: MediaQueryListEvent | MediaQueryList) => setIsDesktop(e.matches);
-    setIsDesktop(media.matches);
-
-    if (media.addEventListener) {
-      media.addEventListener('change', update);
-      return () => media.removeEventListener('change', update);
-    } else {
-      media.addListener(update);
-      return () => media.removeListener(update);
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
     }
+    const mql = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mql.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
   }, [query]);
 
   return isDesktop;

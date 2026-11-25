@@ -26,7 +26,7 @@ export const StepHeader: React.FC<StepHeaderProps> = ({
 
   return (
     <header
-      className={`w-full border-b border-gray-100 bg-white px-4 py-3 select-none ${className}`}
+      className={`w-full border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 select-none ${className}`}
     >
       {/* Hàng 1: Nút điều hướng + Thanh chỉ báo bước + Nút huỷ */}
       <div className="flex items-center justify-between">
@@ -37,7 +37,7 @@ export const StepHeader: React.FC<StepHeaderProps> = ({
               type="button"
               onClick={onBack}
               aria-label="Quay lại"
-              className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
@@ -54,7 +54,7 @@ export const StepHeader: React.FC<StepHeaderProps> = ({
                 {idx > 0 && (
                   <div
                     className={`h-0.5 w-6 transition-colors ${
-                      s <= currentStep ? 'bg-primary' : 'bg-gray-200'
+                      s <= currentStep ? 'bg-primary' : 'bg-[var(--color-border)]'
                     }`}
                   />
                 )}
@@ -62,7 +62,7 @@ export const StepHeader: React.FC<StepHeaderProps> = ({
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-all ${
                     isPassed || isCurrent
                       ? 'bg-primary text-white shadow-xs'
-                      : 'border border-gray-300 bg-white text-gray-400'
+                      : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
                   }`}
                 >
                   {s}
@@ -78,7 +78,7 @@ export const StepHeader: React.FC<StepHeaderProps> = ({
             type="button"
             onClick={onCancel}
             aria-label="Huỷ"
-            className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <X className="h-5 w-5" />
           </button>
@@ -87,7 +87,7 @@ export const StepHeader: React.FC<StepHeaderProps> = ({
 
       {/* Hàng 2: Tên bước */}
       <div className="mt-1.5 text-center">
-        <h2 className="text-sm font-semibold text-gray-900">
+        <h2 className="text-sm font-semibold text-[var(--color-text)]">
           Bước {currentStep}/3 – {stepName}
         </h2>
       </div>

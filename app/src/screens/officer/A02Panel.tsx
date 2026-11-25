@@ -1,652 +1,1265 @@
-import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowLeft,
-  CheckCircle2,
-  Send,
-  Wrench,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Phone,
+  Users,
+  Clock,
   AlertTriangle,
-  ShieldCheck,
+  CheckCircle2,
+  UserCheck,
+  Wrench,
   GitMerge,
   Split,
+  ArrowLeft,
+  Send,
+  FileText,
+  ArrowRightLeft,
+  XCircle,
+  Camera,
 } from 'lucide-react';
+import { OfficerLayout } from '@/layouts/OfficerLayout';
+import { SelectField } from '@/components/ui';
 import { useAppStore } from '@/store/AppStore';
 import {
   acceptReport,
-  assignDepartment,
   assignVolunteer,
-  closeReport,
-  getCategoryConfig,
-  mergeReports,
+  assignDepartment,
   requestSupplement,
-  splitReportAction,
   transferAgency,
+  closeReport,
+  mergeReports,
+  splitReportAction,
+  getCategoryConfig,
 } from '@/store/officerActions';
-import { VOLUNTEERS } from '@/screens/volunteer/V01Tasks';
-import { Modal } from '@/components/ui/Modal';
-import { CATEGORY_CONFIGS } from '@/domain/constants';
-import { formatDateShort, formatDateTime } from '@/domain/format';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { canTransition, transition } from '@/domain/status';
+import {
+  CATEGORY_CONFIGS,
+  DEPARTMENTS,
+  VOLUNTEERS,
+  DEFAULT_OFFICER,
+  officerLabel,
+} from '@/domain/constants';
+import { CATEGORIES, Category, Priority, Report } from '@/domain/types';
+import { maskPhone } from '@/domain/privacy';
+import { findDuplicates } from '@/domain/duplicates';
+import { formatDateTime, formatDistance } from '@/domain/format';
+import { isOverdue } from '@/domain/sorting';
 import { StatusChip } from '@/components/common/StatusChip';
 import { DelayChip } from '@/components/common/DelayChip';
-import { Timeline } from '@/components/common/Timeline';
-import { BeforeAfter } from '@/components/citizen/BeforeAfter';
+import { MapView } from '@/components/map/MapView';
 import { Button } from '@/components/ui/Button';
-import { findDuplicates } from '@/domain/duplicates';
+import { Tabs } from '@/components/ui/Tabs';
+import { Modal } from '@/components/ui/Modal';
+import { TextField } from '@/components/ui/TextField';
+import { Toast } from '@/components/ui/Toast';
+import { EmptyState } from '@/components/ui/EmptyState';
 
-export function A02Panel() {
-  const { id } = useParams<{ id: string }>();
+export interface A02PanelProps {
+  reportId?: string;
+  onClose?: () => void;
+  embedded?: boolean;
+}
+
+type ExceptionMode = 'can_bo_sung' | 'chuyen_co_quan' | 'khong_xac_nhan' | 'dong' | null;
+
+function toDateInputValue(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  // Chuyển sang múi giờ +07:00 để lấy YYYY-MM-DD chính xác
+  const vnTime = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  return vnTime.toISOString().slice(0, 10);
+}
+
+function dateInputToIso(dateStr: string): string {
+  if (!dateStr) return new Date().toISOString();
+  return `${dateStr}T17:00:00+07:00`;
+}
+
+function computeDefaultDueIso(report: Report, cat: Category): string {
+  const cfg = getCategoryConfig(cat);
+  const createdMs = new Date(report.createdAt).getTime();
+  return new Date(createdMs + cfg.defaultDays * 24 * 60 * 60 * 1000).toISOString();
+}
+
+export function A02Panel({
+  reportId: propReportId,
+  onClose,
+  embedded = false,
+}: A02PanelProps = {}) {
+  const params = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
 
-  const report = state.reports.find((r) => r.id === id);
+  const targetId = propReportId ?? params.id;
+  const report = state.reports.find((r) => r.id === targetId);
 
-  const defaultDept = report
-    ? report.department || getCategoryConfig(report.category).suggestedDepartment
-    : '';
+  const [activeTab, setActiveTab] = useState<'chi_tiet' | 'lich_su'>('chi_tiet');
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
 
-  const [selectedDept, setSelectedDept] = useState(defaultDept);
-  const [officerNote, setOfficerNote] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [modal, setModal] = useState<'tnv' | 'supplement' | 'transfer' | null>(null);
-  const [reason, setReason] = useState('');
-  const [agency, setAgency] = useState('');
-  const [tnv, setTnv] = useState('');
+  // Trường chỉnh sửa (AC-A02-2)
+  const [category, setCategory] = useState<Category>(report?.category ?? 'mat_duong');
+  const [priority, setPriority] = useState<Priority>(report?.priority ?? 'binh_thuong');
+  const [department, setDepartment] = useState<string>(
+    report?.department ??
+      (report ? getCategoryConfig(report.category).suggestedDepartment : DEPARTMENTS[0])
+  );
+  const [dueDate, setDueDate] = useState<string>(
+    report ? toDateInputValue(report.dueAt ?? computeDefaultDueIso(report, report.category)) : ''
+  );
 
-  // B2 Gộp/tách hồ sơ (spec 3.5)
-  const similarReports = useMemo(() => {
-    if (!report) return [];
+  // Modals
+  const [showTnvModal, setShowTnvModal] = useState(false);
+  const [selectedTnv, setSelectedTnv] = useState<string>(VOLUNTEERS[0]);
+  const [tnvMode, setTnvMode] = useState<'specific' | 'open'>('specific');
+
+  const [exceptionMode, setExceptionMode] = useState<ExceptionMode>(null);
+  const [exceptionReason, setExceptionReason] = useState('');
+  const [targetAgency, setTargetAgency] = useState('');
+
+  const [mergeTarget, setMergeTarget] = useState<Report | null>(null);
+  const [splitTargetId, setSplitTargetId] = useState<string | null>(null);
+
+  const handleClose = useMemo(
+    () => () => {
+      if (onClose) {
+        onClose();
+      } else {
+        navigate('/can-bo');
+      }
+    },
+    [onClose, navigate]
+  );
+
+  // Đồng bộ form khi đổi hồ sơ
+  const reportIdVal = report?.id;
+  const reportCategory = report?.category;
+  const reportPriority = report?.priority;
+  const reportDepartment = report?.department;
+  const reportDueAt = report?.dueAt;
+  const reportCreatedAt = report?.createdAt;
+
+  useEffect(() => {
+    if (!reportIdVal || !reportCategory || !reportPriority || !reportCreatedAt) return;
+    setCategory(reportCategory);
+    setPriority(reportPriority);
+    setDepartment(reportDepartment ?? getCategoryConfig(reportCategory).suggestedDepartment);
+    const defaultDue = new Date(
+      new Date(reportCreatedAt).getTime() +
+        getCategoryConfig(reportCategory).defaultDays * 24 * 60 * 60 * 1000
+    ).toISOString();
+    setDueDate(toDateInputValue(reportDueAt ?? defaultDue));
+    setPhotoIndex(0);
+    setActiveTab('chi_tiet');
+  }, [reportIdVal, reportCategory, reportPriority, reportDepartment, reportDueAt, reportCreatedAt]);
+
+  // Phím Esc đóng panel khi không mở modal
+  const hasOpenModal = Boolean(showTnvModal || exceptionMode || mergeTarget || splitTargetId);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !hasOpenModal) {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [hasOpenModal, handleClose]);
+
+  const now = state.settings.demoNow;
+
+  // Nhiệm vụ TNV mới nhất đã hoàn thành (AC-A02-5)
+  const completedTask = useMemo(() => {
+    if (!reportIdVal) return undefined;
+    return state.volunteerTasks.find(
+      (t) => t.reportId === reportIdVal && t.status === 'xong' && Boolean(t.result)
+    );
+  }, [state.volunteerTasks, reportIdVal]);
+
+  // Phản ánh tương tự (AC-A02-6)
+  const duplicates = useMemo(() => {
+    if (!report || report.status === 'dong' || report.status === 'da_gop') return [];
     return findDuplicates(
       { id: report.id, category: report.category, lat: report.lat, lng: report.lng },
       state.reports,
-      state.settings.demoNow
+      now
     );
-  }, [report, state.reports, state.settings.demoNow]);
+  }, [report, state.reports, now]);
 
-  if (!report) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
-        <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
-        <h1 className="text-lg font-bold text-gray-900">Không tìm thấy hồ sơ</h1>
-        <p className="mt-1 text-sm text-gray-500">Mã phản ánh {id} không tồn tại.</p>
-        <Button className="mt-4" onClick={() => navigate('/can-bo')}>
-          Về danh sách
-        </Button>
-      </div>
-    );
-  }
+  const showSuccess = (message: string) => {
+    setToast({ message, type: 'success' });
+  };
 
-  const categoryConfig =
-    CATEGORY_CONFIGS.find((c) => c.key === report.category) || CATEGORY_CONFIGS[0]!;
+  const handleCategoryChange = (nextCat: Category) => {
+    setCategory(nextCat);
+    if (report && (report.status === 'moi' || !report.department)) {
+      const cfg = getCategoryConfig(nextCat);
+      setDepartment(cfg.suggestedDepartment);
+      setDueDate(toDateInputValue(computeDefaultDueIso(report, nextCat)));
+    }
+  };
+
+  const handleSaveMetadata = () => {
+    if (!report) return;
+    const updated: Report = {
+      ...report,
+      category,
+      priority,
+      department,
+      dueAt: dueDate ? dateInputToIso(dueDate) : report.dueAt,
+    };
+    dispatch({ type: 'UPDATE_REPORT', payload: { report: updated } });
+    showSuccess('Đã cập nhật thông tin phân loại và hạn xử lý');
+  };
 
   const handleAccept = () => {
-    try {
-      const newState = acceptReport(
+    if (!report) return;
+    const dueIso = dueDate ? dateInputToIso(dueDate) : undefined;
+    const nextState = acceptReport(
+      state,
+      report.id,
+      {
+        category,
+        department,
+        dueAt: dueIso,
+        actor: DEFAULT_OFFICER,
+      },
+      now
+    );
+    const syncedReports = nextState.reports.map((r) =>
+      r.id === report.id ? { ...r, priority } : r
+    );
+    dispatch({ type: 'HYDRATE', payload: { ...nextState, reports: syncedReports } });
+    showSuccess(`Đã tiếp nhận hồ sơ ${report.id}`);
+  };
+
+  const handleAssignDepartment = () => {
+    if (!report) return;
+    const dueIso = dueDate ? dateInputToIso(dueDate) : undefined;
+    const nextState = assignDepartment(
+      state,
+      report.id,
+      {
+        department,
+        dueAt: dueIso,
+        actor: DEFAULT_OFFICER,
+      },
+      now
+    );
+    const syncedReports = nextState.reports.map((r) =>
+      r.id === report.id ? { ...r, category, priority } : r
+    );
+    dispatch({ type: 'HYDRATE', payload: { ...nextState, reports: syncedReports } });
+    showSuccess(`Đã giao ${department}`);
+  };
+
+  const handleConfirmTnv = () => {
+    if (!report) return;
+    const assignee = tnvMode === 'specific' ? selectedTnv : null;
+    const nextState = assignVolunteer(state, report.id, { assignee, actor: DEFAULT_OFFICER }, now);
+    dispatch({ type: 'HYDRATE', payload: nextState });
+    setShowTnvModal(false);
+    showSuccess(
+      assignee ? `Đã giao TNV ${assignee} xác minh` : 'Đã mở nhiệm vụ cho TNV gần nhất nhận'
+    );
+  };
+
+  const openExceptionModal = (mode: Exclude<ExceptionMode, null>) => {
+    setExceptionMode(mode);
+    setExceptionReason('');
+    setTargetAgency('');
+  };
+
+  const handleConfirmException = () => {
+    if (!report || !exceptionMode) return;
+    const trimmedReason = exceptionReason.trim();
+    if (trimmedReason.length < 10) return;
+
+    if (exceptionMode === 'can_bo_sung') {
+      const nextState = requestSupplement(
         state,
         report.id,
-        {
-          department: selectedDept,
-          note: officerNote || 'Cán bộ đã tiếp nhận phản ánh',
-        },
-        state.settings.demoNow
+        { reason: trimmedReason, actor: DEFAULT_OFFICER },
+        now
       );
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg('Đã tiếp nhận hồ sơ thành công!');
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleAssign = () => {
-    try {
-      const newState = assignDepartment(
+      dispatch({ type: 'HYDRATE', payload: nextState });
+      showSuccess('Đã gửi yêu cầu bổ sung thông tin');
+    } else if (exceptionMode === 'chuyen_co_quan') {
+      if (!targetAgency.trim()) return;
+      const nextState = transferAgency(
         state,
         report.id,
-        {
-          department: selectedDept,
-          note: officerNote || `Giao cho ${selectedDept}`,
-        },
-        state.settings.demoNow
+        { agency: targetAgency.trim(), reason: trimmedReason, actor: DEFAULT_OFFICER },
+        now
       );
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg(`Đã giao việc cho ${selectedDept}!`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const flash = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(''), 3000);
-  };
-  const run = (fn: () => ReturnType<typeof acceptReport>, msg: string) => {
-    try {
-      dispatch({ type: 'HYDRATE', payload: fn() });
-      setModal(null);
-      setReason('');
-      flash(msg);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleMerge = (childId: string) => {
-    try {
-      const newState = mergeReports(state, report.id, [childId], undefined, state.settings.demoNow);
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg(`Đã gộp phản ánh #${childId} vào hồ sơ #${report.id}!`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleUnmerge = (childId: string) => {
-    try {
-      const newState = splitReportAction(
+      dispatch({ type: 'HYDRATE', payload: nextState });
+      showSuccess(`Đã chuyển hồ sơ tới ${targetAgency.trim()}`);
+    } else if (exceptionMode === 'dong') {
+      const nextState = closeReport(
         state,
         report.id,
-        childId,
-        undefined,
-        state.settings.demoNow
+        { reason: trimmedReason, actor: DEFAULT_OFFICER },
+        now
       );
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg(`Đã tách phản ánh #${childId} ra khỏi hồ sơ #${report.id}!`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
+      dispatch({ type: 'HYDRATE', payload: nextState });
+      showSuccess('Đã đóng hồ sơ');
+    } else if (exceptionMode === 'khong_xac_nhan') {
+      const { report: updated } = transition(report, 'khong_xac_nhan', 'CB', DEFAULT_OFFICER, now, {
+        note: trimmedReason,
+      });
+      dispatch({ type: 'UPDATE_REPORT', payload: { report: updated } });
+      showSuccess('Đã cập nhật trạng thái Không xác nhận được');
     }
+
+    setExceptionMode(null);
   };
-  const now = state.settings.demoNow;
-  const verifyTask = state.volunteerTasks.find((t) => t.reportId === report.id && t.result);
-  const canRoute = ['moi', 'da_tiep_nhan', 'cho_xac_minh'].includes(report.status);
-  const reasonOk = reason.trim().length >= 10;
 
-  return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <h1 data-testid="screen-title" className="sr-only">
-        Chi tiết & Giao xử lý
-      </h1>
-      {/* Header */}
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => navigate('/can-bo')}
-          aria-label="Quay lại"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+  const handleConfirmMerge = () => {
+    if (!report || !mergeTarget) return;
+    const nextState = mergeReports(
+      state,
+      report.id,
+      [mergeTarget.id],
+      { actor: DEFAULT_OFFICER },
+      now
+    );
+    dispatch({ type: 'HYDRATE', payload: nextState });
+    showSuccess(`Đã gộp ${mergeTarget.id} vào ${report.id}`);
+    setMergeTarget(null);
+  };
 
-        <div className="text-center">
-          <span className="font-mono text-base font-bold text-gray-900" data-testid="report-id">
-            {report.id}
-          </span>
-          <span className="ml-2 text-xs text-gray-500">Chi tiết xử lý</span>
+  const handleConfirmSplit = () => {
+    if (!report || !splitTargetId) return;
+    const nextState = splitReportAction(
+      state,
+      report.id,
+      splitTargetId,
+      { actor: DEFAULT_OFFICER },
+      now
+    );
+    dispatch({ type: 'HYDRATE', payload: nextState });
+    showSuccess(`Đã tách hồ sơ ${splitTargetId}`);
+    setSplitTargetId(null);
+  };
+
+  const renderPanelContent = () => {
+    if (!report) {
+      return (
+        <div className="flex h-full flex-col bg-[var(--color-surface)] p-5">
+          <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+            <h1
+              data-testid="screen-title"
+              className="text-lg font-semibold text-[var(--color-text)]"
+            >
+              Chi tiết & Giao xử lý
+            </h1>
+            <Button variant="ghost" size="sm" onClick={handleClose} aria-label="Đóng">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState
+              icon={<FileText className="h-12 w-12" />}
+              title="Không tìm thấy hồ sơ"
+              description={`Mã hồ sơ ${targetId ?? ''} không tồn tại trong hệ thống.`}
+              actionText="Quay lại hộp tiếp nhận"
+              onAction={handleClose}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    const photos = report.photos ?? [];
+    const safePhotoIdx = Math.min(photoIndex, Math.max(0, photos.length - 1));
+    const currentPhoto = photos[safePhotoIdx];
+    const followerCount = (report.followers?.length ?? 0) + (report.anonymousFollows ?? 0);
+    const overdue = isOverdue(report, now);
+
+    const canAccept = canTransition(report.status, 'da_tiep_nhan', 'CB');
+    const canAssignTnv = canTransition(report.status, 'cho_xac_minh', 'CB');
+    const canAssignDept = canTransition(report.status, 'da_giao', 'CB');
+    const canComplete =
+      canTransition(report.status, 'hoan_thanh', 'CB') || report.status === 'mo_lai';
+    const canSupplement = canTransition(report.status, 'can_bo_sung', 'CB');
+    const canTransfer = canTransition(report.status, 'chuyen_co_quan', 'CB');
+    const canClose = canTransition(report.status, 'dong', 'CB');
+    const canRejectVerify = canTransition(report.status, 'khong_xac_nhan', 'CB');
+
+    const exceptionTitleMap: Record<Exclude<ExceptionMode, null>, string> = {
+      can_bo_sung: 'Yêu cầu người dân bổ sung thông tin',
+      chuyen_co_quan: 'Chuyển cơ quan chuyên môn khác',
+      khong_xac_nhan: 'Xác nhận không phát hiện sự cố',
+      dong: 'Đóng hồ sơ phản ánh',
+    };
+
+    const officerStageIndex = ['hoan_thanh', 'dong'].includes(report.status)
+      ? 4
+      : ['da_giao', 'mo_lai'].includes(report.status)
+        ? 3
+        : ['da_tiep_nhan', 'cho_xac_minh', 'can_bo_sung'].includes(report.status)
+          ? 2
+          : 1;
+
+    const workflowStages = [
+      { step: 1, label: 'Tiếp nhận' },
+      { step: 2, label: 'Xác minh' },
+      { step: 3, label: 'Giao xử lý' },
+      { step: 4, label: 'Hoàn thành' },
+    ];
+
+    return (
+      <aside
+        data-testid="a02-panel"
+        className="flex h-full w-full flex-col rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-4 md:px-6 py-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                data-testid="report-id"
+                className="text-base md:text-lg font-extrabold text-[var(--color-primary)]"
+              >
+                {report.id}
+              </span>
+              <StatusChip status={report.status} variant="officer" size="sm" />
+              {overdue && <DelayChip report={report} now={now} />}
+            </div>
+            <h1
+              data-testid="screen-title"
+              className="mt-1 text-sm font-semibold text-[var(--color-text)]"
+            >
+              Chi tiết & Giao xử lý
+            </h1>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+            aria-label="Đóng panel (Esc)"
+            title="Đóng (Esc)"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
-        <div className="w-10" />
-      </header>
+        {/* Visual 4-Step Officer Workflow Bar */}
+        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg)]/60 px-4 md:px-6 py-3">
+          <div className="grid grid-cols-4 gap-2">
+            {workflowStages.map((stage) => {
+              const isDone = officerStageIndex > stage.step || officerStageIndex === 4;
+              const isCurrent = officerStageIndex === stage.step && officerStageIndex < 4;
+              return (
+                <div key={stage.step} className="flex flex-col items-center text-center">
+                  <div
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold transition-colors ${
+                      isDone
+                        ? 'bg-emerald-600 text-white'
+                        : isCurrent
+                          ? 'bg-[var(--color-primary)] text-white ring-4 ring-[var(--color-primary-soft)]'
+                          : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {stage.step}
+                  </div>
+                  <span
+                    className={`mt-1 text-[11px] font-bold leading-tight ${
+                      isCurrent
+                        ? 'text-[var(--color-primary)]'
+                        : isDone
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {stage.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-      <main className="mx-auto max-w-xl px-4 py-4 space-y-4">
-        {successMsg && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-sm font-semibold text-emerald-800 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <span>{successMsg}</span>
+        {/* Toast */}
+        {toast && (
+          <div className="px-4 md:px-6 pt-3">
+            <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
           </div>
         )}
 
-        {/* Ảnh sự cố */}
-        <div className="relative h-60 w-full overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 shadow-2xs">
-          <img
-            src={report.photos[0] || '/demo-photos/mat_duong/1.jpg'}
-            alt="Hiện trường"
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240"><rect fill="%23f3f4f6" width="400" height="240"/><text fill="%239ca3af" font-family="sans-serif" font-size="14" dy="5" font-weight="bold" x="50%" y="50%" text-anchor="middle">Ảnh hiện trường</text></svg>';
-            }}
+        {/* Tabs */}
+        <div className="px-4 md:px-6 pt-3">
+          <Tabs
+            tabs={[
+              { id: 'chi_tiet', label: 'Chi tiết' },
+              { id: 'lich_su', label: 'Lịch sử', count: report.timeline.length },
+            ]}
+            activeTab={activeTab}
+            onChange={(id) => setActiveTab(id as 'chi_tiet' | 'lich_su')}
           />
         </div>
 
-        {/* Thông tin sự cố */}
-        <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
-            <div className="flex items-center gap-2">
-              <CategoryIcon category={report.category} className="h-5 w-5" />
-              <span className="text-sm font-bold text-gray-900">{categoryConfig.label}</span>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <StatusChip status={report.status} variant="officer" size="sm" />
-              <DelayChip report={report} now={state.settings.demoNow} />
-            </div>
-          </div>
-
-          <div className="space-y-1.5 text-xs text-gray-600">
-            <div>
-              <span className="font-semibold text-gray-800">Địa chỉ: </span>
-              <span>{report.address}</span>
-            </div>
-            {report.description && (
-              <div>
-                <span className="font-semibold text-gray-800">Mô tả: </span>
-                <span className="italic">{report.description}</span>
-              </div>
-            )}
-            <div>
-              <span className="font-semibold text-gray-800">Thời điểm gửi: </span>
-              <span>{formatDateTime(report.createdAt)}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-gray-800">Người gửi: </span>
-              <span>{report.anonymous ? 'Ẩn danh' : report.reporterPhone || 'Công dân'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Khung hành động của Cán bộ */}
-        <div className="rounded-3xl border border-primary-200 bg-primary-50/40 p-4 shadow-2xs space-y-3.5">
-          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <span>Thao tác nghiệp vụ</span>
-          </h3>
-
-          {/* Nếu MOI: Tiếp nhận */}
-          {report.status === 'moi' && (
-            <div className="space-y-3">
-              <p className="text-xs text-gray-600">
-                Hồ sơ mới gửi. Cán bộ xem xét và bấm "Tiếp nhận" để chính thức đưa vào quy trình.
-              </p>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Bộ phận dự kiến tiếp quản:
-                </label>
-                <input
-                  type="text"
-                  value={selectedDept}
-                  onChange={(e) => setSelectedDept(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs font-medium text-gray-900"
-                />
-              </div>
-
-              <Button
-                fullWidth
-                onClick={handleAccept}
-                className="flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Tiếp nhận phản ánh</span>
-              </Button>
-            </div>
-          )}
-
-          {/* Nếu DA_TIEP_NHAN: Giao xử lý */}
-          {report.status === 'da_tiep_nhan' && (
-            <div className="space-y-3">
-              <p className="text-xs text-gray-600">
-                Hồ sơ đã tiếp nhận. Chọn bộ phận phụ trách để chuyển giao xử lý hiện trường:
-              </p>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Đơn vị / Bộ phận tiếp nhận:
-                </label>
-                <input
-                  type="text"
-                  value={selectedDept}
-                  onChange={(e) => setSelectedDept(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs font-medium text-gray-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Ghi chú chỉ đạo (nếu có):
-                </label>
-                <input
-                  type="text"
-                  value={officerNote}
-                  onChange={(e) => setOfficerNote(e.target.value)}
-                  placeholder="Ví dụ: Kiểm tra ngay trong ngày mai..."
-                  className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs text-gray-900"
-                />
-              </div>
-
-              <Button
-                fullWidth
-                onClick={handleAssign}
-                className="flex items-center justify-center gap-2"
-              >
-                <Send className="h-4 w-4" />
-                <span>Giao xử lý</span>
-              </Button>
-            </div>
-          )}
-
-          {/* Nếu DA_GIAO hoặc MO_LAI: Cập nhật kết quả */}
-          {(report.status === 'da_giao' || report.status === 'mo_lai') && (
-            <div className="space-y-3">
-              <div className="rounded-xl bg-white p-3 border border-gray-200 text-xs text-gray-700 space-y-1">
-                <div>
-                  <span className="font-semibold">Bộ phận đang xử lý: </span>
-                  <span className="font-bold text-primary">{report.department}</span>
-                </div>
-                {report.dueAt && (
-                  <div>
-                    <span className="font-semibold">Hạn xử lý: </span>
-                    <span>{formatDateShort(report.dueAt)}</span>
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-5">
+          {activeTab === 'chi_tiet' ? (
+            <>
+              {/* Banner đã gộp */}
+              {report.status === 'da_gop' && report.mergedInto && (
+                <div className="flex items-center justify-between gap-2 rounded-card border border-purple-200 bg-purple-50 p-3 text-sm text-purple-950 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200">
+                  <div className="flex items-center gap-2">
+                    <GitMerge className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span>
+                      Hồ sơ đã được gộp vào <strong>#{report.mergedInto}</strong>
+                    </span>
                   </div>
-                )}
-              </div>
+                  <Link
+                    to={`/can-bo/${report.mergedInto}`}
+                    className="text-xs font-semibold text-purple-700 dark:text-purple-300 underline"
+                  >
+                    Mở hồ sơ chính
+                  </Link>
+                </div>
+              )}
 
-              <Button
-                fullWidth
-                variant="primary"
-                onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
-                className="flex items-center justify-center gap-2"
-              >
-                <Wrench className="h-4 w-4" />
-                <span>Cập nhật kết quả hoàn thành</span>
-              </Button>
-            </div>
-          )}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                <div className="lg:col-span-7 space-y-4">
+                  {/* Gallery ảnh (AC-A02-1) */}
+                  <div className="space-y-2">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+                      {currentPhoto ? (
+                        <img
+                          src={currentPhoto}
+                          alt={`Ảnh hiện trường ${safePhotoIdx + 1}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-sm text-text-sub">
+                          Không có ảnh đính kèm
+                        </div>
+                      )}
 
-          {/* Nếu HOAN_THANH hoặc DONG */}
-          {(report.status === 'hoan_thanh' || report.status === 'dong') && (
-            <div className="rounded-xl bg-white p-3 border border-emerald-200 text-xs text-emerald-800 space-y-2">
-              <div className="flex items-center gap-1.5 font-bold">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span>Hồ sơ đã được xử lý hoàn tất</span>
+                      {photos.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)
+                            }
+                            aria-label="Ảnh trước"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
+                            aria-label="Ảnh sau"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                          <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-medium text-white">
+                            {safePhotoIdx + 1} / {photos.length}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {photos.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {photos.map((src, idx) => (
+                          <button
+                            key={`${src}-${idx}`}
+                            type="button"
+                            onClick={() => setPhotoIndex(idx)}
+                            aria-label={`Xem ảnh ${idx + 1}`}
+                            className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${
+                              idx === safePhotoIdx
+                                ? 'border-primary'
+                                : 'border-transparent opacity-70'
+                            }`}
+                          >
+                            <img
+                              src={src}
+                              alt={`Thumbnail ${idx + 1}`}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bản đồ nhỏ (AC-A02-1) */}
+                  <div className="h-48 md:h-56 w-full overflow-hidden rounded-card border border-[var(--color-border)]">
+                    <MapView
+                      center={[report.lat, report.lng]}
+                      zoom={16}
+                      autoLocateUser={true}
+                      showLocateButton={true}
+                      hideBuiltInLegend={true}
+                      markers={[
+                        {
+                          id: report.id,
+                          lat: report.lat,
+                          lng: report.lng,
+                          category: report.category,
+                          status: report.status,
+                        },
+                      ]}
+                    />
+                  </div>
+
+                  {/* Thông tin cơ bản & Riêng tư (AC-A02-1) */}
+                  <div className="space-y-2.5 rounded-card border border-slate-200 bg-slate-50 p-3.5 text-sm">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div>
+                        <div className="font-medium text-text-main">{report.address}</div>
+                        {report.locationNote && (
+                          <div className="text-xs text-text-sub mt-0.5">{report.locationNote}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {(report.title || report.description) && (
+                      <div className="flex items-start gap-2">
+                        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-text-sub" />
+                        <div className="space-y-1">
+                          {report.title && (
+                            <div className="font-bold text-text-main">{report.title}</div>
+                          )}
+                          {report.description && (
+                            <p className="text-text-main">{report.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[var(--color-border)] text-xs text-text-sub">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5" />
+                        {report.anonymous ? (
+                          <span className="font-medium text-[var(--color-text)]">
+                            {report.subscribedLater ? 'Ẩn danh · đã đăng ký nhận tin' : 'Ẩn danh'}
+                          </span>
+                        ) : (
+                          <span className="font-medium text-[var(--color-text)]">
+                            {maskPhone(report.reporterPhone) || 'Chưa có SĐT'}
+                          </span>
+                        )}
+                        {report.onBehalf && (
+                          <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                            Gửi hộ
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 font-medium text-[var(--color-text)]">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>{followerCount} người cùng báo</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs text-text-sub">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Gửi lúc: {formatDateTime(report.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-4">
+                  {/* Trường phân loại & giao xử lý (AC-A02-2) */}
+                  <div className="space-y-3 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold text-text-main">
+                        Phân loại & Hạn xử lý
+                      </h2>
+                      {report.status !== 'moi' && (
+                        <Button variant="ghost" size="sm" onClick={handleSaveMetadata}>
+                          Lưu thay đổi
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label
+                          htmlFor="a02-category"
+                          className="mb-1 block text-xs font-medium text-text-sub"
+                        >
+                          Loại sự cố
+                        </label>
+                        <SelectField
+                          id="a02-category"
+                          size="sm"
+                          value={category}
+                          onChange={(e) => handleCategoryChange(e.target.value as Category)}
+                        >
+                          {CATEGORIES.map((c) => {
+                            const cfg = CATEGORY_CONFIGS.find((item) => item.key === c);
+                            return (
+                              <option key={c} value={c}>
+                                {cfg?.label ?? c}
+                              </option>
+                            );
+                          })}
+                        </SelectField>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="a02-priority"
+                          className="mb-1 block text-xs font-medium text-text-sub"
+                        >
+                          Ưu tiên
+                        </label>
+                        <SelectField
+                          id="a02-priority"
+                          size="sm"
+                          value={priority}
+                          onChange={(e) => setPriority(e.target.value as Priority)}
+                        >
+                          <option value="binh_thuong">Bình thường</option>
+                          <option value="cao">Cao</option>
+                        </SelectField>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="a02-department"
+                        className="mb-1 block text-xs font-medium text-text-sub"
+                      >
+                        Bộ phận xử lý
+                      </label>
+                      <SelectField
+                        id="a02-department"
+                        size="sm"
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                      >
+                        {DEPARTMENTS.map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept}
+                          </option>
+                        ))}
+                      </SelectField>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="a02-due-date"
+                        className="mb-1 block text-xs font-medium text-text-sub"
+                      >
+                        Hạn xử lý
+                      </label>
+                      <input
+                        id="a02-due-date"
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className="w-full rounded-btn border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-2 text-sm text-[var(--color-text)] focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Gợi ý xác minh cho hồ sơ ẩn danh ở trạng thái mới (AC-A02-10) */}
+                  {report.anonymous && report.status === 'moi' && (
+                    <div
+                      data-testid="anonymous-verify-hint"
+                      className="flex items-start gap-2.5 rounded-card border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                    >
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>
+                        <strong>Hồ sơ ẩn danh:</strong> nên giao TNV xác minh trước khi xử lý
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Nhóm nút thao tác theo trạng thái (AC-A02-3) */}
+                  <div className="space-y-2.5 rounded-card border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3.5">
+                    <div className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                      Thao tác điều phối
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {canAccept && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<CheckCircle2 className="h-4 w-4" />}
+                          onClick={handleAccept}
+                        >
+                          Tiếp nhận
+                        </Button>
+                      )}
+
+                      {canAssignTnv && (
+                        <Button
+                          variant={
+                            report.anonymous && report.status === 'moi' ? 'primary' : 'secondary'
+                          }
+                          size="sm"
+                          icon={<UserCheck className="h-4 w-4" />}
+                          onClick={() => setShowTnvModal(true)}
+                        >
+                          Giao TNV xác minh
+                        </Button>
+                      )}
+
+                      {canAssignDept && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<Wrench className="h-4 w-4" />}
+                          onClick={handleAssignDepartment}
+                        >
+                          Giao xử lý
+                        </Button>
+                      )}
+
+                      {canComplete && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<Camera className="h-4 w-4" />}
+                          onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
+                        >
+                          Cập nhật kết quả
+                        </Button>
+                      )}
+
+                      {canClose && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<CheckCircle2 className="h-4 w-4" />}
+                          onClick={() => openExceptionModal('dong')}
+                        >
+                          Đóng
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Nút ngoại lệ (AC-A02-8) */}
+                    {(canSupplement || canTransfer || canRejectVerify) && (
+                      <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                        {canSupplement && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={<Send className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('can_bo_sung')}
+                          >
+                            Yêu cầu bổ sung
+                          </Button>
+                        )}
+                        {canTransfer && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={<ArrowRightLeft className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('chuyen_co_quan')}
+                          >
+                            Chuyển cơ quan khác
+                          </Button>
+                        )}
+                        {canRejectVerify && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={<XCircle className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('khong_xac_nhan')}
+                          >
+                            Không xác nhận được
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Khối Kết quả xác minh của TNV (AC-A02-5) */}
+                  {completedTask?.result && (
+                    <div
+                      data-testid="tnv-verification-result"
+                      className="space-y-2.5 rounded-card border border-blue-200 bg-blue-50/60 p-3.5 text-sm dark:border-blue-900/60 dark:bg-blue-950/35"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-blue-950 dark:text-blue-200">
+                          {completedTask.type === 'nghiem_thu'
+                            ? 'Kết quả nghiệm thu TNV'
+                            : 'Kết quả xác minh'}
+                        </h3>
+                        <span className="text-xs text-blue-700 dark:text-blue-300">
+                          {completedTask.assignee || 'Tình nguyện viên'} ·{' '}
+                          {formatDateTime(completedTask.result.at)}
+                        </span>
+                      </div>
+
+                      {completedTask.result.photo && (
+                        <img
+                          src={completedTask.result.photo}
+                          alt="Ảnh xác minh của TNV"
+                          loading="lazy"
+                          className="h-36 w-full rounded-btn object-cover border border-blue-200 dark:border-blue-800"
+                        />
+                      )}
+
+                      <div className="space-y-1 text-xs text-[var(--color-text)]">
+                        <div>
+                          <strong>1. Hiện trạng:</strong>{' '}
+                          {completedTask.result.exists === 'co'
+                            ? 'Có sự cố'
+                            : completedTask.result.exists === 'khong'
+                              ? 'Không có sự cố'
+                              : 'Không tìm thấy vị trí'}
+                        </div>
+                        {completedTask.result.severity && (
+                          <div>
+                            <strong>2. Mức độ:</strong>{' '}
+                            {completedTask.result.severity === 'nguy_hiem'
+                              ? 'Nguy hiểm'
+                              : completedTask.result.severity === 'trung_binh'
+                                ? 'Trung bình'
+                                : 'Nhẹ'}
+                          </div>
+                        )}
+                        <div>
+                          <strong>3. Ghi chú TNV:</strong>{' '}
+                          {completedTask.result.note || 'Không có ghi chú thêm'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Khối Đã gộp & Tách (AC-A02-7) */}
+                  {report.mergedChildren && report.mergedChildren.length > 0 && (
+                    <div className="space-y-2 rounded-card border border-purple-200 bg-purple-50/50 p-3.5">
+                      <h3 className="text-sm font-semibold text-purple-950">
+                        Hồ sơ đã gộp ({report.mergedChildren.length})
+                      </h3>
+                      <div className="space-y-1.5">
+                        {report.mergedChildren.map((childId) => (
+                          <div
+                            key={childId}
+                            className="flex items-center justify-between rounded-btn bg-[var(--color-surface)] px-3 py-2 text-xs border border-purple-200 dark:border-purple-800/60"
+                          >
+                            <span className="font-semibold text-purple-900">#{childId}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              icon={<Split className="h-3.5 w-3.5" />}
+                              onClick={() => setSplitTargetId(childId)}
+                            >
+                              Tách
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Khối Phản ánh tương tự (AC-A02-6) */}
+                  {duplicates.length > 0 && (
+                    <div
+                      data-testid="similar-reports-block"
+                      className="space-y-2.5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5"
+                    >
+                      <h3 className="text-sm font-semibold text-text-main">
+                        Phản ánh tương tự ({duplicates.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {duplicates.map(({ report: dup, distanceMeters }) => (
+                          <div
+                            key={dup.id}
+                            className="flex items-center gap-3 rounded-btn border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5"
+                          >
+                            {dup.photos[0] && (
+                              <img
+                                src={dup.photos[0]}
+                                alt={dup.id}
+                                loading="lazy"
+                                className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="font-bold text-primary">{dup.id}</span>
+                                <span className="text-text-sub">
+                                  cách {formatDistance(distanceMeters)}
+                                </span>
+                              </div>
+                              <div className="truncate text-xs text-text-main">{dup.address}</div>
+                            </div>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={<GitMerge className="h-3.5 w-3.5" />}
+                              onClick={() => setMergeTarget(dup)}
+                            >
+                              Gộp vào hồ sơ này
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              {report.resultNote && <p className="text-gray-700 italic">"{report.resultNote}"</p>}
+            </>
+          ) : (
+            /* Tab Lịch sử nội bộ (AC-A02-9) */
+            <div data-testid="officer-history-tab" className="space-y-3">
+              {[...report.timeline].reverse().map((entry, idx) => (
+                <div
+                  key={`${entry.at}-${idx}`}
+                  className="rounded-card border border-[var(--color-border)] bg-[var(--color-bg)]/60 p-3 text-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-text-main">
+                      {officerLabel(entry.status)}
+                    </span>
+                    <span className="text-xs text-text-sub">{formatDateTime(entry.at)}</span>
+                  </div>
+                  <div className="mt-1 text-xs font-medium text-primary">{entry.actor}</div>
+                  {entry.note && <div className="mt-1 text-xs text-text-sub">{entry.note}</div>}
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Hành động bổ sung: TNV / bổ sung / chuyển / đóng */}
-        {(canRoute || report.status === 'hoan_thanh') && (
-          <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-            <h3 className="text-sm font-bold text-gray-900">Thao tác khác</h3>
-            {report.status === 'moi' && report.anonymous && (
-              <p className="rounded-xl bg-amber-50 p-2.5 text-xs font-medium text-amber-800">
-                Hồ sơ ẩn danh: nên giao TNV xác minh trước khi xử lý.
-              </p>
-            )}
-            <div className="grid gap-2 sm:grid-cols-2">
-              {(report.status === 'moi' || report.status === 'da_tiep_nhan') && (
-                <Button variant="outline" onClick={() => setModal('tnv')}>
-                  Giao TNV xác minh
-                </Button>
-              )}
-              {canRoute && (
-                <>
-                  <Button variant="outline" onClick={() => setModal('supplement')}>
-                    Yêu cầu bổ sung
-                  </Button>
-                  <Button variant="outline" onClick={() => setModal('transfer')}>
-                    Chuyển cơ quan khác
-                  </Button>
-                </>
-              )}
-              {report.status === 'hoan_thanh' && (
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    run(() => closeReport(state, report.id, undefined, now), 'Đã đóng hồ sơ')
-                  }
-                >
-                  Đóng hồ sơ
-                </Button>
-              )}
-            </div>
-            {report.status === 'cho_xac_minh' && !verifyTask && (
-              <p className="text-xs text-gray-500">
-                Đang chờ tình nguyện viên gửi kết quả xác minh.
-              </p>
-            )}
-          </div>
-        )}
-
-        {verifyTask?.result && (
-          <div
-            className="rounded-3xl border border-primary-200 bg-white p-4 shadow-2xs space-y-2"
-            data-testid="verify-result"
-          >
-            <h3 className="text-sm font-bold text-gray-900">Kết quả xác minh</h3>
-            <p className="text-xs text-gray-600">
-              TNV: <b>{verifyTask.assignee}</b> · Sự cố:{' '}
-              <b>
-                {
-                  {
-                    co: 'Có tồn tại',
-                    khong: 'Không tồn tại',
-                    khong_tim_thay: 'Không tìm thấy vị trí',
-                  }[verifyTask.result.exists]
-                }
-              </b>
-              {verifyTask.result.severity && (
-                <>
-                  {' '}
-                  · Mức độ:{' '}
-                  <b>
-                    {
-                      { nhe: 'Nhẹ', trung_binh: 'Trung bình', nguy_hiem: 'Nguy hiểm' }[
-                        verifyTask.result.severity
-                      ]
-                    }
-                  </b>
-                </>
-              )}
-            </p>
-            {verifyTask.result.note && (
-              <p className="text-xs italic text-gray-500">"{verifyTask.result.note}"</p>
-            )}
-            <img
-              src={verifyTask.result.photo}
-              alt="Ảnh TNV"
-              className="h-40 w-full rounded-xl object-cover bg-gray-100"
-            />
-          </div>
-        )}
-
+        {/* Modal Giao TNV xác minh (AC-A02-4) */}
         <Modal
-          isOpen={modal !== null}
-          onClose={() => setModal(null)}
-          title={
-            modal === 'tnv'
-              ? 'Giao TNV xác minh'
-              : modal === 'supplement'
-                ? 'Yêu cầu bổ sung'
-                : 'Chuyển cơ quan khác'
-          }
+          isOpen={showTnvModal}
+          onClose={() => setShowTnvModal(false)}
+          title="Giao TNV xác minh tại chỗ"
           footer={
-            modal === 'tnv' ? (
-              <Button
-                fullWidth
-                onClick={() =>
-                  run(
-                    () => assignVolunteer(state, report.id, { assignee: tnv || null }, now),
-                    'Đã giao tình nguyện viên xác minh'
-                  )
-                }
-              >
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setShowTnvModal(false)}>
+                Huỷ
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleConfirmTnv}>
                 Xác nhận giao
               </Button>
-            ) : (
+            </>
+          }
+        >
+          <div className="space-y-3 text-sm">
+            <label className="flex items-start gap-2.5 rounded-btn border border-slate-200 p-3 cursor-pointer">
+              <input
+                type="radio"
+                name="tnv-mode"
+                checked={tnvMode === 'specific'}
+                onChange={() => setTnvMode('specific')}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-text-main">Chọn tình nguyện viên cụ thể</div>
+                <SelectField
+                  size="sm"
+                  wrapperClassName="mt-2"
+                  value={selectedTnv}
+                  onChange={(e) => {
+                    setSelectedTnv(e.target.value);
+                    setTnvMode('specific');
+                  }}
+                >
+                  {VOLUNTEERS.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-2.5 rounded-btn border border-slate-200 p-3 cursor-pointer">
+              <input
+                type="radio"
+                name="tnv-mode"
+                checked={tnvMode === 'open'}
+                onChange={() => setTnvMode('open')}
+              />
+              <span className="font-medium text-text-main">Để TNV gần nhất nhận</span>
+            </label>
+          </div>
+        </Modal>
+
+        {/* Modal Ngoại lệ (AC-A02-8, AC-A02-10) */}
+        <Modal
+          isOpen={Boolean(exceptionMode)}
+          onClose={() => setExceptionMode(null)}
+          title={exceptionMode ? exceptionTitleMap[exceptionMode] : ''}
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setExceptionMode(null)}>
+                Huỷ
+              </Button>
               <Button
-                fullWidth
-                disabled={!reasonOk || (modal === 'transfer' && !agency.trim())}
-                onClick={() =>
-                  modal === 'supplement'
-                    ? run(
-                        () => requestSupplement(state, report.id, { reason: reason.trim() }, now),
-                        'Đã gửi yêu cầu bổ sung'
-                      )
-                    : run(
-                        () =>
-                          transferAgency(
-                            state,
-                            report.id,
-                            { agency: agency.trim(), reason: reason.trim() },
-                            now
-                          ),
-                        'Đã chuyển cơ quan khác'
-                      )
+                variant={exceptionMode === 'khong_xac_nhan' ? 'danger' : 'primary'}
+                size="sm"
+                disabled={
+                  exceptionReason.trim().length < 10 ||
+                  (exceptionMode === 'chuyen_co_quan' && !targetAgency.trim())
                 }
+                onClick={handleConfirmException}
               >
                 Xác nhận
               </Button>
-            )
+            </>
           }
         >
-          {modal === 'tnv' ? (
-            <select
-              value={tnv}
-              onChange={(e) => setTnv(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 p-2.5 text-sm"
-            >
-              <option value="">Để TNV gần nhất nhận</option>
-              {VOLUNTEERS.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <div className="space-y-2">
-              {modal === 'transfer' && (
-                <input
-                  value={agency}
-                  onChange={(e) => setAgency(e.target.value)}
-                  placeholder="Tên cơ quan tiếp nhận"
-                  className="w-full rounded-xl border border-gray-300 p-2.5 text-sm"
-                />
-              )}
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-                placeholder="Lý do (tối thiểu 10 ký tự)"
-                className="w-full rounded-xl border border-gray-300 p-2.5 text-sm"
+          <div className="space-y-3 text-sm">
+            {exceptionMode === 'can_bo_sung' && report.anonymous && !report.subscribedLater && (
+              <div className="flex items-start gap-2 rounded-btn border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-950">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <span>Người gửi sẽ chỉ thấy yêu cầu khi tự mở hồ sơ</span>
+              </div>
+            )}
+
+            {exceptionMode === 'chuyen_co_quan' && (
+              <TextField
+                label="Cơ quan tiếp nhận"
+                placeholder="VD: Công ty Điện lực Đồng Nai"
+                value={targetAgency}
+                onChange={(e) => setTargetAgency(e.target.value)}
               />
+            )}
+
+            <div>
+              <label
+                htmlFor="exception-reason"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
+                Lý do (tối thiểu 10 ký tự)
+              </label>
+              <textarea
+                id="exception-reason"
+                rows={3}
+                value={exceptionReason}
+                onChange={(e) => setExceptionReason(e.target.value)}
+                placeholder="Nhập lý do chi tiết..."
+                className="w-full rounded-card border border-slate-300 p-3 text-sm focus:border-primary focus:outline-none"
+              />
+              <div className="mt-1 flex justify-between text-xs">
+                <span
+                  className={
+                    exceptionReason.trim().length < 10 ? 'text-amber-700' : 'text-emerald-700'
+                  }
+                >
+                  {exceptionReason.trim().length < 10
+                    ? `Cần thêm ${10 - exceptionReason.trim().length} ký tự`
+                    : 'Đạt yêu cầu'}
+                </span>
+                <span className="text-text-sub">{exceptionReason.trim().length} ký tự</span>
+              </div>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal Xác nhận gộp (AC-A02-6, AC-A02-7) */}
+        <Modal
+          isOpen={Boolean(mergeTarget)}
+          onClose={() => setMergeTarget(null)}
+          title="Xác nhận gộp hồ sơ trùng"
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setMergeTarget(null)}>
+                Huỷ
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleConfirmMerge}>
+                Xác nhận gộp
+              </Button>
+            </>
+          }
+        >
+          {mergeTarget && (
+            <div className="space-y-2 text-sm">
+              <p>Bạn có chắc muốn gộp hai hồ sơ sau?</p>
+              <div className="rounded-btn bg-slate-50 p-3 text-xs space-y-1 border border-slate-200">
+                <div>
+                  <strong>Hồ sơ chính (giữ lại):</strong> #{report.id} – {report.address}
+                </div>
+                <div>
+                  <strong>Hồ sơ bị gộp (chuyển sang Đã gộp):</strong> #{mergeTarget.id} –{' '}
+                  {mergeTarget.address}
+                </div>
+              </div>
+              <p className="text-xs text-text-sub">
+                Ảnh và người theo dõi của #{mergeTarget.id} sẽ được chuyển sang #{report.id}.
+              </p>
             </div>
           )}
         </Modal>
 
-        {/* Khối Phản ánh tương tự & Gộp hồ sơ (spec 3.5, B2) */}
-        <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <GitMerge className="h-4 w-4 text-primary" />
-              <span>Phản ánh tương tự & Gộp hồ sơ</span>
-            </h3>
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-primary">
-              Bán kính 50m
-            </span>
-          </div>
+        {/* Modal Xác nhận tách (AC-A02-7) */}
+        <Modal
+          isOpen={Boolean(splitTargetId)}
+          onClose={() => setSplitTargetId(null)}
+          title="Xác nhận tách hồ sơ"
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setSplitTargetId(null)}>
+                Huỷ
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleConfirmSplit}>
+                Xác nhận tách
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm">
+            Tách hồ sơ <strong>#{splitTargetId}</strong> khỏi hồ sơ chính{' '}
+            <strong>#{report.id}</strong> và khôi phục trạng thái trước khi gộp?
+          </p>
+        </Modal>
+      </aside>
+    );
+  };
 
-          {/* Các hồ sơ con đã gộp */}
-          {report.mergedChildren && report.mergedChildren.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-700">Hồ sơ đã gộp vào vụ này:</span>
-              <div className="space-y-1.5">
-                {report.mergedChildren.map((cId) => (
-                  <div
-                    key={cId}
-                    className="flex items-center justify-between rounded-xl bg-purple-50 p-2.5 text-xs text-purple-950 border border-purple-200"
-                  >
-                    <span className="font-mono font-bold">#{cId}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleUnmerge(cId)}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:underline"
-                    >
-                      <Split className="h-3 w-3" />
-                      <span>Tách hồ sơ</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+  if (embedded) {
+    return renderPanelContent();
+  }
 
-          {/* Các hồ sơ nghi trùng phát hiện được */}
-          {similarReports.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs text-gray-500">
-                Phát hiện {similarReports.length} phản ánh cùng loại trong 14 ngày gần nhất:
+  return (
+    <OfficerLayout>
+      <div className="flex flex-1 min-h-0 gap-4">
+        <div className="hidden lg:flex flex-1 flex-col justify-between rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+          <div>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<ArrowLeft className="h-4 w-4" />}
+              onClick={handleClose}
+            >
+              Quay lại hộp tiếp nhận
+            </Button>
+            <div className="mt-6 space-y-2">
+              <h2 className="text-base font-semibold text-[var(--color-text)]">
+                Đang xem chi tiết hồ sơ {report?.id ?? targetId}
+              </h2>
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Nhấn phím{' '}
+                <kbd className="rounded border border-[var(--color-border)] px-1.5 py-0.5 text-xs">
+                  Esc
+                </kbd>{' '}
+                hoặc nút đóng ở góc phải để quay lại danh sách hộp tiếp nhận.
               </p>
-              <div className="space-y-2">
-                {similarReports.map((sim) => (
-                  <div
-                    key={sim.report.id}
-                    className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/80 p-2.5"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gray-200">
-                        <img
-                          src={sim.report.photos[0] || '/demo-photos/placeholder.jpg'}
-                          alt="Ảnh"
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect fill="%23f3f4f6" width="40" height="40"/><text fill="%239ca3af" font-size="8" dy="3" x="50%" y="50%" text-anchor="middle">Ảnh</text></svg>';
-                          }}
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1 text-xs">
-                        <div className="font-bold text-gray-900">
-                          #{sim.report.id}{' '}
-                          <span className="font-normal text-gray-400">
-                            · {Math.round(sim.distanceMeters)}m
-                          </span>
-                        </div>
-                        <p className="truncate text-[11px] text-gray-500">{sim.report.address}</p>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleMerge(sim.report.id)}
-                      className="ml-2 shrink-0 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-soft hover:bg-primary-hover active:scale-95 transition-all"
-                    >
-                      Gộp vào hồ sơ này
-                    </button>
-                  </div>
-                ))}
-              </div>
             </div>
-          ) : (
-            <p className="text-xs text-gray-400 italic">
-              Không có phản ánh trùng nào trong phạm vi 50m.
-            </p>
-          )}
-        </div>
-
-        {/* Khối Trước/Sau nếu có ảnh kết quả */}
-        {report.resultPhotos && report.resultPhotos.length > 0 && (
-          <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-            <h3 className="text-sm font-bold text-gray-900">Hình ảnh kết quả xử lý</h3>
-            <BeforeAfter
-              beforePhotos={report.photos}
-              afterPhotos={report.resultPhotos}
-              beforeTime={report.createdAt}
-              afterTime={report.completedAt}
-              category={report.category}
-            />
           </div>
-        )}
-
-        {/* Timeline */}
-        <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
-          <h3 className="text-sm font-bold text-gray-900">Nhật ký xử lý hồ sơ</h3>
-          <Timeline report={report} now={state.settings.demoNow} />
         </div>
-      </main>
-    </div>
+        <div className="w-full lg:w-[480px] shrink-0">{renderPanelContent()}</div>
+      </div>
+    </OfficerLayout>
   );
 }

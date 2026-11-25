@@ -1,7 +1,7 @@
 import React from 'react';
 import { Report } from '@/domain/types';
 import { publicTimeline } from '@/domain/status';
-import { formatDateShort, formatDateTime } from '@/domain/format';
+import { formatDate, formatDateTime } from '@/domain/format';
 import { Check, Clock, GitMerge, AlertCircle, HelpCircle, ArrowRight } from 'lucide-react';
 
 export interface TimelineProps {
@@ -57,11 +57,11 @@ export const Timeline: React.FC<TimelineProps> = ({ report, className = '' }) =>
       )}
 
       {report.status === 'khong_xac_nhan' && (
-        <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-gray-200 bg-gray-50 p-3.5 text-sm text-gray-800">
-          <AlertCircle className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
+        <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3.5 text-sm text-[var(--color-text)]">
+          <AlertCircle className="h-5 w-5 text-[var(--color-text-muted)] flex-shrink-0 mt-0.5" />
           <div>
             <div className="font-semibold">Không xác nhận sự cố</div>
-            <div className="text-xs text-gray-600 mt-0.5">
+            <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
               {report.timeline.find((t) => t.status === 'khong_xac_nhan')?.note ||
                 'Hiện trường đã được kiểm tra và không phát hiện sự cố như mô tả.'}
             </div>
@@ -70,14 +70,14 @@ export const Timeline: React.FC<TimelineProps> = ({ report, className = '' }) =>
       )}
 
       {/* Vertical Steps */}
-      <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gray-200">
+      <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-[var(--color-border)]">
         {steps.map((step) => {
           const isDone = step.status === 'done';
           const isCurrent = step.status === 'current';
           const isUpcoming = step.status === 'upcoming';
 
           const formattedTime = step.at ? formatDateTime(step.at) : undefined;
-          const expectedDateStr = step.expected ? formatDateShort(step.expected) : undefined;
+          const expectedDateStr = step.expected ? formatDate(step.expected) : undefined;
 
           return (
             <div
@@ -92,8 +92,8 @@ export const Timeline: React.FC<TimelineProps> = ({ report, className = '' }) =>
                   isDone
                     ? 'bg-primary text-white shadow-xs'
                     : isCurrent
-                      ? 'bg-primary text-white ring-4 ring-primary-100'
-                      : 'border-2 border-gray-300 bg-white text-gray-400'
+                      ? 'bg-primary text-white ring-4 ring-[var(--color-primary-soft)]'
+                      : 'border-2 border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
                 }`}
               >
                 {isDone ? (
@@ -111,27 +111,33 @@ export const Timeline: React.FC<TimelineProps> = ({ report, className = '' }) =>
                   <div
                     className={`text-sm font-semibold ${
                       isCurrent
-                        ? 'text-primary-dark'
+                        ? 'text-[var(--color-primary)]'
                         : isUpcoming
-                          ? 'text-gray-500'
-                          : 'text-gray-900'
+                          ? 'text-[var(--color-text-muted)]'
+                          : 'text-[var(--color-text)]'
                     }`}
                   >
                     <span>{step.label}</span>
                     {isUpcoming && expectedDateStr && (
-                      <span className="ml-1.5 text-xs font-normal text-gray-500">
+                      <span className="ml-1.5 text-xs font-normal text-[var(--color-text-muted)]">
                         (dự kiến {expectedDateStr})
                       </span>
                     )}
                   </div>
-                  {formattedTime && <div className="text-xs text-gray-500">{formattedTime}</div>}
+                  {formattedTime && (
+                    <div className="text-xs text-[var(--color-text-muted)]">{formattedTime}</div>
+                  )}
                 </div>
 
                 {step.department && (
-                  <div className="mt-0.5 text-xs text-gray-700 font-medium">{step.department}</div>
+                  <div className="mt-0.5 text-xs text-[var(--color-text-muted)] font-medium">
+                    {step.department}
+                  </div>
                 )}
 
-                {step.note && <div className="mt-0.5 text-xs text-gray-500">{step.note}</div>}
+                {step.note && (
+                  <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">{step.note}</div>
+                )}
               </div>
             </div>
           );

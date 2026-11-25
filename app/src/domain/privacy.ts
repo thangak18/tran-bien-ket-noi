@@ -1,4 +1,5 @@
 import { PublicReport, Report } from './types';
+import { CATEGORY_CONFIGS } from './constants';
 
 /**
  * Che số điện thoại bảo đảm tính riêng tư (spec 4.1, UT-016.1)
@@ -39,6 +40,7 @@ export function toPublicReport(report: Report): PublicReport {
     lng: report.lng,
     address: report.address,
     locationNote: report.locationNote,
+    title: report.title,
     description: report.description,
     createdAt: report.createdAt,
     status: report.status,
@@ -57,4 +59,64 @@ export function toPublicReport(report: Report): PublicReport {
       note: entry.note,
     })),
   };
+}
+
+/**
+ * Chuyển PublicReport thành object tương thích ReportCard mà không lộ thông tin riêng tư
+ */
+export function toPublicCardReport(pub: PublicReport): Report {
+  return {
+    id: pub.id,
+    category: pub.category,
+    photos: pub.photos,
+    photosApproved: true,
+    lat: pub.lat,
+    lng: pub.lng,
+    address: pub.address,
+    locationNote: pub.locationNote,
+    title: pub.title,
+    description: pub.description,
+    createdAt: pub.createdAt,
+    status: pub.status,
+    priority: 'binh_thuong',
+    department: pub.department,
+    dueAt: pub.dueAt,
+    anonymous: false,
+    subscribedLater: false,
+    secretCode: '',
+    onBehalf: false,
+    followers: Array.from({ length: pub.followerCount }, (_, i) => `follower-${i}`),
+    anonymousFollows: 0,
+    mergedInto: pub.mergedInto,
+    resultPhotos: pub.resultPhotos,
+    resultNote: pub.resultNote,
+    completedAt: pub.completedAt,
+    timeline: pub.timeline,
+  };
+}
+
+/**
+ * Lấy danh sách phản ánh công khai cho bảng tin Cộng đồng (loại trừ đã gộp, mới nhất trước, hỗ trợ tìm kiếm)
+ */
+export function getCommunityFeed(reports: Report[], searchQuery = ''): PublicReport[] {
+  const q = searchQuery.trim().toLowerCase();
+
+  const publicReports = reports
+    .filter((r) => r.status !== 'da_gop')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map(toPublicReport);
+
+  if (!q) return publicReports;
+
+  return publicReports.filter((r) => {
+    const catLabel = CATEGORY_CONFIGS.find((c) => c.key === r.category)?.label.toLowerCase() ?? '';
+    return (
+      r.id.toLowerCase().includes(q) ||
+      r.address.toLowerCase().includes(q) ||
+      (r.title?.toLowerCase().includes(q) ?? false) ||
+      (r.description?.toLowerCase().includes(q) ?? false) ||
+      (r.locationNote?.toLowerCase().includes(q) ?? false) ||
+      catLabel.includes(q)
+    );
+  });
 }

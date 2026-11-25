@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppStoreProvider, AppState } from '@/store/AppStore';
 import { C04Confirm } from '@/screens/citizen/C04Confirm';
@@ -7,6 +7,7 @@ import mockData from '@/data/mock.json';
 import { Report, Category } from '@/domain/types';
 
 const reports = mockData.reports as Report[];
+
 function mk(category: Category, lat: number, lng: number): AppState {
   return {
     reports,
@@ -21,7 +22,9 @@ function mk(category: Category, lat: number, lng: number): AppState {
     draft: { photos: ['/demo-photos/placeholder.jpg'], category, lat, lng, address: 'Test' },
   };
 }
-const r = (s: AppState) =>
+
+/** Màn Xác nhận gửi dạng 3 bước: bước 1 chọn loại, bước 2 chọn vị trí rồi "Xác nhận vị trí" mới kiểm tra trùng. */
+function renderAndConfirmLocation(s: AppState) {
   render(
     <AppStoreProvider initialState={s}>
       <MemoryRouter>
@@ -29,24 +32,31 @@ const r = (s: AppState) =>
       </MemoryRouter>
     </AppStoreProvider>
   );
+  fireEvent.click(screen.getByRole('button', { name: /Tiếp tục chọn vị trí/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Xác nhận vị trí' }));
+}
 
 describe('Cảnh báo trùng trên màn Xác nhận gửi', () => {
-  for (const id of ['TB-0041', 'TB-0052', 'TB-0053']) {
-    it(`hiện thẻ khi gửi cùng loại sát ${id}`, () => {
+  for (const id of ['TB-0009', 'TB-0010', 'TB-0024', 'TB-0025']) {
+    it(`hiện hộp thoại đối chiếu khi gửi cùng loại sát ${id}`, () => {
       const t = reports.find((x) => x.id === id)!;
-      r(mk(t.category, t.lat + 0.0001, t.lng));
-      expect(screen.getAllByText(/Có sự cố tương tự gần đây/).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Gợi ý mô phỏng/).length).toBeGreaterThan(0);
+      renderAndConfirmLocation(mk(t.category, t.lat + 0.0001, t.lng));
+      expect(
+        screen.getByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' })
+      ).toBeInTheDocument();
+      expect(screen.getByText('Phát hiện phản ánh tương tự')).toBeInTheDocument();
     });
   }
+
   it('không hiện khi khác loại', () => {
-    const t = reports.find((x) => x.id === 'TB-0041')!;
-    r(mk('rac_thai', t.lat + 0.0001, t.lng));
-    expect(screen.queryByText(/Có sự cố tương tự gần đây/)).toBeNull();
+    const t = reports.find((x) => x.id === 'TB-0009')!;
+    renderAndConfirmLocation(mk('rac_thai', t.lat + 0.0001, t.lng));
+    expect(screen.queryByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' })).toBeNull();
   });
+
   it('không hiện khi xa > 50m', () => {
-    const t = reports.find((x) => x.id === 'TB-0041')!;
-    r(mk(t.category, t.lat + 0.01, t.lng));
-    expect(screen.queryByText(/Có sự cố tương tự gần đây/)).toBeNull();
+    const t = reports.find((x) => x.id === 'TB-0009')!;
+    renderAndConfirmLocation(mk(t.category, t.lat + 0.01, t.lng));
+    expect(screen.queryByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' })).toBeNull();
   });
 });

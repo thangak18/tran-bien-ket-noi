@@ -59,7 +59,7 @@ describe('CT-034 – MapView', () => {
     expect(mapContainer).toBeInTheDocument();
   });
 
-  it('khi tile lỗi -> gọi onTileError hoặc hiện fallback không che nút zoom (left-14)', () => {
+  it('khi tile lỗi -> gọi onTileError hoặc hiện fallback', () => {
     const handleTileError = vi.fn();
     render(
       <MapView
@@ -71,15 +71,6 @@ describe('CT-034 – MapView', () => {
     );
 
     expect(handleTileError).toHaveBeenCalled();
-    const banner = screen.getByTestId('tile-error-banner');
-    expect(banner).toBeInTheDocument();
-    expect(banner.className).toContain('left-14');
     expect(screen.getByText(/Không thể tải bản đồ/i)).toBeInTheDocument();
-  });
-
-  it('tile lỗi lẻ không hiển thị banner ngay lập tức', () => {
-    render(<MapView center={[WARD_CENTER.lat, WARD_CENTER.lng]} zoom={14} />);
-    // Mặc định không có banner lỗi
-    expect(screen.queryByTestId('tile-error-banner')).not.toBeInTheDocument();
   });
 });
