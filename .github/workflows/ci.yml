@@ -1,0 +1,89 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, feat/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Lint, Typecheck, Test, Verify & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+
+      - name: Run Lint & Prettier
+        working-directory: ./app
+        run: npm run lint
+
+      - name: Run TypeScript Check
+        working-directory: ./app
+        run: npx tsc --noEmit
+
+      # Supabase local (Docker) cung cấp PostgreSQL + PostGIS thật, Auth và Storage.
+      - name: Start Supabase local
+        working-directory: ./app
+        run: npx supabase start --workdir ..
+
+      # Khoá của Supabase local và mọi secret khác được sinh ngẫu nhiên lúc chạy, không lưu trong repo.
+      - name: Prepare environment
+        working-directory: ./app
+        run: |
+          STATUS="$(npx supabase status -o env --workdir ..)"
+          value() { echo "$STATUS" | grep "^$1=" | head -1 | cut -d= -f2- | tr -d '"'; }
+          rnd() { openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-48; }
+          for secret in "$(value ANON_KEY)" "$(value SERVICE_ROLE_KEY)" "$(value JWT_SECRET)"; do
+            echo "::add-mask::$secret"
+          done
+          CITIZEN_JWT_SECRET="$(rnd)"; OWNER_KEY_PEPPER="$(rnd)"; CRON_SECRET="$(rnd)"
+          SEED_STAFF_PASSWORD="Ci$(rnd)!1"
+          for secret in "$CITIZEN_JWT_SECRET" "$OWNER_KEY_PEPPER" "$CRON_SECRET" "$SEED_STAFF_PASSWORD"; do
+            echo "::add-mask::$secret"
+          done
+          {
+            echo "DATABASE_URL=$(value DB_URL)"
+            echo "DATABASE_URL_DIRECT=$(value DB_URL)"
+            echo "SUPABASE_URL=$(value API_URL)"
+            echo "SUPABASE_ANON_KEY=$(value ANON_KEY)"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(value SERVICE_ROLE_KEY)"
+            echo "SUPABASE_JWT_SECRET=$(value JWT_SECRET)"
+            echo "CITIZEN_JWT_SECRET=$CITIZEN_JWT_SECRET"
+            echo "OWNER_KEY_PEPPER=$OWNER_KEY_PEPPER"
+            echo "CRON_SECRET=$CRON_SECRET"
+            echo "SEED_STAFF_PASSWORD=$SEED_STAFF_PASSWORD"
+            echo "DEMO_MODE=true"
+          } >> "$GITHUB_ENV"
+
+      - name: Seed Database
+        working-directory: ./app
+        run: npm run seed
+
+      - name: Run Database Invariant Verification (db:verify)
+        working-directory: ./app
+        run: npm run db:verify
+
+      - name: Run Unit, Component & API Tests
+        working-directory: ./app
+        run: npm run test
+
+      - name: Run Mock Data Verification (mock:verify)
+        working-directory: ./app
+        run: npm run mock:verify
+
+      - name: Build Production Frontend
+        working-directory: ./app
+        run: npm run build

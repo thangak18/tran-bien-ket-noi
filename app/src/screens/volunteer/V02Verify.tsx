@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -17,7 +17,10 @@ import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { formatDateTime } from '@/domain/format';
 import { compressImage } from '@/lib/image';
 import { useAppStore } from '@/store/AppStore';
-import { submitVerification } from '@/store/officerActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
+import { ActionError } from '@/components/common/ActionError';
 import { V01Tasks } from './V01Tasks';
 
 type ExistsOption = 'co' | 'khong' | 'khong_tim_thay';
@@ -39,6 +42,9 @@ export function V02Verify() {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
+  const [loading, setLoading] = useState(false);
 
   const task = state.volunteerTasks.find((t) => t.id === taskId);
   const report = task ? state.reports.find((r) => r.id === task.reportId) : undefined;
@@ -52,6 +58,32 @@ export function V02Verify() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Chế độ API: vào thẳng đường dẫn nhiệm vụ thì tải nhiệm vụ và hồ sơ từ máy chủ.
+  useEffect(() => {
+    if (!isApiMode() || !taskId || taskId === 'ban-do' || taskId === 'ho-so') return;
+    if (task && report) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const t = task ?? (await ds.getVolunteerTaskById(taskId));
+        if (!t || cancelled) return;
+        if (!task) dispatch({ type: 'ADD_TASK', payload: t });
+        if (!report) {
+          const r = await ds.getReportById(t.reportId);
+          if (r && !cancelled) dispatch({ type: 'ADD_REPORT', payload: { report: r } });
+        }
+      } catch {
+        /* không tải được: hiển thị "Không tìm thấy nhiệm vụ" bên dưới */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, !!task, !!report]);
   if (taskId === 'ban-do' || taskId === 'ho-so') {
     return <V01Tasks />;
   }
@@ -64,6 +96,16 @@ export function V02Verify() {
     }
   };
 
+  if (loading && (!task || !report)) {
+    return (
+      <VolunteerLayout>
+        <div className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-xs font-semibold text-gray-500">Đang tải nhiệm vụ...</p>
+        </div>
+      </VolunteerLayout>
+    );
+  }
   if (!task || !report) {
     return (
       <VolunteerLayout>
@@ -135,7 +177,7 @@ export function V02Verify() {
     (exists !== 'co' || severity !== null) &&
     photo.length > 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!exists) {
       setErrorMessage('Vui lòng chọn kết quả Câu 1.');
@@ -150,19 +192,16 @@ export function V02Verify() {
       return;
     }
 
-    const nextState = submitVerification(
-      state,
-      task.id,
-      {
+    setErrorMessage(null);
+    const updated = await action.run(() =>
+      ds.submitVolunteerTask(task.id, {
         exists,
         severity: exists === 'co' ? (severity ?? undefined) : undefined,
         photo,
         note: note.trim() || undefined,
-      },
-      state.settings.demoNow
+      })
     );
-
-    dispatch({ type: 'HYDRATE', payload: nextState });
+    if (!updated) return;
     navigate('/tnv', {
       state: { toast: `Đã gửi kết quả xác minh cho ${report.id}` },
     });
@@ -430,6 +469,7 @@ export function V02Verify() {
               </Card>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <ActionError message={action.error} onDismiss={action.clearError} />
                 {errorMessage && (
                   <Toast
                     type="error"

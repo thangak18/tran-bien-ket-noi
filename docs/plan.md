@@ -237,20 +237,21 @@ Nguyên tắc:
 
 ## 11. Thư viện bổ sung (ghi lý do theo AGENTS.md)
 
-Các mục dưới đây **ngoại lệ** của câu "Không dùng… SDK backend" ở mục 2, chỉ áp dụng giai đoạn 2. Ghi version cố định khi cài.
+Các mục dưới đây **ngoại lệ** của câu "Không dùng… SDK backend" ở mục 2, chỉ áp dụng giai đoạn 2. Phiên bản được cố định chính xác (pinned version, không dùng `^` hay `~`) theo quy định của AGENTS.md.
 
-| Thư viện | Dùng ở | Lý do |
-|---|---|---|
-| `drizzle-orm`, `drizzle-kit` | server, migration | ORM đã chốt; sinh migration SQL, kiểu TypeScript từ schema |
-| `postgres` (postgres.js) | server | Driver cho Drizzle, hợp pooler transaction mode |
-| `hono` | server | Router nhẹ cho **một** Vercel Function thay vì ~50 file function (giảm cold start, middleware dùng chung, test bằng `app.request()` không cần dựng server) |
-| `zod` | server + client | Schema đầu vào một nguồn; client dùng lại để kiểm form |
-| `jose` | server | Xác minh JWT Supabase (JWKS) và ký/verify JWT người dân |
-| `@supabase/supabase-js` | client + server | Đăng nhập nhân viên (client); Admin API tạo tài khoản và Storage ký URL (server, khoá service) |
-| `vitest` + DB thử nghiệm | test | Đã có; test API dùng `app.request()` + Postgres thật (Docker `postgis/postgis`) – **không mock DB** vì bất biến nằm ở DB |
-| `@vercel/node` (types) | server | Kiểu cho handler |
+| Thư viện | Phiên bản | Dùng ở | Lý do |
+|---|---|---|---|
+| `drizzle-orm` | `0.38.3` | server, migration | ORM TypeScript gọn nhẹ, không sinh mã cồng kềnh, tương thích tốt với serverless edge |
+| `drizzle-kit` | `0.30.1` | server, dev | Công cụ quản lý schema và sinh file migration SQL từ TypeScript schema |
+| `postgres` | `3.4.5` | server | Driver PostgreSQL (postgres.js) hiệu năng cao, hỗ trợ pooler transaction mode của Supabase |
+| `hono` | `4.6.14` | server | Router siêu nhẹ cho Vercel Function gom thành một điểm vào duy nhất, middleware dùng chung, test bằng `app.request()` không cần dựng server |
+| `zod` | `3.24.1` | server + client | Định nghĩa schema dữ liệu một nguồn duy nhất (SSOT); client dùng lại để validate form, server validate payload |
+| `jose` | `5.9.6` | server | Thư viện chuẩn JWK/JWT không phụ thuộc Node crypto, dùng xác minh JWT Supabase và ký/xác minh JWT 30 ngày của người dân |
+| `@supabase/supabase-js` | `2.47.10` | client + server | Client dùng để đăng nhập nhân viên (Auth); Server dùng khoá `service_role` cho Admin API tạo user và ký URL Supabase Storage |
+| `supabase` | `2.1.1` | dev | CLI Supabase Local để khởi tạo và quản lý bộ dịch vụ Supabase nội bộ (PostgreSQL, PostGIS, Storage, Auth) qua Docker |
+| `@vercel/node` | `5.1.3` | dev, server | Cung cấp kiểu dữ liệu TypeScript (types) và adapter cho Vercel Functions |
 
-Không thêm: NestJS/Express, Prisma, Redis (giới hạn tốc độ dùng bảng Postgres), thư viện SMS (chưa làm thật).
+Không thêm: NestJS/Express, Prisma, Redis (giới hạn tốc độ dùng bảng Postgres), thư viện SMS bên thứ ba (chưa làm thật).
 
 ## 12. Cấu trúc thư mục thêm
 
@@ -286,35 +287,42 @@ app/
 
 ## 13. Biến môi trường
 
-Chỉ liệt kê **tên**; giá trị đặt ở `.env.local` (không commit) và Vercel.
+Chỉ liệt kê **tên**; giá trị đặt ở `app/.env.local` (được `.gitignore` chặn, không commit) và bảng biến môi trường Vercel / GitHub Actions Secrets. Cung cấp file mẫu `app/.env.example` đầy đủ tên biến và chú thích.
 
 | Biến | Phạm vi | Ghi chú |
 |---|---|---|
-| `DATABASE_URL` | server | Chuỗi pooler (transaction mode) |
-| `DATABASE_URL_DIRECT` | máy dev/CI | Chỉ cho migration |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | client + server | `VITE_` tiền tố cho client |
-| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | Tạo user, ký URL Storage |
-| `CITIZEN_JWT_SECRET` | server | ≥ 32 byte ngẫu nhiên |
-| `OWNER_KEY_PEPPER` | server | Pepper cho hash `secretCode`/`ownerToken`/`ip_hash` |
+| `DATABASE_URL` | server | Chuỗi kết nối PostgreSQL pooler (transaction mode) |
+| `DATABASE_URL_DIRECT` | máy dev/CI | Chuỗi kết nối trực tiếp phục vụ migration Drizzle |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | server | URL và anon key của Supabase project |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | client | Khai báo tiền tố `VITE_` để client React gọi Supabase Auth |
+| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | Khoá đặc quyền cao nhất: Admin API tạo tài khoản nhân viên, ký URL upload/download Storage |
+| `CITIZEN_JWT_SECRET` | server | Khóa bí mật ký JWT 30 ngày cho người dân (chuỗi ngẫu nhiên ≥ 32 bytes) |
+| `OWNER_KEY_PEPPER` | server | Pepper cho mã hoá hash `secretCode`, `ownerToken` và `ip_hash` |
 | `OTP_PROVIDER`, `SMS_PROVIDER` | server | `mock` (mặc định) |
-| `ALLOW_MOCK_OTP` | server | Phải `true` mới cho chạy `mock` khi `NODE_ENV=production` |
-| `DEMO_MODE` | server | `true` cho phép script `demo:reset`/`demo:clock` |
-| `CRON_SECRET` | server | Vercel Cron gọi `/api/v1/cron/*` kèm bí mật |
-| `VITE_DATA_SOURCE` | client | `local` \| `api` |
-| `SEED_STAFF_PASSWORD` | máy chạy seed | Mật khẩu tài khoản mẫu, không ghi repo |
+| `ALLOW_MOCK_OTP` | server | Phải `true` mới cho phép chạy provider `mock` khi `NODE_ENV=production` |
+| `DEMO_MODE` | server | `true` mới cho phép chạy script `demo:reset` và `demo:clock` |
+| `CRON_SECRET` | server | Khóa bí mật xác thực Vercel Cron khi gọi `/api/v1/cron/*` |
+| `VITE_DATA_SOURCE` | client | `local` (mặc định offline) \| `api` (kết nối backend Supabase) |
+| `SEED_STAFF_PASSWORD` | máy chạy seed | Mật khẩu tài khoản nhân viên mẫu khi chạy `db:seed`, không ghi vào repo |
 
 ## 14. Môi trường và triển khai
 
 | Môi trường | Supabase | Vercel | Ghi chú |
 |---|---|---|---|
-| Local | Docker `postgis/postgis` (test API) hoặc Supabase CLI | `vercel dev` / Vite | Mặc định `VITE_DATA_SOURCE=local` để dev UI không cần DB |
-| Preview | Dự án Supabase "staging" | Preview deployment mỗi PR | Seed lại khi cần |
-| Production | Dự án Supabase "prod" | Dự án `tran-bien-ket-noi` (Root = `app`) | `VITE_DATA_SOURCE=api` |
-| Demo offline | Không | Dự án Vercel **riêng** `tran-bien-ket-noi-demo` | `VITE_DATA_SOURCE=local`; giữ hành vi nộp 24/11 |
+| Local (Dev/Test) | **Supabase Local** (`npx supabase start` qua Docker) | `vercel dev` / Vite dev | Hỗ trợ 2 chế độ: `VITE_DATA_SOURCE=local` (offline nhanh) và `VITE_DATA_SOURCE=api` (kết nối Supabase local) |
+| Preview | Dự án Supabase "staging" (Cloud) | Preview deployment tự động mỗi PR | Seed lại dữ liệu khi cần |
+| Production | Dự án Supabase "prod" (Cloud) | Dự án `tran-bien-ket-noi` trên Vercel (Root = `app`) | `VITE_DATA_SOURCE=api`, RLS bật toàn diện |
+| Demo offline | Không | Dự án Vercel **riêng** `tran-bien-ket-noi-demo` | `VITE_DATA_SOURCE=local`; bảo toàn nguyên vẹn bản nộp ngày 24/11 |
 
+### Quy trình Supabase Local:
+1. Cài đặt `supabase` CLI dạng devDependency.
+2. Khởi chạy `npx supabase init` và `npx supabase start` (sử dụng Docker engine).
+3. Lấy thông số kết nối qua `npx supabase status` (API URL, anon key, service_role key, connection string).
+4. Ghi các khóa bí mật vào `app/.env.local` (tuyệt đối không đưa vào git).
+
+### Triển khai & Vận hành:
 - Migration chạy **thủ công có kiểm soát** (`npm run db:migrate`) trước khi deploy bản cần schema mới; không chạy tự động trong build.
-- Gói miễn phí Supabase chỉ cho 2 dự án → staging và prod dùng hết; dev dùng Docker.
-- `vercel.json`: thêm rewrite `/api/(.*)` → function, giữ SPA rewrite cho phần còn lại; cron `0 20 * * *` (UTC, = 03:00 UTC+7).
+- `vercel.json`: cấu hình rewrite `/api/(.*)` → function `api/[...path].ts`, giữ nguyên SPA rewrite cho phần còn lại; định nghĩa cron job hằng ngày `0 20 * * *` (UTC, tương đương 03:00 UTC+7).
 
 ## 15. Phases giai đoạn 2
 
@@ -351,7 +359,14 @@ Chi tiết case ghi vào `tests.md` trước khi code mỗi phase (AGENTS.md quy
 | Đồng thời | Vitest | AC-DATA-4: hai giao dịch song song trên cùng hồ sơ |
 | E2E | Playwright | Chạy hai lần: `local` và `api` (DB seed) |
 
-CI (GitHub Actions): lint → typecheck → vitest (service Postgres) → `db:migrate` + `db:seed` + `db:verify` → build. E2E chạy khi gắn nhãn hoặc trước deploy production.
+CI (GitHub Actions qua `.github/workflows/ci.yml`):
+1. `lint` (ESLint + Prettier check).
+2. `typecheck` (`tsc --noEmit`).
+3. `vitest` unit tests cho `domain/`, `store/`, components.
+4. Khởi chạy Postgres container tích hợp PostGIS (`postgis/postgis:15-3.3`).
+5. Thực thi migration Drizzle (`npm run db:migrate`), nạp dữ liệu mẫu (`npm run db:seed`), kiểm tra bộ bất biến (`npm run db:verify`).
+6. Chạy bộ kiểm thử API backend và phân quyền trên database thật (`npm run test:api`).
+7. `build` client và kiểm tra kích thước bundle. E2E Playwright chạy định kỳ hoặc khi gắn nhãn chuẩn bị release.
 
 ## 17. Checklist trước khi mở cho người dùng thật
 
@@ -376,3 +391,11 @@ Xem bảng rủi ro ở `spec.md` mục 17. Bổ sung kỹ thuật:
 | Drizzle không biểu diễn hết PostGIS/trigger/RLS | Viết các phần đó bằng SQL tay trong `migrations/`, có test kiểm tồn tại |
 | Lệch múi giờ | DB `timestamptz`; chỉ định dạng `+07:00` ở lớp serialize |
 | Seed ghi đè dữ liệu thật | `db:seed` từ chối chạy nếu bảng `reports` đã có dòng không phải `is_seed` (trừ cờ `--force` chỉ ở staging) |
+
+## 19. Ghi chú sau review 25/11/2026
+
+- Không thêm `@hono/node-server`: Vite dev server đã có middleware phục vụ `/api` (`vite.config.ts`), đủ cho e2e chế độ API (`playwright.api.config.ts`), nên không có thư viện mới nào ngoài danh sách ở mục 11.
+- PostGIS chạy thật bằng Supabase local; không còn lớp tương thích `cube/earthdistance` (các mục nhắc lớp này ở trên không còn hiệu lực).
+- Script dùng chung `app/scripts/lib` (env bắt buộc, Supabase Auth admin) thay cho các URL/pepper mặc định.
+- E2E chế độ API chạy bằng `npm run test:e2e:api`; dùng Google Chrome cài sẵn (`channel: chrome`, đổi bằng `PW_CHANNEL`).
+

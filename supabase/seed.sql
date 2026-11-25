@@ -1,0 +1,1 @@
+-- Supabase initial seed SQL (managed by db:seed script)

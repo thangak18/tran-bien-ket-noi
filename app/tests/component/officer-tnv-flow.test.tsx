@@ -46,9 +46,11 @@ describe('Luồng liên vai trò: cán bộ giao TNV -> TNV gửi -> cán bộ x
 
     // Cán bộ giao TNV
     fireEvent.click(screen.getByRole('button', { name: /Giao TNV xác minh/i }));
-    const dialog = screen.getByRole('dialog');
+    // Trang A02 còn ô chọn bộ phận, nên chỉ tìm ô chọn TNV trong hộp thoại giao việc.
+    const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'Lê Thảo Vy' } });
     fireEvent.click(within(dialog).getByRole('button', { name: /Xác nhận giao|Giao nhiệm vụ/i }));
+    await screen.findByText(/Đã giao TNV Lê Thảo Vy xác minh/);
 
     // TNV thấy nhiệm vụ
     await router.navigate('/tnv');

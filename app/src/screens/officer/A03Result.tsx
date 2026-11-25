@@ -1,10 +1,13 @@
-import { useState, ChangeEvent } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Trash2, CheckCircle2, ImagePlus, AlertCircle } from 'lucide-react';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { useAppStore } from '@/store/AppStore';
-import { completeReport, getCategoryConfig } from '@/store/officerActions';
-import { DEFAULT_OFFICER } from '@/domain/constants';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
+import { ActionError } from '@/components/common/ActionError';
+import { getCategoryConfig } from '@/domain/constants';
 import { compressImage } from '@/lib/image';
 import { BeforeAfter } from '@/components/citizen/BeforeAfter';
 import { StatusChip } from '@/components/common/StatusChip';
@@ -25,7 +28,24 @@ export function A03Result() {
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
 
+  const ds = useDataSource();
+  const action = useAction();
   const report = state.reports.find((r) => r.id === id);
+  // Chế độ API: luôn tải chi tiết hồ sơ (danh sách không có đủ trường); local chỉ tải khi chưa có.
+  const loadReport = async () => {
+    if (!id) return;
+    try {
+      const rep = await ds.getOfficerReport(id);
+      if (rep) dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+    } catch {
+      /* lỗi tải được báo khi gửi; hồ sơ trong danh sách vẫn hiển thị */
+    }
+  };
+  useEffect(() => {
+    if (id && (isApiMode() || !report)) void loadReport();
+    // Chỉ chạy lại khi đổi hồ sơ đang xem.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const [afterPhotos, setAfterPhotos] = useState<string[]>(report?.resultPhotos ?? []);
   const [resultNote, setResultNote] = useState<string>(report?.resultNote ?? '');
@@ -106,32 +126,25 @@ export function A03Result() {
     setAfterPhotos((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!isValid) return;
-    try {
-      const nextState = completeReport(
-        state,
-        report.id,
-        {
+    const updated = await action.run(
+      () =>
+        ds.officerCompleteReport(report.id, {
           resultPhotos: afterPhotos,
           resultNote: resultNote.trim(),
           completedAt: completedAtIso,
-          actor: DEFAULT_OFFICER,
-        },
-        state.settings.demoNow
-      );
-      dispatch({ type: 'HYDRATE', payload: nextState });
-      setToast({
-        message: `Đã cập nhật kết quả hoàn thành cho ${report.id}`,
-        type: 'success',
-      });
-      navigate(`/can-bo/${report.id}`);
-    } catch (err) {
-      setToast({
-        message: err instanceof Error ? err.message : 'Không thể cập nhật kết quả',
-        type: 'error',
-      });
-    }
+          version: report.version,
+        }),
+      { onConflict: loadReport }
+    );
+    if (!updated) return;
+    dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
+    setToast({
+      message: `Đã cập nhật kết quả hoàn thành cho ${report.id}`,
+      type: 'success',
+    });
+    navigate(`/can-bo/${report.id}`);
   };
 
   const catConfig = getCategoryConfig(report.category);
@@ -308,12 +321,13 @@ export function A03Result() {
 
             {/* Nút Xác nhận + chú thích lý do khi tắt (AC-A03-4, AC-A03-5) */}
             <div className="pt-2 space-y-2">
+              <ActionError message={action.error} onDismiss={action.clearError} />
               <Button
                 variant="primary"
                 fullWidth
-                disabled={!isValid}
+                disabled={!isValid || action.pending}
                 icon={<CheckCircle2 className="h-5 w-5" />}
-                onClick={handleConfirm}
+                onClick={() => void handleConfirm()}
               >
                 Xác nhận hoàn thành
               </Button>

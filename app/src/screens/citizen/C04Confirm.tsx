@@ -32,7 +32,10 @@ import { CATEGORIES, Category, Report } from '@/domain/types';
 import { getCurrentLocation } from '@/lib/geolocation';
 import { compressImage } from '@/lib/image';
 import { useAppStore } from '@/store/AppStore';
-import { followReport, submitReport, subscribeLater, unsubscribe } from '@/store/citizenActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
+import { ActionError } from '@/components/common/ActionError';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { MapView } from '@/components/map/MapView';
 import { CategoryTile } from '@/components/citizen/CategoryTile';
@@ -164,6 +167,11 @@ export function C04Confirm() {
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
   const { draft, settings, reports } = state;
+  const ds = useDataSource();
+  const submitAction = useAction();
+  const subscribeAction = useAction();
+  // Một lần gửi dùng một Idempotency-Key để nhấn nhanh nhiều lần không tạo hồ sơ trùng.
+  const idempotencyKey = useRef<string>(crypto.randomUUID());
 
   // Gợi ý loại sự cố mô phỏng từ ảnh (AC-C04-1 / B1)
   const aiSuggestedCategory: Category = useMemo(() => {
@@ -645,7 +653,47 @@ export function C04Confirm() {
     handleDescriptionChange(nextText);
   };
 
-  const executePhoneSubmit = (verifiedPhone: string) => {
+  const recordApiReport = (
+    res: { report: Report; secretCode?: string; ownerToken?: string },
+    phone?: string
+  ) => {
+    if (isApiMode()) {
+      dispatch({
+        type: 'SET_SETTINGS',
+        payload: {
+          ...(phone ? { phone } : {}),
+          deviceReports: [
+            ...(state.settings.deviceReports || []),
+            {
+              id: res.report.id,
+              secretCode: res.secretCode || '',
+              code: res.report.id,
+              ownerToken: res.ownerToken || '',
+            },
+          ],
+        },
+      });
+      dispatch({ type: 'ADD_REPORT', payload: { report: res.report } });
+    } else if (phone) {
+      dispatch({ type: 'SET_SETTINGS', payload: { phone } });
+    }
+    idempotencyKey.current = crypto.randomUUID();
+  };
+
+  const buildPayload = (anonymous: boolean, phone?: string) => ({
+    category: selectedCategory,
+    photos: draft.photos.length > 0 ? draft.photos : [FALLBACK_HERO_PHOTO],
+    lat: draft.lat!,
+    lng: draft.lng!,
+    address: draft.address!,
+    locationNote: locationNoteInput.trim() || draft.locationNote,
+    title: titleInput.trim() || draft.title?.trim() || undefined,
+    description: description.trim() || undefined,
+    ...(anonymous ? {} : { phone }),
+    anonymous,
+  });
+
+  const executePhoneSubmit = async (verifiedPhone: string) => {
     if (!hasLocation) {
       handleGoToLocationMap();
       return;
@@ -658,43 +706,26 @@ export function C04Confirm() {
       return;
     }
 
-    const stateWithPhone = {
-      ...state,
-      settings: {
-        ...state.settings,
-        phone: verifiedPhone,
-      },
-    };
-
-    const { state: nextState, report } = submitReport(
-      stateWithPhone,
-      {
-        category: selectedCategory,
-        photos: draft.photos.length > 0 ? draft.photos : [FALLBACK_HERO_PHOTO],
-        lat: draft.lat!,
-        lng: draft.lng!,
-        address: draft.address!,
-        locationNote: locationNoteInput.trim() || draft.locationNote,
-        title: titleInput.trim() || draft.title?.trim() || undefined,
-        description: description.trim() || undefined,
-        phone: verifiedPhone,
-        anonymous: false,
-      },
-      settings.demoNow
+    // Lỗi từ API được báo ngay trên màn hình, giữ nguyên bản nháp; không lưu cục bộ thay cho API.
+    const res = await submitAction.run(() =>
+      ds.createReport(buildPayload(false, verifiedPhone), {
+        idempotencyKey: idempotencyKey.current,
+      })
     );
+    if (!res) return;
 
     setOfflineError(false);
     setPendingMode(null);
-    dispatch({ type: 'HYDRATE', payload: nextState });
+    recordApiReport(res, verifiedPhone);
     navigate('/', {
       state: {
-        submittedId: report.id,
-        toastMessage: `Gửi phản ánh #${report.id} thành công!`,
+        submittedId: res.report.id,
+        toastMessage: `Gửi phản ánh #${res.report.id} thành công!`,
       },
     });
   };
 
-  const executeAnonymousSubmit = () => {
+  const executeAnonymousSubmit = async () => {
     if (!hasLocation) {
       handleGoToLocationMap();
       return;
@@ -712,26 +743,19 @@ export function C04Confirm() {
       return;
     }
 
-    const { state: nextState, report } = submitReport(
-      state,
-      {
-        category: selectedCategory,
-        photos: draft.photos.length > 0 ? draft.photos : [FALLBACK_HERO_PHOTO],
-        lat: draft.lat!,
-        lng: draft.lng!,
-        address: draft.address!,
-        locationNote: locationNoteInput.trim() || draft.locationNote,
-        title: titleInput.trim() || draft.title?.trim() || undefined,
-        description: description.trim() || undefined,
-        anonymous: true,
-      },
-      settings.demoNow
+    const res = await submitAction.run(() =>
+      ds.createReport(buildPayload(true), { idempotencyKey: idempotencyKey.current })
     );
+    if (!res) return;
 
     setOfflineError(false);
     setPendingMode(null);
-    dispatch({ type: 'HYDRATE', payload: nextState });
-    setSubmittedAnonymousReport(report);
+    recordApiReport(res);
+    // Mã bí mật chỉ có trong phản hồi lúc tạo; hiển thị một lần ở màn hình thành công.
+    setSubmittedAnonymousReport({
+      ...res.report,
+      secretCode: res.secretCode ?? res.report.secretCode ?? '',
+    });
   };
 
   const handlePrimarySubmit = () => {
@@ -788,52 +812,39 @@ export function C04Confirm() {
     setCurrentStep(3);
   };
 
-  const handleJoinDuplicate = () => {
+  const handleJoinDuplicate = async () => {
     if (!topDuplicate) return;
     const cleanPhone = phoneInput.replace(/\s+/g, '') || settings.phone;
-    const nextState = followReport(
-      state,
-      topDuplicate.report.id,
-      cleanPhone ? { phone: cleanPhone } : { anonymous: true }
-    );
-    dispatch({ type: 'HYDRATE', payload: nextState });
+    const targetId = topDuplicate.report.id;
+    const ok = await submitAction.run(async () => {
+      await ds.followReport(targetId, cleanPhone || undefined);
+      return true;
+    });
+    if (!ok) return;
     dispatch({ type: 'CLEAR_DRAFT' });
-    navigate(`/phan-anh/${topDuplicate.report.id}`);
+    navigate(`/phan-anh/${targetId}`);
   };
 
-  const handleSubscribeLater = (verifiedPhone: string) => {
+  const handleSubscribeLater = async (verifiedPhone: string) => {
     if (!submittedAnonymousReport) return;
-    const nextState = subscribeLater(
-      state,
-      submittedAnonymousReport.id,
-      verifiedPhone,
-      settings.demoNow
+    const updated = await subscribeAction.run(() =>
+      ds.claimReport(submittedAnonymousReport.id, verifiedPhone)
     );
-    const nextWithPhone = {
-      ...nextState,
-      settings: {
-        ...nextState.settings,
-        phone: verifiedPhone,
-      },
-    };
-    dispatch({ type: 'HYDRATE', payload: nextWithPhone });
-    const updated =
-      nextWithPhone.reports.find((r) => r.id === submittedAnonymousReport.id) ??
-      submittedAnonymousReport;
-    setSubmittedAnonymousReport(updated);
+    if (!updated) return;
+    dispatch({ type: 'SET_SETTINGS', payload: { phone: verifiedPhone } });
+    setSubmittedAnonymousReport({ ...updated, secretCode: submittedAnonymousReport.secretCode });
     showToast('Đã đăng ký nhận thông báo tiến độ', 'success');
   };
 
-  const handleUnsubscribeLater = () => {
+  const handleUnsubscribeLater = async () => {
     if (!submittedAnonymousReport) return;
     const targetPhone = settings.phone;
     if (!targetPhone) return;
-    const nextState = unsubscribe(state, submittedAnonymousReport.id, targetPhone);
-    dispatch({ type: 'HYDRATE', payload: nextState });
-    const updated =
-      nextState.reports.find((r) => r.id === submittedAnonymousReport.id) ??
-      submittedAnonymousReport;
-    setSubmittedAnonymousReport(updated);
+    const updated = await subscribeAction.run(() =>
+      ds.unsubscribeReport(submittedAnonymousReport.id, targetPhone)
+    );
+    if (!updated) return;
+    setSubmittedAnonymousReport({ ...updated, secretCode: submittedAnonymousReport.secretCode });
     showToast('Đã huỷ nhận tin báo cho phản ánh này', 'info');
   };
 
@@ -887,6 +898,7 @@ export function C04Confirm() {
               onCopySuccess={() => showToast('Đã sao chép link theo dõi', 'success')}
             />
 
+            <ActionError message={subscribeAction.error} onDismiss={subscribeAction.clearError} />
             <SubscribeCard
               reportId={submittedAnonymousReport.id}
               currentPhone={subscribedPhone}
@@ -1205,6 +1217,11 @@ export function C04Confirm() {
             </div>
           )}
 
+          <ActionError
+            className="mb-4"
+            message={submitAction.error}
+            onDismiss={submitAction.clearError}
+          />
           {/* Offline Error Banner */}
           {offlineError && (
             <div
@@ -2005,10 +2022,11 @@ export function C04Confirm() {
                   <button
                     type="button"
                     onClick={handlePrimarySubmit}
+                    disabled={submitAction.pending}
                     className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0084E8] px-5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition-all hover:bg-[#006EC4] active:scale-[0.99]"
                   >
                     <Send className="h-4 w-4" />
-                    <span>Gửi phản ánh</span>
+                    <span>{submitAction.pending ? 'Đang gửi…' : 'Gửi phản ánh'}</span>
                   </button>
                 ) : (
                   <button

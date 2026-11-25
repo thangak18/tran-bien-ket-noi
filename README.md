@@ -10,22 +10,27 @@ Người dân chụp ảnh báo sự cố, cán bộ phường tiếp nhận và
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
 | 1 | Prototype giao diện (React) + dữ liệu mẫu + localStorage, deploy Vercel | **Đã nộp 24/11/2026** |
-| 2 | Sản phẩm hoàn chỉnh: backend + PostgreSQL/PostGIS + tài khoản + lưu ảnh | **Đang bắt đầu (25/11/2026)** – kế hoạch ở `CLAUDE.md` mục 6 |
+| 2 | Sản phẩm hoàn chỉnh: full-stack React SPA + Hono API + PostgreSQL/PostGIS + tài khoản phân quyền + lưu trữ ảnh Supabase Storage + CLI vận hành | **Hoàn thành trọn vẹn (25/11/2026)** – xem `docs/van-hanh.md` |
 
 ## Cấu trúc
 
 ```
 TranBienKetNoi_Workspace/
-├── CLAUDE.md                 # bối cảnh + kế hoạch giai đoạn 2 (đọc đầu tiên)
+├── CLAUDE.md                 # bối cảnh + trạng thái dự án
 ├── AGENTS.md                 # luật cho agent code
-├── README.md
+├── README.md                 # tài liệu giới thiệu tổng quan
 ├── thuyet-minh.md            # bản thuyết minh nộp vòng 1 (+ PDF)
 ├── assets/                   # sơ đồ luồng và kiến trúc
-├── docs/                     # spec, ui-ux-guidelines, plan, tasks, tests, code-guidelines, review/
-└── app/                      # React + Vite + TypeScript + Tailwind 3.4
+├── docs/                     # proposal_v3, spec, ui-ux-guidelines, plan, tasks, tests, van-hanh.md
+└── app/                      # Full-stack Application
+    ├── api/                  # Vercel Function Node.js handler ([...path].ts)
+    ├── server/               # Hono backend engine: routes, middleware, db client, schema
+    ├── scripts/              # Seed, db-verify, staff CLI, ops CLI
     ├── src/domain/           # nghiệp vụ thuần: types, constants, transitions, duplicates, privacy…
-    ├── src/store/            # AppStore + citizenActions + officerActions (hàm thuần state → state)
-    ├── src/screens/          # citizen / officer / volunteer / demo
+    ├── src/data/             # DataSource abstraction (LocalDataSource, ApiDataSource)
+    ├── src/lib/              # api client, auth, geolocation, image, senior, share
+    ├── src/store/            # AppStore + citizenActions + officerActions
+    ├── src/screens/          # citizen / officer / volunteer / auth / demo
     ├── src/data/mock.json    # 64 hồ sơ mẫu
     └── public/demo-photos/   # ảnh minh hoạ
 ```
@@ -34,12 +39,14 @@ TranBienKetNoi_Workspace/
 
 ```bash
 cd app
-npm install
-npm run dev        # chạy local
-npm run build      # tsc + vite build
-npm run lint
-npx vitest run
-npm run mock:verify
+npm install           # Cài đặt thư viện pinned dependencies
+npm run dev           # Chạy serverless dev & React SPA
+npm run verify        # Kiểm tra toàn diện (lint, tsc, 39 files test, 16 bất biến mock)
+npm run db:verify     # Kiểm tra 16 bất biến trực tiếp trên PostgreSQL live
+npm run seed          # Nạp 64 hồ sơ mẫu và tài khoản nhân viên
+npm run build         # Build production frontend
+npm run staff:list    # Quản trị danh sách nhân viên
+npm run demo:reset    # Đặt lại dữ liệu mẫu cho giám khảo
 ```
 
 ## Quyết định đã chốt

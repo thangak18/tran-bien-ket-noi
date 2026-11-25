@@ -1,4 +1,5 @@
 import { Priority, Report, Status } from './types';
+import { followerCount as countFollowers } from './access';
 
 const DUE_TRACKED_STATUSES: Set<Status> = new Set([
   'da_tiep_nhan',
@@ -35,7 +36,7 @@ export function computePriority(report: Report, manualPriority?: Priority): Prio
   if (manualPriority === 'cao' || report.priority === 'cao') {
     return 'cao';
   }
-  const followerCount = (report.followers?.length ?? 0) + (report.anonymousFollows ?? 0);
+  const followerCount = countFollowers(report);
   if (followerCount >= 3) {
     return 'cao';
   }

@@ -25,6 +25,8 @@ import { formatDistance } from '@/domain/format';
 import { haversineMeters } from '@/domain/geo';
 import { WARD_CENTER } from '@/data/streets';
 import { getCurrentLocation } from '@/lib/geolocation';
+import { isApiMode } from '@/lib/api';
+import { getCurrentVolunteer, setCurrentVolunteer as saveActingVolunteer } from '@/lib/volunteer';
 import { useAppStore } from '@/store/AppStore';
 import { Report, VolunteerTask } from '@/domain/types';
 
@@ -60,9 +62,15 @@ export function V01Tasks() {
   const [volunteerSession, setLocalVolunteerSession] = useState<VolunteerSession | null>(() =>
     getVolunteerSession()
   );
-  const [currentVolunteer, setCurrentVolunteer] = useState<string>(
-    () => volunteerSession?.name ?? getInitialVolunteer(location.search)
+  const [currentVolunteer, setCurrentVolunteer] = useState<string>(() =>
+    isApiMode()
+      ? getCurrentVolunteer()
+      : (volunteerSession?.name ?? getInitialVolunteer(location.search))
   );
+  // Chế độ local: LocalDataSource lấy tên TNV đang đóng vai từ lib/volunteer.
+  useEffect(() => {
+    if (!isApiMode() && currentVolunteer) saveActingVolunteer(currentVolunteer);
+  }, [currentVolunteer]);
   const [activeTab, setActiveTab] = useState<'todo' | 'done'>('todo');
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>(WARD_CENTER);
   const [hasGps, setHasGps] = useState(false);

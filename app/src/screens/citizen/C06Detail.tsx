@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -33,13 +33,9 @@ import { Report, Status, TimelineEntry } from '@/domain/types';
 import { compressImage } from '@/lib/image';
 import { buildTrackingUrl } from '@/lib/share';
 import { useAppStore } from '@/store/AppStore';
-import {
-  claimByLink,
-  followReport,
-  submitFeedback,
-  subscribeLater,
-  unsubscribe,
-} from '@/store/citizenActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
 
 const FOLLOWED_STORAGE_KEY = 'tbkn:followed-reports';
 
@@ -160,6 +156,8 @@ export function C06Detail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
 
   const urlKey = searchParams.get('k');
   const now = state.settings.demoNow;
@@ -193,25 +191,52 @@ export function C06Detail() {
     setActiveHeroIdx(0);
   }, [id]);
 
-  // Kiểm tra ?k= và tự động ghi nhận quyền chủ hồ sơ trên thiết bị (AC-C06-10)
-  const hasInvalidKey = useMemo(() => {
-    if (!rawReport || !urlKey) return false;
-    return rawReport.secretCode !== urlKey;
-  }, [rawReport, urlKey]);
+  // Hồ sơ chưa có trong store (mở thẳng link, hoặc chế độ API): tải chi tiết công khai.
+  useEffect(() => {
+    if (rawReport || !id) return;
+    let cancelled = false;
+    void ds
+      .getReportById(id)
+      .then((rep) => {
+        if (rep && !cancelled) dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [id, rawReport, ds, dispatch]);
 
+  // Lỗi của thao tác ghi hiển thị bằng toast (có chữ "Lỗi" trong nội dung thông báo từ useAction).
+  useEffect(() => {
+    if (action.error) setToast({ message: action.error, type: 'error' });
+  }, [action.error]);
+
+  // Kiểm tra ?k= và tự động ghi nhận quyền chủ hồ sơ trên thiết bị (AC-C06-10)
+  const [apiKeyInvalid, setApiKeyInvalid] = useState(false);
+  const claimTried = useRef<string | null>(null);
+  const hasInvalidKey = useMemo(() => {
+    if (!urlKey) return false;
+    if (isApiMode()) return apiKeyInvalid;
+    if (!rawReport) return false;
+    return rawReport.secretCode !== urlKey;
+  }, [rawReport, urlKey, apiKeyInvalid]);
   useEffect(() => {
     if (!rawReport || !urlKey) return;
+    const claimKey = `${rawReport.id}:${urlKey}`;
+    if (claimTried.current === claimKey) return;
+    if (isApiMode()) {
+      claimTried.current = claimKey;
+      ds.claimReportByKey(rawReport.id, urlKey).catch(() => setApiKeyInvalid(true));
+      return;
+    }
     if (rawReport.secretCode === urlKey) {
       const alreadyClaimed = state.settings.deviceReports.some(
         (d) => d.id === rawReport.id && d.secretCode === urlKey
       );
-      if (!alreadyClaimed) {
-        const nextState = claimByLink(state, rawReport.id, urlKey);
-        dispatch({ type: 'HYDRATE', payload: nextState });
-      }
+      claimTried.current = claimKey;
+      if (!alreadyClaimed) void ds.claimReportByKey(rawReport.id, urlKey);
     }
-  }, [rawReport, urlKey, state, dispatch]);
-
+  }, [rawReport, urlKey, state.settings.deviceReports, ds]);
   const isOwner = useMemo(() => {
     if (!rawReport) return false;
     return hasOwnerAccess(rawReport, {
@@ -304,28 +329,28 @@ export function C06Detail() {
     setIsShareOpen(true);
   };
 
-  const handleRatingSubmit = (data: { rating: number; tags: string[]; comment?: string }) => {
+  const handleRatingSubmit = async (data: { rating: number; tags: string[]; comment?: string }) => {
     setIsSubmitting(true);
-    try {
-      const nextState = submitFeedback(
-        state,
-        rawReport.id,
-        { resolved: true, rating: data.rating, tags: data.tags, comment: data.comment },
-        now
-      );
-      dispatch({ type: 'HYDRATE', payload: nextState });
-      setIsRatingOpen(false);
-      setToast({ message: 'Cảm ơn bạn đã đánh giá! Phản ánh đã được đóng.', type: 'success' });
-    } catch (err) {
-      setToast({
-        message: err instanceof Error ? err.message : 'Không thể gửi đánh giá.',
-        type: 'error',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    const updated = await action.run(
+      () =>
+        ds.submitFeedback(rawReport.id, {
+          resolved: true,
+          rating: data.rating,
+          tags: data.tags,
+          comment: data.comment,
+        }),
+      { onConflict: reloadReport }
+    );
+    setIsSubmitting(false);
+    if (!updated) return;
+    if (isApiMode()) dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
+    setIsRatingOpen(false);
+    setToast({ message: 'Cảm ơn bạn đã đánh giá! Phản ánh đã được đóng.', type: 'success' });
   };
-
+  const reloadReport = async () => {
+    const fresh = await ds.getReportById(rawReport.id);
+    if (fresh) dispatch({ type: 'ADD_REPORT', payload: { report: fresh } });
+  };
   const handleReopenPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -337,31 +362,25 @@ export function C06Detail() {
     }
   };
 
-  const handleReopenSubmit = (e: React.FormEvent) => {
+  const handleReopenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const nextState = submitFeedback(
-        state,
-        rawReport.id,
-        { resolved: false, comment: reopenNote.trim() || undefined },
-        now
-      );
-      dispatch({ type: 'HYDRATE', payload: nextState });
-      setIsReopenOpen(false);
-      setReopenNote('');
-      setReopenPhoto(null);
-      setToast({ message: 'Phường đã nhận ý kiến và sẽ kiểm tra lại.', type: 'info' });
-    } catch (err) {
-      setToast({
-        message: err instanceof Error ? err.message : 'Không thể gửi phản hồi.',
-        type: 'error',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    const updated = await action.run(
+      () =>
+        ds.submitFeedback(rawReport.id, {
+          resolved: false,
+          comment: reopenNote.trim() || undefined,
+        }),
+      { onConflict: reloadReport }
+    );
+    setIsSubmitting(false);
+    if (!updated) return;
+    if (isApiMode()) dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
+    setIsReopenOpen(false);
+    setReopenNote('');
+    setReopenPhoto(null);
+    setToast({ message: 'Phường đã nhận ý kiến và sẽ kiểm tra lại.', type: 'info' });
   };
-
   const handleSupplement = () => {
     dispatch({
       type: 'SET_DRAFT',
@@ -379,32 +398,37 @@ export function C06Detail() {
     navigate('/bao-su-co/anh', { state: { supplementReportId: rawReport.id } });
   };
 
-  const handleSubscribe = (phone: string) => {
-    const nextState = subscribeLater(state, rawReport.id, phone, now);
-    dispatch({ type: 'HYDRATE', payload: nextState });
+  const handleSubscribe = async (phone: string) => {
+    const updated = await action.run(() => ds.claimReport(rawReport.id, phone), {
+      onConflict: reloadReport,
+    });
+    if (!updated) return;
+    if (isApiMode()) dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
     setToast({ message: `Đã đăng ký nhận tin báo cho #${rawReport.id}.`, type: 'success' });
   };
-
-  const handleUnsubscribe = () => {
+  const handleUnsubscribe = async () => {
     if (!subscribedPhone) return;
-    const nextState = unsubscribe(state, rawReport.id, subscribedPhone);
-    dispatch({ type: 'HYDRATE', payload: nextState });
+    const updated = await action.run(() => ds.unsubscribeReport(rawReport.id, subscribedPhone), {
+      onConflict: reloadReport,
+    });
+    if (!updated) return;
+    if (isApiMode()) dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
     setToast({ message: 'Đã huỷ nhận tin báo cho phản ánh này.', type: 'info' });
   };
-
-  const handleFollowIssue = () => {
+  const handleFollowIssue = async () => {
     if (hasFollowed) return;
-    const nextState = followReport(
-      state,
-      rawReport.id,
-      state.settings.phone ? { phone: state.settings.phone } : { anonymous: true }
+    const ok = await action.run(
+      async () => {
+        await ds.followReport(rawReport.id, state.settings.phone || undefined);
+        return true;
+      },
+      { onConflict: reloadReport }
     );
-    dispatch({ type: 'HYDRATE', payload: nextState });
+    if (!ok) return;
     saveFollowedId(rawReport.id);
     setHasFollowed(true);
     setToast({ message: 'Đã ghi nhận! Bạn cũng đang theo dõi vấn đề này.', type: 'success' });
   };
-
   const handleBeforeAfterClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target instanceof HTMLImageElement && e.target.src) {
       setZoomedPhoto({ src: e.target.src, alt: e.target.alt || 'Ảnh phản ánh' });

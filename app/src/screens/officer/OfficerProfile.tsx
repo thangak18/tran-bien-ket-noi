@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clearSession, isApiMode } from '@/lib/api';
 import {
   ArrowLeft,
   BarChart3,
@@ -99,6 +100,12 @@ export function OfficerProfile() {
   };
 
   const handleLogout = () => {
+    if (isApiMode()) {
+      // Đăng nhập thật: xoá token và tài khoản ở thiết bị rồi về màn đăng nhập.
+      clearSession();
+      navigate('/dang-nhap', { replace: true });
+      return;
+    }
     clearOfficerSession();
     setSession(null);
     showToast('Đã đăng xuất tài khoản cán bộ');

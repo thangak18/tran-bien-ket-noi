@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { ShieldCheck, ArrowLeft, Smartphone } from 'lucide-react';
+import { apiFetch, isApiMode, setCitizenToken } from '@/lib/api';
 
 export interface PhoneOtpSheetProps {
   isOpen: boolean;
@@ -24,7 +25,18 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [phoneError, setPhoneError] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [busy, setBusy] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Mỗi lần mở hộp: bắt đầu lại từ bước nhập SĐT với số đã nhập ở màn hình trước.
+  useEffect(() => {
+    if (!isOpen) return;
+    setPhone(initialPhone);
+    setStep('phone');
+    setOtpDigits(['', '', '', '', '', '']);
+    setPhoneError('');
+    setOtpError('');
+  }, [isOpen, initialPhone]);
 
   const validatePhone = (p: string): boolean => {
     const clean = p.replace(/\s+/g, '');
@@ -40,14 +52,35 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
     return true;
   };
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const goToOtpStep = () => {
+    setPhoneError('');
+    setOtpDigits(['', '', '', '', '', '']);
+    setStep('otp');
+    window.setTimeout(() => otpRefs.current[0]?.focus(), 50);
+  };
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validatePhone(phone)) {
-      setPhoneError('');
-      setOtpDigits(['', '', '', '', '', '']);
-      setStep('otp');
-      window.setTimeout(() => otpRefs.current[0]?.focus(), 50);
+    if (!validatePhone(phone)) return;
+    if (isApiMode()) {
+      // Chế độ API: yêu cầu mã OTP từ server (vẫn là mô phỏng, mã 123456).
+      setBusy(true);
+      try {
+        await apiFetch('/citizen/otp/request', {
+          method: 'POST',
+          body: JSON.stringify({ phone: phone.replace(/\s+/g, '') }),
+        });
+        goToOtpStep();
+      } catch (err) {
+        setPhoneError(
+          err instanceof Error ? err.message : 'Không gửi được mã OTP. Vui lòng thử lại.'
+        );
+      } finally {
+        setBusy(false);
+      }
+      return;
     }
+    goToOtpStep();
   };
 
   const handleOtpDigitChange = (index: number, value: string) => {
@@ -80,15 +113,35 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
     }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanOtp = otpDigits.join('').trim();
+    const cleanPhone = phone.replace(/\s+/g, '');
+    if (isApiMode()) {
+      // Chế độ API: server xác minh OTP và cấp JWT người dân; hồ sơ gửi kèm token sẽ gắn với SĐT này.
+      setBusy(true);
+      try {
+        const res = await apiFetch<{ token: string }>('/citizen/otp/verify', {
+          method: 'POST',
+          body: JSON.stringify({ phone: cleanPhone, code: cleanOtp }),
+        });
+        setCitizenToken(res.token);
+        setOtpError('');
+        onVerified(cleanPhone);
+        onClose();
+      } catch (err) {
+        setOtpError(err instanceof Error ? err.message : 'Mã OTP không đúng. Vui lòng thử lại.');
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (cleanOtp !== '123456') {
       setOtpError('Mã OTP không đúng (thử mã mô phỏng: 123456)');
       return;
     }
     setOtpError('');
-    onVerified(phone.replace(/\s+/g, ''));
+    onVerified(cleanPhone);
     onClose();
   };
 
@@ -128,12 +181,12 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
       }
       footer={
         step === 'phone' ? (
-          <Button fullWidth onClick={handleRequestOtp}>
-            Tiếp tục
+          <Button fullWidth disabled={busy} onClick={handleRequestOtp}>
+            {busy ? 'Đang gửi mã...' : 'Tiếp tục'}
           </Button>
         ) : (
-          <Button fullWidth onClick={handleVerifyOtp}>
-            Xác nhận &amp; Đăng nhập
+          <Button fullWidth disabled={busy} onClick={handleVerifyOtp}>
+            {busy ? 'Đang xác thực...' : 'Xác nhận & Đăng nhập'}
           </Button>
         )
       }

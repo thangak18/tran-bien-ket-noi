@@ -4,6 +4,7 @@ import { AppStoreProvider, useAppStore } from './store/AppStore';
 import { applyFontScale, resolveFontScale } from './lib/senior';
 import { applyTheme, getInitialTheme } from './lib/theme';
 import { PortalSwitcherFab } from './components/common/PortalSwitcherFab';
+import { isApiMode } from './lib/api';
 import { CitizenLayout } from './layouts/CitizenLayout';
 import { C01Home } from './screens/citizen/C01Home';
 import { WelcomeScreen, WELCOMED_STORAGE_KEY } from './screens/citizen/WelcomeScreen';
@@ -22,6 +23,10 @@ import { OfficerStats } from './screens/officer/OfficerStats';
 import { V01Tasks } from './screens/volunteer/V01Tasks';
 import { V02Verify } from './screens/volunteer/V02Verify';
 import { VolunteerStats } from './screens/volunteer/VolunteerStats';
+import { LoginScreen } from './screens/auth/LoginScreen';
+import { ForbiddenScreen } from './screens/auth/ForbiddenScreen';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AuthEvents } from './components/auth/AuthEvents';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
 
 function SeniorSync() {
@@ -59,8 +64,9 @@ export default function App() {
   return (
     <AppStoreProvider frame={frame}>
       <SeniorSync />
+      <AuthEvents />
       <WelcomeGate />
-      <PortalSwitcherFab />
+      {!isApiMode() && <PortalSwitcherFab />}
       <Routes>
         <Route
           path="/"
@@ -121,16 +127,89 @@ export default function App() {
             </CitizenLayout>
           }
         />
-        <Route path="/can-bo" element={<A01Inbox />} />
-        <Route path="/can-bo/thong-ke" element={<OfficerStats />} />
-        <Route path="/can-bo/ho-so" element={<OfficerProfile />} />
-        <Route path="/can-bo/:id" element={<A02Panel />} />
-        <Route path="/can-bo/:id/ket-qua" element={<A03Result />} />
-        <Route path="/tnv" element={<V01Tasks />} />
-        <Route path="/tnv/ban-do" element={<V01Tasks />} />
-        <Route path="/tnv/ho-so" element={<V01Tasks />} />
-        <Route path="/tnv/thong-ke" element={<VolunteerStats />} />
-        <Route path="/tnv/:taskId" element={<V02Verify />} />
+        {/* Cổng cán bộ / TNV: chế độ API bắt buộc đăng nhập đúng vai trò (chế độ local không chặn) */}
+        <Route
+          path="/can-bo"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <A01Inbox />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/can-bo/thong-ke"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <OfficerStats />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/can-bo/ho-so"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <OfficerProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/can-bo/:id"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <A02Panel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/can-bo/:id/ket-qua"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <A03Result />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tnv"
+          element={
+            <ProtectedRoute allowedRoles={['tnv', 'can_bo']}>
+              <V01Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tnv/ban-do"
+          element={
+            <ProtectedRoute allowedRoles={['tnv', 'can_bo']}>
+              <V01Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tnv/ho-so"
+          element={
+            <ProtectedRoute allowedRoles={['tnv', 'can_bo']}>
+              <V01Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tnv/thong-ke"
+          element={
+            <ProtectedRoute allowedRoles={['tnv', 'can_bo']}>
+              <VolunteerStats />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tnv/:taskId"
+          element={
+            <ProtectedRoute allowedRoles={['tnv', 'can_bo']}>
+              <V02Verify />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/dang-nhap" element={<LoginScreen />} />
+        <Route path="/khong-co-quyen" element={<ForbiddenScreen />} />
         {import.meta.env.DEV && <Route path="/dev/ui" element={<DevUiGallery />} />}
       </Routes>
     </AppStoreProvider>

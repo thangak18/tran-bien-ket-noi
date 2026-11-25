@@ -4,6 +4,7 @@ import { computePriority } from '../domain/sorting';
 import { buildNotification } from '../domain/notifications';
 import { transition } from '../domain/status';
 import { AppState } from './AppStore';
+import { randomInt } from '../lib/random';
 
 export interface SubmitReportPayload {
   category: Category;
@@ -37,7 +38,7 @@ export function getNextReportId(reports: Report[]): string {
  * Sinh mã bí mật 4 chữ số
  */
 export function generateSecretCode(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return randomInt(1000, 10000).toString();
 }
 
 /**

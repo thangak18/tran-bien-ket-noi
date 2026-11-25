@@ -24,25 +24,14 @@ import {
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { SelectField } from '@/components/ui';
 import { useAppStore } from '@/store/AppStore';
-import {
-  acceptReport,
-  assignVolunteer,
-  assignDepartment,
-  requestSupplement,
-  transferAgency,
-  closeReport,
-  mergeReports,
-  splitReportAction,
-  getCategoryConfig,
-} from '@/store/officerActions';
-import { canTransition, transition } from '@/domain/status';
-import {
-  CATEGORY_CONFIGS,
-  DEPARTMENTS,
-  VOLUNTEERS,
-  DEFAULT_OFFICER,
-  officerLabel,
-} from '@/domain/constants';
+import { getCategoryConfig } from '@/store/officerActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { VolunteerOption } from '@/data/DataSource';
+import { isApiMode } from '@/lib/api';
+import { ActionError } from '@/components/common/ActionError';
+import { canTransition } from '@/domain/status';
+import { CATEGORY_CONFIGS, DEPARTMENTS, VOLUNTEERS, officerLabel } from '@/domain/constants';
 import { CATEGORIES, Category, Priority, Report } from '@/domain/types';
 import { maskPhone } from '@/domain/privacy';
 import { findDuplicates } from '@/domain/duplicates';
@@ -94,6 +83,8 @@ export function A02Panel({
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
 
   const targetId = propReportId ?? params.id;
   const report = state.reports.find((r) => r.id === targetId);
@@ -118,7 +109,10 @@ export function A02Panel({
 
   // Modals
   const [showTnvModal, setShowTnvModal] = useState(false);
-  const [selectedTnv, setSelectedTnv] = useState<string>(VOLUNTEERS[0]);
+  const [volunteers, setVolunteers] = useState<VolunteerOption[]>(
+    isApiMode() ? [] : VOLUNTEERS.map((name) => ({ id: name, name }))
+  );
+  const [selectedTnv, setSelectedTnv] = useState<string>(isApiMode() ? '' : VOLUNTEERS[0]);
   const [tnvMode, setTnvMode] = useState<'specific' | 'open'>('specific');
 
   const [exceptionMode, setExceptionMode] = useState<ExceptionMode>(null);
@@ -161,6 +155,31 @@ export function A02Panel({
     setActiveTab('chi_tiet');
   }, [reportIdVal, reportCategory, reportPriority, reportDepartment, reportDueAt, reportCreatedAt]);
 
+  // Chế độ API: luôn tải lại chi tiết (danh sách không có lịch sử xử lý) khi đổi hồ sơ.
+  const loadReport = async () => {
+    if (!targetId) return;
+    try {
+      const rep = await ds.getOfficerReport(targetId);
+      if (rep) dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+    } catch {
+      /* lỗi tải được báo khi thao tác tiếp theo; hồ sơ trong danh sách vẫn hiển thị */
+    }
+  };
+  useEffect(() => {
+    if (targetId && (isApiMode() || !report)) void loadReport();
+    // Chỉ chạy lại khi đổi hồ sơ đang xem.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetId]);
+  // Danh sách TNV thật từ API (chế độ local dùng danh sách mẫu).
+  useEffect(() => {
+    if (!isApiMode()) return;
+    ds.listVolunteers()
+      .then((list) => {
+        setVolunteers(list);
+        setSelectedTnv((cur) => cur || list[0]?.id || '');
+      })
+      .catch(() => setVolunteers([]));
+  }, [ds]);
   // Phím Esc đóng panel khi không mở modal
   const hasOpenModal = Boolean(showTnvModal || exceptionMode || mergeTarget || splitTargetId);
 
@@ -220,136 +239,126 @@ export function A02Panel({
     showSuccess('Đã cập nhật thông tin phân loại và hạn xử lý');
   };
 
+  /**
+   * Chạy một thao tác nghiệp vụ qua DataSource. Thành công: cập nhật hồ sơ trong store và báo thành công.
+   * Lỗi 401/403/409/mạng hiển thị bằng tiếng Việt; 409 tự tải lại hồ sơ (useAction).
+   * Chế độ local còn ghi mức ưu tiên/loại do cán bộ chỉnh (API chưa có trường ưu tiên).
+   */
+  const act = async (
+    fn: () => Promise<Report>,
+    msg: string,
+    localPatch?: Partial<Report>
+  ): Promise<boolean> => {
+    const updated = await action.run(fn, { onConflict: loadReport });
+    if (!updated) return false;
+    const merged = !isApiMode() && localPatch ? { ...updated, ...localPatch } : updated;
+    dispatch({ type: 'ADD_REPORT', payload: { report: merged } });
+    showSuccess(msg);
+    return true;
+  };
   const handleAccept = () => {
     if (!report) return;
     const dueIso = dueDate ? dateInputToIso(dueDate) : undefined;
-    const nextState = acceptReport(
-      state,
-      report.id,
-      {
-        category,
-        department,
-        dueAt: dueIso,
-        actor: DEFAULT_OFFICER,
-      },
-      now
+    void act(
+      () =>
+        ds.officerAcceptReport(report.id, {
+          category,
+          department,
+          dueAt: dueIso,
+          version: report.version,
+        }),
+      `Đã tiếp nhận hồ sơ ${report.id}`,
+      { priority }
     );
-    const syncedReports = nextState.reports.map((r) =>
-      r.id === report.id ? { ...r, priority } : r
-    );
-    dispatch({ type: 'HYDRATE', payload: { ...nextState, reports: syncedReports } });
-    showSuccess(`Đã tiếp nhận hồ sơ ${report.id}`);
   };
-
   const handleAssignDepartment = () => {
     if (!report) return;
     const dueIso = dueDate ? dateInputToIso(dueDate) : undefined;
-    const nextState = assignDepartment(
-      state,
-      report.id,
-      {
-        department,
-        dueAt: dueIso,
-        actor: DEFAULT_OFFICER,
-      },
-      now
+    void act(
+      () =>
+        ds.officerAssignDepartment(report.id, {
+          department,
+          dueAt: dueIso,
+          version: report.version,
+        }),
+      `Đã giao ${department}`,
+      { category, priority }
     );
-    const syncedReports = nextState.reports.map((r) =>
-      r.id === report.id ? { ...r, category, priority } : r
-    );
-    dispatch({ type: 'HYDRATE', payload: { ...nextState, reports: syncedReports } });
-    showSuccess(`Đã giao ${department}`);
   };
-
-  const handleConfirmTnv = () => {
+  const handleConfirmTnv = async () => {
     if (!report) return;
-    const assignee = tnvMode === 'specific' ? selectedTnv : null;
-    const nextState = assignVolunteer(state, report.id, { assignee, actor: DEFAULT_OFFICER }, now);
-    dispatch({ type: 'HYDRATE', payload: nextState });
-    setShowTnvModal(false);
-    showSuccess(
-      assignee ? `Đã giao TNV ${assignee} xác minh` : 'Đã mở nhiệm vụ cho TNV gần nhất nhận'
+    const assignee =
+      tnvMode === 'specific' ? (volunteers.find((v) => v.id === selectedTnv) ?? null) : null;
+    const ok = await act(
+      () =>
+        ds.officerAssignVolunteer(report.id, {
+          taskType: 'xac_minh',
+          assignee,
+          version: report.version,
+        }),
+      assignee ? `Đã giao TNV ${assignee.name} xác minh` : 'Đã mở nhiệm vụ cho TNV gần nhất nhận'
     );
+    if (ok) setShowTnvModal(false);
   };
-
   const openExceptionModal = (mode: Exclude<ExceptionMode, null>) => {
     setExceptionMode(mode);
     setExceptionReason('');
     setTargetAgency('');
+    action.clearError();
   };
-
-  const handleConfirmException = () => {
+  const handleConfirmException = async () => {
     if (!report || !exceptionMode) return;
     const trimmedReason = exceptionReason.trim();
     if (trimmedReason.length < 10) return;
-
+    const version = report.version;
+    let ok = false;
     if (exceptionMode === 'can_bo_sung') {
-      const nextState = requestSupplement(
-        state,
-        report.id,
-        { reason: trimmedReason, actor: DEFAULT_OFFICER },
-        now
+      ok = await act(
+        () => ds.officerRequestSupplement(report.id, { reason: trimmedReason, version }),
+        'Đã gửi yêu cầu bổ sung thông tin'
       );
-      dispatch({ type: 'HYDRATE', payload: nextState });
-      showSuccess('Đã gửi yêu cầu bổ sung thông tin');
     } else if (exceptionMode === 'chuyen_co_quan') {
       if (!targetAgency.trim()) return;
-      const nextState = transferAgency(
-        state,
-        report.id,
-        { agency: targetAgency.trim(), reason: trimmedReason, actor: DEFAULT_OFFICER },
-        now
+      ok = await act(
+        () =>
+          ds.officerTransferAgency(report.id, {
+            agency: targetAgency.trim(),
+            reason: trimmedReason,
+            version,
+          }),
+        `Đã chuyển hồ sơ tới ${targetAgency.trim()}`
       );
-      dispatch({ type: 'HYDRATE', payload: nextState });
-      showSuccess(`Đã chuyển hồ sơ tới ${targetAgency.trim()}`);
     } else if (exceptionMode === 'dong') {
-      const nextState = closeReport(
-        state,
-        report.id,
-        { reason: trimmedReason, actor: DEFAULT_OFFICER },
-        now
+      ok = await act(
+        () => ds.officerCloseReport(report.id, { reason: trimmedReason, version }),
+        'Đã đóng hồ sơ'
       );
-      dispatch({ type: 'HYDRATE', payload: nextState });
-      showSuccess('Đã đóng hồ sơ');
     } else if (exceptionMode === 'khong_xac_nhan') {
-      const { report: updated } = transition(report, 'khong_xac_nhan', 'CB', DEFAULT_OFFICER, now, {
-        note: trimmedReason,
-      });
-      dispatch({ type: 'UPDATE_REPORT', payload: { report: updated } });
-      showSuccess('Đã cập nhật trạng thái Không xác nhận được');
+      ok = await act(
+        () => ds.officerMarkUnverified(report.id, { reason: trimmedReason, version }),
+        'Đã cập nhật trạng thái Không xác nhận được'
+      );
     }
-
-    setExceptionMode(null);
+    if (ok) setExceptionMode(null);
   };
-
-  const handleConfirmMerge = () => {
+  const handleConfirmMerge = async () => {
     if (!report || !mergeTarget) return;
-    const nextState = mergeReports(
-      state,
-      report.id,
-      [mergeTarget.id],
-      { actor: DEFAULT_OFFICER },
-      now
+    const child = mergeTarget;
+    const ok = await act(
+      () => ds.officerMergeReport(child.id, report.id, { version: report.version }),
+      `Đã gộp ${child.id} vào ${report.id}`
     );
-    dispatch({ type: 'HYDRATE', payload: nextState });
-    showSuccess(`Đã gộp ${mergeTarget.id} vào ${report.id}`);
-    setMergeTarget(null);
+    if (ok) setMergeTarget(null);
   };
-
-  const handleConfirmSplit = () => {
+  const handleConfirmSplit = async () => {
     if (!report || !splitTargetId) return;
-    const nextState = splitReportAction(
-      state,
-      report.id,
-      splitTargetId,
-      { actor: DEFAULT_OFFICER },
-      now
+    const childId = splitTargetId;
+    const ok = await act(
+      () => ds.officerSplitReport(report.id, childId, { version: report.version }),
+      `Đã tách hồ sơ ${childId}`
     );
-    dispatch({ type: 'HYDRATE', payload: nextState });
-    showSuccess(`Đã tách hồ sơ ${splitTargetId}`);
-    setSplitTargetId(null);
+    if (ok) setSplitTargetId(null);
   };
-
   const renderPanelContent = () => {
     if (!report) {
       return (
@@ -488,6 +497,11 @@ export function A02Panel({
           </div>
         </div>
 
+        {action.error && !hasOpenModal && (
+          <div className="px-4 md:px-6 pt-3">
+            <ActionError message={action.error} onDismiss={action.clearError} />
+          </div>
+        )}
         {/* Toast */}
         {toast && (
           <div className="px-4 md:px-6 pt-3">
@@ -684,7 +698,7 @@ export function A02Panel({
                       <h2 className="text-sm font-semibold text-text-main">
                         Phân loại & Hạn xử lý
                       </h2>
-                      {report.status !== 'moi' && (
+                      {report.status !== 'moi' && !isApiMode() && (
                         <Button variant="ghost" size="sm" onClick={handleSaveMetadata}>
                           Lưu thay đổi
                         </Button>
@@ -1054,6 +1068,7 @@ export function A02Panel({
             </>
           }
         >
+          <ActionError message={action.error} onDismiss={action.clearError} className="mb-3" />
           <div className="space-y-3 text-sm">
             <label className="flex items-start gap-2.5 rounded-btn border border-slate-200 p-3 cursor-pointer">
               <input
@@ -1074,9 +1089,9 @@ export function A02Panel({
                     setTnvMode('specific');
                   }}
                 >
-                  {VOLUNTEERS.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
+                  {volunteers.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
                     </option>
                   ))}
                 </SelectField>
@@ -1119,6 +1134,7 @@ export function A02Panel({
             </>
           }
         >
+          <ActionError message={action.error} onDismiss={action.clearError} className="mb-3" />
           <div className="space-y-3 text-sm">
             {exceptionMode === 'can_bo_sung' && report.anonymous && !report.subscribedLater && (
               <div className="flex items-start gap-2 rounded-btn border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-950">
@@ -1183,6 +1199,7 @@ export function A02Panel({
             </>
           }
         >
+          <ActionError message={action.error} onDismiss={action.clearError} className="mb-3" />
           {mergeTarget && (
             <div className="space-y-2 text-sm">
               <p>Bạn có chắc muốn gộp hai hồ sơ sau?</p>
@@ -1218,6 +1235,7 @@ export function A02Panel({
             </>
           }
         >
+          <ActionError message={action.error} onDismiss={action.clearError} className="mb-3" />
           <p className="text-sm">
             Tách hồ sơ <strong>#{splitTargetId}</strong> khỏi hồ sơ chính{' '}
             <strong>#{report.id}</strong> và khôi phục trạng thái trước khi gộp?

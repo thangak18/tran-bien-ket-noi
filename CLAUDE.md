@@ -12,17 +12,25 @@ Người dân chụp ảnh báo sự cố (đèn đường, ngập nước, rác
 - Repo GitHub (private): `thangak18/tran-bien-ket-noi`. Deploy: Vercel project `tran-bien-ket-noi` (Root Directory = `app`, SPA rewrite trong `vercel.json`).
 - Bài thuyết minh đã nộp: `thuyet-minh.md` + `Tran-Bien-Ket-Noi_Thuyet-minh.pdf`, sơ đồ trong `assets/`.
 
-## 2. Trạng thái hiện tại (25/11/2026)
+## 2. Trạng thái hiện tại (25/11/2026, cập nhật sau đợt review)
 
-**Vòng 1 đã nộp (24/11, 15:15):** prototype **frontend thuần**, chạy hoàn toàn trong trình duyệt.
+Giai đoạn 2 trên nhánh `feat/giai-doan-2` **đã chạy được ở máy local nhưng chưa xong hết**. Báo cáo cũ ghi "hoàn thành 100%, 229 test pass" là sai: các test đó chạy trên Postgres giả (lớp `cube/earthdistance`) và còn lỗ hổng bảo mật. Số liệu đo lại ngày 25/11/2026 (chi tiết: `docs/review/giai-doan-2/ket-qua-kiem-chung.md`):
 
-- Dữ liệu: `app/src/data/mock.json` (sinh bằng generator có seed) + `localStorage` (key `tbkn:v1`), đồng bộ giữa tab bằng sự kiện `storage`.
-- Không có backend, DB, tài khoản thật. OTP / SMS / Zalo / AI gợi ý loại đều là **mô phỏng** và có nhãn "Mô phỏng" trên UI.
-- Đã có đủ màn lõi + bonus ở mức mô phỏng: chữ lớn (B3), "Tôi cũng gặp" + cảnh báo trùng + gộp/tách hồ sơ (B2), gợi ý loại "Gợi ý mô phỏng" (B1), cán bộ gửi hộ (B5). Nút nổi **"Đổi vai trò"** (`RoleSwitcher`) để giám khảo chuyển 3 vai trò.
+- Môi trường: Docker Desktop + Supabase local 2.1.1 (`npx supabase start --workdir ..` chạy trong `app/`), PostgreSQL 15 + **PostGIS thật**, Supabase Auth thật.
+- `npm run verify`: 49 file, **303 test pass, 0 fail**. `npm run db:verify`: **17/17**. `npm run mock:verify`: 100%. `npm run lint`, `npm run build`: đạt.
+- E2E chế độ API (`npm run test:e2e:api`): **7/7 pass** (người dân → cán bộ đăng nhập thật → TNV → hoàn thành → Trước/Sau → "Chưa giải quyết"). Ảnh chụp ở `docs/review/giai-doan-2/screenshots/`.
+- Đã sửa: đăng nhập cán bộ không kiểm tra mật khẩu, mật khẩu/secret cứng, TNV thấy SĐT, đánh giá không kiểm tra chủ hồ sơ, chuyển trạng thái bỏ qua `transition.ts`, PostGIS giả, `ST_X` trên `geography`. Xem `docs/review/giai-doan-2/be.md`, `db.md`.
+- Frontend: mọi màn hình ghi dữ liệu qua `DataSource` (`VITE_DATA_SOURCE=local|api`), xử lý 401/403/409/mất mạng. Xem `docs/review/giai-doan-2/fe.md`.
 
-**Việc tiếp theo: làm BACKEND** (chủ dự án yêu cầu 25/11). Phạm vi chưa chốt – xem mục 6.
+**Việc còn lại / hạn chế** (đầy đủ ở `docs/review/giai-doan-2/be.md` mục 6, `fe.md` mục 5):
+- Upload ảnh lên Supabase Storage **chưa làm**: `/uploads/sign` là bản giả, ảnh lưu dạng data URL.
+- Idempotency-Key lưu trong bộ nhớ (không bền trên Vercel); OTP mô phỏng luôn nhận `123456`.
+- Chưa chạy: GitHub Actions, Supabase cloud/Vercel, e2e WebKit (máy không tải được). Chưa có script `staff:reset-password`.
+- `npm audit`: 37 lỗ hổng (3 critical), chưa nâng gói: `docs/review/giai-doan-2/npm-audit.md`.
+- Cảnh báo trùng (B2) ở FE vẫn tính ở client; hàm PostGIS `find_duplicate_reports` chưa có endpoint.
 
-> ⚠️ `AGENTS.md` mục "Phạm vi" ghi "Không tạo backend" – đó là luật của **vòng 1**. Khi chủ dự án xác nhận phạm vi backend ở mục 6, cập nhật lại `AGENTS.md` và `README.md` (README đang lỗi thời, vẫn ghi "chưa có code").
+Tài liệu: `docs/proposal_v3.md` → `docs/spec.md` → `docs/plan.md` → `docs/tasks.md` → `docs/tests.md` → `docs/van-hanh.md`; báo cáo: `docs/bao-cao-dem-25-11.md`; truy vết: `docs/review/giai-doan-2/truy-vet.md`.
+Lệnh kiểm tra: `npm run verify`, `npm run db:verify`, `npm run test:e2e:api` (cần Supabase local đang chạy và `app/.env.local`, xem `docs/van-hanh.md`).
 
 ## 3. Stack frontend
 
@@ -34,7 +42,7 @@ cd app
 npm run dev          # Vite
 npm run build        # tsc --noEmit && vite build
 npm run lint
-npx vitest run       # 186 pass / 17 fail – 17 test cũ của UI trước redesign (layouts, router titles, c01-home, status-chip, timeline), KHÔNG phải lỗi mới
+npx vitest run       # 303 test pass (49 file); test API cần Supabase local đang chạy
 npm run mock:verify  # kiểm tra bất biến dữ liệu
 ```
 

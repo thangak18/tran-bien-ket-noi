@@ -1,20 +1,13 @@
 import { AppState } from './AppStore';
 import { Category, Notification, Report, VolunteerTask } from '../domain/types';
-import { CATEGORY_CONFIGS, DEFAULT_DEADLINES } from '../domain/constants';
+import { DEFAULT_DEADLINES, getCategoryConfig } from '../domain/constants';
 import { computePriority } from '../domain/sorting';
 import { buildNotification } from '../domain/notifications';
 import { formatDate } from '../domain/format';
+import { randomInt } from '../lib/random';
 
-/**
- * Tìm cấu hình danh mục sự cố
- */
-export function getCategoryConfig(category: Category) {
-  const cfg = CATEGORY_CONFIGS.find((c) => c.key === category);
-  if (!cfg) {
-    throw new Error(`Không tìm thấy cấu hình cho loại sự cố: ${category}`);
-  }
-  return cfg;
-}
+// getCategoryConfig đã chuyển sang domain/constants; re-export để giữ tương thích với mã và test cũ.
+export { getCategoryConfig };
 
 /**
  * Tạo ID tiếp theo cho VolunteerTask (dạng NV-001, NV-002, ...)
@@ -512,6 +505,43 @@ export function closeReport(
   };
 }
 
+/**
+ * 8b. Xác nhận không có sự cố sau khi TNV báo "Không có / Không tìm thấy" (spec 3.3: cho_xac_minh -> khong_xac_nhan, CB)
+ */
+export function markUnverified(
+  state: AppState,
+  reportId: string,
+  params: { reason?: string; actor?: string } | undefined,
+  now: string
+): AppState {
+  const report = state.reports.find((r) => r.id === reportId);
+  if (!report) {
+    throw new Error(`Không tìm thấy hồ sơ ${reportId}`);
+  }
+  if (report.status !== 'cho_xac_minh') {
+    throw new Error('Chỉ xác nhận không có sự cố cho hồ sơ đang chờ xác minh');
+  }
+
+  const updatedReport: Report = {
+    ...report,
+    status: 'khong_xac_nhan',
+    timeline: [
+      ...report.timeline,
+      {
+        at: now,
+        status: 'khong_xac_nhan',
+        actor: params?.actor || 'Cán bộ',
+        note: params?.reason || 'Khi kiểm tra tại chỗ không thấy sự cố',
+      },
+    ],
+  };
+
+  return {
+    ...state,
+    reports: state.reports.map((r) => (r.id === reportId ? updatedReport : r)),
+  };
+}
+
 // BONUS B2 – HOÃN: chưa dùng trong UI lõi
 /**
  * 9. Gộp hồ sơ (spec 3.3, 3.4, AC-A02-6, AC-A02-7)
@@ -759,7 +789,7 @@ export function createOnBehalf(
   const nextId = `TB-${String(maxId + 1).padStart(4, '0')}`;
 
   // Sinh secretCode 4 chữ số
-  const secretCode = String(Math.floor(1000 + Math.random() * 9000));
+  const secretCode = String(randomInt(1000, 10000));
 
   const cfg = getCategoryConfig(params.category);
   const department = params.department || cfg.suggestedDepartment;

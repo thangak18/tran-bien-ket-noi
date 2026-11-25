@@ -1,5 +1,6 @@
 import { PublicReport, Report } from './types';
 import { CATEGORY_CONFIGS } from './constants';
+import { followerCount as countFollowers } from './access';
 
 /**
  * Che số điện thoại bảo đảm tính riêng tư (spec 4.1, UT-016.1)
@@ -30,7 +31,7 @@ function sanitizePublicActor(actor: string): string {
  * Loại bỏ hoàn toàn reporterPhone, secretCode, subscribedLater, followers
  */
 export function toPublicReport(report: Report): PublicReport {
-  const followerCount = (report.followers?.length ?? 0) + (report.anonymousFollows ?? 0);
+  const followerCount = countFollowers(report);
 
   return {
     id: report.id,

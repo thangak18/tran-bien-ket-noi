@@ -27,13 +27,15 @@ import {
   setOfficerSession,
 } from '@/lib/portalSession';
 import { useAppStore } from '@/store/AppStore';
-import { createOnBehalf } from '@/store/officerActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { ActionError } from '@/components/common/ActionError';
 import { computeKpi } from '@/domain/kpi';
 import { sortInbox, isOverdue, isDueSoon } from '@/domain/sorting';
 import { findDuplicates } from '@/domain/duplicates';
 import { formatDate, formatDays } from '@/domain/format';
 import { CATEGORY_CONFIGS, DEPARTMENTS, DEMO_NOW, officerLabel } from '@/domain/constants';
-import { Category, Notification, Report, Status, STATUSES } from '@/domain/types';
+import { Category, Report, Status, STATUSES } from '@/domain/types';
 import { STREETS, WARD_CENTER, nearestStreet } from '@/data/streets';
 import { Button, EmptyState, Modal, Tabs, TextField } from '@/components/ui';
 import { StatusChip } from '@/components/common/StatusChip';
@@ -73,8 +75,10 @@ interface OnBehalfModalProps {
   now: string;
 }
 
-function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
-  const { state, dispatch } = useAppStore();
+function OnBehalfModal({ isOpen, onClose }: OnBehalfModalProps) {
+  const { dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
   const navigate = useNavigate();
 
   const [phone, setPhone] = useState('');
@@ -87,7 +91,8 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
   const [error, setError] = useState('');
   const [createdResult, setCreatedResult] = useState<{
     report: Report;
-    notification: Notification;
+    secretCode: string;
+    message: string;
   } | null>(null);
 
   const resetForm = () => {
@@ -136,7 +141,7 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanPhone = phone.replace(/\s+/g, '');
     if (!/^0\d{8,10}$/.test(cleanPhone)) {
@@ -147,10 +152,10 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
       setError('Vui lòng nhập hoặc chọn địa chỉ sự cố.');
       return;
     }
+    setError('');
 
-    const res = createOnBehalf(
-      state,
-      {
+    const res = await action.run(() =>
+      ds.officerCreateOnBehalf({
         phone: cleanPhone,
         category,
         lat,
@@ -158,16 +163,16 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
         address: address.trim(),
         description: description.trim() || undefined,
         photos: photos.length > 0 ? photos : undefined,
-      },
-      now
+      })
     );
+    if (!res) return;
 
-    dispatch({
-      type: 'ADD_REPORT',
-      payload: { report: res.report, notification: res.notification },
+    dispatch({ type: 'ADD_REPORT', payload: { report: res.report } });
+    setCreatedResult({
+      report: res.report,
+      secretCode: res.secretCode,
+      message: `Phường Trấn Biên đã tiếp nhận phản ánh #${res.report.id} tạo hộ bạn. Mã theo dõi: #${res.report.id}, mã bí mật: ${res.secretCode}.`,
     });
-    setCreatedResult({ report: res.report, notification: res.notification });
-    setError('');
   };
 
   return (
@@ -191,8 +196,11 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
 
           <SmsPreview
             phone={createdResult.report.reporterPhone || phone}
-            message={createdResult.notification.message}
+            message={createdResult.message}
           />
+          <p className="text-xs text-slate-600">
+            Mã bí mật chỉ hiển thị một lần. Hãy đọc lại cho người dân và không lưu ở nơi công khai.
+          </p>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={handleClose}>
@@ -214,6 +222,7 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          <ActionError message={action.error} onDismiss={action.clearError} />
           {error && (
             <div
               role="alert"
@@ -371,9 +380,10 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
               type="submit"
               variant="primary"
               size="sm"
+              disabled={action.pending}
               className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)]"
             >
-              Tiếp nhận & tạo hồ sơ
+              {action.pending ? 'Đang tạo…' : 'Tiếp nhận & tạo hồ sơ'}
             </Button>
           </div>
         </form>
