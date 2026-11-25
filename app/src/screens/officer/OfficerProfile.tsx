@@ -3,15 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   BarChart3,
-  CheckCircle2,
+  Bell,
   ChevronRight,
+  Edit3,
+  Headphones,
   LogIn,
   LogOut,
   MapPin,
-  Pencil,
-  Phone,
+  Moon,
+  RotateCcw,
   Settings,
   ShieldCheck,
+  Sun,
+  Type,
   User,
 } from 'lucide-react';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
@@ -28,12 +32,25 @@ import {
   setOfficerSession,
 } from '@/lib/portalSession';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
-import { PortalSettingsCards } from '@/components/common/PortalSettingsCards';
 import { HotlineModal } from '@/components/common/HotlineModal';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 
 type OfficerSubView = 'main' | 'auth' | 'settings';
+
+const FONT_SCALE_OPTIONS: ReadonlyArray<{ id: FontScale; label: string }> = [
+  { id: 'small', label: 'Nhỏ' },
+  { id: 'normal', label: 'Thường' },
+  { id: 'large', label: 'Lớn' },
+  { id: 'xlarge', label: 'Siêu lớn' },
+];
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'CB';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0]}${parts[parts.length - 1]![0]}`.toUpperCase();
+}
 
 export function OfficerProfile() {
   const { state, dispatch } = useAppStore();
@@ -42,7 +59,6 @@ export function OfficerProfile() {
   const [subView, setSubView] = useState<OfficerSubView>('main');
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [gpsEnabled, setGpsEnabled] = useState(true);
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -56,7 +72,9 @@ export function OfficerProfile() {
   const [draftName, setDraftName] = useState(session?.name ?? '');
   const [draftUnit, setDraftUnit] = useState(session?.unit ?? 'UBND P. Trấn Biên');
 
-  const fontScale = resolveFontScale(state.settings);
+  const activeFontScale = resolveFontScale(state.settings);
+  const activeFontLabel =
+    FONT_SCALE_OPTIONS.find((opt) => opt.id === activeFontScale)?.label ?? 'Thường';
 
   const officerStats = useMemo(() => {
     const total = state.reports.length;
@@ -130,7 +148,7 @@ export function OfficerProfile() {
 
   return (
     <OfficerLayout>
-      <div className="mx-auto w-full max-w-2xl animate-fade-up">
+      <div className="mx-auto w-full max-w-6xl animate-fade-up">
         {toastMsg && (
           <div className="mb-3">
             <Toast message={toastMsg} onClose={() => setToastMsg(null)} />
@@ -138,102 +156,266 @@ export function OfficerProfile() {
         )}
 
         {subView === 'auth' && (
-          <PortalAuthFlow
-            portalLabel="Cán bộ phường"
-            roleSummary="Tiếp nhận phản ánh, điều phối bộ phận/TNV và cập nhật kết quả xử lý."
-            accent="sky"
-            defaultAddress="UBND P. Trấn Biên"
-            addressLabel="Đơn vị công tác"
-            addressPlaceholder="VD: UBND P. Trấn Biên"
-            reports={state.reports}
-            mockAccounts={MOCK_OFFICER_ACCOUNTS.map((a) => ({
-              name: a.name,
-              subtitle: `${a.roleTitle} · ${a.unit}`,
-              address: a.unit,
-              phone: a.phone,
-            }))}
-            onCancel={() => setSubView('main')}
-            onAuthenticated={handleAuthenticated}
-          />
-        )}
-
-        {subView === 'settings' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSubView('main')}
-                aria-label="Quay lại hồ sơ"
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <h1 className="text-lg font-bold text-[var(--color-text)]">Cài đặt cán bộ</h1>
-            </div>
-
-            <PortalSettingsCards
+          <div className="mx-auto max-w-lg py-2">
+            <PortalAuthFlow
+              portalLabel="Cán bộ phường"
+              roleSummary="Tiếp nhận phản ánh, điều phối bộ phận/TNV và cập nhật kết quả xử lý."
               accent="sky"
-              theme={theme}
-              onToggleTheme={handleToggleTheme}
-              fontScale={fontScale}
-              onSelectFontScale={handleSelectFontScale}
-              notificationsEnabled={notificationsEnabled}
-              onToggleNotifications={() => setNotificationsEnabled((v) => !v)}
-              gpsEnabled={gpsEnabled}
-              onToggleGps={() => setGpsEnabled((v) => !v)}
-              onOpenHotline={() => setHotlineOpen(true)}
-              onOpenPrivacy={() => setPrivacyOpen(true)}
-              onResetDemo={handleResetDemo}
+              defaultAddress="UBND P. Trấn Biên"
+              addressLabel="Đơn vị công tác"
+              addressPlaceholder="VD: UBND P. Trấn Biên"
+              reports={state.reports}
+              mockAccounts={MOCK_OFFICER_ACCOUNTS.map((a) => ({
+                name: a.name,
+                subtitle: `${a.roleTitle} · ${a.unit}`,
+                address: a.unit,
+                phone: a.phone,
+              }))}
+              onCancel={() => setSubView('main')}
+              onAuthenticated={handleAuthenticated}
             />
           </div>
         )}
 
-        {subView === 'main' && (
-          <div className="space-y-4">
-            {/* Profile Hero Card */}
-            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300">
-                    <User className="h-7 w-7" />
+        {subView === 'settings' && (
+          <div className="mx-auto max-w-2xl space-y-5 pb-12">
+            <header className="sticky top-0 z-20 -mx-4 flex items-center gap-3 border-b border-slate-200/70 bg-[var(--color-surface)] px-4 py-3.5 md:mx-0 md:rounded-2xl md:border dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSubView('main')}
+                aria-label="Quay lại hồ sơ"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-[var(--color-bg)] text-[var(--color-text)] transition hover:bg-slate-100 dark:border-slate-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <h1 className="text-lg font-extrabold text-[var(--color-text)]">Cài đặt ứng dụng</h1>
+            </header>
+
+            <div className="space-y-3">
+              {/* Giao diện */}
+              <div className="flex min-h-[64px] items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-[var(--color-surface)] px-4 py-3 shadow-2xs dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-amber-300">
+                    {theme === 'dark' ? (
+                      <Moon className="h-4 w-4" />
+                    ) : (
+                      <Sun className="h-4 w-4 text-amber-500" />
+                    )}
                   </div>
                   <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1
-                        data-testid="screen-title"
-                        className="text-lg font-extrabold text-[var(--color-text)]"
-                      >
-                        {session ? session.name : 'Chưa đăng nhập'}
-                      </h1>
-                      {session && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 dark:bg-sky-950/70 dark:text-sky-300">
-                          <ShieldCheck className="h-3 w-3" />
-                          {session.roleTitle}
-                        </span>
-                      )}
+                    <div className="text-sm font-bold text-[var(--color-text)]">
+                      Giao diện (Sáng / Tối)
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
-                      {session ? (
-                        <>
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {session.unit}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Phone className="h-3.5 w-3.5" />
-                            {session.phone}
-                          </span>
-                        </>
-                      ) : (
-                        <span>Đăng nhập tài khoản cán bộ để tiếp nhận và điều phối phản ánh</span>
-                      )}
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {theme === 'dark' ? 'Đang bật chế độ Tối' : 'Đang bật chế độ Sáng'}
                     </div>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={theme === 'dark'}
+                  aria-label="Chuyển giao diện sáng tối"
+                  onClick={handleToggleTheme}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                    theme === 'dark' ? 'bg-[#0084E8]' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
+                      theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
 
-                <div className="flex items-center gap-2">
-                  {session ? (
-                    <>
+              {/* Cỡ chữ */}
+              <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-[var(--color-surface)] px-4 py-3.5 shadow-2xs dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]">
+                    <Type className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[var(--color-text)]">Cỡ chữ</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      Đang chọn: {activeFontLabel}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  role="radiogroup"
+                  aria-label="Chọn kích cỡ chữ hiển thị"
+                  className="grid grid-cols-4 gap-2"
+                >
+                  {FONT_SCALE_OPTIONS.map((opt) => {
+                    const selected = activeFontScale === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => handleSelectFontScale(opt.id)}
+                        className={`flex h-9 items-center justify-center rounded-xl text-xs font-extrabold transition-all ${
+                          selected
+                            ? 'bg-[#0084E8] text-white shadow-xs dark:bg-[#38BDF8] dark:text-slate-950'
+                            : 'border border-slate-200/90 bg-slate-50 text-slate-600 hover:border-[#0084E8]/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Thông báo */}
+              <div className="flex min-h-[64px] items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-[var(--color-surface)] px-4 py-3 shadow-2xs dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]">
+                    <Bell className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[var(--color-text)]">Thông báo đẩy</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {notificationsEnabled ? 'Nhận tin khi có phản ánh mới' : 'Đang tạm tắt'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={notificationsEnabled}
+                  aria-label="Bật tắt thông báo đẩy"
+                  onClick={() => setNotificationsEnabled((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                    notificationsEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
+                      notificationsEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* GPS */}
+              <div className="flex min-h-[64px] items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-[var(--color-surface)] px-4 py-3 shadow-2xs dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[var(--color-text)]">Vị trí GPS</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      Tự động định vị khu vực xử lý
+                    </div>
+                  </div>
+                </div>
+                <span className="rounded-full bg-emerald-100/80 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  Đang bật
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {subView === 'main' && (
+          <div className="flex flex-col pb-12">
+            {/* Top Header matching C05Mine */}
+            <header className="mb-5 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3.5 dark:border-slate-800">
+              <h1
+                data-testid="screen-title"
+                className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--color-text)]"
+              >
+                Hồ sơ
+              </h1>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* LEFT COLUMN (lg:col-span-5): ACCOUNT + STATS */}
+              <div className="lg:col-span-5 space-y-5">
+                {!session ? (
+                  <section className="overflow-hidden rounded-3xl border border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] via-[#F8FCFF] to-white p-5 shadow-xs space-y-4 dark:border-sky-800/80 dark:from-sky-950/50 dark:via-slate-900 dark:to-slate-900">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]">
+                          <User className="h-6 w-6" aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0">
+                          <h2 className="truncate text-base sm:text-lg font-extrabold text-[var(--color-text)]">
+                            Chưa đăng nhập
+                          </h2>
+                          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                            Đăng nhập tài khoản cán bộ để tiếp nhận &amp; điều phối phản ánh.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSubView('auth')}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl bg-[#0084E8] px-3.5 py-2 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(0,132,232,0.3)] transition hover:bg-[#006EC4]"
+                      >
+                        <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Đăng nhập</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate('/can-bo')}
+                        className="rounded-2xl border border-slate-200/80 bg-white p-2.5 text-center shadow-2xs transition hover:border-[#0084E8]/40 dark:border-slate-700 dark:bg-slate-900"
+                      >
+                        <div className="text-lg font-extrabold text-[var(--color-text)]">
+                          {officerStats.total}
+                        </div>
+                        <div className="text-[11px] font-semibold text-slate-500">Tổng hồ sơ</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/can-bo')}
+                        className="rounded-2xl border border-slate-200/80 bg-white p-2.5 text-center shadow-2xs transition hover:border-yellow-400 dark:border-slate-700 dark:bg-slate-900"
+                      >
+                        <div className="text-lg font-extrabold text-yellow-500 dark:text-yellow-400">
+                          {officerStats.pending}
+                        </div>
+                        <div className="text-[11px] font-semibold text-slate-500">Đang xử lý</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/can-bo')}
+                        className="rounded-2xl border border-slate-200/80 bg-white p-2.5 text-center shadow-2xs transition hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900"
+                      >
+                        <div className="text-lg font-extrabold text-[#16A34A]">
+                          {officerStats.completed}
+                        </div>
+                        <div className="text-[11px] font-semibold text-slate-500">Hoàn thành</div>
+                      </button>
+                    </div>
+                  </section>
+                ) : (
+                  <section className="overflow-hidden rounded-3xl border border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] via-[#F8FCFF] to-white p-5 shadow-xs space-y-4 dark:border-sky-800/80 dark:from-sky-950/50 dark:via-slate-900 dark:to-slate-900">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#0084E8] text-xl font-extrabold text-white shadow-[0_6px_16px_rgba(0,132,232,0.3)]">
+                          {getInitials(session.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-base sm:text-lg font-extrabold text-[var(--color-text)]">
+                              {session.name}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            <span>{session.phone}</span>
+                            <span>·</span>
+                            <span className="truncate">{session.unit}</span>
+                          </div>
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => {
@@ -241,167 +423,401 @@ export function OfficerProfile() {
                           setDraftUnit(session.unit);
                           setEditOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-xs font-bold text-[var(--color-text)] transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
+                        aria-label="Chỉnh sửa hồ sơ cá nhân"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-[#BAE6FD] bg-white/90 px-2.5 py-1.5 text-xs font-bold text-[#0084E8] shadow-2xs transition hover:bg-[#E6F3FD] dark:border-sky-800 dark:bg-slate-800 dark:text-[#38BDF8]"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Sửa
+                        <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Sửa</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => navigate('/can-bo')}
+                        className="rounded-2xl border border-white/90 bg-[var(--color-surface)] p-3 text-center shadow-2xs transition-all hover:-translate-y-0.5 hover:border-[#0084E8]/40 hover:shadow-sm dark:border-slate-700"
+                      >
+                        <div className="text-xl font-extrabold text-[var(--color-text)]">
+                          {officerStats.total}
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
+                          Tổng hồ sơ
+                        </div>
                       </button>
                       <button
                         type="button"
-                        onClick={handleLogout}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 transition-colors duration-150 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-400"
+                        onClick={() => navigate('/can-bo')}
+                        className="rounded-2xl border border-white/90 bg-[var(--color-surface)] p-3 text-center shadow-2xs transition-all hover:-translate-y-0.5 hover:border-yellow-400 hover:shadow-sm dark:border-slate-700"
                       >
-                        <LogOut className="h-3.5 w-3.5" />
-                        Đăng xuất
+                        <div className="text-xl font-extrabold text-yellow-500 dark:text-yellow-400">
+                          {officerStats.pending}
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
+                          Đang xử lý
+                        </div>
                       </button>
-                    </>
-                  ) : (
+                      <button
+                        type="button"
+                        onClick={() => navigate('/can-bo')}
+                        className="rounded-2xl border border-white/90 bg-[var(--color-surface)] p-3 text-center shadow-2xs transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-sm dark:border-slate-700"
+                      >
+                        <div className="text-xl font-extrabold text-[#16A34A]">
+                          {officerStats.completed}
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
+                          Hoàn thành
+                        </div>
+                      </button>
+                    </div>
+                  </section>
+                )}
+
+                {/* Stats Card matching C05Mine */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/can-bo/thong-ke')}
+                  className="group flex w-full items-center justify-between gap-3.5 rounded-3xl border border-[#BAE6FD] bg-[#F0F9FF] p-4 sm:p-5 text-left shadow-2xs transition-all hover:border-[#0084E8]/50 hover:bg-[#E0F2FE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:border-sky-800 dark:bg-sky-950/40"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0084E8] text-white shadow-xs transition-transform group-hover:scale-105 dark:bg-[#38BDF8] dark:text-slate-950">
+                      <BarChart3 className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <div className="text-sm sm:text-base font-extrabold text-[var(--color-text)]">
+                        Thống kê điều hành
+                      </div>
+                      <div className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+                        {officerStats.total} hồ sơ · {officerStats.pending} đang xử lý ·{' '}
+                        {officerStats.completed} hoàn thành
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className="h-5 w-5 shrink-0 text-[#0084E8] transition-transform group-hover:translate-x-0.5 dark:text-[#38BDF8]"
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+
+              {/* RIGHT COLUMN (lg:col-span-7): APP SETTINGS & SUPPORT */}
+              <div className="lg:col-span-7 space-y-5">
+                {/* Mobile Only: Button to open Settings subview */}
+                <button
+                  type="button"
+                  onClick={() => setSubView('settings')}
+                  className="flex w-full items-center justify-between gap-3.5 rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 text-left shadow-2xs transition-all hover:border-[#0084E8]/40 active:scale-[0.99] md:hidden dark:border-slate-800"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]">
+                      <Settings className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-extrabold text-[var(--color-text)]">
+                        Cài đặt ứng dụng
+                      </div>
+                      <div className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        Giao diện {theme === 'dark' ? 'Tối' : 'Sáng'} · Cỡ chữ {activeFontLabel} ·
+                        Thông báo &amp; GPS
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+                </button>
+
+                {/* Tablet & PC: CÀI ĐẶT ỨNG DỤNG */}
+                <section className="hidden md:block rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs space-y-3.5 dark:border-slate-800">
+                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Cài đặt ứng dụng
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Card 1: Giao diện */}
+                    <div className="flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs dark:bg-slate-800 dark:text-amber-300">
+                          {theme === 'dark' ? (
+                            <Moon className="h-4 w-4" />
+                          ) : (
+                            <Sun className="h-4 w-4 text-amber-500" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-[var(--color-text)]">
+                            Giao diện (Sáng / Tối)
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {theme === 'dark' ? 'Đang bật chế độ Tối' : 'Đang bật chế độ Sáng'}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={theme === 'dark'}
+                        aria-label="Chuyển giao diện sáng tối"
+                        onClick={handleToggleTheme}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                          theme === 'dark' ? 'bg-[#0084E8]' : 'bg-slate-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
+                            theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Card 2: Cỡ chữ */}
+                    <div className="sm:col-span-2 space-y-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#0084E8] shadow-2xs dark:bg-slate-800 dark:text-[#38BDF8]">
+                          <Type className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-[var(--color-text)]">Cỡ chữ</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Đang chọn: {activeFontLabel}
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        role="radiogroup"
+                        aria-label="Chọn kích cỡ chữ hiển thị"
+                        className="grid grid-cols-4 gap-2"
+                      >
+                        {FONT_SCALE_OPTIONS.map((opt) => {
+                          const selected = activeFontScale === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              onClick={() => handleSelectFontScale(opt.id)}
+                              className={`flex h-9 items-center justify-center rounded-xl text-xs font-extrabold transition-all ${
+                                selected
+                                  ? 'bg-[#0084E8] text-white shadow-xs dark:bg-[#38BDF8] dark:text-slate-950'
+                                  : 'border border-slate-200/90 bg-white text-slate-600 hover:border-[#0084E8]/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Card 3: Thông báo đẩy */}
+                    <div className="flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#0084E8] shadow-2xs dark:bg-slate-800 dark:text-[#38BDF8]">
+                          <Bell className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-[var(--color-text)]">
+                            Thông báo đẩy
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {notificationsEnabled ? 'Nhận tin khi có phản ánh mới' : 'Đang tạm tắt'}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={notificationsEnabled}
+                        aria-label="Bật tắt thông báo đẩy"
+                        onClick={() => setNotificationsEnabled((v) => !v)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                          notificationsEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
+                            notificationsEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Card 4: Vị trí GPS */}
+                    <div className="flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-2xs dark:bg-slate-800 dark:text-emerald-400">
+                          <MapPin className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-[var(--color-text)]">
+                            Vị trí GPS
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Tự động định vị khu vực xử lý
+                          </div>
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-emerald-100/80 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        Đang bật
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* THÔNG TIN & HỖ TRỢ */}
+                <section className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs space-y-3 dark:border-slate-800">
+                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Thông tin &amp; Hỗ trợ
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
                       type="button"
-                      onClick={() => setSubView('auth')}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all duration-150 hover:bg-sky-700 active:scale-[0.98]"
+                      onClick={() => setPrivacyOpen(true)}
+                      className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70"
                     >
-                      <LogIn className="h-3.5 w-3.5" />
-                      Đăng nhập
+                      <div className="flex items-center gap-2.5">
+                        <ShieldCheck className="h-4 w-4 text-[#0084E8]" />
+                        <span className="font-bold text-[var(--color-text)]">
+                          Chính sách bảo mật
+                        </span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
                     </button>
-                  )}
-                </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setHotlineOpen(true)}
+                      className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Headphones className="h-4 w-4 text-[#0084E8]" />
+                        <span className="font-bold text-[var(--color-text)]">
+                          Tổng đài hỗ trợ phường
+                        </span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResetDemo}
+                      className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <RotateCcw className="h-4 w-4 text-[#0084E8]" />
+                        <span className="font-bold text-[var(--color-text)]">
+                          Khôi phục dữ liệu mẫu
+                        </span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                    </button>
+
+                    <div className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900/70">
+                      <span className="font-bold text-[var(--color-text)]">Phiên bản ứng dụng</span>
+                      <span className="rounded-lg bg-slate-200/70 px-2.5 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        v1.2 Chính thức
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Đăng xuất */}
+                {session && (
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm font-extrabold text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Đăng xuất</span>
+                  </button>
+                )}
               </div>
-
-              {/* Role & Duties */}
-              <div className="mt-4 rounded-2xl bg-[var(--color-bg)] px-3.5 py-2.5 text-xs text-[var(--color-text-muted)]">
-                <span className="font-bold text-[var(--color-text)]">Vai trò Cán bộ phường: </span>
-                Tiếp nhận &amp; phân loại phản ánh, điều phối bộ phận/TNV xác minh hiện trường, và
-                cập nhật kết quả hoàn thành.
-              </div>
-
-              {/* Compact KPI Strip */}
-              {session && (
-                <div className="mt-3 grid grid-cols-3 gap-2.5">
-                  <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
-                    <div className="text-lg font-extrabold text-[var(--color-text)]">
-                      {officerStats.total}
-                    </div>
-                    <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
-                      Tổng hồ sơ
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
-                    <div className="text-lg font-extrabold text-yellow-500 dark:text-yellow-400">
-                      {officerStats.pending}
-                    </div>
-                    <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
-                      Đang xử lý
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
-                    <div className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
-                      {officerStats.completed}
-                    </div>
-                    <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
-                      Hoàn thành
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Action List */}
-            <div className="divide-y divide-[var(--color-border)] rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-              <button
-                type="button"
-                onClick={() => navigate('/can-bo/thong-ke')}
-                className="flex w-full items-center justify-between p-4 text-left transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300">
-                    <BarChart3 className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[var(--color-text)]">
-                      Thống kê điều hành
-                    </div>
-                    <div className="text-xs text-[var(--color-text-muted)]">
-                      Tiến độ theo bộ phận &amp; hồ sơ quá hạn
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)]" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSubView('settings')}
-                className="flex w-full items-center justify-between p-4 text-left transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                    <Settings className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[var(--color-text)]">
-                      Cài đặt giao diện &amp; hệ thống
-                    </div>
-                    <div className="text-xs text-[var(--color-text-muted)]">
-                      Nền sáng/tối, cỡ chữ, thông báo
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)]" />
-              </button>
             </div>
           </div>
         )}
+
+        {/* Modals */}
+        <HotlineModal isOpen={hotlineOpen} onClose={() => setHotlineOpen(false)} />
+
+        <Modal
+          isOpen={privacyOpen}
+          onClose={() => setPrivacyOpen(false)}
+          title="Quy định bảo mật & dữ liệu"
+        >
+          <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
+            Thông tin cá nhân và hình ảnh hiện trường của công dân được bảo mật theo quy định của
+            UBND Phường Trấn Biên. Cán bộ chỉ sử dụng dữ liệu cho mục đích tiếp nhận, xác minh và xử
+            lý phản ánh đô thị.
+          </p>
+        </Modal>
+
+        <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Chỉnh sửa hồ sơ cán bộ">
+          <div className="space-y-4 text-sm">
+            <div>
+              <label
+                htmlFor="officer-name-input"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500"
+              >
+                Họ và tên hiển thị
+              </label>
+              <input
+                id="officer-name-input"
+                type="text"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder="VD: Nguyễn Văn Minh"
+                className="w-full rounded-2xl border border-slate-200 bg-[var(--color-bg)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] focus:border-[#0084E8] focus:outline-none dark:border-slate-700"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="officer-unit-input"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500"
+              >
+                Đơn vị công tác
+              </label>
+              <input
+                id="officer-unit-input"
+                type="text"
+                value={draftUnit}
+                onChange={(e) => setDraftUnit(e.target.value)}
+                placeholder="VD: UBND P. Trấn Biên"
+                className="w-full rounded-2xl border border-slate-200 bg-[var(--color-bg)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] focus:border-[#0084E8] focus:outline-none dark:border-slate-700"
+              />
+            </div>
+
+            {session?.phone && (
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Số điện thoại
+                </label>
+                <div className="w-full rounded-2xl border border-slate-200/80 bg-slate-100/80 px-4 py-2.5 text-sm font-semibold text-slate-600 dark:border-slate-700/80 dark:bg-slate-800/60 dark:text-slate-300">
+                  {session.phone}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                className="rounded-2xl bg-[#0084E8] px-4 py-2 text-xs font-extrabold text-white shadow-xs hover:bg-[#006EC4]"
+              >
+                Lưu thay đổi
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
-
-      {/* Edit Profile Modal */}
-      <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Cập nhật hồ sơ cán bộ">
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
-              Họ và tên
-            </label>
-            <input
-              type="text"
-              value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3.5 py-2.5 text-sm text-[var(--color-text)] outline-none focus:border-sky-500"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
-              Đơn vị công tác
-            </label>
-            <input
-              type="text"
-              value={draftUnit}
-              onChange={(e) => setDraftUnit(e.target.value)}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3.5 py-2.5 text-sm text-[var(--color-text)] outline-none focus:border-sky-500"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleSaveProfile}
-            className="btn-primary-action flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 text-sm font-bold text-white transition-colors duration-150 hover:bg-sky-700"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Lưu thay đổi
-          </button>
-        </div>
-      </Modal>
-
-      <HotlineModal isOpen={hotlineOpen} onClose={() => setHotlineOpen(false)} />
-
-      <Modal
-        isOpen={privacyOpen}
-        onClose={() => setPrivacyOpen(false)}
-        title="Quy định bảo mật nội bộ"
-      >
-        <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-          Thông tin phản ánh, số điện thoại công dân và nhật ký điều phối chỉ sử dụng cho mục đích
-          xử lý hiện trường tại Phường Trấn Biên.
-        </p>
-      </Modal>
     </OfficerLayout>
   );
 }

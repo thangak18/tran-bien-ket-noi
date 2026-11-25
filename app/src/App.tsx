@@ -14,6 +14,7 @@ import { C05Mine } from './screens/citizen/C05Mine';
 import { C06Detail } from './screens/citizen/C06Detail';
 import { C07Nearby } from './screens/citizen/C07Nearby';
 import { C08Transparency } from './screens/citizen/C08Transparency';
+import { C09Notifications } from './screens/citizen/C09Notifications';
 import { A01Inbox } from './screens/officer/A01Inbox';
 import { A02Panel } from './screens/officer/A02Panel';
 import { A03Result } from './screens/officer/A03Result';
@@ -21,6 +22,7 @@ import { OfficerProfile } from './screens/officer/OfficerProfile';
 import { OfficerStats } from './screens/officer/OfficerStats';
 import { V01Tasks } from './screens/volunteer/V01Tasks';
 import { V02Verify } from './screens/volunteer/V02Verify';
+import { V03Map } from './screens/volunteer/V03Map';
 import { VolunteerStats } from './screens/volunteer/VolunteerStats';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
 
@@ -104,6 +106,14 @@ export default function App() {
             </CitizenLayout>
           }
         />
+        <Route
+          path="/thong-bao"
+          element={
+            <CitizenLayout>
+              <C09Notifications />
+            </CitizenLayout>
+          }
+        />
         <Route path="/phan-anh/:id" element={<C06Detail />} />
         <Route
           path="/quanh-day"
@@ -127,7 +137,7 @@ export default function App() {
         <Route path="/can-bo/:id" element={<A02Panel />} />
         <Route path="/can-bo/:id/ket-qua" element={<A03Result />} />
         <Route path="/tnv" element={<V01Tasks />} />
-        <Route path="/tnv/ban-do" element={<V01Tasks />} />
+        <Route path="/tnv/ban-do" element={<V03Map />} />
         <Route path="/tnv/ho-so" element={<V01Tasks />} />
         <Route path="/tnv/thong-ke" element={<VolunteerStats />} />
         <Route path="/tnv/:taskId" element={<V02Verify />} />

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
@@ -100,6 +100,57 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
 
   const last4Phone = (phone.replace(/\D/g, '') || '0068').slice(-4);
 
+  // Tự động nhận diện & dán mã OTP khi SMS về (WebOTP API + mô phỏng tự động điền)
+  useEffect(() => {
+    if (!isOpen || step !== 'otp') return;
+    let cancelled = false;
+    const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+
+    const applyDetectedOtp = (code: string) => {
+      if (cancelled) return;
+      const clean = code.replace(/\D/g, '').slice(0, 6);
+      if (clean.length === 6) {
+        setOtpDigits(clean.split(''));
+        setOtpError('');
+        otpRefs.current[5]?.focus();
+      }
+    };
+
+    const creds =
+      typeof navigator !== 'undefined'
+        ? (
+            navigator as Navigator & {
+              credentials?: { get?: (opts: unknown) => Promise<{ code?: string } | null> };
+            }
+          ).credentials
+        : undefined;
+
+    if (creds && typeof creds.get === 'function') {
+      creds
+        .get({
+          otp: { transport: ['sms'] },
+          signal: ac?.signal,
+        })
+        .then((res) => {
+          if (res?.code) applyDetectedOtp(res.code);
+        })
+        .catch(() => {});
+    }
+
+    const demoTimer = window.setTimeout(() => {
+      setOtpDigits((prev) => {
+        if (cancelled || prev.some((d) => d.length > 0)) return prev;
+        return ['1', '2', '3', '4', '5', '6'];
+      });
+    }, 650);
+
+    return () => {
+      cancelled = true;
+      ac?.abort();
+      window.clearTimeout(demoTimer);
+    };
+  }, [isOpen, step]);
+
   return (
     <BottomSheet
       isOpen={isOpen}
@@ -191,6 +242,7 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
                   }}
                   type="text"
                   inputMode="numeric"
+                  autoComplete={idx === 0 ? 'one-time-code' : undefined}
                   maxLength={6}
                   aria-label={idx === 0 ? 'Mã OTP' : `Chữ số thứ ${idx + 1}`}
                   value={digit}

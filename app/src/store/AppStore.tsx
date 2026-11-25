@@ -145,18 +145,15 @@ export function AppStoreProvider({
   initialState?: AppState;
   frame?: string;
 }) {
-  const [state, dispatch] = useReducer(
-    appReducer,
-    initialState ??
-      (() => {
-        const isTestEnv =
-          typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom');
-        if (isTestEnv) {
-          return loadPersistedState(frame, DEFAULT_STORAGE_KEY);
-        }
-        return loadPersistedState(frame, 'tbkn:live:v1', true);
-      })()
-  );
+  const [state, dispatch] = useReducer(appReducer, initialState, (init) => {
+    if (init) return init;
+    const isTestEnv =
+      typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom');
+    if (isTestEnv) {
+      return loadPersistedState(frame, DEFAULT_STORAGE_KEY);
+    }
+    return loadPersistedState(frame, 'tbkn:live:v1', true);
+  });
 
   const activeStorageKey =
     typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom')

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -375,7 +375,6 @@ export function C08Transparency({
                       <img
                         src={beforePhoto}
                         alt={`Ảnh trước xử lý ${report.id}`}
-                        loading="lazy"
                         className="h-full w-full object-cover"
                       />
                       <span className="absolute top-1.5 left-1.5 rounded-lg bg-black/65 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
@@ -394,7 +393,6 @@ export function C08Transparency({
                           <img
                             src={afterPhoto}
                             alt={`Ảnh sau xử lý ${report.id}`}
-                            loading="lazy"
                             className="h-full w-full object-cover"
                           />
                           <span className="absolute top-1.5 left-1.5 rounded-lg bg-emerald-700/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">

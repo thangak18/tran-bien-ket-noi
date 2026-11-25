@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { Category } from '@/domain/types';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { isVideoSource } from '@/lib/media';
 
 export interface BeforeAfterProps {
   beforePhotos: string[];
@@ -30,12 +31,22 @@ export const BeforeAfter: React.FC<BeforeAfterProps> = ({
         {/* Trước */}
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-2xs dark:border-slate-700">
           {beforePhoto && !beforeError ? (
-            <img
-              src={beforePhoto}
-              alt="Trước xử lý"
-              onError={() => setBeforeError(true)}
-              className="h-full w-full object-cover"
-            />
+            isVideoSource(beforePhoto) ? (
+              <video
+                src={beforePhoto}
+                controls
+                playsInline
+                preload="metadata"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                src={beforePhoto}
+                alt="Trước xử lý"
+                onError={() => setBeforeError(true)}
+                className="h-full w-full object-cover"
+              />
+            )
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center text-[var(--color-text-muted)] select-none">
               <CategoryIcon
@@ -79,12 +90,22 @@ export const BeforeAfter: React.FC<BeforeAfterProps> = ({
             </div>
           ) : (
             <>
-              <img
-                src={afterPhoto}
-                alt="Sau xử lý"
-                onError={() => setAfterError(true)}
-                className="h-full w-full object-cover"
-              />
+              {isVideoSource(afterPhoto) ? (
+                <video
+                  src={afterPhoto}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <img
+                  src={afterPhoto}
+                  alt="Sau xử lý"
+                  onError={() => setAfterError(true)}
+                  className="h-full w-full object-cover"
+                />
+              )}
               <span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-[#15803D] px-2.5 py-0.5 text-[11px] font-bold text-white">
                 Sau xử lý
               </span>

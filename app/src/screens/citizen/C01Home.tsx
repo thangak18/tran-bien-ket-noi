@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   QrCode,
+  Search,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { getCommunityFeed, toPublicCardReport } from '@/domain/privacy';
@@ -22,7 +23,6 @@ import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { Category } from '@/domain/types';
 import { ReportCard } from '@/components/citizen/ReportCard';
 import { QrScannerModal } from '@/components/citizen/QrScannerModal';
-import { Seek } from '@/components/citizen/Seek';
 
 type HomeSegment = 'community' | 'personal';
 
@@ -358,23 +358,27 @@ export function C01Home() {
             </h1>
 
             <div className="flex items-center justify-end gap-2">
-              {/* Seek: One-object spring-expanding search icon -> search field */}
-              <Seek
-                open={searchOpen}
-                onOpenChange={setSearchOpen}
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-                placeholder="Tìm mã TB-xxxx, tên đường, sự cố..."
-                buttonAriaLabel="Tìm kiếm phản ánh"
-                inputAriaLabel="Nhập từ khóa tìm kiếm phản ánh"
-              />
+              <button
+                type="button"
+                onClick={() => setSearchOpen((prev) => !prev)}
+                aria-label="Tìm kiếm phản ánh"
+                aria-expanded={searchOpen}
+                title="Tìm kiếm"
+                className={`flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] ${
+                  searchOpen
+                    ? 'border-[#0084E8] bg-[#0084E8] text-white shadow-xs'
+                    : 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] hover:border-[#0084E8] hover:text-[#0084E8]'
+                }`}
+              >
+                <Search className="h-5 w-5" aria-hidden="true" />
+              </button>
 
               <button
                 type="button"
                 onClick={() => setIsQrOpen(true)}
                 aria-label="Quét mã QR phản ánh"
                 title="Quét mã QR"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] transition-colors hover:border-[#0084E8] hover:text-[#0084E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] transition-colors hover:border-[#0084E8] hover:text-[#0084E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
               >
                 <QrCode className="h-5 w-5" />
               </button>
@@ -383,96 +387,128 @@ export function C01Home() {
                 type="button"
                 onClick={() => navigate('/quanh-day')}
                 aria-label="Xem bản đồ quanh đây"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#E0F2FE] bg-[#F0F9FF] text-[#0084E8] transition-colors hover:bg-[#E0F2FE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:border-sky-800 dark:bg-sky-950/40 dark:text-[#38BDF8]"
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border border-[#E0F2FE] bg-[#F0F9FF] text-[#0084E8] transition-colors hover:bg-[#E0F2FE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:border-sky-800 dark:bg-sky-950/40 dark:text-[#38BDF8]"
               >
                 <MapPin className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          {/* Gợi ý tìm kiếm nhanh khi thanh Seek bung ra */}
+          {/* Thanh tìm kiếm mở rộng toàn chiều ngang (không bao giờ làm vỡ layout header) */}
           {searchOpen && (
-            <div className="mt-2.5 overflow-hidden rounded-[20px] border border-slate-200 bg-[var(--color-surface)] p-3 shadow-xl dark:border-slate-700">
-              {!searchQuery.trim() && (
-                <div className="mb-3">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                    Gần đây
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {RECENT_SEARCH_CHIPS.map((chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setSearchQuery(chip)}
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:border-[#0084E8] hover:bg-[#F0F9FF] hover:text-[#0084E8] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="mt-3 space-y-2.5">
+              <div className="relative flex items-center">
+                <Search
+                  className="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm mã TB-xxxx, tên đường, sự cố..."
+                  aria-label="Nhập từ khóa tìm kiếm phản ánh"
+                  autoFocus
+                  className="h-11 w-full rounded-2xl border border-[#0084E8]/50 bg-[var(--color-bg)] pr-10 pl-10 text-sm font-medium text-[var(--color-text)] placeholder:text-slate-400 shadow-2xs focus:border-[#0084E8] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[#0084E8]/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (searchQuery) {
+                      setSearchQuery('');
+                    } else {
+                      setSearchOpen(false);
+                    }
+                  }}
+                  aria-label={searchQuery ? 'Xoá từ khoá' : 'Đóng tìm kiếm'}
+                  className="absolute right-2.5 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
 
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                    Gợi ý kết quả
-                  </span>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setSearchOpen(false)}
-                    className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  >
-                    Thu gọn
-                  </button>
-                </div>
-                {quickDropdownMatches.length === 0 ? (
-                  <div className="py-3 text-center text-xs text-slate-500">
-                    Không có gợi ý khớp từ khóa
-                  </div>
-                ) : (
-                  <div role="listbox" aria-label="Gợi ý kết quả" className="space-y-1">
-                    {quickDropdownMatches.map((item, idx) => {
-                      const cat = CATEGORY_CONFIGS.find((c) => c.key === item.category);
-                      const CatIcon = CATEGORY_ICON_MAP[item.category];
-                      return (
+              <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-[var(--color-surface)] p-3 shadow-lg dark:border-slate-700">
+                {!searchQuery.trim() && (
+                  <div className="mb-3">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                      Gần đây
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {RECENT_SEARCH_CHIPS.map((chip) => (
                         <button
-                          key={item.id}
+                          key={chip}
                           type="button"
-                          role="option"
-                          aria-selected={idx === 0}
                           onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => navigate(`/phan-anh/${item.id}`)}
-                          className={`flex w-full items-center justify-between gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs transition-colors ${
-                            idx === 0
-                              ? 'bg-[#F0F9FF] dark:bg-sky-950/40'
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-800/70'
-                          }`}
+                          onClick={() => setSearchQuery(chip)}
+                          className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:border-[#0084E8] hover:bg-[#F0F9FF] hover:text-[#0084E8] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
-                          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                            <span className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-[8px] bg-[#E0F2FE] text-[#0084E8] dark:bg-sky-900/60 dark:text-[#38BDF8]">
-                              <CatIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate font-semibold text-[var(--color-text)]">
-                                {item.title || item.description || cat?.label}
-                              </div>
-                              <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
-                                {item.address}
-                              </div>
-                            </div>
-                          </div>
-                          <span className="flex flex-shrink-0 items-center gap-1 font-mono text-[11px] font-semibold text-[#0084E8] dark:text-[#38BDF8]">
-                            <span>#{item.id}</span>
-                            <CornerDownLeft className="h-3 w-3" aria-hidden="true" />
-                          </span>
+                          {chip}
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
                 )}
+
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                      Gợi ý kết quả
+                    </span>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setSearchOpen(false)}
+                      className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      Thu gọn
+                    </button>
+                  </div>
+                  {quickDropdownMatches.length === 0 ? (
+                    <div className="py-3 text-center text-xs text-slate-500">
+                      Không có gợi ý khớp từ khóa
+                    </div>
+                  ) : (
+                    <div role="listbox" aria-label="Gợi ý kết quả" className="space-y-1">
+                      {quickDropdownMatches.map((item, idx) => {
+                        const cat = CATEGORY_CONFIGS.find((c) => c.key === item.category);
+                        const CatIcon = CATEGORY_ICON_MAP[item.category];
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            role="option"
+                            aria-selected={idx === 0}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => navigate(`/phan-anh/${item.id}`)}
+                            className={`flex w-full items-center justify-between gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs transition-colors ${
+                              idx === 0
+                                ? 'bg-[#F0F9FF] dark:bg-sky-950/40'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800/70'
+                            }`}
+                          >
+                            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                              <span className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-[8px] bg-[#E0F2FE] text-[#0084E8] dark:bg-sky-900/60 dark:text-[#38BDF8]">
+                                <CatIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate font-semibold text-[var(--color-text)]">
+                                  {item.title || item.description || cat?.label}
+                                </div>
+                                <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                  {item.address}
+                                </div>
+                              </div>
+                            </div>
+                            <span className="flex flex-shrink-0 items-center gap-1 font-mono text-[11px] font-semibold text-[#0084E8] dark:text-[#38BDF8]">
+                              <span>#{item.id}</span>
+                              <CornerDownLeft className="h-3 w-3" aria-hidden="true" />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

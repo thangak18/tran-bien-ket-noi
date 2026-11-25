@@ -7,8 +7,10 @@ import {
   CheckCircle2,
   Folder,
   Plus,
+  Square,
   Trash2,
   Upload,
+  Video,
   X,
   Zap,
   ZapOff,
@@ -16,13 +18,23 @@ import {
 import { CitizenLayout } from '@/layouts/CitizenLayout';
 import { Button, Modal } from '@/components/ui';
 import { compressImage } from '@/lib/image';
+import {
+  blobToMediaSource,
+  formatDuration,
+  getSupportedVideoMimeType,
+  getVideoDurationSeconds,
+  isVideoSource,
+  MAX_IMAGE_SIZE_BYTES,
+  MAX_MEDIA_ITEMS,
+  MAX_VIDEO_DURATION_SECONDS,
+  MAX_VIDEO_SIZE_BYTES,
+} from '@/lib/media';
 import { getCurrentLocation } from '@/lib/geolocation';
 import { useIsDesktop } from '@/lib/useIsDesktop';
 import { nearestStreet } from '@/data/streets';
 import { useAppStore } from '@/store/AppStore';
 
-const MAX_PHOTOS = 5;
-const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
+const MAX_PHOTOS = MAX_MEDIA_ITEMS;
 
 interface LocationState {
   fromStep?: number;
@@ -99,6 +111,9 @@ export function C02Photo() {
   const [flashOn, setFlashOn] = useState<boolean>(false);
   const [shutterFlash, setShutterFlash] = useState<boolean>(false);
   const [liveCameraReady, setLiveCameraReady] = useState<boolean>(false);
+  const [captureMode, setCaptureMode] = useState<'photo' | 'video'>('photo');
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingSeconds, setRecordingSeconds] = useState<number>(0);
   const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -106,6 +121,9 @@ export function C02Photo() {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,13 +144,31 @@ export function C02Photo() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const stopRecordingTimer = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
   const stopCameraStream = useCallback(() => {
+    stopRecordingTimer();
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      try {
+        recorderRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+    recorderRef.current = null;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     setLiveCameraReady(false);
-  }, []);
+    setIsRecording(false);
+    setRecordingSeconds(0);
+  }, [stopRecordingTimer]);
 
   // Khởi động camera thật bằng WebRTC getUserMedia khi mở màn hình
   useEffect(() => {
@@ -145,16 +181,16 @@ export function C02Photo() {
       return;
     }
 
-    navigator.mediaDevices
-      .getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-        audio: false,
-      })
-      .then((stream) => {
+    const startStream = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: captureMode === 'video',
+        });
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
@@ -165,16 +201,43 @@ export function C02Photo() {
           videoRef.current.play().catch(() => {});
         }
         setLiveCameraReady(true);
-      })
-      .catch(() => {
+      } catch {
+        if (captureMode === 'video') {
+          try {
+            const videoOnly = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+              },
+              audio: false,
+            });
+            if (cancelled) {
+              videoOnly.getTracks().forEach((t) => t.stop());
+              return;
+            }
+            streamRef.current = videoOnly;
+            if (videoRef.current) {
+              videoRef.current.srcObject = videoOnly;
+              videoRef.current.play().catch(() => {});
+            }
+            setLiveCameraReady(true);
+            return;
+          } catch {
+            // fall through
+          }
+        }
         setLiveCameraReady(false);
-      });
+      }
+    };
+
+    void startStream();
 
     return () => {
       cancelled = true;
       stopCameraStream();
     };
-  }, [stopCameraStream]);
+  }, [captureMode, stopCameraStream]);
 
   const tryPrefetchGps = useCallback(() => {
     if (draft.lat !== undefined && draft.lng !== undefined && draft.address) {
@@ -213,11 +276,97 @@ export function C02Photo() {
     }
   };
 
+  const stopVideoRecording = useCallback(() => {
+    stopRecordingTimer();
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      recorderRef.current.stop();
+    }
+    setIsRecording(false);
+  }, [stopRecordingTimer]);
+
+  const handleVideoToggle = () => {
+    setErrorMessage(null);
+    if (isRecording) {
+      stopVideoRecording();
+      return;
+    }
+
+    if (photos.length >= MAX_PHOTOS) {
+      setErrorMessage(`Bạn chỉ có thể gửi tối đa ${MAX_PHOTOS} mục (ảnh/video).`);
+      return;
+    }
+
+    if (!liveCameraReady || !streamRef.current || typeof MediaRecorder === 'undefined') {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    chunksRef.current = [];
+    const mimeType = getSupportedVideoMimeType();
+    try {
+      const recorder = mimeType
+        ? new MediaRecorder(streamRef.current, { mimeType })
+        : new MediaRecorder(streamRef.current);
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, {
+          type: mimeType || 'video/webm',
+        });
+        chunksRef.current = [];
+        if (blob.size === 0) return;
+
+        setIsCompressing(true);
+        blobToMediaSource(blob)
+          .then((src) => {
+            const updated = [...photos, src].slice(0, MAX_PHOTOS);
+            updatePhotos(updated);
+            setActiveIndex(updated.length - 1);
+            tryPrefetchGps();
+          })
+          .catch(() => {
+            setErrorMessage('Không thể lưu video vừa quay. Vui lòng thử lại.');
+          })
+          .finally(() => {
+            setIsCompressing(false);
+          });
+      };
+
+      recorder.start(1000);
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      timerRef.current = window.setInterval(() => {
+        setRecordingSeconds((prev) => {
+          const next = prev + 1;
+          if (next >= MAX_VIDEO_DURATION_SECONDS) {
+            stopVideoRecording();
+            return MAX_VIDEO_DURATION_SECONDS;
+          }
+          return next;
+        });
+      }, 1000);
+    } catch {
+      cameraInputRef.current?.click();
+    }
+  };
+
   // Chụp thực sự từ luồng video WebRTC đang hiển thị
   const handleShutterClick = () => {
+    if (captureMode === 'video') {
+      handleVideoToggle();
+      return;
+    }
+
     setErrorMessage(null);
     if (photos.length >= MAX_PHOTOS) {
-      setErrorMessage(`Bạn chỉ có thể chụp tối đa ${MAX_PHOTOS} ảnh.`);
+      setErrorMessage(`Bạn chỉ có thể chụp tối đa ${MAX_PHOTOS} mục (ảnh/video).`);
       return;
     }
 
@@ -278,20 +427,39 @@ export function C02Photo() {
     const newDataUrls: string[] = [];
 
     for (const file of filesToProcess) {
-      if (!file.type.startsWith('image/')) {
-        setErrorMessage('Định dạng tệp không hợp lệ. Vui lòng chọn tệp hình ảnh (JPG, PNG, WEBP).');
-        continue;
-      }
-      if (file.size > MAX_FILE_SIZE_BYTES) {
-        setErrorMessage('Ảnh vượt quá dung lượng tối đa 15MB. Vui lòng chọn ảnh nhẹ hơn.');
-        continue;
-      }
-
-      try {
-        const result = await compressImage(file, 1280, 0.7);
-        newDataUrls.push(result.dataUrl);
-      } catch {
-        setErrorMessage('Không thể xử lý ảnh này. Vui lòng thử chụp hoặc chọn ảnh khác.');
+      if (file.type.startsWith('image/')) {
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          setErrorMessage('Ảnh vượt quá dung lượng tối đa 15MB. Vui lòng chọn ảnh nhẹ hơn.');
+          continue;
+        }
+        try {
+          const result = await compressImage(file, 1280, 0.7);
+          newDataUrls.push(result.dataUrl);
+        } catch {
+          setErrorMessage('Không thể xử lý ảnh này. Vui lòng thử chụp hoặc chọn ảnh khác.');
+        }
+      } else if (file.type.startsWith('video/')) {
+        if (file.size > MAX_VIDEO_SIZE_BYTES) {
+          setErrorMessage('Video vượt quá dung lượng tối đa 100MB. Vui lòng chọn video nhẹ hơn.');
+          continue;
+        }
+        try {
+          const duration = await getVideoDurationSeconds(file);
+          if (duration > MAX_VIDEO_DURATION_SECONDS) {
+            setErrorMessage(
+              'Video vượt quá thời lượng tối đa 5 phút. Vui lòng chọn video ngắn hơn.'
+            );
+            continue;
+          }
+          const videoSrc = await blobToMediaSource(file);
+          newDataUrls.push(videoSrc);
+        } catch {
+          setErrorMessage('Không thể xử lý video này. Vui lòng thử lại.');
+        }
+      } else {
+        setErrorMessage(
+          'Định dạng tệp không hợp lệ. Vui lòng chọn tệp hình ảnh (JPG, PNG, WEBP) hoặc video.'
+        );
       }
     }
 
@@ -378,7 +546,7 @@ export function C02Photo() {
           ref={cameraInputRef}
           data-testid="camera-input"
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           capture="environment"
           onChange={handleCameraChange}
           className="hidden"
@@ -388,7 +556,7 @@ export function C02Photo() {
           ref={galleryInputRef}
           data-testid="gallery-input"
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           multiple
           onChange={handleGalleryChange}
           className="hidden"
@@ -446,13 +614,31 @@ export function C02Photo() {
             {/* Crisp Studio Camera Viewfinder Backdrop (never uses blurry default photo) */}
             <ViewfinderStudioBackdrop />
 
-            {/* Selected Photo Preview (only when user actually captured or picked a photo) */}
-            {previewSelectedPhoto && (
-              <img
-                src={previewSelectedPhoto}
-                alt="Ảnh hiện trường đã chọn"
-                className="pointer-events-none absolute inset-0 h-full w-full object-contain bg-slate-950/75 backdrop-blur-xs"
-              />
+            {/* Selected Photo/Video Preview */}
+            {previewSelectedPhoto &&
+              (isVideoSource(previewSelectedPhoto) ? (
+                <video
+                  src={previewSelectedPhoto}
+                  controls
+                  playsInline
+                  className="absolute inset-0 z-10 h-full w-full object-contain bg-slate-950/90"
+                />
+              ) : (
+                <img
+                  src={previewSelectedPhoto}
+                  alt="Ảnh hiện trường đã chọn"
+                  className="pointer-events-none absolute inset-0 h-full w-full object-contain bg-slate-950/75 backdrop-blur-xs"
+                />
+              ))}
+
+            {isRecording && (
+              <div className="absolute top-4 left-4 z-30 flex items-center gap-2 rounded-full bg-rose-600/95 px-3 py-1.5 text-xs font-bold text-white shadow-lg">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" />
+                <span>
+                  REC {formatDuration(recordingSeconds)} /{' '}
+                  {formatDuration(MAX_VIDEO_DURATION_SECONDS)}
+                </span>
+              </div>
             )}
 
             {/* Live WebRTC Camera Stream */}
@@ -565,11 +751,26 @@ export function C02Photo() {
                                   : 'border-white/25 opacity-85 hover:opacity-100'
                               }`}
                             >
-                              <img
-                                src={src}
-                                alt={`Ảnh sự cố ${idx + 1}`}
-                                className="h-full w-full object-cover"
-                              />
+                              {isVideoSource(src) ? (
+                                <video
+                                  src={src}
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <img
+                                  src={src}
+                                  alt={`Ảnh sự cố ${idx + 1}`}
+                                  className="h-full w-full object-cover"
+                                />
+                              )}
+                              {isVideoSource(src) && (
+                                <span className="pointer-events-none absolute top-1 left-1 rounded bg-black/75 p-0.5 text-white">
+                                  <Video className="h-2.5 w-2.5" aria-hidden="true" />
+                                </span>
+                              )}
                               <span className="pointer-events-none absolute bottom-1 left-1 rounded-md bg-black/70 px-1.5 py-0.2 text-[10px] font-extrabold text-white">
                                 {idx + 1}
                               </span>
@@ -608,12 +809,44 @@ export function C02Photo() {
                 </button>
               )}
 
-              {/* Guide Pill */}
-              <div className="rounded-full bg-black/60 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
-                Đưa sự cố vào khung hình để chụp
+              {/* Mode switcher: Chụp ảnh / Quay video */}
+              <div className="inline-flex rounded-full border border-white/15 bg-black/60 p-1 text-xs font-semibold backdrop-blur-md">
+                <button
+                  type="button"
+                  disabled={isRecording}
+                  onClick={() => setCaptureMode('photo')}
+                  className={`rounded-full px-3.5 py-1 transition ${
+                    captureMode === 'photo'
+                      ? 'bg-[#0084E8] text-white shadow-sm'
+                      : 'text-slate-200 hover:text-white'
+                  } disabled:opacity-50`}
+                >
+                  Chụp ảnh
+                </button>
+                <button
+                  type="button"
+                  disabled={isRecording}
+                  onClick={() => setCaptureMode('video')}
+                  className={`rounded-full px-3.5 py-1 transition ${
+                    captureMode === 'video'
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'text-slate-200 hover:text-white'
+                  } disabled:opacity-50`}
+                >
+                  Quay video (≤ 5p)
+                </button>
               </div>
 
-              {/* Symmetric Pill Dock: [Flash]  [Blue Shutter]  [Folder] */}
+              {/* Guide Pill */}
+              <div className="rounded-full bg-black/60 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+                {captureMode === 'video'
+                  ? isRecording
+                    ? 'Đang quay video hiện trường...'
+                    : 'Nhấn nút đỏ để quay video (tối đa 5 phút)'
+                  : 'Đưa sự cố vào khung hình để chụp'}
+              </div>
+
+              {/* Symmetric Pill Dock: [Flash]  [Shutter / Record]  [Folder] */}
               <div className="flex h-[80px] w-[326px] max-w-full items-center justify-between rounded-[40px] border border-white/15 bg-[#141824]/90 px-6 shadow-2xl backdrop-blur-md">
                 <button
                   type="button"
@@ -637,10 +870,28 @@ export function C02Photo() {
                   type="button"
                   onClick={handleShutterClick}
                   disabled={isCompressing}
-                  aria-label="Chụp ảnh sự cố"
-                  className="flex h-[62px] w-[62px] items-center justify-center rounded-full border-[3px] border-white p-1 shadow-[0_0_24px_rgba(0,132,232,0.45)] transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
+                  aria-label={
+                    captureMode === 'video'
+                      ? isRecording
+                        ? 'Dừng quay video'
+                        : 'Quay video sự cố'
+                      : 'Chụp ảnh sự cố'
+                  }
+                  className={`flex h-[62px] w-[62px] items-center justify-center rounded-full border-[3px] p-1 transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 ${
+                    captureMode === 'video'
+                      ? 'border-rose-400 shadow-[0_0_24px_rgba(244,63,94,0.5)]'
+                      : 'border-white shadow-[0_0_24px_rgba(0,132,232,0.45)]'
+                  }`}
                 >
-                  <span className="h-full w-full rounded-full bg-[#0084E8]" />
+                  {captureMode === 'video' ? (
+                    isRecording ? (
+                      <Square className="h-6 w-6 fill-rose-500 text-rose-500" aria-hidden="true" />
+                    ) : (
+                      <span className="h-full w-full rounded-full bg-rose-500" />
+                    )
+                  ) : (
+                    <span className="h-full w-full rounded-full bg-[#0084E8]" />
+                  )}
                 </button>
 
                 <button
@@ -682,7 +933,7 @@ export function C02Photo() {
                         Tải ảnh từ máy tính hoặc kéo thả vào khung
                       </span>
                       <span className="text-xs text-slate-500 dark:text-slate-400">
-                        Hỗ trợ JPG, PNG, WEBP · Tối đa 5 ảnh (≤ 15MB/ảnh)
+                        Hỗ trợ ảnh (JPG, PNG, WEBP ≤ 15MB) & video (≤ 5 phút) · Tối đa 5 mục
                       </span>
                     </button>
                   ) : (
@@ -698,12 +949,27 @@ export function C02Photo() {
                                 : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'
                             }`}
                           >
-                            <img
-                              src={src}
-                              alt={`Ảnh đã chọn ${idx + 1}`}
-                              className="h-full w-full object-cover"
-                            />
+                            {isVideoSource(src) ? (
+                              <video
+                                src={src}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <img
+                                src={src}
+                                alt={`Ảnh đã chọn ${idx + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                            )}
                           </button>
+                          {isVideoSource(src) && (
+                            <span className="pointer-events-none absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              <Video className="h-2.5 w-2.5" aria-hidden="true" /> Video
+                            </span>
+                          )}
                           <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-white">
                             #{idx + 1}
                           </span>

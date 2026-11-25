@@ -1,21 +1,19 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowLeft,
-  Camera,
   CheckCircle2,
   ClipboardList,
   ExternalLink,
   MapPin,
-  Trash2,
 } from 'lucide-react';
 import { VolunteerLayout } from '@/layouts/VolunteerLayout';
 import { Button, Card, Chip, EmptyState, Toast } from '@/components/ui';
+import { MediaCaptureField, MediaItemPreview } from '@/components/common/MediaCapture';
 import { MapView } from '@/components/map/MapView';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { formatDateTime } from '@/domain/format';
-import { compressImage } from '@/lib/image';
 import { useAppStore } from '@/store/AppStore';
 import { submitVerification } from '@/store/officerActions';
 import { V01Tasks } from './V01Tasks';
@@ -45,12 +43,14 @@ export function V02Verify() {
 
   const [exists, setExists] = useState<ExistsOption | null>(task?.result?.exists ?? null);
   const [severity, setSeverity] = useState<SeverityOption | null>(task?.result?.severity ?? null);
-  const [photo, setPhoto] = useState<string>(task?.result?.photo ?? '');
+  const [mediaItems, setMediaItems] = useState<string[]>(
+    task?.result?.photo ? [task.result.photo] : []
+  );
+  const photo = mediaItems[0] ?? '';
   const [note, setNote] = useState<string>(task?.result?.note ?? '');
-  const [isCompressing, setIsCompressing] = useState(false);
+  const [activePhotoIndex, setActivePhotoIndex] = useState<number>(0);
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (taskId === 'ban-do' || taskId === 'ho-so') {
     return <V01Tasks />;
@@ -106,34 +106,8 @@ export function V02Verify() {
     [...report.timeline].reverse().find((t) => t.status === 'mo_lai')?.note ||
     'Người dân phản hồi sự cố chưa được xử lý triệt để.';
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('Vui lòng chọn tệp hình ảnh hợp lệ.');
-      return;
-    }
-
-    setErrorMessage(null);
-    setIsCompressing(true);
-    try {
-      const compressed = await compressImage(file, 1280, 0.7);
-      setPhoto(compressed.dataUrl);
-    } catch {
-      setErrorMessage('Không thể xử lý ảnh. Vui lòng thử chụp lại.');
-    } finally {
-      setIsCompressing(false);
-    }
-  };
-
   const canSubmit =
-    !isCompleted &&
-    !isCompressing &&
-    exists !== null &&
-    (exists !== 'co' || severity !== null) &&
-    photo.length > 0;
+    !isCompleted && exists !== null && (exists !== 'co' || severity !== null) && photo.length > 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,403 +142,396 @@ export function V02Verify() {
     });
   };
 
+  const step1Done = exists !== null && (exists !== 'co' || severity !== null);
+  const step2Done = photo.length > 0;
+  const heroPhotos = report.photos.length > 0 ? report.photos : [];
+  const safeHeroIdx = Math.min(activePhotoIndex, Math.max(0, heroPhotos.length - 1));
+  const currentHeroPhoto = heroPhotos[safeHeroIdx] ?? null;
+
   return (
     <VolunteerLayout>
-      <div className="mx-auto w-full max-w-5xl flex flex-col gap-4 p-4 md:p-6 pb-24 animate-fade-up">
-        <header className="flex items-center gap-2 border-b border-[var(--color-border)] pb-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label="Quay lại danh sách nhiệm vụ"
-            icon={<ArrowLeft className="h-5 w-5" />}
-            onClick={handleBack}
-          />
-          <div className="min-w-0 flex-1">
-            <h1
-              data-testid="screen-title"
-              className="truncate text-[var(--fs-title)] font-bold text-[var(--color-text)]"
-            >
-              Xác minh tại chỗ
-            </h1>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              <span data-testid="task-id">{task.id}</span> · Hồ sơ {report.id} ·{' '}
-              {isInspection ? 'Nghiệm thu sau xử lý' : 'Xác minh ban đầu'}
-            </p>
+      <div className="flex min-h-screen flex-1 flex-col bg-[#F4F8FC] dark:bg-[var(--color-bg)]">
+        {/* Clean Full-Width Header matching C04Confirm */}
+        <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-[var(--color-surface)] px-4 md:px-6 lg:px-8 py-3.5 dark:border-slate-800">
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={handleBack}
+                aria-label="Quay lại danh sách nhiệm vụ"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-slate-50 text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <div className="min-w-0">
+                <h1
+                  data-testid="screen-title"
+                  className="truncate text-base sm:text-lg font-extrabold tracking-tight text-[var(--color-text)]"
+                >
+                  Xác minh tại chỗ
+                </h1>
+                <p className="truncate text-xs text-[var(--color-text-muted)]">
+                  <span data-testid="task-id" className="font-bold text-[#0084E8]">
+                    {task.id}
+                  </span>{' '}
+                  · Hồ sơ {report.id} · {isInspection ? 'Nghiệm thu sau xử lý' : 'Xác minh ban đầu'}
+                </p>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Live 3-Step Verification Progress */}
-        {!isCompleted && (
-          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center shadow-2xs">
-            <div className="flex flex-col items-center gap-1">
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold ${
-                  exists ? 'bg-emerald-600 text-white' : 'bg-[var(--color-primary)] text-white'
-                }`}
-              >
-                1
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--color-text)]">
-                Kiểm tra hiện trạng
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold ${
-                  photo
-                    ? 'bg-emerald-600 text-white'
-                    : exists
-                      ? 'bg-[var(--color-primary)] text-white'
-                      : 'border border-[var(--color-border)] text-[var(--color-text-muted)]'
-                }`}
-              >
-                2
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--color-text)]">
-                Chụp ảnh tại chỗ
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold ${
-                  canSubmit
-                    ? 'bg-emerald-600 text-white'
-                    : 'border border-[var(--color-border)] text-[var(--color-text-muted)]'
-                }`}
-              >
-                3
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--color-text)]">
-                Gửi kết quả
-              </span>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          <div className="lg:col-span-7 space-y-4">
-            {/* V02b · Khối nghiệm thu sau xử lý (lý do mở lại + Trước/Sau) */}
-            {isInspection && (
-              <Card className="flex flex-col gap-3 border-amber-200 bg-amber-50/50 dark:border-amber-900/60 dark:bg-amber-950/30">
-                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-                  <span className="text-xs font-bold uppercase tracking-wide">
-                    Nghiệm thu sau xử lý
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[var(--color-text-muted)]">
-                    Lý do người dân mở lại
-                  </p>
-                  <p className="mt-0.5 text-sm text-[var(--color-text)]">{reopenReason}</p>
-                </div>
-                {(report.photos.length > 0 || (report.resultPhotos?.length ?? 0) > 0) && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="mb-1 text-xs font-semibold text-gray-600">Trước xử lý</p>
-                      {report.photos[0] ? (
-                        <img
-                          src={report.photos[0]}
-                          alt="Ảnh trước xử lý"
-                          loading="lazy"
-                          className="h-28 w-full rounded-xl border border-gray-200 object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-300 text-xs text-gray-400">
-                          Không có ảnh
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="mb-1 text-xs font-semibold text-gray-600">Sau xử lý</p>
-                      {report.resultPhotos?.[0] ? (
-                        <img
-                          src={report.resultPhotos[0]}
-                          alt="Ảnh sau xử lý"
-                          loading="lazy"
-                          className="h-28 w-full rounded-xl border border-gray-200 object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-300 text-xs text-gray-400">
-                          Chưa có ảnh sau
-                        </div>
-                      )}
-                    </div>
+        {/* Main 12-Column Layout matching C04Confirm */}
+        <div className="mx-auto w-full max-w-7xl flex-1 px-4 md:px-6 lg:px-8 py-5 sm:py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* LEFT COLUMN (lg:col-span-5): Media Card + TÓM TẮT NHIỆM VỤ */}
+            <div className="lg:col-span-5 rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 sm:p-5 shadow-sm space-y-4 dark:border-slate-800">
+              {currentHeroPhoto ? (
+                <div className="space-y-2.5">
+                  <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 dark:border-slate-700">
+                    <MediaItemPreview
+                      src={currentHeroPhoto}
+                      alt={`Ảnh hiện trường ${safeHeroIdx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-black/70 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
+                      Ảnh #{safeHeroIdx + 1}/{heroPhotos.length}
+                    </span>
                   </div>
-                )}
-                {report.resultNote && (
-                  <p className="text-xs text-gray-600">
-                    <strong>Kết quả đơn vị báo:</strong> {report.resultNote}
-                  </p>
-                )}
-              </Card>
-            )}
-
-            {/* Thông tin phản ánh gốc của người dân */}
-            <Card className="flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-bold text-[var(--color-text)]">{categoryLabel}</span>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  {formatDateTime(report.createdAt)}
-                </span>
-              </div>
-
-              {report.title && (
-                <div className="rounded-xl bg-[var(--color-bg)] px-3 py-2 text-sm font-extrabold text-[var(--color-text)] border border-[var(--color-border)]">
-                  {report.title}
-                </div>
-              )}
-
-              <div className="flex items-start gap-1.5 text-sm text-[var(--color-text)]">
-                <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">{report.address}</p>
-                  {report.locationNote && (
-                    <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
-                      {report.locationNote}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {!isInspection && report.photos.length > 0 && (
-                <div>
-                  <p className="mb-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
-                    Ảnh gốc của người dân
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {report.photos.map((src, idx) => (
-                      <img
-                        key={idx}
-                        src={src}
-                        alt={`Ảnh phản ánh ${idx + 1}`}
-                        loading="lazy"
-                        className="h-24 w-full rounded-xl border border-[var(--color-border)] object-cover"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <p className="text-xs font-semibold text-[var(--color-text-muted)]">Mô tả sự cố</p>
-                <p className="mt-1 text-sm text-[var(--color-text)]">
-                  {report.description?.trim()
-                    ? report.description
-                    : 'Người dân không ghi thêm mô tả.'}
-                </p>
-              </div>
-            </Card>
-
-            {/* Bản đồ + Chỉ đường */}
-            <Card className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-[var(--color-text)]">
-                  Vị trí trên bản đồ
-                </span>
-                <a
-                  href={directionsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-dark hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <span>Chỉ đường</span>
-                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                </a>
-              </div>
-              <div className="h-48 w-full overflow-hidden rounded-xl border border-gray-200">
-                <MapView
-                  center={[report.lat, report.lng]}
-                  zoom={16}
-                  markers={[
-                    {
-                      id: report.id,
-                      lat: report.lat,
-                      lng: report.lng,
-                      category: report.category,
-                      status: report.status,
-                      title: report.address,
-                    },
-                  ]}
-                  selectedMarkerId={report.id}
-                  autoLocateUser={true}
-                  showLocateButton={true}
-                  hideBuiltInLegend={true}
-                />
-              </div>
-            </Card>
-          </div>
-          <div className="lg:col-span-5 lg:sticky lg:top-4">
-            {/* Biểu mẫu xác minh 3 câu hỏi */}
-            {isCompleted && task.result ? (
-              <Card className="flex flex-col gap-3 border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/60 dark:bg-emerald-950/30">
-                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
-                  <span className="text-sm font-bold">Đã gửi kết quả xác minh</span>
-                </div>
-                <div className="space-y-1 text-sm text-[var(--color-text)]">
-                  <p>
-                    <strong>Sự cố tồn tại:</strong>{' '}
-                    {EXISTS_OPTIONS.find((o) => o.value === task.result?.exists)?.label}
-                  </p>
-                  {task.result.severity && (
-                    <p>
-                      <strong>Mức độ:</strong>{' '}
-                      {SEVERITY_OPTIONS.find((o) => o.value === task.result?.severity)?.label}
-                    </p>
-                  )}
-                  {task.result.note && (
-                    <p>
-                      <strong>Ghi chú:</strong> {task.result.note}
-                    </p>
-                  )}
-                </div>
-                {task.result.photo && (
-                  <img
-                    src={task.result.photo}
-                    alt="Ảnh xác minh tại chỗ"
-                    loading="lazy"
-                    className="h-44 w-full rounded-xl border border-gray-200 object-cover"
-                  />
-                )}
-              </Card>
-            ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {errorMessage && (
-                  <Toast
-                    type="error"
-                    message={errorMessage}
-                    onClose={() => setErrorMessage(null)}
-                  />
-                )}
-
-                {/* Câu 1 */}
-                <Card className="flex flex-col gap-2.5">
-                  <label className="text-sm font-bold text-[var(--color-text)]">
-                    1. Sự cố có tồn tại không? <span className="text-red-600">*</span>
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {EXISTS_OPTIONS.map((opt) => (
-                      <Chip
-                        key={opt.value}
-                        label={opt.label}
-                        selected={exists === opt.value}
-                        onClick={() => {
-                          setExists(opt.value);
-                          if (opt.value !== 'co') {
-                            setSeverity(null);
-                          }
-                          setErrorMessage(null);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </Card>
-
-                {/* Câu 2 (chỉ hiện khi Câu 1 = Có) */}
-                {exists === 'co' && (
-                  <Card className="flex flex-col gap-2.5">
-                    <label className="text-sm font-bold text-[var(--color-text)]">
-                      2. Mức độ sự cố <span className="text-red-600">*</span>
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {SEVERITY_OPTIONS.map((opt) => (
-                        <Chip
-                          key={opt.value}
-                          label={opt.label}
-                          selected={severity === opt.value}
-                          onClick={() => {
-                            setSeverity(opt.value);
-                            setErrorMessage(null);
-                          }}
-                        />
+                  {heroPhotos.length > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+                      {heroPhotos.map((src, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setActivePhotoIndex(idx)}
+                          className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                            idx === safeHeroIdx
+                              ? 'border-[#0084E8] ring-2 ring-[#0084E8]/20'
+                              : 'border-slate-200 opacity-75 hover:opacity-100 dark:border-slate-700'
+                          }`}
+                        >
+                          <MediaItemPreview src={src} alt={`Ảnh ${idx + 1}`} />
+                        </button>
                       ))}
                     </div>
-                  </Card>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="rounded-2xl border border-slate-200/80 bg-[#F8FAFC] p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                    Tóm tắt nhiệm vụ
+                  </span>
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    {categoryLabel}
+                  </span>
+                </div>
+
+                {report.title && (
+                  <div className="rounded-xl border border-slate-200/80 bg-[var(--color-surface)] px-3.5 py-2.5 text-sm font-extrabold text-[var(--color-text)] dark:border-slate-700">
+                    {report.title}
+                  </div>
                 )}
 
-                {/* Câu 3 */}
-                <Card className="flex flex-col gap-3">
-                  <label className="text-sm font-bold text-[var(--color-text)]">
-                    {exists === 'co' ? '3.' : '2.'} Ảnh chụp tại chỗ{' '}
-                    <span className="text-red-600">*</span>
-                  </label>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                    aria-label="Chọn ảnh tại chỗ"
-                  />
-
-                  {photo ? (
-                    <div className="relative">
-                      <img
-                        src={photo}
-                        alt="Ảnh chụp tại chỗ"
-                        className="h-48 w-full rounded-xl border border-[var(--color-border)] object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="danger"
-                        size="sm"
-                        aria-label="Xoá ảnh tại chỗ"
-                        icon={<Trash2 className="h-4 w-4" />}
-                        onClick={() => setPhoto('')}
-                        className="absolute right-2 top-2"
-                      >
-                        Xoá
-                      </Button>
+                <div className="rounded-xl border border-slate-200/80 bg-[var(--color-surface)] p-3 flex items-start justify-between gap-2 dark:border-slate-700">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#0084E8]" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-semibold text-slate-400">
+                        Vị trí hiện trường
+                      </div>
+                      <div className="text-xs font-bold text-[var(--color-text)]">
+                        {report.address}
+                      </div>
+                      {report.locationNote && (
+                        <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
+                          {report.locationNote}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        fullWidth
-                        isLoading={isCompressing}
-                        icon={<Camera className="h-5 w-5" />}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        Chụp / chọn ảnh tại chỗ
-                      </Button>
-                      <button
-                        type="button"
-                        onClick={() => setPhoto(`/demo-photos/${report.category}/1.jpg`)}
-                        className="w-full rounded-xl border border-dashed border-[var(--color-border)] py-2 text-xs font-semibold text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-elevated)]"
-                      >
-                        Dùng ảnh mẫu (Demo)
-                      </button>
+                  </div>
+                  <a
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 text-xs font-extrabold text-[#0084E8] hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>Chỉ đường</span>
+                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                </div>
+
+                {report.description?.trim() && (
+                  <div className="rounded-xl border border-slate-200/80 bg-[var(--color-surface)] p-3 text-xs text-[var(--color-text)] dark:border-slate-700">
+                    <span className="font-bold text-slate-500">Mô tả: </span>
+                    {report.description}
+                  </div>
+                )}
+
+                {isInspection && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-950 space-y-1 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+                    <div className="flex items-center gap-1.5 font-extrabold">
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                      <span>Lý do mở lại ({formatDateTime(report.createdAt)})</span>
+                    </div>
+                    <p>{reopenReason}</p>
+                  </div>
+                )}
+
+                <div className="h-44 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                  <MapView
+                    center={[report.lat, report.lng]}
+                    zoom={16}
+                    markers={[
+                      {
+                        id: report.id,
+                        lat: report.lat,
+                        lng: report.lng,
+                        category: report.category,
+                        status: report.status,
+                        title: report.address,
+                      },
+                    ]}
+                    selectedMarkerId={report.id}
+                    autoLocateUser={true}
+                    showLocateButton={true}
+                    hideBuiltInLegend={true}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN (lg:col-span-7): Pill Stepper + Form matching C04Confirm */}
+            <div className="lg:col-span-7 lg:sticky lg:top-20">
+              {isCompleted && task.result ? (
+                <Card className="flex flex-col gap-4 rounded-3xl border-emerald-200 bg-[var(--color-surface)] p-6 shadow-sm dark:border-emerald-900/60">
+                  <div className="flex items-center gap-2.5 text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+                    <span className="text-base font-extrabold">Đã gửi kết quả xác minh</span>
+                  </div>
+                  <div className="space-y-2 rounded-2xl bg-[#F8FAFC] p-4 text-sm text-[var(--color-text)] border border-slate-200 dark:bg-slate-900/60 dark:border-slate-700">
+                    <p>
+                      <strong>Sự cố tồn tại:</strong>{' '}
+                      {EXISTS_OPTIONS.find((o) => o.value === task.result?.exists)?.label}
+                    </p>
+                    {task.result.severity && (
+                      <p>
+                        <strong>Mức độ:</strong>{' '}
+                        {SEVERITY_OPTIONS.find((o) => o.value === task.result?.severity)?.label}
+                      </p>
+                    )}
+                    {task.result.note && (
+                      <p>
+                        <strong>Ghi chú:</strong> {task.result.note}
+                      </p>
+                    )}
+                  </div>
+                  {task.result.photo && (
+                    <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-slate-900">
+                      <MediaItemPreview
+                        src={task.result.photo}
+                        alt="Ảnh xác minh tại chỗ"
+                        className="h-56 w-full object-cover"
+                      />
                     </div>
                   )}
-
-                  <div>
-                    <label
-                      htmlFor="verify-note"
-                      className="mb-1 block text-xs font-semibold text-[var(--color-text-muted)]"
-                    >
-                      Ghi chú thêm (không bắt buộc)
-                    </label>
-                    <textarea
-                      id="verify-note"
-                      rows={3}
-                      maxLength={300}
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Mô tả tình trạng thực tế tại hiện trường..."
-                      className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-[var(--fs-body)] text-[var(--color-text)] shadow-xs focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    />
-                  </div>
                 </Card>
+              ) : (
+                <form
+                  onSubmit={handleSubmit}
+                  className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 sm:p-6 shadow-sm space-y-5 dark:border-slate-800"
+                >
+                  <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200/80 bg-[#F8FAFC] p-1.5 dark:border-slate-800 dark:bg-slate-900/60">
+                    {[
+                      { step: 1 as const, label: 'Thực tế', done: step1Done },
+                      { step: 2 as const, label: 'Ảnh / Video', done: step2Done },
+                      { step: 3 as const, label: 'Ghi chú & Gửi', done: canSubmit },
+                    ].map((item) => {
+                      const isCurrent = activeStep === item.step;
+                      return (
+                        <button
+                          key={item.step}
+                          type="button"
+                          onClick={() => setActiveStep(item.step)}
+                          className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold transition-all ${
+                            isCurrent
+                              ? 'bg-[#0084E8] text-white shadow-sm'
+                              : 'text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold ${
+                              isCurrent
+                                ? 'bg-white text-[#0084E8]'
+                                : item.done
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-200'
+                            }`}
+                          >
+                            {item.step}
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                <Button type="submit" variant="primary" size="lg" fullWidth disabled={!canSubmit}>
-                  Gửi kết quả xác minh
-                </Button>
-              </form>
-            )}
+                  {errorMessage && (
+                    <Toast
+                      type="error"
+                      message={errorMessage}
+                      onClose={() => setErrorMessage(null)}
+                    />
+                  )}
+
+                  {activeStep === 1 && (
+                    <section className="space-y-4">
+                      <div>
+                        <h2 className="text-base font-extrabold text-[var(--color-text)]">
+                          Bước 1: Sự cố có tồn tại ngoài thực tế không?{' '}
+                          <span className="text-red-600">*</span>
+                        </h2>
+                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          {EXISTS_OPTIONS.map((opt) => (
+                            <Chip
+                              key={opt.value}
+                              label={opt.label}
+                              selected={exists === opt.value}
+                              onClick={() => {
+                                setExists(opt.value);
+                                if (opt.value !== 'co') {
+                                  setSeverity(null);
+                                  setActiveStep(2);
+                                }
+                                setErrorMessage(null);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {exists === 'co' && (
+                        <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <h3 className="text-sm font-extrabold text-[var(--color-text)]">
+                            Mức độ nghiêm trọng <span className="text-red-600">*</span>
+                          </h3>
+                          <div className="mt-2.5 flex flex-wrap gap-2.5">
+                            {SEVERITY_OPTIONS.map((opt) => (
+                              <Chip
+                                key={opt.value}
+                                label={opt.label}
+                                selected={severity === opt.value}
+                                onClick={() => {
+                                  setSeverity(opt.value);
+                                  setActiveStep(2);
+                                  setErrorMessage(null);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          disabled={!step1Done}
+                          onClick={() => setActiveStep(2)}
+                          className="flex h-11 w-full items-center justify-center rounded-2xl bg-[#0084E8] px-5 text-sm font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition hover:bg-[#006EC4] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-800"
+                        >
+                          Tiếp tục chụp ảnh / video
+                        </button>
+                      </div>
+                    </section>
+                  )}
+
+                  {activeStep === 2 && (
+                    <section className="space-y-4">
+                      <h2 className="text-base font-extrabold text-[var(--color-text)]">
+                        Bước 2: Ảnh / Video tại chỗ <span className="text-red-600">*</span>
+                      </h2>
+                      <MediaCaptureField
+                        items={mediaItems}
+                        onChange={(next) => {
+                          setMediaItems(next);
+                        }}
+                        maxItems={5}
+                        allowGallery={true}
+                        allowVideo={true}
+                        captureLabel="Chụp ảnh / Quay video tại chỗ"
+                        galleryLabel="Chọn từ máy"
+                        onAddSample={() => {
+                          const sample = `/demo-photos/${report.category}/1.jpg`;
+                          if (!mediaItems.includes(sample)) {
+                            setMediaItems((prev) => [...prev, sample].slice(0, 5));
+                            setActiveStep(3);
+                          }
+                        }}
+                        sampleLabel="Dùng ảnh mẫu (Demo)"
+                      />
+                      <div className="flex items-center gap-2.5 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setActiveStep(1)}
+                          className="flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        >
+                          Quay lại
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!step2Done}
+                          onClick={() => setActiveStep(3)}
+                          className="flex h-11 flex-1 items-center justify-center rounded-2xl bg-[#0084E8] px-5 text-sm font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition hover:bg-[#006EC4] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-800"
+                        >
+                          Tiếp tục ghi chú &amp; gửi
+                        </button>
+                      </div>
+                    </section>
+                  )}
+
+                  {activeStep === 3 && (
+                    <section className="space-y-4">
+                      <div>
+                        <label
+                          htmlFor="verify-note"
+                          className="mb-1.5 block text-sm font-extrabold text-[var(--color-text)]"
+                        >
+                          Bước 3: Ghi chú hiện trường (không bắt buộc)
+                        </label>
+                        <textarea
+                          id="verify-note"
+                          rows={3}
+                          maxLength={300}
+                          value={note}
+                          onChange={(e) => setNote(e.target.value)}
+                          placeholder="Mô tả tình trạng thực tế, phạm vi ảnh hưởng hoặc lưu ý cho đơn vị xử lý..."
+                          className="w-full rounded-2xl border border-slate-200/90 bg-[#F8FAFC] px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-slate-400 focus:border-[#0084E8] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[#0084E8]/20 dark:border-slate-700 dark:bg-slate-900/60"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setActiveStep(2)}
+                          className="flex h-[52px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        >
+                          Quay lại
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={!canSubmit}
+                          className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0084E8] px-5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition hover:bg-[#006EC4] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-800"
+                        >
+                          Gửi kết quả xác minh
+                        </button>
+                      </div>
+                    </section>
+                  )}
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </div>

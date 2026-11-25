@@ -173,9 +173,6 @@ export function WelcomeScreen({ onComplete }: WelcomeScreenProps) {
             <h2 className="text-2xl md:text-[28px] font-extrabold tracking-tight text-[var(--color-text)]">
               Chọn kích cỡ chữ
             </h2>
-            <p className="mt-1.5 text-sm md:text-base text-[var(--color-text-muted)]">
-              Tùy chỉnh cỡ chữ dễ đọc nhất cho bạn (mặc định: Thường).
-            </p>
           </div>
 
           {/* Live Preview */}
@@ -259,7 +256,7 @@ export function WelcomeScreen({ onComplete }: WelcomeScreenProps) {
         )}
 
         <p className="text-center text-[11px] font-medium text-[var(--color-text-muted)]">
-          UBND Phường Trấn Biên · Không cần đăng nhập để gửi phản ánh
+          UBND Phường Trấn Biên · Kết nối phản ánh &amp; theo dõi xử lý
         </p>
       </div>
     </div>

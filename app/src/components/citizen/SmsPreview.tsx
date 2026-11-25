@@ -7,6 +7,7 @@ export interface SmsPreviewProps {
   message: string;
   time?: string;
   sender?: string;
+  showMockBadge?: boolean;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export const SmsPreview: React.FC<SmsPreviewProps> = ({
   message,
   time = 'Vừa xong',
   sender = 'UBND P. Tran Bien',
+  showMockBadge = true,
   className = '',
 }) => {
   return (
@@ -31,7 +33,7 @@ export const SmsPreview: React.FC<SmsPreviewProps> = ({
             <div className="text-[11px] text-[var(--color-text-muted)]">Gửi tới {phone}</div>
           </div>
         </div>
-        <MockLabel />
+        {showMockBadge && <MockLabel />}
       </div>
 
       <div className="rounded-xl bg-[var(--color-surface-elevated)] p-3.5 text-xs text-[var(--color-text)] leading-relaxed font-mono whitespace-pre-wrap">
@@ -41,7 +43,7 @@ export const SmsPreview: React.FC<SmsPreviewProps> = ({
       <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--color-text-muted)]">
         <span className="flex items-center gap-1">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-          Tin nhắn SMS giả lập
+          Thông báo tiến độ
         </span>
         <span>{time}</span>
       </div>

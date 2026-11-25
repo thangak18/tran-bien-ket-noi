@@ -55,12 +55,14 @@ describe('Luồng liên vai trò: cán bộ giao TNV -> TNV gửi -> cán bộ x
     expect(await screen.findByText('Xác minh ban đầu')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Xác minh ban đầu'));
 
-    // Form: chưa đủ -> nút Gửi bị khoá
-    const send = await screen.findByRole('button', { name: /Gửi kết quả/i });
-    expect(send).toBeDisabled();
+    // Form: bước 1 chưa đủ -> nút Tiếp tục bị khoá
+    const nextToStep2 = await screen.findByRole('button', { name: /Tiếp tục chụp ảnh \/ video/i });
+    expect(nextToStep2).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Có' }));
     fireEvent.click(screen.getByRole('button', { name: 'Nguy hiểm' }));
-    fireEvent.click(screen.getByRole('button', { name: /Dùng ảnh mẫu/i }));
+    // Tự động chuyển sang bước 2 -> chọn ảnh mẫu -> tự động chuyển sang bước 3
+    fireEvent.click(await screen.findByRole('button', { name: /Dùng ảnh mẫu/i }));
+    const send = await screen.findByRole('button', { name: /Gửi kết quả/i });
     expect(send).toBeEnabled();
     fireEvent.click(send);
 
