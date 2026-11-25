@@ -14,6 +14,8 @@ Người dân chụp ảnh báo sự cố (đèn đường, ngập nước, rác
 
 ## 2. Trạng thái hiện tại (25/11/2026, cập nhật sau đợt review)
 
+**Cập nhật sau merge lần 2 (25/11/2026):** `main` gộp thêm bản mới của `feat/ui-upgrade-portals-theme` (proposal + UI: C09 thông báo, V03 bản đồ TNV, MediaCapture), `feat/admin` (vai trò admin, `/quan-tri`, migration `20261125020000_admin`) và `feat/ai-deepseek` (AI gợi ý loại, migration `20261125030000_ai_suggestion`). Theo UI mới người dân phải đăng nhập SĐT (OTP mô phỏng) mới gửi được; API vẫn nhận hồ sơ ẩn danh. Đo trên `main`: vitest 58 file / 349 pass (Supabase local), e2e API 8/8 trên local và trên Supabase cloud, `db:verify` 17/17 trên cloud. Cloud đã có đủ 4 migration. Kết nối DB tắt prepared statement nên server không được dùng `sql.json()` (có test DB-GUARD-001).
+
 **Cập nhật sau merge (25/11/2026):** `main` local đã gộp `feat/ui-upgrade-portals-theme` (giao diện mới, ưu tiên khi xung đột) rồi `feat/giai-doan-2` (backend/DB/DataSource). Giao diện mới nối lại qua DataSource; đo lại trên `main`: vitest 52 file / **313 pass**, `db:verify` 17/17, `mock:verify` 100%, e2e API **7/7** (spec viết lại cho UI mới). Chưa push. Nhánh `feat/admin` chưa merge (trái quyết định chỉ 3 vai trò).
 
 Giai đoạn 2 trên nhánh `feat/giai-doan-2` **đã chạy được ở máy local nhưng chưa xong hết**. Báo cáo cũ ghi "hoàn thành 100%, 229 test pass" là sai: các test đó chạy trên Postgres giả (lớp `cube/earthdistance`) và còn lỗ hổng bảo mật. Số liệu đo lại ngày 25/11/2026 (chi tiết: `docs/review/giai-doan-2/ket-qua-kiem-chung.md`):
