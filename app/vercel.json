@@ -15,5 +15,8 @@
       "path": "/api/cron/sweep-overdue",
       "schedule": "0 17 * * *"
     }
+  ],
+  "regions": [
+    "icn1"
   ]
 }
