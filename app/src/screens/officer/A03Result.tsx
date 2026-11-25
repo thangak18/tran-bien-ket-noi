@@ -1,14 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Camera, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { completeReport } from '@/store/officerActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
+import { ActionError } from '@/components/common/ActionError';
 import { Button } from '@/components/ui/Button';
 
 export function A03Result() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
 
   const report = state.reports.find((r) => r.id === id);
 
@@ -16,6 +21,23 @@ export function A03Result() {
   const [resultNote, setResultNote] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Tải hồ sơ (kèm số phiên bản mới nhất ở chế độ API) khi vào thẳng đường dẫn hoặc khi chưa có trong store.
+  const loadReport = async () => {
+    if (!id) return;
+    try {
+      const rep = await ds.getOfficerReport(id);
+      if (rep) dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Không tải được hồ sơ.');
+    }
+  };
+
+  useEffect(() => {
+    if (id && (isApiMode() || !report)) void loadReport();
+    // Chỉ chạy lại khi đổi hồ sơ đang xem.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (!report) {
     return (
@@ -45,7 +67,7 @@ export function A03Result() {
     setAfterPhoto(`/demo-photos/after/${report.category}.jpg`);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!afterPhoto) {
       setErrorMsg('Vui lòng chọn hoặc chụp ảnh kết quả hiện trường.');
       return;
@@ -55,21 +77,18 @@ export function A03Result() {
       return;
     }
 
-    try {
-      const newState = completeReport(
-        state,
-        report.id,
-        {
+    const updated = await action.run(
+      () =>
+        ds.officerCompleteReport(report.id, {
           resultPhotos: [afterPhoto],
           resultNote: resultNote.trim(),
-        },
-        state.settings.demoNow
-      );
-      dispatch({ type: 'HYDRATE', payload: newState });
-      navigate(`/can-bo/${report.id}`);
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    }
+          version: report.version,
+        }),
+      { onConflict: loadReport }
+    );
+    if (!updated) return;
+    dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
+    navigate(`/can-bo/${report.id}`);
   };
 
   return (
@@ -98,6 +117,7 @@ export function A03Result() {
       </header>
 
       <main className="mx-auto max-w-md px-4 py-4 space-y-4">
+        <ActionError message={action.error} onDismiss={action.clearError} />
         {errorMsg && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
             {errorMsg}
@@ -211,12 +231,12 @@ export function A03Result() {
           <Button
             fullWidth
             size="lg"
-            disabled={!afterPhoto || resultNote.trim().length < 10}
-            onClick={handleComplete}
+            disabled={!afterPhoto || resultNote.trim().length < 10 || action.pending}
+            onClick={() => void handleComplete()}
             className="flex items-center justify-center gap-2"
           >
             <CheckCircle2 className="h-5 w-5" />
-            <span>Xác nhận hoàn thành</span>
+            <span>{action.pending ? 'Đang lưu...' : 'Xác nhận hoàn thành'}</span>
           </Button>
         </div>
       </main>

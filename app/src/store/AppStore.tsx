@@ -1,8 +1,19 @@
-import { createContext, useContext, useReducer, useEffect, ReactNode, Dispatch } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useReducer,
+  useEffect,
+  ReactNode,
+  Dispatch,
+} from 'react';
 import { Notification, Report, ReportDraft, Settings, VolunteerTask } from '../domain/types';
 import { DEMO_NOW } from '../domain/constants';
 import mockData from '../data/mock.json';
 import { loadPersistedState, saveStateDebounced, setupStorageSync } from './persistence';
+import { SESSION_CHANGED_EVENT } from '../lib/api';
+
+const API_MODE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATA_SOURCE === 'api';
 
 export interface AppState {
   reports: Report[];
@@ -26,12 +37,14 @@ export type AppAction =
   | { type: 'UPDATE_TASK'; payload: VolunteerTask }
   | { type: 'MARK_NOTIFICATIONS_READ'; payload?: { phone?: string } };
 
-export const DEFAULT_STORAGE_KEY = 'tbkn:v1';
+// Chế độ API dùng khoá riêng để không lẫn dữ liệu mô phỏng của chế độ local.
+export const DEFAULT_STORAGE_KEY = API_MODE ? 'tbkn:api:v1' : 'tbkn:v1';
 
 export function getInitialState(): AppState {
   return {
-    reports: JSON.parse(JSON.stringify(mockData.reports)),
-    volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)),
+    // Chế độ API: dữ liệu đến từ server, không khởi tạo từ dữ liệu mẫu.
+    reports: API_MODE ? [] : JSON.parse(JSON.stringify(mockData.reports)),
+    volunteerTasks: API_MODE ? [] : JSON.parse(JSON.stringify(mockData.volunteerTasks)),
     notifications: [],
     settings: {
       seniorMode: false,
@@ -95,9 +108,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       const newNotifications = action.payload.notification
         ? [action.payload.notification, ...state.notifications]
         : state.notifications;
+      // Hồ sơ đã có trong store thì thay thế tại chỗ (tải lại chi tiết không tạo bản trùng).
+      const exists = state.reports.some((r) => r.id === action.payload.report.id);
       return {
         ...state,
-        reports: [action.payload.report, ...state.reports],
+        reports: exists
+          ? state.reports.map((r) =>
+              r.id === action.payload.report.id ? action.payload.report : r
+            )
+          : [action.payload.report, ...state.reports],
         notifications: newNotifications,
       };
     }
@@ -146,6 +165,26 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 interface AppStoreContextValue {
   state: AppState;
   dispatch: Dispatch<AppAction>;
+  /** Chế độ API: tải lại danh sách hồ sơ và nhiệm vụ từ server vào store. Chế độ local: không làm gì. */
+  refresh?: () => Promise<void>;
+}
+
+/** Tải hồ sơ và nhiệm vụ từ API theo vai trò đang đăng nhập rồi ghi vào store. */
+export async function syncApiStore(dispatch: Dispatch<AppAction>): Promise<void> {
+  const { dataSource } = await import('../data');
+  const role = localStorage.getItem('tbkn_user_role');
+  const isOfficer = role === 'can_bo';
+  const isVolunteer = role === 'tnv';
+
+  const reports = isOfficer
+    ? await dataSource.getOfficerReports().catch(() => dataSource.getReports({ limit: 100 }))
+    : await dataSource.getReports({ limit: 100 });
+  dispatch({ type: 'SET_REPORTS', payload: reports });
+
+  if (isVolunteer || isOfficer) {
+    const tasks = await dataSource.getVolunteerTasks().catch(() => []);
+    dispatch({ type: 'SET_TASKS', payload: tasks });
+  }
 }
 
 export const AppStoreContext = createContext<AppStoreContextValue | null>(null);
@@ -172,44 +211,32 @@ export function AppStoreProvider({
     saveStateDebounced(state, frame, 100, DEFAULT_STORAGE_KEY);
   }, [state, frame]);
 
-  useEffect(() => {
-    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATA_SOURCE === 'api') {
-      const syncApiData = async () => {
-        try {
-          const { dataSource } = await import('../data');
-          const isOfficer = localStorage.getItem('tbkn_user_role') === 'can_bo';
-          const isVolunteer = localStorage.getItem('tbkn_user_role') === 'tnv';
-
-          let reps: Report[] = [];
-          if (isOfficer) {
-            reps = await dataSource.getOfficerReports().catch(() => dataSource.getReports());
-          } else {
-            reps = await dataSource.getReports();
-          }
-
-          if (reps && reps.length > 0) {
-            dispatch({ type: 'SET_REPORTS', payload: reps });
-          }
-
-          if (isVolunteer || isOfficer) {
-            const tasks = await dataSource.getVolunteerTasks().catch(() => []);
-            if (tasks && tasks.length > 0) {
-              dispatch({ type: 'SET_TASKS', payload: tasks });
-            }
-          }
-        } catch (err) {
-          console.error('Lỗi đồng bộ dữ liệu API vào store:', err);
-        }
-      };
-
-      syncApiData();
-      const interval = setInterval(syncApiData, 30000);
-      return () => clearInterval(interval);
+  const refresh = useCallback(async () => {
+    if (!API_MODE) return;
+    try {
+      await syncApiStore(dispatch);
+    } catch (err) {
+      console.error('Lỗi đồng bộ dữ liệu API vào store:', err);
     }
   }, []);
 
+  useEffect(() => {
+    if (!API_MODE) return;
+    void refresh();
+    const interval = setInterval(() => void refresh(), 30000);
+    // Đăng nhập/đăng xuất đổi vai trò: tải lại dữ liệu đúng quyền ngay.
+    const onSessionChanged = () => void refresh();
+    window.addEventListener(SESSION_CHANGED_EVENT, onSessionChanged);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(SESSION_CHANGED_EVENT, onSessionChanged);
+    };
+  }, [refresh]);
+
   return (
-    <AppStoreContext.Provider value={{ state, dispatch }}>{children}</AppStoreContext.Provider>
+    <AppStoreContext.Provider value={{ state, dispatch, refresh }}>
+      {children}
+    </AppStoreContext.Provider>
   );
 }
 

@@ -87,6 +87,10 @@ export interface Report {
   completedAt?: string; // ISO
   feedback?: Feedback;
   timeline: TimelineEntry[];
+  /** Chỉ có khi dữ liệu đến từ API: tổng người cùng báo (server không trả danh sách SĐT). */
+  followerCount?: number;
+  /** Chỉ có khi dữ liệu đến từ API: số phiên bản để phát hiện xung đột cập nhật (409). */
+  version?: number;
 }
 
 /**

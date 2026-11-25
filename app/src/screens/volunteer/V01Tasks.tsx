@@ -2,36 +2,30 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle2, ChevronRight, MapPin } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { getCategoryConfig } from '@/store/officerActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
+import { ActionError } from '@/components/common/ActionError';
+import { VOLUNTEERS, getCategoryConfig } from '@/domain/constants';
+import { getCurrentVolunteer, setCurrentVolunteer } from '@/lib/volunteer';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 import type { VolunteerTask } from '@/domain/types';
-
-export const VOLUNTEERS = ['Lê Thảo Vy', 'Trần Quốc Bảo', 'Phạm Ngọc Hân'];
-export const TNV_KEY = 'tbkn:tnv';
-
-export function getCurrentVolunteer(): string {
-  try {
-    return localStorage.getItem(TNV_KEY) || VOLUNTEERS[0]!;
-  } catch {
-    return VOLUNTEERS[0]!;
-  }
-}
 
 export function V01Tasks() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state, dispatch } = useAppStore();
+  const { state } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
+  const apiMode = isApiMode();
   const [me, setMe] = useState(getCurrentVolunteer());
   const [tab, setTab] = useState<'todo' | 'done'>('todo');
   const toast = (location.state as { toast?: string } | null)?.toast;
 
   const pickVolunteer = (name: string) => {
     setMe(name);
-    try {
-      localStorage.setItem(TNV_KEY, name);
-    } catch {
-      /* bỏ qua */
-    }
+    setCurrentVolunteer(name);
   };
 
   const mine = state.volunteerTasks.filter((t) => t.assignee === me || t.assignee === null);
@@ -39,9 +33,9 @@ export function V01Tasks() {
   const done = mine.filter((t) => t.status === 'xong' && t.assignee === me);
   const list = tab === 'todo' ? todo : done;
 
-  const claim = (t: VolunteerTask) => {
-    dispatch({ type: 'UPDATE_TASK', payload: { ...t, assignee: me, status: 'dang_lam' } });
-    navigate(`/tnv/${t.id}`);
+  const claim = async (t: VolunteerTask) => {
+    const claimed = await action.run(() => ds.claimVolunteerTask(t.id));
+    if (claimed) navigate(`/tnv/${t.id}`);
   };
 
   return (
@@ -54,6 +48,7 @@ export function V01Tasks() {
           <span className="ml-auto hidden text-xs font-semibold text-primary lg:block">
             Cổng tình nguyện viên · Trấn Biên
           </span>
+          <LogoutButton className="ml-auto lg:ml-3" />
         </div>
       </header>
 
@@ -68,22 +63,30 @@ export function V01Tasks() {
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Chọn tình nguyện viên">
-          {VOLUNTEERS.map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => pickVolunteer(v)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                me === v
-                  ? 'bg-primary text-white'
-                  : 'border border-gray-200 bg-white text-gray-600 hover:border-primary-300'
-              }`}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
+        <ActionError message={action.error} onDismiss={action.clearError} />
+
+        {apiMode ? (
+          <p className="text-xs font-semibold text-gray-600">
+            Đăng nhập với tên: <b>{me || 'Tình nguyện viên'}</b>
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Chọn tình nguyện viên">
+            {VOLUNTEERS.map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => pickVolunteer(v)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  me === v
+                    ? 'bg-primary text-white'
+                    : 'border border-gray-200 bg-white text-gray-600 hover:border-primary-300'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1">
           {(
@@ -146,8 +149,9 @@ export function V01Tasks() {
                   ) : (
                     <button
                       type="button"
+                      disabled={action.pending}
                       onClick={() =>
-                        t.status === 'cho_nhan' ? claim(t) : navigate(`/tnv/${t.id}`)
+                        t.status === 'cho_nhan' ? void claim(t) : navigate(`/tnv/${t.id}`)
                       }
                       className="mt-3 flex w-full items-center justify-center gap-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
                     >

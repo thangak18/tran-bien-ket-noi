@@ -186,3 +186,14 @@ export const ALL_FEEDBACK_TAGS: readonly string[] = [
   ...FEEDBACK_POSITIVE_TAGS,
   ...FEEDBACK_NEGATIVE_TAGS,
 ] as const;
+
+/**
+ * Tìm cấu hình danh mục sự cố (spec 3.1). Là hàm thuần nên đặt ở domain/ để màn hình và store cùng dùng.
+ */
+export function getCategoryConfig(category: Category) {
+  const cfg = CATEGORY_CONFIGS.find((c) => c.key === category);
+  if (!cfg) {
+    throw new Error(`Không tìm thấy cấu hình cho loại sự cố: ${category}`);
+  }
+  return cfg;
+}

@@ -11,20 +11,14 @@ import {
   Split,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import {
-  acceptReport,
-  assignDepartment,
-  assignVolunteer,
-  closeReport,
-  getCategoryConfig,
-  mergeReports,
-  requestSupplement,
-  splitReportAction,
-  transferAgency,
-} from '@/store/officerActions';
-import { VOLUNTEERS } from '@/screens/volunteer/V01Tasks';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
+import type { VolunteerOption } from '@/data/DataSource';
+import type { Report } from '@/domain/types';
+import { ActionError } from '@/components/common/ActionError';
 import { Modal } from '@/components/ui/Modal';
-import { CATEGORY_CONFIGS } from '@/domain/constants';
+import { CATEGORY_CONFIGS, DEPARTMENTS, VOLUNTEERS, getCategoryConfig } from '@/domain/constants';
 import { formatDateShort, formatDateTime } from '@/domain/format';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { StatusChip } from '@/components/common/StatusChip';
@@ -38,6 +32,8 @@ export function A02Panel() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
 
   const report = state.reports.find((r) => r.id === id);
 
@@ -45,58 +41,57 @@ export function A02Panel() {
     ? report.department || getCategoryConfig(report.category).suggestedDepartment
     : '';
 
-  const [selectedDept, setSelectedDept] = useState(defaultDept);
+  const [selectedDept, setSelectedDept] = useState<string>(defaultDept);
   const [officerNote, setOfficerNote] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [modal, setModal] = useState<'tnv' | 'supplement' | 'transfer' | null>(null);
   const [reason, setReason] = useState('');
   const [agency, setAgency] = useState('');
   const [tnv, setTnv] = useState('');
+  const [volunteers, setVolunteers] = useState<VolunteerOption[]>(
+    isApiMode() ? [] : VOLUNTEERS.map((name) => ({ id: name, name }))
+  );
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const fetchReport = () => {
+  // Tải chi tiết hồ sơ. Chế độ API luôn tải lại (danh sách không có timeline); chế độ local chỉ tải khi chưa có.
+  const loadReport = async () => {
     if (!id) return;
     setLoading(true);
     setLoadError(null);
-    import('@/data').then(({ dataSource }) => {
-      dataSource
-        .getReportById(id)
-        .then((rep) => {
-          if (rep) {
-            dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
-          } else {
-            setLoadError(`Mã phản ánh ${id} không tồn tại.`);
-          }
-        })
-        .catch((err) => {
-          setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
-        })
-        .finally(() => setLoading(false));
-    });
+    try {
+      const rep = await ds.getOfficerReport(id);
+      if (rep) {
+        dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+      } else {
+        setLoadError(`Mã phản ánh ${id} không tồn tại.`);
+      }
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Lỗi khi tải thông tin hồ sơ.');
+    } finally {
+      setLoading(false);
+    }
   };
+  const fetchReport = () => void loadReport();
 
   useEffect(() => {
-    if (!report && id) {
-      setLoading(true);
-      setLoadError(null);
-      import('@/data').then(({ dataSource }) => {
-        dataSource
-          .getReportById(id)
-          .then((rep) => {
-            if (rep) {
-              dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
-            } else {
-              setLoadError(`Mã phản ánh ${id} không tồn tại.`);
-            }
-          })
-          .catch((err) => {
-            setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
-          })
-          .finally(() => setLoading(false));
-      });
-    }
-  }, [id, report, dispatch]);
+    if (id && (isApiMode() || !report)) void loadReport();
+    // Chỉ chạy lại khi đổi hồ sơ đang xem.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Danh sách TNV thật từ API (chế độ local dùng danh sách mẫu).
+  useEffect(() => {
+    if (!isApiMode()) return;
+    ds.listVolunteers()
+      .then(setVolunteers)
+      .catch(() => setVolunteers([]));
+  }, [ds]);
+
+  // Bộ phận mặc định theo loại sự cố khi hồ sơ vừa được tải xong.
+  useEffect(() => {
+    if (!selectedDept && defaultDept) setSelectedDept(defaultDept);
+  }, [defaultDept, selectedDept]);
 
   // B2 Gộp/tách hồ sơ (spec 3.5)
   const similarReports = useMemo(() => {
@@ -138,87 +133,61 @@ export function A02Panel() {
   const categoryConfig =
     CATEGORY_CONFIGS.find((c) => c.key === report.category) || CATEGORY_CONFIGS[0]!;
 
-  const handleAccept = () => {
-    try {
-      const newState = acceptReport(
-        state,
-        report.id,
-        {
-          department: selectedDept,
-          note: officerNote || 'Cán bộ đã tiếp nhận phản ánh',
-        },
-        state.settings.demoNow
-      );
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg('Đã tiếp nhận hồ sơ thành công!');
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleAssign = () => {
-    try {
-      const newState = assignDepartment(
-        state,
-        report.id,
-        {
-          department: selectedDept,
-          note: officerNote || `Giao cho ${selectedDept}`,
-        },
-        state.settings.demoNow
-      );
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg(`Đã giao việc cho ${selectedDept}!`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const flash = (msg: string) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(''), 3000);
   };
-  const run = (fn: () => ReturnType<typeof acceptReport>, msg: string) => {
-    try {
-      dispatch({ type: 'HYDRATE', payload: fn() });
-      setModal(null);
-      setReason('');
-      flash(msg);
-    } catch (err) {
-      console.error(err);
-    }
+
+  /**
+   * Chạy một thao tác nghiệp vụ qua DataSource. Thành công: cập nhật hồ sơ trong store, đóng hộp thoại, báo thành công.
+   * Lỗi 401/403/409/mạng hiển thị bằng tiếng Việt; 409 tự tải lại hồ sơ (useAction).
+   */
+  const act = async (fn: () => Promise<Report>, msg: string): Promise<boolean> => {
+    const updated = await action.run(fn, { onConflict: loadReport });
+    if (!updated) return false;
+    dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
+    setModal(null);
+    setReason('');
+    flash(msg);
+    return true;
   };
 
-  const handleMerge = (childId: string) => {
-    try {
-      const newState = mergeReports(state, report.id, [childId], undefined, state.settings.demoNow);
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg(`Đã gộp phản ánh #${childId} vào hồ sơ #${report.id}!`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const version = report.version;
 
-  const handleUnmerge = (childId: string) => {
-    try {
-      const newState = splitReportAction(
-        state,
-        report.id,
-        childId,
-        undefined,
-        state.settings.demoNow
-      );
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setSuccessMsg(`Đã tách phản ánh #${childId} ra khỏi hồ sơ #${report.id}!`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  const now = state.settings.demoNow;
+  const handleAccept = () =>
+    act(
+      () =>
+        ds.officerAcceptReport(report.id, {
+          department: selectedDept,
+          note: officerNote || 'Cán bộ đã tiếp nhận phản ánh',
+          version,
+        }),
+      'Đã tiếp nhận hồ sơ thành công!'
+    );
+
+  const handleAssign = () =>
+    act(
+      () =>
+        ds.officerAssignDepartment(report.id, {
+          department: selectedDept,
+          note: officerNote || `Giao cho ${selectedDept}`,
+          version,
+        }),
+      `Đã giao việc cho ${selectedDept}!`
+    );
+
+  const handleMerge = (childId: string) =>
+    act(
+      () => ds.officerMergeReport(childId, report.id, { version }),
+      `Đã gộp phản ánh #${childId} vào hồ sơ #${report.id}!`
+    );
+
+  const handleUnmerge = (childId: string) =>
+    act(
+      () => ds.officerSplitReport(report.id, childId, { version }),
+      `Đã tách phản ánh #${childId} ra khỏi hồ sơ #${report.id}!`
+    );
+
   const verifyTask = state.volunteerTasks.find((t) => t.reportId === report.id && t.result);
   const canRoute = ['moi', 'da_tiep_nhan', 'cho_xac_minh'].includes(report.status);
   const reasonOk = reason.trim().length >= 10;
@@ -248,6 +217,12 @@ export function A02Panel() {
 
         <div className="w-10" />
       </header>
+
+      {action.error && (
+        <div className="mx-auto max-w-xl px-4 pt-3">
+          <ActionError message={action.error} onDismiss={action.clearError} />
+        </div>
+      )}
 
       <main className="mx-auto max-w-xl px-4 py-4 space-y-4">
         {successMsg && (
@@ -324,17 +299,23 @@ export function A02Panel() {
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                   Bộ phận dự kiến tiếp quản:
                 </label>
-                <input
-                  type="text"
+                <select
                   value={selectedDept}
                   onChange={(e) => setSelectedDept(e.target.value)}
                   className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs font-medium text-gray-900"
-                />
+                >
+                  {[...new Set([selectedDept, ...DEPARTMENTS].filter(Boolean))].map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <Button
                 fullWidth
-                onClick={handleAccept}
+                onClick={() => void handleAccept()}
+                disabled={action.pending}
                 className="flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="h-4 w-4" />
@@ -354,12 +335,17 @@ export function A02Panel() {
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                   Đơn vị / Bộ phận tiếp nhận:
                 </label>
-                <input
-                  type="text"
+                <select
                   value={selectedDept}
                   onChange={(e) => setSelectedDept(e.target.value)}
                   className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs font-medium text-gray-900"
-                />
+                >
+                  {[...new Set([selectedDept, ...DEPARTMENTS].filter(Boolean))].map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -377,7 +363,8 @@ export function A02Panel() {
 
               <Button
                 fullWidth
-                onClick={handleAssign}
+                onClick={() => void handleAssign()}
+                disabled={action.pending}
                 className="flex items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" />
@@ -427,7 +414,7 @@ export function A02Panel() {
         </div>
 
         {/* Hành động bổ sung: TNV / bổ sung / chuyển / đóng */}
-        {(canRoute || report.status === 'hoan_thanh') && (
+        {(canRoute || report.status === 'mo_lai') && (
           <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3">
             <h3 className="text-sm font-bold text-gray-900">Thao tác khác</h3>
             {report.status === 'moi' && report.anonymous && (
@@ -451,16 +438,37 @@ export function A02Panel() {
                   </Button>
                 </>
               )}
-              {report.status === 'hoan_thanh' && (
+              {report.status === 'mo_lai' && (
                 <Button
                   variant="outline"
+                  disabled={action.pending}
                   onClick={() =>
-                    run(() => closeReport(state, report.id, undefined, now), 'Đã đóng hồ sơ')
+                    void act(() => ds.officerCloseReport(report.id, { version }), 'Đã đóng hồ sơ')
                   }
                 >
                   Đóng hồ sơ
                 </Button>
               )}
+              {report.status === 'cho_xac_minh' &&
+                verifyTask?.result &&
+                verifyTask.result.exists !== 'co' && (
+                  <Button
+                    variant="outline"
+                    disabled={action.pending}
+                    onClick={() =>
+                      void act(
+                        () =>
+                          ds.officerMarkUnverified(report.id, {
+                            reason: verifyTask.result?.note || undefined,
+                            version,
+                          }),
+                        'Đã xác nhận không có sự cố'
+                      )
+                    }
+                  >
+                    Xác nhận không có sự cố
+                  </Button>
+                )}
             </div>
             {report.status === 'cho_xac_minh' && !verifyTask && (
               <p className="text-xs text-gray-500">
@@ -526,9 +534,15 @@ export function A02Panel() {
             modal === 'tnv' ? (
               <Button
                 fullWidth
+                disabled={action.pending}
                 onClick={() =>
-                  run(
-                    () => assignVolunteer(state, report.id, { assignee: tnv || null }, now),
+                  void act(
+                    () =>
+                      ds.officerAssignVolunteer(report.id, {
+                        taskType: 'xac_minh',
+                        assignee: volunteers.find((v) => v.id === tnv) ?? null,
+                        version,
+                      }),
                     'Đã giao tình nguyện viên xác minh'
                   )
                 }
@@ -538,21 +552,24 @@ export function A02Panel() {
             ) : (
               <Button
                 fullWidth
-                disabled={!reasonOk || (modal === 'transfer' && !agency.trim())}
+                disabled={!reasonOk || (modal === 'transfer' && !agency.trim()) || action.pending}
                 onClick={() =>
                   modal === 'supplement'
-                    ? run(
-                        () => requestSupplement(state, report.id, { reason: reason.trim() }, now),
+                    ? void act(
+                        () =>
+                          ds.officerRequestSupplement(report.id, {
+                            reason: reason.trim(),
+                            version,
+                          }),
                         'Đã gửi yêu cầu bổ sung'
                       )
-                    : run(
+                    : void act(
                         () =>
-                          transferAgency(
-                            state,
-                            report.id,
-                            { agency: agency.trim(), reason: reason.trim() },
-                            now
-                          ),
+                          ds.officerTransferAgency(report.id, {
+                            agency: agency.trim(),
+                            reason: reason.trim(),
+                            version,
+                          }),
                         'Đã chuyển cơ quan khác'
                       )
                 }
@@ -562,6 +579,7 @@ export function A02Panel() {
             )
           }
         >
+          <ActionError message={action.error} onDismiss={action.clearError} className="mb-2" />
           {modal === 'tnv' ? (
             <select
               value={tnv}
@@ -569,9 +587,9 @@ export function A02Panel() {
               className="w-full rounded-xl border border-gray-300 p-2.5 text-sm"
             >
               <option value="">Để TNV gần nhất nhận</option>
-              {VOLUNTEERS.map((v) => (
-                <option key={v} value={v}>
-                  {v}
+              {volunteers.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
                 </option>
               ))}
             </select>
@@ -621,7 +639,7 @@ export function A02Panel() {
                     <span className="font-mono font-bold">#{cId}</span>
                     <button
                       type="button"
-                      onClick={() => handleUnmerge(cId)}
+                      onClick={() => void handleUnmerge(cId)}
                       className="flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:underline"
                     >
                       <Split className="h-3 w-3" />
@@ -670,7 +688,7 @@ export function A02Panel() {
 
                     <button
                       type="button"
-                      onClick={() => handleMerge(sim.report.id)}
+                      onClick={() => void handleMerge(sim.report.id)}
                       className="ml-2 shrink-0 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-soft hover:bg-primary-hover active:scale-95 transition-all"
                     >
                       Gộp vào hồ sơ này

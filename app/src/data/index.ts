@@ -1,21 +1,18 @@
 import { DataSource } from './DataSource';
 import { LocalDataSource } from './LocalDataSource';
 import { ApiDataSource } from './ApiDataSource';
+import { isApiMode } from '../lib/api';
 
 export * from './DataSource';
 export * from './LocalDataSource';
 export * from './ApiDataSource';
 
-function createDataSource(): DataSource {
-  const isApi =
-    typeof import.meta !== 'undefined' &&
-    import.meta.env &&
-    import.meta.env.VITE_DATA_SOURCE === 'api';
+export { isApiMode };
 
-  if (isApi) {
-    return new ApiDataSource();
-  }
-  return new LocalDataSource();
-}
+export const apiDataSource = new ApiDataSource();
 
-export const dataSource: DataSource = createDataSource();
+/**
+ * Nguồn dữ liệu dùng ngoài React (không có store). Trong React hãy dùng useDataSource()
+ * để chế độ local ghi thẳng vào AppStore đang hiển thị.
+ */
+export const dataSource: DataSource = isApiMode() ? apiDataSource : new LocalDataSource();

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Phone, Mail, Lock, ArrowRight, UserCheck, CheckCircle2 } from 'lucide-react';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, clearSession, notifySessionChanged } from '../../lib/api';
 
 export function LoginScreen() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const redirectUrl = searchParams.get('redirect') || '';
+  // Chỉ chấp nhận đường dẫn nội bộ (bắt đầu bằng một dấu /) để không bị chuyển hướng ra trang ngoài.
+  const rawRedirect = searchParams.get('redirect') || '';
+  const redirectUrl = /^\/(?!\/)/.test(rawRedirect) ? rawRedirect : '';
 
   const [activeTab, setActiveTab] = useState<'staff' | 'citizen'>('staff');
 
@@ -39,10 +41,13 @@ export function LoginScreen() {
           body: JSON.stringify({ email, password }),
         });
 
+        // Phiên cũ (nếu có) bị thay thế hoàn toàn bởi phiên nhân viên mới.
+        clearSession();
         localStorage.setItem('tb_staff_token', res.token);
         localStorage.setItem('tbkn_auth_token', res.token);
         localStorage.setItem('tbkn_user_role', res.user.role);
         localStorage.setItem('tbkn_user_name', res.user.displayName);
+        notifySessionChanged();
 
         setLoading(false);
         if (redirectUrl) {
@@ -124,10 +129,12 @@ export function LoginScreen() {
           method: 'POST',
           body: JSON.stringify({ phone, code: otp }),
         });
+        clearSession();
         localStorage.setItem('tb_citizen_token', res.token);
         localStorage.setItem('tbkn_auth_token', res.token);
         localStorage.setItem('tbkn_user_role', 'citizen');
         localStorage.setItem('tbkn_user_phone', phone);
+        notifySessionChanged();
         setLoading(false);
         navigate(redirectUrl || '/cua-toi');
       } catch (err: unknown) {

@@ -22,6 +22,7 @@ import { V02Verify } from './screens/volunteer/V02Verify';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import { ForbiddenScreen } from './screens/auth/ForbiddenScreen';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AuthEvents } from './components/auth/AuthEvents';
 import { DemoHub } from './screens/demo/DemoHub';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
 
@@ -39,6 +40,7 @@ export default function App() {
   return (
     <AppStoreProvider>
       <SeniorSync />
+      <AuthEvents />
       <RoleSwitcher />
       <Routes>
         <Route

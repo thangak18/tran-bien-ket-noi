@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { AppStoreProvider, AppState } from '@/store/AppStore';
 import { A02Panel } from '@/screens/officer/A02Panel';
@@ -46,7 +46,9 @@ describe('Luồng liên vai trò: cán bộ giao TNV -> TNV gửi -> cán bộ x
 
     // Cán bộ giao TNV
     fireEvent.click(screen.getByRole('button', { name: 'Giao TNV xác minh' }));
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Lê Thảo Vy' } });
+    // Trang A02 còn ô chọn bộ phận, nên chỉ tìm ô chọn TNV trong hộp thoại giao việc.
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'Lê Thảo Vy' } });
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận giao' }));
     await screen.findByText('Đã giao tình nguyện viên xác minh');
 

@@ -11,7 +11,10 @@ import {
   Construction,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { submitReport } from '@/store/citizenActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/data';
+import { ActionError } from '@/components/common/ActionError';
 import { Category } from '@/domain/types';
 import { PhoneOtpSheet } from '@/components/citizen/PhoneOtpSheet';
 import { nearestStreet } from '@/data/streets';
@@ -32,6 +35,8 @@ const CATEGORY_ITEMS: { key: Category; label: string; icon: React.ReactNode }[] 
 export function C04Confirm() {
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const submitAction = useAction();
 
   const photos = state.draft?.photos || [];
   const primaryPhoto = photos[0] || '';
@@ -106,6 +111,9 @@ export function C04Confirm() {
     }
   };
 
+  // Khoá chống gửi trùng khi nhấn nhanh nhiều lần (một lần gửi dùng một Idempotency-Key).
+  const idempotencyKey = useRef<string>(crypto.randomUUID());
+
   const executeSubmit = async (submitPhone: string, isAnon: boolean) => {
     if (!category || !lat || !lng || !address) return;
 
@@ -120,51 +128,40 @@ export function C04Confirm() {
       anonymous: isAnon,
     };
 
-    if (import.meta.env.VITE_DATA_SOURCE === 'api') {
-      try {
-        const { dataSource } = await import('@/data');
-        const res = await dataSource.createReport(payload);
-        const existingDeviceReports = state.settings.deviceReports || [];
-        const newDeviceReports = [
-          ...existingDeviceReports,
-          {
-            id: res.report.id,
-            secretCode: res.secretCode || '',
-            code: res.report.id,
-            ownerToken: res.ownerToken || '',
-          },
-        ];
-        dispatch({ type: 'SET_SETTINGS', payload: { deviceReports: newDeviceReports } });
-        dispatch({ type: 'ADD_REPORT', payload: { report: res.report } });
-        dispatch({ type: 'CLEAR_DRAFT' });
+    // Lỗi (mất mạng, 4xx/5xx) được báo ngay trên màn hình và giữ nguyên bản nháp để thử lại;
+    // không bao giờ âm thầm lưu cục bộ thay cho API.
+    const res = await submitAction.run(() =>
+      ds.createReport(payload, { idempotencyKey: idempotencyKey.current })
+    );
+    if (!res) return;
 
-        navigate('/?tab=ca-nhan', {
-          replace: true,
-          state: {
-            justSubmitted: {
-              reportId: res.report.id,
-              secretCode: res.secretCode,
-              ownerToken: res.ownerToken,
-              anonymous: isAnon,
+    if (isApiMode()) {
+      dispatch({
+        type: 'SET_SETTINGS',
+        payload: {
+          deviceReports: [
+            ...(state.settings.deviceReports || []),
+            {
+              id: res.report.id,
+              secretCode: res.secretCode || '',
+              code: res.report.id,
+              ownerToken: res.ownerToken || '',
             },
-          },
-        });
-        return;
-      } catch (err) {
-        console.error('Lỗi khi gửi phản ánh lên API:', err);
-      }
+          ],
+        },
+      });
+      dispatch({ type: 'ADD_REPORT', payload: { report: res.report } });
     }
-
-    const res = submitReport(state, payload, state.settings.demoNow);
-    dispatch({ type: 'HYDRATE', payload: res.state });
     dispatch({ type: 'CLEAR_DRAFT' });
+    idempotencyKey.current = crypto.randomUUID();
 
     navigate('/?tab=ca-nhan', {
       replace: true,
       state: {
         justSubmitted: {
           reportId: res.report.id,
-          secretCode: res.report.secretCode,
+          secretCode: res.secretCode,
+          ...(isApiMode() ? { ownerToken: res.ownerToken } : {}),
           anonymous: isAnon,
         },
       },
@@ -451,6 +448,7 @@ export function C04Confirm() {
           )}
 
           {/* 5. Nút "Gửi phản ánh" */}
+          <ActionError message={submitAction.error} onDismiss={submitAction.clearError} />
           <div className="pt-2">
             {!hasLocation ? (
               <button
@@ -471,10 +469,11 @@ export function C04Confirm() {
             ) : (
               <button
                 type="button"
+                disabled={submitAction.pending}
                 onClick={handleStartSubmit}
                 className="w-full rounded-btn bg-primary py-3 text-xs font-bold text-white shadow-soft hover:bg-primary-hover active:scale-95 transition-all text-center"
               >
-                Gửi phản ánh
+                {submitAction.pending ? 'Đang gửi...' : 'Gửi phản ánh'}
               </button>
             )}
           </div>
@@ -764,9 +763,14 @@ export function C04Confirm() {
 
               {/* Nút gửi Desktop */}
               <div className="pt-4">
+                <ActionError
+                  message={submitAction.error}
+                  onDismiss={submitAction.clearError}
+                  className="mb-2"
+                />
                 <button
                   type="button"
-                  disabled={!category || !hasLocation}
+                  disabled={!category || !hasLocation || submitAction.pending}
                   onClick={handleStartSubmit}
                   className={`w-full rounded-btn py-3 text-xs font-bold text-white shadow-soft transition-all ${
                     category && hasLocation
@@ -774,7 +778,7 @@ export function C04Confirm() {
                       : 'bg-gray-300 cursor-not-allowed text-gray-500'
                   }`}
                 >
-                  Gửi phản ánh ngay
+                  {submitAction.pending ? 'Đang gửi...' : 'Gửi phản ánh ngay'}
                 </button>
               </div>
             </div>

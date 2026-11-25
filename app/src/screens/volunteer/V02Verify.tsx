@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, Camera, Navigation } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { getCategoryConfig, submitVerification } from '@/store/officerActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { isApiMode } from '@/lib/api';
+import { ActionError } from '@/components/common/ActionError';
+import { getCategoryConfig } from '@/domain/constants';
 import { Button } from '@/components/ui/Button';
-import { getCurrentVolunteer } from './V01Tasks';
 
 type Exists = 'co' | 'khong' | 'khong_tim_thay';
 type Severity = 'nhe' | 'trung_binh' | 'nguy_hiem';
@@ -24,6 +27,9 @@ export function V02Verify() {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
+  const [loading, setLoading] = useState(false);
 
   const [exists, setExists] = useState<Exists | null>(null);
   const [severity, setSeverity] = useState<Severity | null>(null);
@@ -32,6 +38,41 @@ export function V02Verify() {
 
   const task = state.volunteerTasks.find((t) => t.id === taskId);
   const report = task ? state.reports.find((r) => r.id === task.reportId) : undefined;
+
+  // Chế độ API: vào thẳng đường dẫn nhiệm vụ thì tải nhiệm vụ và hồ sơ từ server.
+  useEffect(() => {
+    if (!isApiMode() || !taskId || (task && report)) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const t = task ?? (await ds.getVolunteerTaskById(taskId));
+        if (!t || cancelled) return;
+        if (!task) dispatch({ type: 'ADD_TASK', payload: t });
+        if (!report) {
+          const r = await ds.getReportById(t.reportId);
+          if (r && !cancelled) dispatch({ type: 'ADD_REPORT', payload: { report: r } });
+        }
+      } catch {
+        /* không tải được: hiển thị "Không tìm thấy nhiệm vụ" bên dưới */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, !!task, !!report]);
+
+  if (loading && (!task || !report)) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="mt-3 text-xs font-semibold text-gray-500">Đang tải nhiệm vụ...</p>
+      </div>
+    );
+  }
 
   if (!task || !report) {
     return (
@@ -55,29 +96,17 @@ export function V02Verify() {
     reader.readAsDataURL(file);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSubmit || !exists) return;
-    const me = getCurrentVolunteer();
-    const base = task.assignee
-      ? state
-      : {
-          ...state,
-          volunteerTasks: state.volunteerTasks.map((t) =>
-            t.id === task.id ? { ...t, assignee: me } : t
-          ),
-        };
-    const next = submitVerification(
-      base,
-      task.id,
-      {
+    const updated = await action.run(() =>
+      ds.submitVolunteerTask(task.id, {
         exists,
         severity: exists === 'co' ? (severity ?? undefined) : undefined,
         photo,
         note: note.trim() || undefined,
-      },
-      state.settings.demoNow
+      })
     );
-    dispatch({ type: 'HYDRATE', payload: next });
+    if (!updated) return;
     navigate('/tnv', { state: { toast: 'Đã gửi kết quả cho cán bộ' } });
   };
 
@@ -217,8 +246,9 @@ export function V02Verify() {
             />
           </div>
 
-          <Button fullWidth disabled={!canSubmit} onClick={submit}>
-            Gửi kết quả
+          <ActionError message={action.error} onDismiss={action.clearError} />
+          <Button fullWidth disabled={!canSubmit || action.pending} onClick={() => void submit()}>
+            {action.pending ? 'Đang gửi...' : 'Gửi kết quả'}
           </Button>
         </section>
       </main>

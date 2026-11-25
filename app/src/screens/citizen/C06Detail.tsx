@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Users, Star, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { submitFeedback, followReport } from '@/store/citizenActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { ActionError } from '@/components/common/ActionError';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { StatusChip } from '@/components/common/StatusChip';
 import { DelayChip } from '@/components/common/DelayChip';
@@ -26,6 +28,8 @@ export function C06Detail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { state, dispatch } = useAppStore();
+  const ds = useDataSource();
+  const action = useAction();
   const isDesktop = useIsDesktop();
 
   const [selectedRating, setSelectedRating] = useState<number>(5);
@@ -36,58 +40,40 @@ export function C06Detail() {
 
   const report = state.reports.find((r) => r.id === id);
 
-  const fetchReport = () => {
+  const loadReport = async () => {
     if (!id) return;
     setLoading(true);
     setLoadError(null);
-    import('@/data').then(({ dataSource }) => {
-      dataSource
-        .getReportById(id)
-        .then((rep) => {
-          if (rep) {
-            dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
-          } else {
-            setLoadError(`Mã phản ánh ${id} không tồn tại.`);
-          }
-        })
-        .catch((err) => {
-          setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
-        })
-        .finally(() => setLoading(false));
-    });
+    try {
+      const rep = await ds.getReportById(id);
+      if (rep) {
+        dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+      } else {
+        setLoadError(`Mã phản ánh ${id} không tồn tại.`);
+      }
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Lỗi khi tải thông tin hồ sơ.');
+    } finally {
+      setLoading(false);
+    }
   };
+  const fetchReport = () => void loadReport();
 
   useEffect(() => {
-    if (!report && id) {
-      setLoading(true);
-      setLoadError(null);
-      import('@/data').then(({ dataSource }) => {
-        dataSource
-          .getReportById(id)
-          .then((rep) => {
-            if (rep) {
-              dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
-            } else {
-              setLoadError(`Mã phản ánh ${id} không tồn tại.`);
-            }
-          })
-          .catch((err) => {
-            setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
-          })
-          .finally(() => setLoading(false));
-      });
-    }
+    if (!report && id) void loadReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, report, dispatch]);
 
-  const handleMeToo = () => {
+  const handleMeToo = async () => {
     if (!report || hasMeToo) return;
-    try {
-      const newState = followReport(state, report.id, { anonymous: true });
-      dispatch({ type: 'HYDRATE', payload: newState });
-      setHasMeToo(true);
-    } catch (e) {
-      console.error(e);
-    }
+    const ok = await action.run(
+      async () => {
+        await ds.followReport(report.id, state.settings.phone);
+        return true;
+      },
+      { onConflict: loadReport }
+    );
+    if (ok) setHasMeToo(true);
   };
 
   if (loading) {
@@ -138,42 +124,39 @@ export function C06Detail() {
     (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()
   );
 
+  const sendFeedback = async (feedback: {
+    resolved: boolean;
+    rating?: number;
+    tags?: string[];
+    comment?: string;
+  }) => {
+    const updated = await action.run(() => ds.submitFeedback(report.id, feedback), {
+      onConflict: loadReport,
+    });
+    if (updated) dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
+  };
+
   const handleResolve = () => {
-    try {
-      const newState = submitFeedback(
-        state,
-        report.id,
-        {
-          resolved: true,
-          rating: selectedRating,
-          comment: `Đánh giá ${selectedRating} sao`,
-        },
-        now
-      );
-      dispatch({ type: 'HYDRATE', payload: newState });
-    } catch (err) {
-      console.error(err);
-    }
+    void sendFeedback({
+      resolved: true,
+      rating: selectedRating,
+      comment: `Đánh giá ${selectedRating} sao`,
+    });
   };
 
   const handleUnresolved = () => {
     if (window.confirm('Bạn xác nhận sự cố vẫn chưa được giải quyết triệt để?')) {
-      try {
-        const newState = submitFeedback(
-          state,
-          report.id,
-          {
-            resolved: false,
-            comment: 'Chưa giải quyết triệt để',
-          },
-          now
-        );
-        dispatch({ type: 'HYDRATE', payload: newState });
-      } catch (err) {
-        console.error(err);
-      }
+      void sendFeedback({ resolved: false, comment: 'Chưa giải quyết triệt để' });
     }
   };
+
+  // Số người cùng báo: API chỉ trả tổng số; chế độ local đếm theo danh sách followers.
+  const peopleCount =
+    typeof report.followerCount === 'number'
+      ? Math.max(1, report.followerCount)
+      : report.followers && report.followers.length > 0
+        ? report.followers.length
+        : 1;
 
   return (
     <div className="min-h-screen bg-[#F5F7FB] pb-16 font-sans">
@@ -200,6 +183,12 @@ export function C06Detail() {
 
         <StatusChip status={report.status} variant="public" size="sm" />
       </header>
+
+      {action.error && (
+        <div className="mx-auto max-w-md px-4 pt-3 lg:max-w-5xl">
+          <ActionError message={action.error} onDismiss={action.clearError} />
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* 1. BỐ CỤC MOBILE & TABLET (< 1024px)                     */}
@@ -244,10 +233,7 @@ export function C06Detail() {
 
           <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-1 border-t border-gray-100">
             <Users className="h-4 w-4 text-primary shrink-0" />
-            <span>
-              {report.followers && report.followers.length > 0 ? report.followers.length : 1} người
-              cùng báo vấn đề này
-            </span>
+            <span>{peopleCount} người cùng báo vấn đề này</span>
           </div>
         </div>
 
@@ -255,7 +241,7 @@ export function C06Detail() {
         <button
           type="button"
           onClick={handleMeToo}
-          disabled={hasMeToo}
+          disabled={hasMeToo || action.pending}
           className={`w-full flex items-center justify-center gap-2 rounded-btn py-3 text-xs font-bold transition-all shadow-soft ${
             hasMeToo
               ? 'bg-emerald-50 border border-emerald-300 text-emerald-700 cursor-default'
@@ -319,6 +305,7 @@ export function C06Detail() {
               <button
                 type="button"
                 onClick={handleResolve}
+                disabled={action.pending}
                 className="rounded-btn bg-[#16A34A] py-2.5 text-xs font-bold text-white shadow-soft hover:bg-[#15803D] active:scale-95 transition-all text-center"
               >
                 Đã giải quyết
@@ -327,6 +314,7 @@ export function C06Detail() {
               <button
                 type="button"
                 onClick={handleUnresolved}
+                disabled={action.pending}
                 className="rounded-btn border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 shadow-soft hover:bg-gray-50 active:scale-95 transition-all text-center"
               >
                 Chưa giải quyết
@@ -451,10 +439,7 @@ export function C06Detail() {
                 <div className="text-xs font-bold text-gray-900 leading-snug">{report.address}</div>
                 <div className="flex items-center gap-1 text-[11px] text-gray-500 mt-1">
                   <Users className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <span>
-                    {report.followers && report.followers.length > 0 ? report.followers.length : 1}{' '}
-                    người cùng báo vấn đề này
-                  </span>
+                  <span>{peopleCount} người cùng báo vấn đề này</span>
                 </div>
               </div>
             </div>
@@ -484,7 +469,7 @@ export function C06Detail() {
           <button
             type="button"
             onClick={handleMeToo}
-            disabled={hasMeToo}
+            disabled={hasMeToo || action.pending}
             className={`w-full flex items-center justify-center gap-2 rounded-btn py-3 text-xs font-bold transition-all shadow-soft ${
               hasMeToo
                 ? 'bg-emerald-50 border border-emerald-300 text-emerald-700 cursor-default'
@@ -530,6 +515,7 @@ export function C06Detail() {
                 <button
                   type="button"
                   onClick={handleResolve}
+                  disabled={action.pending}
                   className="rounded-btn bg-[#16A34A] py-2.5 text-xs font-bold text-white shadow-soft hover:bg-[#15803D] active:scale-95 transition-all text-center"
                 >
                   Đã giải quyết
@@ -538,6 +524,7 @@ export function C06Detail() {
                 <button
                   type="button"
                   onClick={handleUnresolved}
+                  disabled={action.pending}
                   className="rounded-btn border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 shadow-soft hover:bg-gray-50 active:scale-95 transition-all text-center"
                 >
                   Chưa giải quyết
@@ -553,7 +540,7 @@ export function C06Detail() {
         isOpen={isRatingSheetOpen}
         onClose={() => setIsRatingSheetOpen(false)}
         onSubmit={(data) => {
-          submitFeedback(state, report.id, { resolved: true, ...data }, now);
+          void sendFeedback({ resolved: true, ...data });
           setIsRatingSheetOpen(false);
         }}
       />

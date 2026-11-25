@@ -3,6 +3,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
+import { apiFetch, isApiMode, setCitizenToken } from '@/lib/api';
 
 export interface PhoneOtpSheetProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
   const [otp, setOtp] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const validatePhone = (p: string): boolean => {
     const clean = p.replace(/\s+/g, '');
@@ -39,23 +41,60 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
     return true;
   };
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validatePhone(phone)) {
-      setPhoneError('');
-      setStep('otp');
+    if (!validatePhone(phone)) return;
+    setPhoneError('');
+    if (isApiMode()) {
+      // Chế độ API: yêu cầu mã OTP từ server (vẫn là mô phỏng, mã 123456).
+      setBusy(true);
+      try {
+        await apiFetch('/citizen/otp/request', {
+          method: 'POST',
+          body: JSON.stringify({ phone: phone.replace(/\s+/g, '') }),
+        });
+        setStep('otp');
+      } catch (err) {
+        setPhoneError(
+          err instanceof Error ? err.message : 'Không gửi được mã OTP. Vui lòng thử lại.'
+        );
+      } finally {
+        setBusy(false);
+      }
+      return;
     }
+    setStep('otp');
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanOtp = otp.trim();
+    const cleanPhone = phone.replace(/\s+/g, '');
+    if (isApiMode()) {
+      // Chế độ API: server xác minh OTP và cấp JWT người dân; hồ sơ gửi kèm token sẽ gắn với SĐT này.
+      setBusy(true);
+      try {
+        const res = await apiFetch<{ token: string }>('/citizen/otp/verify', {
+          method: 'POST',
+          body: JSON.stringify({ phone: cleanPhone, code: cleanOtp }),
+        });
+        setCitizenToken(res.token);
+        setOtpError('');
+        onVerified(cleanPhone);
+        onClose();
+      } catch (err) {
+        setOtpError(err instanceof Error ? err.message : 'Mã OTP không đúng. Vui lòng thử lại.');
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (cleanOtp !== '123456') {
       setOtpError('Mã OTP không đúng (thử mã mô phỏng: 123456)');
       return;
     }
     setOtpError('');
-    onVerified(phone.replace(/\s+/g, ''));
+    onVerified(cleanPhone);
     onClose();
   };
 
@@ -86,12 +125,12 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
       }
       footer={
         step === 'phone' ? (
-          <Button fullWidth onClick={handleRequestOtp}>
-            Tiếp tục
+          <Button fullWidth disabled={busy} onClick={handleRequestOtp}>
+            {busy ? 'Đang gửi mã...' : 'Tiếp tục'}
           </Button>
         ) : (
-          <Button fullWidth onClick={handleVerifyOtp}>
-            Xác nhận
+          <Button fullWidth disabled={busy} onClick={handleVerifyOtp}>
+            {busy ? 'Đang xác thực...' : 'Xác nhận'}
           </Button>
         )
       }

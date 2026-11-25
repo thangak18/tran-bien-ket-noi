@@ -9,7 +9,10 @@ import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { StatusChip } from '@/components/common/StatusChip';
 import { Report, Category } from '@/domain/types';
-import { createOnBehalf } from '@/store/officerActions';
+import { useDataSource } from '@/data/useDataSource';
+import { useAction } from '@/data/useAction';
+import { ActionError } from '@/components/common/ActionError';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 import { useIsDesktop } from '@/lib/useIsDesktop';
 import { STREETS } from '@/data/streets';
 import { Modal } from '@/components/ui/Modal';
@@ -17,7 +20,9 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 
 export function A01Inbox() {
   const navigate = useNavigate();
-  const { state, dispatch } = useAppStore();
+  const { state } = useAppStore();
+  const ds = useDataSource();
+  const proxyAction = useAction();
   const isDesktop = useIsDesktop();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'resolved'>('all');
@@ -29,34 +34,38 @@ export function A01Inbox() {
   const [proxyStreet, setProxyStreet] = useState(STREETS[0]!.name);
   const [proxyDescription, setProxyDescription] = useState('');
   const [proxySuccess, setProxySuccess] = useState('');
+  // Mã bí mật chỉ hiển thị một lần cho cán bộ để đọc lại cho người dân.
+  const [proxySecret, setProxySecret] = useState<{ id: string; code: string } | null>(null);
+  const [proxyPhoneError, setProxyPhoneError] = useState('');
 
   const now = state.settings.demoNow;
 
-  const handleCreateProxy = () => {
-    if (!proxyPhone.trim()) return;
-    try {
-      const selectedStreet = STREETS.find((s) => s.name === proxyStreet) || STREETS[0]!;
-      const result = createOnBehalf(
-        state,
-        {
-          phone: proxyPhone.trim(),
-          category: proxyCategory,
-          lat: selectedStreet.lat,
-          lng: selectedStreet.lng,
-          address: `Đường ${selectedStreet.name}, Phường Trấn Biên`,
-          description: proxyDescription.trim() || undefined,
-        },
-        now
-      );
-      dispatch({ type: 'HYDRATE', payload: result.state });
-      setIsProxyOpen(false);
-      setProxyPhone('');
-      setProxyDescription('');
-      setProxySuccess(`Đã tạo phản ánh #${result.report.id} hộ người dân thành công!`);
-      setTimeout(() => setProxySuccess(''), 4000);
-    } catch (err) {
-      console.error(err);
+  const handleCreateProxy = async () => {
+    const phone = proxyPhone.replace(/\s+/g, '');
+    if (!phone) return;
+    if (!/^0[0-9]{9}$/.test(phone)) {
+      setProxyPhoneError('Số điện thoại gồm 10 chữ số, bắt đầu bằng 0 (ví dụ: 0909000068)');
+      return;
     }
+    setProxyPhoneError('');
+    const selectedStreet = STREETS.find((s) => s.name === proxyStreet) || STREETS[0]!;
+    const result = await proxyAction.run(() =>
+      ds.officerCreateOnBehalf({
+        phone,
+        category: proxyCategory,
+        lat: selectedStreet.lat,
+        lng: selectedStreet.lng,
+        address: `Đường ${selectedStreet.name}, Phường Trấn Biên`,
+        description: proxyDescription.trim() || undefined,
+      })
+    );
+    if (!result) return;
+    setIsProxyOpen(false);
+    setProxyPhone('');
+    setProxyDescription('');
+    setProxySecret({ id: result.report.id, code: result.secretCode });
+    setProxySuccess(`Đã tạo phản ánh #${result.report.id} hộ người dân thành công!`);
+    setTimeout(() => setProxySuccess(''), 4000);
   };
 
   // 4 số KPI tính từ dữ liệu
@@ -138,6 +147,7 @@ export function A01Inbox() {
               <Plus className="h-4 w-4" />
               <span>Tạo phản ánh hộ</span>
             </button>
+            <LogoutButton />
           </div>
         </div>
 
@@ -146,6 +156,27 @@ export function A01Inbox() {
           <div className="mx-auto mt-2.5 max-w-[1200px] rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-semibold text-emerald-900 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
             <span>{proxySuccess}</span>
+          </div>
+        )}
+
+        {proxySecret && (
+          <div
+            role="status"
+            data-testid="proxy-secret"
+            className="mx-auto mt-2.5 flex max-w-[1200px] items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-900"
+          >
+            <span>
+              Mã bí mật của #{proxySecret.id}:{' '}
+              <b className="font-mono text-sm">{proxySecret.code}</b>. Chỉ hiển thị một lần, hãy đọc
+              lại cho người dân.
+            </span>
+            <button
+              type="button"
+              onClick={() => setProxySecret(null)}
+              className="shrink-0 rounded-lg border border-amber-300 px-2.5 py-1 font-semibold hover:bg-amber-100"
+            >
+              Đã ghi lại
+            </button>
           </div>
         )}
 
@@ -328,6 +359,16 @@ export function A01Inbox() {
                 placeholder="0909 xxx xxx"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
               />
+              {proxyPhoneError && (
+                <p role="alert" className="mt-1 text-[11px] font-semibold text-red-700">
+                  Lỗi: {proxyPhoneError}
+                </p>
+              )}
+              <ActionError
+                message={proxyAction.error}
+                onDismiss={proxyAction.clearError}
+                className="mt-2"
+              />
             </div>
 
             <div>
@@ -394,8 +435,8 @@ export function A01Inbox() {
               </button>
               <button
                 type="button"
-                disabled={!proxyPhone.trim()}
-                onClick={handleCreateProxy}
+                disabled={!proxyPhone.trim() || proxyAction.pending}
+                onClick={() => void handleCreateProxy()}
                 className="rounded-lg bg-primary px-4 py-2 font-semibold text-white shadow-soft hover:bg-primary-hover disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Tạo phản ánh hộ
@@ -422,6 +463,16 @@ export function A01Inbox() {
                 placeholder="0909 xxx xxx"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 text-xs font-semibold text-gray-900 focus:border-primary focus:bg-white focus:outline-none"
               />
+              {proxyPhoneError && (
+                <p role="alert" className="mt-1 text-[11px] font-semibold text-red-700">
+                  Lỗi: {proxyPhoneError}
+                </p>
+              )}
+              <ActionError
+                message={proxyAction.error}
+                onDismiss={proxyAction.clearError}
+                className="mt-2"
+              />
             </div>
 
             <div>
@@ -488,8 +539,8 @@ export function A01Inbox() {
               </button>
               <button
                 type="button"
-                disabled={!proxyPhone.trim()}
-                onClick={handleCreateProxy}
+                disabled={!proxyPhone.trim() || proxyAction.pending}
+                onClick={() => void handleCreateProxy()}
                 className="rounded-lg bg-primary px-4 py-2 font-semibold text-white shadow-soft hover:bg-primary-hover disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Tạo phản ánh hộ

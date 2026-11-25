@@ -38,6 +38,42 @@ export interface CreateReportResult {
   ownerToken?: string;
 }
 
+/** Kết quả xác minh/nghiệm thu tại hiện trường do TNV gửi (spec 4.2, AC-V02). */
+export interface VerificationInput {
+  exists: 'co' | 'khong' | 'khong_tim_thay';
+  severity?: 'nhe' | 'trung_binh' | 'nguy_hiem';
+  photo: string;
+  note?: string;
+}
+
+export interface VolunteerOption {
+  id: string;
+  name: string;
+}
+
+/** Cán bộ tạo phản ánh hộ người dân (B5, AC-A01-8). */
+export interface CreateOnBehalfInput {
+  phone: string;
+  category: Category;
+  photos?: string[];
+  lat: number;
+  lng: number;
+  address: string;
+  description?: string;
+  locationNote?: string;
+}
+
+export interface CreateOnBehalfResult {
+  report: Report;
+  /** Mã bí mật 4 số, chỉ hiển thị một lần cho cán bộ để đọc lại cho người dân. */
+  secretCode: string;
+}
+
+/**
+ * Mọi thao tác dữ liệu của giao diện đi qua hợp đồng này.
+ * - LocalDataSource: chạy offline trên store + localStorage (mô phỏng, Giai đoạn 1).
+ * - ApiDataSource: gọi API Hono (Giai đoạn 2). Lỗi được ném dưới dạng ApiError.
+ */
 export interface DataSource {
   /** Lấy danh sách phản ánh công khai */
   getReports(params?: ReportQueryParams): Promise<Report[]>;
@@ -86,19 +122,17 @@ export interface DataSource {
   /** TNV: Nhận nhiệm vụ */
   claimVolunteerTask(taskId: string): Promise<VolunteerTask>;
 
-  /** TNV: Gửi kết quả xác minh tại hiện trường */
-  submitVolunteerTask(
-    taskId: string,
-    payload: {
-      note?: string;
-      photos?: string[];
-      status?: string;
-      verifiedCategory?: string;
-    }
-  ): Promise<VolunteerTask>;
+  /** TNV: Gửi kết quả xác minh/nghiệm thu tại hiện trường */
+  submitVolunteerTask(taskId: string, input: VerificationInput): Promise<VolunteerTask>;
 
   /** Cán bộ: Lấy danh sách hồ sơ cần xử lý */
   getOfficerReports(params?: OfficerReportQueryParams): Promise<Report[]>;
+
+  /** Cán bộ: Chi tiết hồ sơ (SĐT đã che, timeline có tên người thao tác) */
+  getOfficerReport(idOrCode: string): Promise<Report | null>;
+
+  /** Cán bộ: Danh sách tình nguyện viên đang hoạt động để giao việc */
+  listVolunteers(): Promise<VolunteerOption[]>;
 
   /** Cán bộ: Tiếp nhận hồ sơ */
   officerAcceptReport(
@@ -108,16 +142,19 @@ export interface DataSource {
       dueAt?: string;
       category?: Category;
       note?: string;
+      /** Phiên bản hồ sơ giao diện đang xem; lệch thì API trả 409 (xung đột cập nhật). */
+      version?: number;
     }
   ): Promise<Report>;
 
-  /** Cán bộ: Giao tình nguyện viên xác minh hoặc nghiệm thu */
+  /** Cán bộ: Giao tình nguyện viên xác minh hoặc nghiệm thu (không chọn assignee = "TNV gần nhất nhận") */
   officerAssignVolunteer(
     reportId: string,
     params: {
       taskType: 'xac_minh' | 'nghiem_thu';
-      assignee: string;
+      assignee?: VolunteerOption | string | null;
       note?: string;
+      version?: number;
     }
   ): Promise<Report>;
 
@@ -128,6 +165,7 @@ export interface DataSource {
       department: string;
       dueAt?: string;
       note?: string;
+      version?: number;
     }
   ): Promise<Report>;
 
@@ -137,20 +175,50 @@ export interface DataSource {
     params: {
       resultNote: string;
       resultPhotos: string[];
+      version?: number;
     }
   ): Promise<Report>;
 
-  /** Cán bộ: Từ chối / Chuyển cơ quan khác */
-  officerRejectReport(
+  /** Cán bộ: Yêu cầu người dân bổ sung thông tin */
+  officerRequestSupplement(
     reportId: string,
-    params: {
-      reason: string;
-      mode?: 'tu_choi' | 'chuyen_co_quan';
-    }
+    params: { reason: string; version?: number }
   ): Promise<Report>;
 
-  /** Cán bộ: Gộp phản ánh trùng lặp */
-  officerMergeReport(reportId: string, targetId: string): Promise<Report>;
+  /** Cán bộ: Chuyển cơ quan khác xử lý */
+  officerTransferAgency(
+    reportId: string,
+    params: { agency: string; reason: string; version?: number }
+  ): Promise<Report>;
+
+  /** Cán bộ: Xác nhận không có sự cố sau khi TNV báo "Không có" / "Không tìm thấy" */
+  officerMarkUnverified(
+    reportId: string,
+    params?: { reason?: string; version?: number }
+  ): Promise<Report>;
+
+  /** Cán bộ: Đóng hồ sơ (mở lại → đóng sau nghiệm thu) */
+  officerCloseReport(
+    reportId: string,
+    params?: { reason?: string; version?: number }
+  ): Promise<Report>;
+
+  /** Cán bộ: Gộp phản ánh trùng lặp vào hồ sơ chính */
+  officerMergeReport(
+    reportId: string,
+    targetId: string,
+    params?: { version?: number }
+  ): Promise<Report>;
+
+  /** Cán bộ: Tách hồ sơ đã gộp khỏi hồ sơ chính */
+  officerSplitReport(
+    mainId: string,
+    childId: string,
+    params?: { version?: number }
+  ): Promise<Report>;
+
+  /** Cán bộ: Tạo phản ánh hộ người dân */
+  officerCreateOnBehalf(input: CreateOnBehalfInput): Promise<CreateOnBehalfResult>;
 
   /** Tải ảnh lên (trả về URL hoặc đường dẫn ảnh) */
   uploadPhoto(file: Blob | File, filename?: string): Promise<string>;

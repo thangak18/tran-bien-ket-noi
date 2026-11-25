@@ -38,7 +38,13 @@ export function hasOwnerAccess(report: Report, context: AccessContext): boolean 
 /**
  * Tính tổng số người cùng báo phản ánh (spec 3.6, UT-016b.5)
  */
-export function followerCount(report: { followers?: string[]; anonymousFollows?: number }): number {
+export function followerCount(report: {
+  followers?: string[];
+  anonymousFollows?: number;
+  followerCount?: number;
+}): number {
+  // Dữ liệu từ API chỉ có tổng số (không có danh sách SĐT).
+  if (typeof report.followerCount === 'number') return report.followerCount;
   return (report.followers?.length ?? 0) + (report.anonymousFollows ?? 0);
 }
 
