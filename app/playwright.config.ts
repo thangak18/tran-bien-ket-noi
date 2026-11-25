@@ -10,6 +10,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
+    // PW_CHANNEL=chrome: dùng Google Chrome cài sẵn khi chưa tải được Chromium của Playwright.
+    channel: process.env.PW_CHANNEL || undefined,
   },
   projects: [
     {

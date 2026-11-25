@@ -237,10 +237,30 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 | **3. Khóa bí mật JWT & Pepper sinh ngẫu nhiên 32-byte** | Đảm bảo an toàn mật mã theo tiêu chuẩn HMAC-SHA256 khi chưa có cấu hình production chính thức | Thay chuỗi bí mật mới vào biến `CITIZEN_JWT_SECRET` và `OWNER_KEY_PEPPER` trong `.env.local` |
 | **4. Dùng bảng `access_attempts` và `anonymous_submissions` trong PostgreSQL để rate-limit** | Không cần cài đặt Redis cồng kềnh, hoạt động nhất quán trong cùng cơ sở dữ liệu quan hệ | Chuyển sang Upstash Redis nếu tải tăng cao ở giai đoạn sau |
 | **5. Dùng chung trực tiếp `src/domain/` cho cả Client và Server** | Giữ tính nhất quán logic nghiệp vụ một nguồn (SSOT), tránh trùng lặp code theo quy định của AGENTS.md | Đóng gói thành `packages/domain` nếu Vercel build gặp khó khăn về bundle path |
-| **6. PostgreSQL 16 + cube/earthdistance & PostGIS compatibility layer cho dev** | Máy chủ dev local có sẵn PostgreSQL 16, tránh tải gigabytes thư viện khi dung lượng ổ root hạn chế; ST_DWithin, ST_Distance tính mét chuẩn WGS84 100% | Trên môi trường Supabase Cloud hoặc Docker đầy đủ, chỉ cần bật extension `postgis` gốc |
+| **6. PostGIS thật qua Supabase local (thay cho lớp giả cube/earthdistance)** | Lớp giả che lỗi (ví dụ `ST_X` không có cho `geography`) và cho kết quả kiểm sai; Supabase local có sẵn PostGIS 3. Sửa 25/11 sau review | Không cần; chỉ phải chạy Docker và `npx supabase start --workdir ..` |
 
 ---
+## Đợt sửa sau review 25/11/2026 (chiều)
+
+Số liệu thật: `docs/review/giai-doan-2/ket-qua-kiem-chung.md`.
+
+- [x] Q1b PostGIS thật, migration hardening, `find_duplicate_reports`, `db:verify` 17/17 (PG-001…005).
+- [x] Q3b Đăng nhập nhân viên qua Supabase Auth, bỏ mật khẩu/secret cứng, cron Bearer (LOGIN-001…009, OFF-010).
+- [x] Q3c Chủ hồ sơ mới được đánh giá/bổ sung (OWNER-001…005); TNV không thấy SĐT (VOL-000…007).
+- [x] Q2b Mọi chuyển trạng thái qua `transition.ts`; mã bí mật tạo hộ ngẫu nhiên bằng `crypto` (OFF-001…009, TRANS-006).
+- [x] Q6b Màn hình A01–A03, V01–V02, C04, C06 nối qua DataSource; xử lý 401/403/409/mất mạng; e2e API 7/7.
+- [ ] Q4 Lưu ảnh: ký URL tải lên Supabase Storage thật, kiểm tra magic bytes khi gắn hồ sơ (hiện `/uploads/sign` là bản giả).
+- [ ] Q2c Idempotency-Key bền vững; thực thi `OTP_PROVIDER`/`ALLOW_MOCK_OTP`; giới hạn đăng nhập ở API; thống nhất 400/422 (AC-API-4).
+- [ ] Q5b Script `staff:reset-password`; endpoint dùng `find_duplicate_reports`; "Phản ánh của tôi" ở chế độ API qua `/citizen/me/reports`.
+- [ ] Q7b Chạy thử CI trên GitHub; cấu hình Supabase cloud và Vercel (chủ dự án làm); nâng gói có lỗ hổng (`npm-audit.md`).
+
 
 ## Câu hỏi mở giai đoạn 2
 
 Xem `spec.md` mục 17 (7 câu: mã bí mật 4 số + khoá dò, cột `is_seed`, dự án demo riêng, vùng đặt dữ liệu/Nghị định 13, CB không xem SĐT đầy đủ, quên mật khẩu nhân viên, cron 1 lần/ngày). Toàn bộ 7 câu đã áp dụng phương án [ĐĐ] đề xuất trong đêm, ghi nhận chờ chủ dự án duyệt sáng mai.
+
+Bổ sung 25/11 (chiều):
+1. Có nên nâng `hono`, `zod`, `react-router-dom`, `drizzle-orm`, `vitest`, `vite` (có thay đổi phá vỡ) trước khi triển khai thật không? Xem `docs/review/giai-doan-2/npm-audit.md`.
+2. Lỗi kiểm tra đầu vào: giữ 400 (hiện tại) hay đổi sang 422 như AC-API-4?
+3. Máy dev không tải được Chromium/WebKit của Playwright; có chấp nhận dùng Google Chrome cài sẵn (`channel: chrome`) cho e2e không?
+

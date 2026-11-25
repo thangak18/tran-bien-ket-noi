@@ -92,36 +92,59 @@ npx supabase status -o env --workdir ..                # lấy ANON_KEY, SERVICE
 
 ## 3. Khởi chạy và Seed Dữ liệu
 
-### 3.1. Cài đặt thư viện
+Thứ tự chạy từ máy trống: Docker → Supabase local → `.env.local` → migrate → seed → chạy ứng dụng.
+
+### 3.1. Docker và thư viện
+1. Mở Docker Desktop, chờ "Engine running" (`docker info` trả về ngay). Docker lưu dữ liệu ở ổ đã chọn trong Settings → Resources → Advanced → Disk image location (hiện `/Volumes/Thang/DataDocker`); không cần làm gì thêm.
+2. Cài thư viện (phiên bản Supabase CLI được ghim trong `package.json`, không cài bản global):
 ```bash
 cd app
 npm ci
+npx supabase --version     # phải ra 2.1.1
 ```
 
-### 3.2. Khởi động Supabase local và áp dụng Migration
+### 3.2. Khởi động Supabase local và áp dụng migration
 Thư mục `supabase/` nằm ở gốc repo, nên khi chạy từ `app/` phải thêm `--workdir ..`:
 ```bash
 cd app
-npx supabase start --workdir ..      # lần đầu sẽ pull image Docker
-npx supabase db reset --workdir ..   # áp dụng supabase/migrations/*.sql (PostGIS thật)
+npx supabase start --workdir ..      # lần đầu pull image Docker, mất vài phút
+npx supabase db reset --workdir ..   # áp dụng supabase/migrations/*.sql (PostGIS thật), xoá dữ liệu local
 ```
-Cổng mặc định: API `54321`, Postgres `54322`, Studio `54323`. Lệnh `npx supabase status -o env --workdir ..` in URL và khoá local để điền vào `app/.env.local`.
+Cổng mặc định: API `54321`, Postgres `54322`, Studio `54323`. Kiểm tra PostGIS thật:
+```bash
+docker exec supabase_db_TranBienKetNoi_Workspace psql -U postgres -c "select postgis_full_version();"
+```
 
-### 3.3. Nạp Dữ liệu Mẫu (Seed)
-Nạp 64 hồ sơ tháng 11/2026, 4 nhiệm vụ TNV, tài khoản nhân viên, SLA bộ phận:
+### 3.3. Tạo `app/.env.local` (không commit)
+```bash
+cd app
+cp .env.example .env.local
+npx supabase status -o env --workdir ..   # lấy ANON_KEY, SERVICE_ROLE_KEY, JWT_SECRET, DB_URL, API_URL
+openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-48   # chạy 3 lần cho CITIZEN_JWT_SECRET, OWNER_KEY_PEPPER, CRON_SECRET
+```
+Điền các biến theo bảng mục 2.2, thêm `SEED_STAFF_PASSWORD` (mật khẩu ban đầu của 4 tài khoản mẫu, tự đặt). Thiếu biến nào, API và script dừng và báo đúng tên biến đó.
+
+### 3.4. Nạp dữ liệu mẫu (seed)
+Tạo 4 tài khoản cán bộ/TNV trong Supabase Auth (`cb.minh`, `tnv.mai`, `tnv.nam`, `tnv.quynhanh` ở `@tranbien.gov.vn`), nạp 64 hồ sơ tháng 11/2026, 4 nhiệm vụ TNV, SLA bộ phận:
 ```bash
 npm run seed
 ```
-> **Đặc tính Idempotent:** Lệnh seed có thể chạy lại nhiều lần mà không làm nhân bản dữ liệu hay lỗi khóa chính.
+Seed chạy lại được nhiều lần. Muốn xoá mọi dữ liệu phát sinh (hồ sơ thử, thông báo, OTP…) và về đúng 64 hồ sơ chuẩn: `npm run demo:reset` (cần `DEMO_MODE=true`).
 
-### 3.4. Khởi chạy Ứng dụng Chế độ Phát triển
+### 3.5. Chạy ứng dụng
 ```bash
 npm run dev
 ```
-Ứng dụng sẽ chạy tại: `http://localhost:5173`
+Mở `http://localhost:5173`. Chế độ offline (mô phỏng, mặc định): `VITE_DATA_SOURCE=local`. Chế độ dùng API và DB thật: đặt `VITE_DATA_SOURCE=api` trong `app/.env.local` rồi chạy lại `npm run dev`; đăng nhập cán bộ/TNV ở `/dang-nhap` bằng email trên và `SEED_STAFF_PASSWORD`.
+
+### 3.6. Kiểm chứng nhanh
+```bash
+npm run db:verify          # 17/17 trên DB đang chạy
+npm run verify             # lint + tsc + vitest + mock:verify
+npm run test:e2e:api       # Playwright, chế độ API (dùng Google Chrome; tự chạy demo:reset)
+```
 
 ---
-
 ## 4. Bộ Công cụ Kiểm tra Chất lượng (Verification)
 
 Hệ thống có hai cấp độ kiểm tra bất biến dữ liệu bắt buộc phải đạt 100% trước khi triển khai:
@@ -130,7 +153,7 @@ Hệ thống có hai cấp độ kiểm tra bất biến dữ liệu bắt buộ
 Chạy chuỗi kiểm tra nghiêm ngặt gồm:
 1. `npm run lint`: Kiểm tra quy chuẩn ESLint và định dạng Prettier.
 2. `tsc --noEmit`: Kiểm tra tính toàn vẹn kiểu dữ liệu TypeScript.
-3. `npm run test`: Chạy 39 file kiểm thử với 229 ca kiểm thử (Unit, Component, Router, API Security).
+3. `npm run test`: Chạy 49 file kiểm thử với 303 ca (Unit, Component, Router, API; test API cần Supabase local đang chạy).
 4. `npm run mock:verify`: Xác thực 16 bất biến dữ liệu trên tập dữ liệu mẫu.
 
 ```bash
@@ -173,10 +196,10 @@ Kết quả kiểm tra 17 mục:
 npm run staff:list
 
 # 2. Tạo tài khoản nhân viên mới
-npm run staff:create <can_bo|tnv> "Tên Nhân Viên" [mã_bộ_phận]
+npm run staff:create <can_bo|tnv> "Tên Nhân Viên" <email> [mã_bộ_phận]
 # Ví dụ:
-npm run staff:create can_bo "Lê Văn An" do_thi
-npm run staff:create tnv "Nguyễn Thị Hoa"
+npm run staff:create can_bo "Lê Văn An" an.le@tranbien.gov.vn doi_duy_tu
+npm run staff:create tnv "Nguyễn Thị Hoa" hoa.nguyen@tranbien.gov.vn
 
 # 3. Tạm khóa quyền tài khoản nhân viên
 npm run staff:disable <staff_user_id>

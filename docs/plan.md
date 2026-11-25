@@ -391,3 +391,11 @@ Xem bảng rủi ro ở `spec.md` mục 17. Bổ sung kỹ thuật:
 | Drizzle không biểu diễn hết PostGIS/trigger/RLS | Viết các phần đó bằng SQL tay trong `migrations/`, có test kiểm tồn tại |
 | Lệch múi giờ | DB `timestamptz`; chỉ định dạng `+07:00` ở lớp serialize |
 | Seed ghi đè dữ liệu thật | `db:seed` từ chối chạy nếu bảng `reports` đã có dòng không phải `is_seed` (trừ cờ `--force` chỉ ở staging) |
+
+## 19. Ghi chú sau review 25/11/2026
+
+- Không thêm `@hono/node-server`: Vite dev server đã có middleware phục vụ `/api` (`vite.config.ts`), đủ cho e2e chế độ API (`playwright.api.config.ts`), nên không có thư viện mới nào ngoài danh sách ở mục 11.
+- PostGIS chạy thật bằng Supabase local; không còn lớp tương thích `cube/earthdistance` (các mục nhắc lớp này ở trên không còn hiệu lực).
+- Script dùng chung `app/scripts/lib` (env bắt buộc, Supabase Auth admin) thay cho các URL/pepper mặc định.
+- E2E chế độ API chạy bằng `npm run test:e2e:api`; dùng Google Chrome cài sẵn (`channel: chrome`, đổi bằng `PW_CHANNEL`).
+

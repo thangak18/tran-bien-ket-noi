@@ -76,6 +76,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     fileParallelism: false,
+    // Test API/DB gọi Postgres trong Docker nên cần dư địa khi máy bận.
+    testTimeout: 15000,
+    hookTimeout: 30000,
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['tests/e2e/**/*', 'tests/e2e-api/**/*', 'node_modules/**/*'],
