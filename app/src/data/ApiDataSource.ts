@@ -15,6 +15,7 @@ import {
   AiSuggestionData,
   Category,
   Notification,
+  Priority,
   Report,
   Status,
   VolunteerTask,
@@ -63,6 +64,7 @@ export function mapApiReport(raw: Json): Report {
     lng: Number(raw.lng),
     address: String(raw.address ?? ''),
     locationNote: str(raw.locationNote),
+    title: str(raw.title),
     description: str(raw.description),
     createdAt: String(raw.createdAt ?? ''),
     status: raw.status as Status,
@@ -198,12 +200,31 @@ export class ApiDataSource implements DataSource {
       headers['Idempotency-Key'] = options.idempotencyKey;
     }
 
+    // Tải ảnh dạng data URL lên Supabase Storage (bucket report-photos) qua signed URL trước khi tạo hồ sơ.
+    const uploadedPhotos: string[] = [];
+    for (let i = 0; i < (payload.photos ?? []).length; i++) {
+      const p = payload.photos[i]!;
+      if (p.startsWith('data:image/')) {
+        try {
+          const blob = await fetch(p).then((r) => r.blob());
+          const ext =
+            blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+          const path = await this.uploadPhoto(blob, `photo-${i + 1}.${ext}`);
+          uploadedPhotos.push(path);
+        } catch {
+          uploadedPhotos.push(p);
+        }
+      } else {
+        uploadedPhotos.push(p);
+      }
+    }
+
     const res = await apiFetch<{ code: string; secretCode?: string; ownerToken?: string }>(
       '/citizen/reports',
       {
         method: 'POST',
         headers,
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, photos: uploadedPhotos }),
       }
     );
     if (res.ownerToken) saveReportKey(res.code, res.ownerToken);
@@ -387,6 +408,23 @@ export class ApiDataSource implements DataSource {
   async listVolunteers(): Promise<VolunteerOption[]> {
     const res = await apiFetch<{ items?: VolunteerOption[] }>('/officer/volunteers');
     return (res.items ?? []).map((v) => ({ id: v.id, name: v.name }));
+  }
+
+  async officerUpdateReport(
+    reportId: string,
+    params: {
+      category?: Category;
+      priority?: Priority;
+      department?: string;
+      dueAt?: string;
+      version?: number;
+    }
+  ): Promise<Report> {
+    await apiFetch(`/officer/reports/${enc(reportId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(params),
+    });
+    return this.requireOfficerReport(reportId);
   }
 
   officerAcceptReport(

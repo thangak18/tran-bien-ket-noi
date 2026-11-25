@@ -1,4 +1,11 @@
-import { AiSuggestionData, Category, Notification, Report, VolunteerTask } from '../domain/types';
+import {
+  AiSuggestionData,
+  Category,
+  Notification,
+  Priority,
+  Report,
+  VolunteerTask,
+} from '../domain/types';
 import { SubmitReportPayload } from '../store/citizenActions';
 
 export interface PublicKpiResult {
@@ -154,6 +161,18 @@ export interface DataSource {
 
   /** Cán bộ: Danh sách tình nguyện viên đang hoạt động để giao việc */
   listVolunteers(): Promise<VolunteerOption[]>;
+
+  /** Cán bộ: Cập nhật phân loại, mức ưu tiên, bộ phận và hạn xử lý */
+  officerUpdateReport(
+    reportId: string,
+    params: {
+      category?: Category;
+      priority?: Priority;
+      department?: string;
+      dueAt?: string;
+      version?: number;
+    }
+  ): Promise<Report>;
 
   /** Cán bộ: Tiếp nhận hồ sơ */
   officerAcceptReport(

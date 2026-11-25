@@ -14,6 +14,7 @@ interface DbReportRow {
   lat?: number;
   lng?: number;
   address?: string;
+  title?: string | null;
   description?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -108,6 +109,7 @@ function formatPublicReportRow(
     lng,
     address: r.address,
     locationNote: r.location_note || undefined,
+    title: r.title || undefined,
     description: r.description || undefined,
     department: r.department_name || undefined,
     dueAt: r.due_at || undefined,
@@ -415,4 +417,57 @@ publicRoutes.get('/recent-results', async (c) => {
   });
 
   return c.json({ items });
+});
+
+/**
+ * GET /public/duplicates - Tìm tối đa 3 phản ánh nghi trùng trong bán kính 50m, cùng loại, 14 ngày (PostGIS)
+ */
+publicRoutes.get('/duplicates', async (c) => {
+  const lat = parseFloat(c.req.query('lat') || '');
+  const lng = parseFloat(c.req.query('lng') || '');
+  const category = c.req.query('category')?.trim() || '';
+  const excludeId = c.req.query('excludeId')?.trim() || null;
+
+  if (isNaN(lat) || isNaN(lng) || lat < 10.9 || lat > 11.0 || lng < 106.7 || lng > 106.9) {
+    throw new AppError('INVALID_LOCATION', 'Tọa độ tìm trùng không hợp lệ', 400);
+  }
+  if (!['den_duong', 'ngap_nuoc', 'rac_thai', 'mat_duong'].includes(category)) {
+    throw new AppError('INVALID_CATEGORY', 'Loại sự cố không hợp lệ', 400);
+  }
+
+  const now = await getDemoNow();
+  const isUuid =
+    excludeId !== null &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(excludeId);
+
+  const matches = await sqlClient`
+    SELECT d.id, d.code, d.distance_meters, r.category, r.status, r.address, r.title,
+           r.description, r.created_at, r.photos_approved,
+           (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) + r.anonymous_follows AS follower_count
+    FROM find_duplicate_reports(
+      ${lng},
+      ${lat},
+      ${category}::category,
+      ${now}::timestamptz,
+      ${isUuid ? excludeId : null}::uuid
+    ) d
+    JOIN reports r ON r.id = d.id
+    ORDER BY d.distance_meters ASC;
+  `;
+
+  return c.json({
+    items: matches.map((m) => ({
+      id: m.code,
+      code: m.code,
+      uuid: m.id,
+      distanceMeters: Math.round(Number(m.distance_meters ?? 0)),
+      category: m.category,
+      status: m.status,
+      address: m.address,
+      title: m.title || undefined,
+      description: m.description || undefined,
+      createdAt: m.created_at,
+      followerCount: Number(m.follower_count ?? 0),
+    })),
+  });
 });

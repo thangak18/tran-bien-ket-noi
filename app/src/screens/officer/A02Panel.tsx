@@ -23,14 +23,19 @@ import {
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { SelectField } from '@/components/ui';
 import { useAppStore } from '@/store/AppStore';
-import { getCategoryConfig } from '@/store/officerActions';
 import { useDataSource } from '@/data/useDataSource';
 import { useAction } from '@/data/useAction';
 import { VolunteerOption } from '@/data/DataSource';
 import { isApiMode } from '@/lib/api';
 import { ActionError } from '@/components/common/ActionError';
 import { canTransition } from '@/domain/status';
-import { CATEGORY_CONFIGS, DEPARTMENTS, VOLUNTEERS, officerLabel } from '@/domain/constants';
+import {
+  CATEGORY_CONFIGS,
+  DEPARTMENTS,
+  VOLUNTEERS,
+  getCategoryConfig,
+  officerLabel,
+} from '@/domain/constants';
 import { CATEGORIES, Category, Priority, Report } from '@/domain/types';
 import { MediaItemPreview } from '@/components/common/MediaCapture';
 import { findDuplicates } from '@/domain/duplicates';
@@ -224,15 +229,17 @@ export function A02Panel({
 
   const handleSaveMetadata = () => {
     if (!report) return;
-    const updated: Report = {
-      ...report,
-      category,
-      priority,
-      department,
-      dueAt: dueDate ? dateInputToIso(dueDate) : report.dueAt,
-    };
-    dispatch({ type: 'UPDATE_REPORT', payload: { report: updated } });
-    showSuccess('Đã cập nhật thông tin phân loại và hạn xử lý');
+    void act(
+      () =>
+        ds.officerUpdateReport(report.id, {
+          category,
+          priority,
+          department,
+          dueAt: dueDate ? dateInputToIso(dueDate) : report.dueAt,
+          version: report.version,
+        }),
+      'Đã cập nhật thông tin phân loại và hạn xử lý'
+    );
   };
 
   /**

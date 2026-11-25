@@ -11,6 +11,7 @@ import {
   MapPin,
   Moon,
   Phone,
+  Search,
   Settings,
   ShieldCheck,
   Smartphone,
@@ -19,10 +20,12 @@ import {
   User,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { apiFetch, isApiMode, setCitizenToken } from '@/lib/api';
+import { apiFetch, isApiMode, notifySessionChanged, setCitizenToken } from '@/lib/api';
 import { filterMyReports } from '@/domain/access';
 import { useMyReports } from '@/data/useMyReports';
+import { useDataSource } from '@/data/useDataSource';
 import { computeKpi } from '@/domain/kpi';
+import { buildCitizenNotifications } from '@/domain/notifications';
 import { maskPhone } from '@/domain/privacy';
 import { formatDays } from '@/domain/format';
 import { FontScale } from '@/domain/types';
@@ -96,13 +99,63 @@ export function C05Mine() {
   const [otpError, setOtpError] = useState('');
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const CITIZEN_PUSH_STORAGE_KEY = 'tbkn:push-enabled:citizen';
+  const ds = useDataSource();
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
-  const [pushEnabled, setPushEnabled] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return window.localStorage.getItem(CITIZEN_PUSH_STORAGE_KEY) !== '0';
+  });
+  const togglePushEnabled = () => {
+    setPushEnabled((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(CITIZEN_PUSH_STORAGE_KEY, next ? '1' : '0');
+      }
+      return next;
+    });
+  };
+  const [lookupCode, setLookupCode] = useState('');
+  const [lookupError, setLookupError] = useState('');
+  const [lookupBusy, setLookupBusy] = useState(false);
   const { gpsEnabled, gpsSubtitle, toggleGps } = useGpsSetting();
+
+  const handleLookupByCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = lookupCode.trim().toUpperCase().replace(/^#/, '');
+    if (!raw) {
+      setLookupError('Vui lòng nhập mã phản ánh (VD: TB-0008).');
+      return;
+    }
+    const normalized = /^\d{1,4}$/.test(raw) ? `TB-${raw.padStart(4, '0')}` : raw;
+    setLookupError('');
+    const localFound = state.reports.find((r) => r.id.toUpperCase() === normalized);
+    if (localFound) {
+      navigate(`/phan-anh/${localFound.id}`);
+      return;
+    }
+    if (!isApiMode()) {
+      setLookupError(`Không tìm thấy phản ánh mã ${normalized}. Vui lòng kiểm tra lại.`);
+      return;
+    }
+    setLookupBusy(true);
+    try {
+      const remoteFound = await ds.getReportById(normalized);
+      if (remoteFound) {
+        navigate(`/phan-anh/${remoteFound.id}`);
+      } else {
+        setLookupError(`Không tìm thấy phản ánh mã ${normalized}. Vui lòng kiểm tra lại.`);
+      }
+    } catch {
+      setLookupError(`Không thể tra cứu mã ${normalized}. Vui lòng thử lại.`);
+    } finally {
+      setLookupBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!toastMsg) return;
@@ -132,10 +185,12 @@ export function C05Mine() {
   const myReports = useMyReports();
 
   const unreadNotifCount = useMemo(() => {
-    const myPhone = state.settings.phone;
-    if (!myPhone) return 0;
-    return state.notifications.filter((n) => n.phone === myPhone && !n.read).length;
-  }, [state.notifications, state.settings.phone]);
+    return buildCitizenNotifications(
+      state.reports,
+      state.notifications,
+      state.settings.phone
+    ).filter((n) => !n.read).length;
+  }, [state.notifications, state.reports, state.settings.phone]);
 
   const counts = useMemo(
     () => ({
@@ -378,8 +433,14 @@ export function C05Mine() {
   };
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') window.localStorage.removeItem('tb_citizen_token');
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('tb_citizen_token');
+    }
     dispatch({ type: 'SET_SETTINGS', payload: { phone: undefined } });
+    if (isApiMode()) {
+      dispatch({ type: 'SET_NOTIFICATIONS', payload: [] });
+      notifySessionChanged();
+    }
     setPhoneInput('');
     setToastMsg('Đã đăng xuất số điện thoại');
   };
@@ -691,7 +752,7 @@ export function C05Mine() {
                 role="switch"
                 aria-checked={pushEnabled}
                 aria-label="Bật tắt thông báo đẩy"
-                onClick={() => setPushEnabled((p) => !p)}
+                onClick={togglePushEnabled}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
                   pushEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
                 }`}
@@ -911,6 +972,39 @@ export function C05Mine() {
               </section>
             )}
 
+            {/* 2. Tra cứu nhanh theo mã phản ánh (F8-13) */}
+            <section className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 sm:p-5 shadow-2xs space-y-2.5 dark:border-slate-800">
+              <div className="flex items-center gap-2 text-sm font-extrabold text-[var(--color-text)]">
+                <Search className="h-4 w-4 text-[#0084E8] dark:text-[#38BDF8]" aria-hidden="true" />
+                <span>Tra cứu theo mã phản ánh</span>
+              </div>
+              <form onSubmit={handleLookupByCode} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={lookupCode}
+                  onChange={(e) => {
+                    setLookupCode(e.target.value);
+                    if (lookupError) setLookupError('');
+                  }}
+                  placeholder="Nhập mã, VD: TB-0008"
+                  aria-label="Mã phản ánh cần tra cứu"
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm font-semibold text-[var(--color-text)] placeholder:font-normal placeholder:text-slate-400 focus:border-[#0084E8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0084E8]/20 dark:border-slate-700 dark:bg-slate-900"
+                />
+                <button
+                  type="submit"
+                  disabled={lookupBusy}
+                  className="h-11 shrink-0 rounded-xl bg-[#0084E8] px-4 text-xs font-extrabold text-white shadow-xs transition hover:bg-[#0073CC] active:scale-[0.98] disabled:opacity-60"
+                >
+                  {lookupBusy ? 'Đang tìm...' : 'Tra cứu'}
+                </button>
+              </form>
+              {lookupError && (
+                <p role="alert" className="text-xs font-semibold text-red-600 dark:text-red-400">
+                  {lookupError}
+                </p>
+              )}
+            </section>
+
             {/* 3. Bảng minh bạch phường Card */}
             <button
               type="button"
@@ -1029,7 +1123,7 @@ export function C05Mine() {
                     role="switch"
                     aria-checked={pushEnabled}
                     aria-label="Bật tắt thông báo đẩy"
-                    onClick={() => setPushEnabled((p) => !p)}
+                    onClick={togglePushEnabled}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
                       pushEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
                     }`}
@@ -1196,10 +1290,10 @@ export function C05Mine() {
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100">
-            <div className="font-extrabold">2. Quyền gửi phản ánh ẩn danh</div>
+            <div className="font-extrabold">2. Phạm vi hiển thị số điện thoại</div>
             <p className="mt-1 text-xs leading-relaxed">
-              Khi không nhập số điện thoại, hệ thống tự động tạo Mã bí mật 4 số và mã QR riêng để
-              bạn tự theo dõi tiến độ xử lý mà không cần cung cấp thông tin định danh.
+              Số điện thoại người gửi chỉ hiển thị cho cán bộ phường và tình nguyện viên đang phụ
+              trách xác minh để liên hệ khi cần bổ sung thông tin, không hiển thị công khai.
             </p>
           </div>
         </div>

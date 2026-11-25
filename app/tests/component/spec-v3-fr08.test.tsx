@@ -59,6 +59,21 @@ describe('FOLLOW-003 – "Tôi cũng gặp" theo spec v3.0 (AC-C06-13)', () => {
     fireEvent.click(screen.getAllByText('Tôi cũng gặp vấn đề này')[0]!);
     await waitFor(() => expect(screen.getByTestId('login-page')).toBeInTheDocument());
   });
+
+  it('tài khoản A đã bấm "Tôi cũng gặp" không làm tài khoản B trên cùng thiết bị bị đánh dấu đã theo dõi', async () => {
+    window.localStorage.removeItem('tbkn:followed-reports');
+    const first = renderC06('0911222333');
+    fireEvent.click(screen.getAllByText('Tôi cũng gặp vấn đề này')[0]!);
+    await waitFor(() =>
+      expect(screen.getAllByText('Bạn đã báo vấn đề này').length).toBeGreaterThan(0)
+    );
+    first.unmount();
+
+    // Tài khoản B mở cùng hồ sơ trên cùng thiết bị vẫn có thể bấm "Tôi cũng gặp vấn đề này"
+    renderC06('0922333444');
+    expect(screen.getAllByText('Tôi cũng gặp vấn đề này').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Bạn đã báo vấn đề này')).toBeNull();
+  });
 });
 
 describe('C04-CAT-001 – Bước 1 không chọn sẵn loại (AC-C04-15)', () => {

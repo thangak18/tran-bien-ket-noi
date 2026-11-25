@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
 import crypto from 'node:crypto';
 import { sqlClient } from '../db/client';
+import { env } from '../env';
 import { AppError } from '../middleware/errorHandler';
 
 export const uploadRoutes = new Hono();
 
+const STORAGE_BUCKET = 'report-photos';
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -43,11 +45,11 @@ export function validateMagicBytes(buffer: Uint8Array): { valid: boolean; format
 }
 
 /**
- * POST /uploads/sign - Xin URL tải lên kèm chữ ký (Spec 15, PHOTO-001)
+ * POST /uploads/sign - Xin URL tải lên kèm chữ ký vào bucket riêng tư report-photos (Spec 15, PHOTO-001)
  */
 uploadRoutes.post('/sign', async (c) => {
   const body = await c.req.json();
-  const contentType = body.contentType?.toLowerCase();
+  const contentType = String(body.contentType || body.mimeType || '').toLowerCase();
   const sizeBytes = Number(body.sizeBytes || 0);
 
   if (!contentType || !ALLOWED_MIME_TYPES.includes(contentType)) {
@@ -77,14 +79,89 @@ uploadRoutes.post('/sign', async (c) => {
     ON CONFLICT (path) DO NOTHING;
   `;
 
-  // Trong chế độ phát triển / mock, cấp URL upload giả lập
-  const uploadUrl = `/api/uploads/file/${storagePath}`;
-  const signedUrl = `/api/uploads/file/${storagePath}?expires=${Math.floor(Date.now() / 1000) + 3600}`;
+  // Xin signed upload URL thật từ Supabase Storage (bucket riêng tư report-photos)
+  const baseUrl = env.SUPABASE_URL.replace(/\/$/, '');
+  const signEndpoint = `${baseUrl}/storage/v1/object/upload/sign/${STORAGE_BUCKET}/${storagePath}`;
+  let uploadUrl = `/api/v1/uploads/file/${storagePath}`;
+  let token = '';
+
+  try {
+    const res = await fetch(signEndpoint, {
+      method: 'POST',
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (res.ok) {
+      const data = (await res.json()) as { url?: string; token?: string };
+      if (data.url) {
+        uploadUrl = data.url.startsWith('http')
+          ? data.url
+          : `${baseUrl}/storage/v1${data.url.startsWith('/') ? '' : '/'}${data.url}`;
+      }
+      token = data.token ?? '';
+    } else if (!env.DEMO_MODE) {
+      throw new AppError(
+        'STORAGE_SIGN_FAILED',
+        'Không thể tạo liên kết tải ảnh lên kho lưu trữ',
+        502
+      );
+    }
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    if (!env.DEMO_MODE) {
+      throw new AppError(
+        'STORAGE_UNAVAILABLE',
+        'Kho lưu trữ ảnh tạm thời không khả dụng. Vui lòng thử lại sau.',
+        503
+      );
+    }
+  }
 
   return c.json({
     path: storagePath,
+    storagePath,
     uploadUrl,
-    signedUrl,
+    token,
     expiresInSeconds: 3600,
   });
+});
+
+/**
+ * GET /uploads/signed-url?path=... - Cấp URL đọc ảnh có chữ ký tạm thời (Spec 15)
+ */
+uploadRoutes.get('/signed-url', async (c) => {
+  const storagePath = c.req.query('path')?.trim();
+  if (!storagePath || storagePath.includes('..') || !storagePath.startsWith('reports/')) {
+    throw new AppError('INVALID_PATH', 'Đường dẫn ảnh không hợp lệ', 400);
+  }
+
+  const baseUrl = env.SUPABASE_URL.replace(/\/$/, '');
+  const res = await fetch(`${baseUrl}/storage/v1/object/sign/${STORAGE_BUCKET}/${storagePath}`, {
+    method: 'POST',
+    headers: {
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ expiresIn: 3600 }),
+    signal: AbortSignal.timeout(8000),
+  });
+
+  if (!res.ok) {
+    throw new AppError('STORAGE_SIGN_FAILED', 'Không thể tạo liên kết xem ảnh', 502);
+  }
+
+  const data = (await res.json()) as { signedURL?: string; signedUrl?: string };
+  const rawSigned = data.signedURL || data.signedUrl || '';
+  const signedUrl = rawSigned.startsWith('http')
+    ? rawSigned
+    : `${baseUrl}/storage/v1${rawSigned.startsWith('/') ? '' : '/'}${rawSigned}`;
+
+  return c.json({ path: storagePath, signedUrl, expiresInSeconds: 3600 });
 });

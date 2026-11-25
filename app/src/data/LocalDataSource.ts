@@ -16,6 +16,7 @@ import {
   CATEGORIES,
   Category,
   Notification,
+  Priority,
   Report,
   VolunteerTask,
 } from '../domain/types';
@@ -328,6 +329,32 @@ export class LocalDataSource implements DataSource {
 
   async listVolunteers(): Promise<VolunteerOption[]> {
     return VOLUNTEERS.map((name) => ({ id: name, name }));
+  }
+
+  async officerUpdateReport(
+    reportId: string,
+    params: {
+      category?: Category;
+      priority?: Priority;
+      department?: string;
+      dueAt?: string;
+      version?: number;
+    }
+  ): Promise<Report> {
+    const state = this.read();
+    const existing = findReport(state, reportId);
+    const updated: Report = {
+      ...existing,
+      ...(params.category !== undefined ? { category: params.category } : {}),
+      ...(params.priority !== undefined ? { priority: params.priority } : {}),
+      ...(params.department !== undefined ? { department: params.department } : {}),
+      ...(params.dueAt !== undefined ? { dueAt: params.dueAt } : {}),
+    };
+    this.write({
+      ...state,
+      reports: state.reports.map((r) => (r.id === reportId ? updated : r)),
+    });
+    return findReport(this.read(), reportId);
   }
 
   async officerAcceptReport(

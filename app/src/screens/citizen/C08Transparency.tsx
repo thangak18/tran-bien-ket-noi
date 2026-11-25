@@ -50,9 +50,13 @@ export function C08Transparency({
   const { state } = useAppStore();
   const navigate = useNavigate();
 
+  const currentMonth = state.settings.demoNow.slice(0, 7);
+  const [yearPart, monthPart] = currentMonth.split('-');
+  const monthLabel = `${Number(monthPart)}/${yearPart}`;
+
   const kpi = useMemo(
-    () => computeKpi(state.reports, '2026-11', state.settings.demoNow),
-    [state.reports, state.settings.demoNow]
+    () => computeKpi(state.reports, currentMonth, state.settings.demoNow),
+    [state.reports, currentMonth, state.settings.demoNow]
   );
 
   const chartData = useMemo(
@@ -492,7 +496,7 @@ export function C08Transparency({
         {/* Chú thích nguồn */}
         <footer className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 py-3 text-xs text-slate-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-slate-200">
           <p className="font-bold text-[var(--color-text)]">
-            Số liệu tổng hợp · Cổng thông tin Phường Trấn Biên
+            Số liệu tháng {monthLabel} · Dữ liệu mẫu cuộc thi
           </p>
           {avgRating !== null && (
             <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">

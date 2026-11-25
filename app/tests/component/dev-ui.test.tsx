@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import App from '@/App';
 
 describe('DevUiGallery – /dev/ui', () => {
-  it('route /dev/ui render đầy đủ các section component review', () => {
+  it('route /dev/ui render đầy đủ các section component review', async () => {
     render(
       <MemoryRouter initialEntries={['/dev/ui']}>
         <App />
@@ -12,7 +12,7 @@ describe('DevUiGallery – /dev/ui', () => {
     );
 
     // Kiểm tra tiêu đề header
-    expect(screen.getByText('P3 UI Gallery')).toBeInTheDocument();
+    expect(await screen.findByText('P3 UI Gallery')).toBeInTheDocument();
     expect(screen.getByText('DEV ONLY')).toBeInTheDocument();
 
     // Kiểm tra các section chính

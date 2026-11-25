@@ -85,7 +85,7 @@ interface WindowWithSpeech {
 
 const MAX_TITLE_LENGTH = 90;
 const MAX_DESCRIPTION_LENGTH = 300;
-const MAX_PHOTOS = 5;
+const MAX_PHOTOS = 3;
 const FALLBACK_HERO_PHOTO = '/demo-photos/mat_duong/1.jpg';
 
 const CATEGORY_TITLE_SUGGESTIONS: Record<Category, readonly string[]> = {
@@ -535,7 +535,7 @@ export function C04Confirm() {
 
     const remaining = MAX_PHOTOS - draft.photos.length;
     if (remaining <= 0) {
-      showToast('Tối đa 5 ảnh cho mỗi phản ánh', 'warning');
+      showToast(`Tối đa ${MAX_PHOTOS} ảnh cho mỗi phản ánh`, 'warning');
       e.target.value = '';
       return;
     }

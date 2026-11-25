@@ -443,6 +443,12 @@ export function C07Nearby() {
                         <img
                           src={photo}
                           alt={`Ảnh ${catConfig.label}`}
+                          onError={(e) => {
+                            const fallback = `/demo-photos/${report.category}/1.jpg`;
+                            if (e.currentTarget.getAttribute('src') !== fallback) {
+                              e.currentTarget.src = fallback;
+                            }
+                          }}
                           className="h-[68px] w-[76px] flex-shrink-0 rounded-xl object-cover bg-slate-200"
                         />
                         <div className="min-w-0 flex-1 space-y-1">
@@ -560,6 +566,12 @@ export function C07Nearby() {
                       <img
                         src={photo}
                         alt={`Ảnh ${catConfig.label}`}
+                        onError={(e) => {
+                          const fallback = `/demo-photos/${report.category}/1.jpg`;
+                          if (e.currentTarget.getAttribute('src') !== fallback) {
+                            e.currentTarget.src = fallback;
+                          }
+                        }}
                         className="h-[72px] w-[84px] flex-shrink-0 rounded-xl object-cover bg-slate-200"
                       />
                       <div className="min-w-0 flex-1 space-y-1">

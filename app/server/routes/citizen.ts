@@ -2,6 +2,7 @@ import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 import { sqlClient } from '../db/client';
+import { env } from '../env';
 import { AppError } from '../middleware/errorHandler';
 import {
   createCitizenToken,
@@ -50,6 +51,17 @@ citizenRoutes.post('/otp/request', async (c) => {
       'Số điện thoại không đúng định dạng (10 chữ số, bắt đầu bằng 0)',
       400
     );
+  }
+
+  if (env.OTP_PROVIDER === 'real') {
+    throw new AppError(
+      'OTP_PROVIDER_NOT_CONFIGURED',
+      'Nhà cung cấp SMS OTP thật chưa được cấu hình trên máy chủ.',
+      503
+    );
+  }
+  if (!env.ALLOW_MOCK_OTP) {
+    throw new AppError('MOCK_OTP_DISABLED', 'Chế độ OTP mô phỏng đã tắt trên môi trường này.', 503);
   }
 
   const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
@@ -150,6 +162,8 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
   }
 
   const address = body.address?.trim() || 'Khu vực phường Trấn Biên';
+  const title =
+    typeof body.title === 'string' && body.title.trim() ? body.title.trim().slice(0, 120) : null;
   const description = body.description?.trim() || null;
   const locationNote = body.locationNote?.trim() || null;
   await checkPhoneDailyLimit(citizenPhone);
@@ -191,12 +205,12 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
     const [created] = await tx`
       INSERT INTO reports (
         code, category, status, priority, location, address, location_note,
-        description, created_at, reporter_phone, anonymous, subscribed_later,
+        title, description, created_at, reporter_phone, anonymous, subscribed_later,
         on_behalf, secret_code_hash, owner_token_hash, anonymous_follows,
         photos_approved, is_seed, version, ai_suggestion
       ) VALUES (
         ${nextCode}, ${category}, 'moi', 'binh_thuong', ST_GeographyFromText(${pointWkt}),
-        ${address}, ${locationNote}, ${description}, ${now}::timestamptz,
+        ${address}, ${locationNote}, ${title}, ${description}, ${now}::timestamptz,
         ${citizenPhone}, false, false, false,
         ${secretHash}, null, 0, true, false, 1,
         ${aiSuggestion ? JSON.stringify(aiSuggestion) : null}::jsonb
@@ -636,6 +650,7 @@ citizenRoutes.get('/me/reports', requireCitizenAuth, async (c) => {
     status: r.status,
     address: r.address,
     locationNote: r.location_note,
+    title: r.title || undefined,
     description: r.description,
     lat: Number(r.lat),
     lng: Number(r.lng),
@@ -722,6 +737,7 @@ citizenRoutes.get('/reports/:code/owner', optionalCitizenAuth, async (c) => {
     department: report.department_name,
     address: report.address,
     locationNote: report.location_note,
+    title: report.title || undefined,
     description: report.description,
     lat: Number(report.lat),
     lng: Number(report.lng),

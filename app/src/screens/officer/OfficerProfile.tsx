@@ -56,9 +56,22 @@ export function OfficerProfile() {
   const { state, dispatch } = useAppStore();
   const navigate = useNavigate();
 
+  const OFFICER_PUSH_STORAGE_KEY = 'tbkn:push-enabled:officer';
   const [subView, setSubView] = useState<OfficerSubView>('main');
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return window.localStorage.getItem(OFFICER_PUSH_STORAGE_KEY) !== '0';
+  });
+  const toggleNotifications = () => {
+    setNotificationsEnabled((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(OFFICER_PUSH_STORAGE_KEY, next ? '1' : '0');
+      }
+      return next;
+    });
+  };
   const { gpsEnabled, gpsSubtitle, toggleGps } = useGpsSetting();
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -282,7 +295,7 @@ export function OfficerProfile() {
                   role="switch"
                   aria-checked={notificationsEnabled}
                   aria-label="Bật tắt thông báo đẩy"
-                  onClick={() => setNotificationsEnabled((v) => !v)}
+                  onClick={toggleNotifications}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
                     notificationsEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
                   }`}
@@ -594,7 +607,7 @@ export function OfficerProfile() {
                         role="switch"
                         aria-checked={notificationsEnabled}
                         aria-label="Bật tắt thông báo đẩy"
-                        onClick={() => setNotificationsEnabled((v) => !v)}
+                        onClick={toggleNotifications}
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
                           notificationsEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
                         }`}

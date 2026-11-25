@@ -21,13 +21,13 @@ describe('T-004 – Router với 14 route spec 8 (E2E-00)', () => {
   ];
 
   routes.forEach(({ path, title }) => {
-    it(`route ${path} render tiêu đề "${title}"`, () => {
+    it(`route ${path} render tiêu đề "${title}"`, async () => {
       render(
         <MemoryRouter initialEntries={[path]}>
           <App />
         </MemoryRouter>
       );
-      const elements = screen.getAllByTestId('screen-title');
+      const elements = await screen.findAllByTestId('screen-title');
       const hasTitle = elements.some(
         (el) =>
           el.textContent?.includes(title) ||

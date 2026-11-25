@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppStoreProvider, getInitialState } from '@/store/AppStore';
+import { saveState, loadPersistedState } from '@/store/persistence';
 import { C01Home } from '@/screens/citizen/C01Home';
 import { C05Mine } from '@/screens/citizen/C05Mine';
 import { formatRelativeTime } from '@/domain/format';
@@ -9,8 +10,13 @@ import { lookupReportByCode } from '@/domain/access';
 
 describe('C01Home & C05Mine', () => {
   beforeEach(() => {
+    localStorage.clear();
     document.documentElement.className = '';
     document.documentElement.removeAttribute('data-theme');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('formatRelativeTime hiển thị "1 tháng trước" khi quá 30 ngày', () => {
@@ -33,6 +39,7 @@ describe('C01Home & C05Mine', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Phản ánh' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Thông báo/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Cộng đồng' })).toHaveAttribute('aria-selected', 'true');
 
     // Phân trang 10 hàng trên mỗi trang (mặc định 1 cột trên mobile = 10 phản ánh/trang)
@@ -85,6 +92,99 @@ describe('C01Home & C05Mine', () => {
 
     expect(lookupReportByCode(initial.reports, firstReport.id, firstReport.secretCode)?.id).toBe(
       firstReport.id
+    );
+  });
+
+  it('C05Mine bấm Đăng xuất ghi ngay vào localStorage (không chờ debounce) và sau khi tải lại vẫn chưa đăng nhập', () => {
+    vi.useFakeTimers();
+
+    const loggedInState = {
+      ...getInitialState(),
+      settings: {
+        ...getInitialState().settings,
+        phone: '0909000068',
+      },
+    };
+    saveState(loggedInState, 'left');
+    localStorage.setItem('tb_citizen_token', 'mock-citizen-jwt');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <AppStoreProvider>
+          <C05Mine />
+        </AppStoreProvider>
+      </MemoryRouter>
+    );
+
+    const logoutBtn = screen.getByRole('button', { name: 'Đăng xuất' });
+    fireEvent.click(logoutBtn);
+
+    // Tải lại ngay lập tức (chưa kịp chạy timer debounce 100ms)
+    expect(localStorage.getItem('tb_citizen_token')).toBeNull();
+    expect(loadPersistedState('left').settings.phone).toBeUndefined();
+
+    unmount();
+
+    // Giả lập mở lại trang từ localStorage
+    render(
+      <MemoryRouter>
+        <AppStoreProvider>
+          <C05Mine />
+        </AppStoreProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('button', { name: 'Đăng nhập' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Đăng xuất' })).not.toBeInTheDocument();
+  });
+
+  it('C05Mine hỗ trợ tra cứu nhanh theo mã TB-xxxx và báo lỗi khi mã không tồn tại', () => {
+    render(
+      <MemoryRouter>
+        <AppStoreProvider>
+          <C05Mine />
+        </AppStoreProvider>
+      </MemoryRouter>
+    );
+
+    const input = screen.getByLabelText('Mã phản ánh cần tra cứu');
+    const submitBtn = screen.getByRole('button', { name: 'Tra cứu' });
+
+    fireEvent.change(input, { target: { value: 'TB-9999' } });
+    fireEvent.click(submitBtn);
+    expect(screen.getByRole('alert')).toHaveTextContent('Không tìm thấy phản ánh mã TB-9999');
+  });
+
+  it('C05Mine lưu trạng thái nút Thông báo đẩy vào localStorage sau khi tải lại', () => {
+    localStorage.removeItem('tbkn:push-enabled:citizen');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <AppStoreProvider>
+          <C05Mine />
+        </AppStoreProvider>
+      </MemoryRouter>
+    );
+
+    const switchBtn = screen.getByRole('switch', { name: 'Bật tắt thông báo đẩy' });
+    expect(switchBtn).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(switchBtn);
+    expect(switchBtn).toHaveAttribute('aria-checked', 'false');
+    expect(localStorage.getItem('tbkn:push-enabled:citizen')).toBe('0');
+
+    unmount();
+
+    render(
+      <MemoryRouter>
+        <AppStoreProvider>
+          <C05Mine />
+        </AppStoreProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('switch', { name: 'Bật tắt thông báo đẩy' })).toHaveAttribute(
+      'aria-checked',
+      'false'
     );
   });
 });

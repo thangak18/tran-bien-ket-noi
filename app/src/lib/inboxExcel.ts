@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { CATEGORY_CONFIGS, STATUS_CONFIGS } from '@/domain/constants';
 import { formatDate } from '@/domain/format';
 import { Category, Notification, Report } from '@/domain/types';
@@ -88,7 +87,8 @@ export function buildExcelRows(reports: Report[]) {
   }));
 }
 
-export function exportReportsToExcel(reports: Report[], dateTag: string): void {
+export async function exportReportsToExcel(reports: Report[], dateTag: string): Promise<void> {
+  const XLSX = await import('xlsx');
   const rows = buildExcelRows(reports);
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -124,6 +124,7 @@ export interface ExcelOnBehalfRows {
  * ds.officerCreateOnBehalf nên chế độ API ghi vào DB thật, chế độ local ghi vào store.
  */
 export async function readOnBehalfRowsFromExcel(file: File): Promise<ExcelOnBehalfRows> {
+  const XLSX = await import('xlsx');
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: 'array' });
   const firstSheetName = workbook.SheetNames[0];

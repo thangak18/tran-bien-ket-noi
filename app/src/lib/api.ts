@@ -241,24 +241,31 @@ export async function uploadPhotoWithSign(file: Blob | File, filename?: string):
   }
 
   // 1. Ký URL
-  const signRes = await apiFetch<{ uploadUrl: string; storagePath: string; token: string }>(
-    '/uploads/sign',
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        filename: name,
-        mimeType,
-        sizeBytes,
-      }),
-    }
-  );
+  const signRes = await apiFetch<{
+    uploadUrl: string;
+    storagePath?: string;
+    path?: string;
+    token?: string;
+  }>('/uploads/sign', {
+    method: 'POST',
+    body: JSON.stringify({
+      filename: name,
+      contentType: mimeType,
+      mimeType,
+      sizeBytes,
+    }),
+  });
 
   // 2. PUT file lên URL ký
+  const uploadHeaders: Record<string, string> = {
+    'Content-Type': mimeType,
+  };
+  if (signRes.token) {
+    uploadHeaders['x-upsert'] = 'false';
+  }
   const uploadRes = await fetch(signRes.uploadUrl, {
     method: 'PUT',
-    headers: {
-      'Content-Type': mimeType,
-    },
+    headers: uploadHeaders,
     body: file,
   });
 
@@ -266,5 +273,5 @@ export async function uploadPhotoWithSign(file: Blob | File, filename?: string):
     throw new ApiError('UPLOAD_FAILED', 'Tải ảnh lên hệ thống lưu trữ thất bại', uploadRes.status);
   }
 
-  return signRes.storagePath;
+  return signRes.storagePath || signRes.path || '';
 }

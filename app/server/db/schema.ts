@@ -92,6 +92,7 @@ export const reports = pgTable(
     location: geographyPoint('location').notNull(),
     address: text('address').notNull(),
     locationNote: text('location_note'),
+    title: text('title'),
     description: text('description'),
     departmentId: text('department_id').references(() => departments.id),
     dueAt: timestamp('due_at', { withTimezone: true }),
@@ -281,6 +282,17 @@ export const appSettings = pgTable('app_settings', {
   key: text('key').primaryKey(),
   value: jsonb('value').notNull(),
 });
+
+export const idempotencyKeys = pgTable(
+  'idempotency_keys',
+  {
+    key: text('key').primaryKey(),
+    status: integer('status').notNull(),
+    body: jsonb('body').$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('idempotency_keys_created_at_idx').on(table.createdAt)]
+);
 
 export const adminAuditLog = pgTable(
   'admin_audit_log',

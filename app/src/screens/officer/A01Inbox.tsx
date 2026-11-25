@@ -219,16 +219,20 @@ export function A01Inbox() {
     dateTo,
   ]);
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (filteredAndSorted.length === 0) {
       setExcelToast({ type: 'error', message: 'Không có hồ sơ nào để xuất Excel.' });
       return;
     }
-    exportReportsToExcel(filteredAndSorted, now.slice(0, 10));
-    setExcelToast({
-      type: 'success',
-      message: `Đã xuất ${filteredAndSorted.length} hồ sơ ra file Excel.`,
-    });
+    try {
+      await exportReportsToExcel(filteredAndSorted, now.slice(0, 10));
+      setExcelToast({
+        type: 'success',
+        message: `Đã xuất ${filteredAndSorted.length} hồ sơ ra file Excel.`,
+      });
+    } catch {
+      setExcelToast({ type: 'error', message: 'Không thể xuất file Excel. Vui lòng thử lại.' });
+    }
   };
 
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {

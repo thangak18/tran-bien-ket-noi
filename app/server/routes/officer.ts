@@ -47,6 +47,7 @@ const patchReportSchema = z.object({
   category: z.enum(CATEGORIES).optional(),
   priority: z.enum(['cao', 'binh_thuong']).optional(),
   departmentId: z.string().trim().min(1).nullable().optional(),
+  department: z.string().trim().min(1).optional(),
   dueAt: z.string().datetime({ offset: true }).optional(),
   version: z.number().int().optional(),
 });
@@ -154,6 +155,7 @@ officerRoutes.get('/reports', async (c) => {
     lng: Number(r.lng),
     address: r.address,
     locationNote: r.location_note || undefined,
+    title: r.title || undefined,
     description: r.description || undefined,
     departmentId: r.department_id,
     departmentName: r.department_name,
@@ -596,6 +598,7 @@ officerRoutes.get('/reports/:code', async (c) => {
     lng: Number(report.lng),
     address: report.address,
     locationNote: report.location_note || undefined,
+    title: report.title || undefined,
     description: report.description || undefined,
     departmentId: report.department_id,
     departmentName: report.department_name,
@@ -654,12 +657,21 @@ officerRoutes.patch('/reports/:code', async (c) => {
     }
 
     const next = (report.version || 1) + 1;
+    const resolvedDepartmentId =
+      body.departmentId === null
+        ? null
+        : body.departmentId || body.department
+          ? await resolveDepartmentId(tx, {
+              departmentId: body.departmentId ?? undefined,
+              department: body.department,
+            })
+          : report.department_id;
     await tx`
       UPDATE reports
       SET
         category = ${body.category ?? report.category}::category,
         priority = ${body.priority ?? report.priority}::priority,
-        department_id = ${body.departmentId !== undefined ? body.departmentId : report.department_id},
+        department_id = ${resolvedDepartmentId},
         due_at = ${body.dueAt ? new Date(body.dueAt).toISOString() : report.due_at}::timestamptz,
         version = ${next}
       WHERE id = ${report.id};

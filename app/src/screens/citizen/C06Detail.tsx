@@ -38,7 +38,7 @@ import { isApiMode } from '@/lib/api';
 
 const FOLLOWED_STORAGE_KEY = 'tbkn:followed-reports';
 
-function getFollowedIds(): string[] {
+function getFollowedKeys(): string[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(FOLLOWED_STORAGE_KEY);
@@ -49,12 +49,23 @@ function getFollowedIds(): string[] {
   }
 }
 
-function saveFollowedId(reportId: string): void {
+function saveFollowedKey(phone: string, reportId: string): void {
   if (typeof window === 'undefined') return;
-  const list = getFollowedIds();
-  if (!list.includes(reportId)) {
-    window.localStorage.setItem(FOLLOWED_STORAGE_KEY, JSON.stringify([...list, reportId]));
+  const key = `${phone}:${reportId}`;
+  const list = getFollowedKeys();
+  if (!list.includes(key)) {
+    window.localStorage.setItem(FOLLOWED_STORAGE_KEY, JSON.stringify([...list, key]));
   }
+}
+
+function isFollowedByPhone(
+  phone: string | undefined,
+  reportId: string | undefined,
+  followers?: readonly string[]
+): boolean {
+  if (!phone || !reportId) return false;
+  if (followers?.includes(phone)) return true;
+  return getFollowedKeys().includes(`${phone}:${reportId}`);
 }
 
 // AC-C06-13: "Tôi cũng gặp" ẩn khi hồ sơ đã xử lý xong hoặc kết thúc.
@@ -175,18 +186,17 @@ export function C06Detail() {
   const [reopenMedia, setReopenMedia] = useState<string[]>([]);
   const [isRatingAuthOpen, setIsRatingAuthOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasFollowed, setHasFollowed] = useState<boolean>(() => {
-    if (!id) return false;
-    const inLocal = getFollowedIds().includes(id);
-    const inFollowers = Boolean(
-      state.settings.phone && rawReport?.followers.includes(state.settings.phone)
-    );
-    return inLocal || inFollowers;
-  });
+  const [hasFollowed, setHasFollowed] = useState<boolean>(() =>
+    isFollowedByPhone(state.settings.phone, id, rawReport?.followers)
+  );
   const [toast, setToast] = useState<{
     message: string;
     type: 'info' | 'success' | 'warning' | 'error';
   } | null>(null);
+
+  useEffect(() => {
+    setHasFollowed(isFollowedByPhone(state.settings.phone, id, rawReport?.followers));
+  }, [state.settings.phone, id, rawReport?.followers]);
 
   useEffect(() => {
     setActiveHeroIdx(0);
@@ -438,7 +448,7 @@ export function C06Detail() {
       onConflict: reloadReport,
     });
     if (!res) return;
-    saveFollowedId(rawReport.id);
+    saveFollowedKey(state.settings.phone, rawReport.id);
     setHasFollowed(true);
     if (res.alreadyFollowed) {
       setToast({ message: 'Bạn đã báo vấn đề này', type: 'info' });
