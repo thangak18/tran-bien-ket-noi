@@ -109,3 +109,63 @@ describe('C04-DRAFT-001 – Gửi thành công thì xoá bản nháp (AC-C04-14,
     expect(await screen.findByTestId('draft-photos')).toHaveTextContent('0');
   });
 });
+
+describe('C04-SUPP-001 – Bổ sung hồ sơ can_bo_sung gọi API bổ sung, không tạo hồ sơ mới (AC-C06-7)', () => {
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it('gửi ảnh + vị trí tới /citizen/reports/:code/supplement rồi về chi tiết hồ sơ', async () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'api');
+    localStorage.setItem('tb_citizen_token', 'citizen-jwt');
+    const target = reports.find((x) => x.status === 'can_bo_sung')!;
+    const calls: { url: string; method?: string; body?: string }[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      calls.push({ url, method: init?.method, body: init?.body as string | undefined });
+      const body = url.includes(`/public/reports/${target.id}`)
+        ? { ...target, code: target.id, status: 'moi' }
+        : url.endsWith('/supplement')
+          ? { success: true, newStatus: 'moi' }
+          : { items: [] };
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    const s = mk(target.category, target.lat, target.lng);
+    s.settings = { ...s.settings, phone: '0909000068' };
+    s.draft = { ...s.draft, supplementFor: target.id, photos: ['/demo-photos/rac_thai/2.jpg'] };
+    render(
+      <AppStoreProvider initialState={s}>
+        <MemoryRouter initialEntries={['/bao-su-co/xac-nhan']}>
+          <Routes>
+            <Route path="/bao-su-co/xac-nhan" element={<C04Confirm />} />
+            <Route path="/phan-anh/:id" element={<DraftProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </AppStoreProvider>
+    );
+    expect(screen.getAllByText(`Bổ sung cho hồ sơ #${target.id}`).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /Tiếp tục chọn vị trí/ }));
+    // Chính hồ sơ đang bổ sung không bị coi là "phản ánh tương tự".
+    expect(screen.queryByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận vị trí' }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Gửi bổ sung/ })[0]!);
+    expect(await screen.findByTestId('draft-photos')).toHaveTextContent('0');
+    const supplement = calls.find((c) =>
+      c.url.endsWith(`/citizen/reports/${target.id}/supplement`)
+    );
+    expect(supplement?.method).toBe('POST');
+    expect(JSON.parse(supplement!.body!)).toMatchObject({
+      photos: ['/demo-photos/rac_thai/2.jpg'],
+      lat: target.lat,
+      lng: target.lng,
+    });
+    expect(calls.some((c) => c.url.endsWith('/citizen/reports') && c.method === 'POST')).toBe(
+      false
+    );
+  });
+});

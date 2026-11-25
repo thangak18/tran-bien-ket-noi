@@ -445,7 +445,9 @@ export function C05Mine() {
 
             {loginRequired && (
               <div className="rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-3.5 py-2.5 text-center text-xs font-semibold text-[#0369A1] dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
-                Vui lòng đăng nhập để hoàn tất gửi phản ánh.
+                {redirectTarget?.startsWith('/bao-su-co')
+                  ? 'Vui lòng đăng nhập để hoàn tất gửi phản ánh.'
+                  : 'Vui lòng đăng nhập số điện thoại để tiếp tục.'}
               </div>
             )}
 

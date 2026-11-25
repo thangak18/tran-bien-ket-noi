@@ -10,6 +10,7 @@ import {
   CreateOnBehalfInput,
   CreateOnBehalfResult,
   FollowResult,
+  SupplementInput,
 } from './DataSource';
 import {
   AiSuggestionData,
@@ -187,6 +188,15 @@ export class LocalDataSource implements DataSource {
     return findReport(this.read(), reportId);
   }
 
+  async markNotificationsRead(): Promise<void> {
+    const state = this.read();
+    const phone = state.settings.phone;
+    if (!phone) return;
+    this.write({
+      ...state,
+      notifications: state.notifications.map((n) => (n.phone === phone ? { ...n, read: true } : n)),
+    });
+  }
   async getMyNotifications(): Promise<Notification[] | null> {
     const state = this.read();
     return state.settings.phone
@@ -222,8 +232,21 @@ export class LocalDataSource implements DataSource {
     return findReport(this.read(), reportId);
   }
 
-  async supplementReport(reportId: string, note: string, photos?: string[]): Promise<Report> {
-    this.write(supplementReport(this.read(), reportId, { note, photos: photos || [] }, this.now));
+  async supplementReport(
+    reportId: string,
+    note: string,
+    extra: SupplementInput = {}
+  ): Promise<Report> {
+    // Không kèm ảnh thì giữ ảnh cũ (mảng rỗng sẽ xoá hết ảnh của hồ sơ).
+    const photos = extra.photos && extra.photos.length > 0 ? extra.photos : undefined;
+    this.write(
+      supplementReport(
+        this.read(),
+        reportId,
+        { note, photos, lat: extra.lat, lng: extra.lng, address: extra.address },
+        this.now
+      )
+    );
     return findReport(this.read(), reportId);
   }
 

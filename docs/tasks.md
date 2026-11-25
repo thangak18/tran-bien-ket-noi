@@ -284,6 +284,9 @@ Nguồn: `spec.md` v3.0 (đặc biệt 3.4a, 3.4b, 7.7, AC-C04-14/15, AC-C06-13/
 | [x] (26/11) | F9-06 | Nút chuyển cổng `PortalSwitcherFab` hiện ở chế độ API, thêm cổng Quản trị; sai vai trò → `/khong-co-quyen?redirect=`, "Đổi tài khoản" quay về đúng cổng | F9-00 | AC-ROLE-1 | ROLE-001, E2E-DEMO-01 |
 | [x] (26/11) | F9-07 | E2E demo chuyển vai trò trên một trình duyệt: người dân gửi → cán bộ → TNV → quay lại người dân vẫn gửi được | F9-01 → F9-06 | 13.3a | E2E-DEMO-01 |
 | [x] (26/11) | F9-08 | Gửi thành công ở chế độ API → xoá bản nháp (lần báo sau bắt đầu lại từ C02); trả chú thích C08 về đúng AC-C08-4; e2e chọn ảnh qua khung chụp (V02, A03) và hộp đối chiếu trùng tự mở ở bước ② | F9-00 | AC-C04-14, AC-C08-4 | C04-DRAFT-001, E2E-DEMO-01 |
+| [x] (26/11) | F9-09 | "Bổ sung ngay" (AC-C06-7) gửi tới API bổ sung của đúng hồ sơ (ảnh, vị trí, ghi chú) thay vì tạo hồ sơ mới; không coi chính hồ sơ đó là "phản ánh tương tự"; chế độ local không xoá ảnh khi bổ sung không kèm ảnh | F9-00 | AC-C06-7, 12.5 | OWNER-006, C04-SUPP-001, E2E-CITIZEN-02 |
+| [x] (26/11) | F9-10 | C09 "Đánh dấu đã đọc" lưu ở máy chủ (`POST /citizen/me/notifications/read`), không hiện lại "chưa đọc" sau lần đồng bộ | F9-00 | AC-C09-1 | C09-READ-001, E2E-CITIZEN-02 |
+| [x] (26/11) | F9-11 | Giờ dưới mốc ProgressBar theo giờ Việt Nam; CI sinh `SEED_ADMIN_PASSWORD`; lời nhắc đăng nhập ở `/ho-so?login=1` đúng ngữ cảnh | F9-00 | 7.6, AC-SESSION-3 | CT-032, E2E-CITIZEN-02 |
 
 > Ghi chú phụ thuộc ngoài nhóm: phần AI của F8-11 dùng chung với G2-12b → G2-12d (cột `reports.ai_suggestion`, `suggestCategory`); nếu G2-12 chưa xong thì F8-11 chỉ giữ `aiSuggestion` trong bản nháp ở chế độ local.
 

@@ -155,4 +155,46 @@ describe('OWNER: chỉ chủ hồ sơ mới đánh giá / bổ sung (AUTHZ-009, 
     expect(ok.status).toBe(200);
     expect(ok.data.newStatus).toBe('moi');
   });
+
+  it('OWNER-006: chủ hồ sơ bổ sung ảnh và vị trí (AC-C06-7) -> ảnh trước và vị trí được thay; dữ liệu sai -> 400', async () => {
+    const report = await track('can_bo_sung', { phone: OWNER_PHONE });
+    const token = await createCitizenToken(OWNER_PHONE);
+    const auth = { Authorization: `Bearer ${token}` };
+    const bad = await post(
+      `/citizen/reports/${report.code}/supplement`,
+      { lat: 200, lng: 106.82 },
+      auth
+    );
+    expect(bad.status).toBe(400);
+
+    const ok = await post(
+      `/citizen/reports/${report.code}/supplement`,
+      {
+        note: 'Chụp lại gần hơn',
+        photos: ['/demo-photos/rac_thai/1.jpg', '/demo-photos/rac_thai/2.jpg'],
+        lat: 10.9512,
+        lng: 106.8231,
+        address: 'Đ. Cách Mạng Tháng Tám, P. Trấn Biên',
+      },
+      auth
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.data.newStatus).toBe('moi');
+    const photos = await sqlClient`
+      SELECT storage_path FROM report_photos
+      WHERE report_id = ${report.id}::uuid AND kind = 'before' ORDER BY sort;
+    `;
+    expect(photos.map((p) => p.storage_path)).toEqual([
+      '/demo-photos/rac_thai/1.jpg',
+      '/demo-photos/rac_thai/2.jpg',
+    ]);
+    const [row] = await sqlClient`
+      SELECT status, address, ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng
+      FROM reports WHERE id = ${report.id}::uuid;
+    `;
+    expect(row?.status).toBe('moi');
+    expect(row?.address).toBe('Đ. Cách Mạng Tháng Tám, P. Trấn Biên');
+    expect(Number(row?.lat)).toBeCloseTo(10.9512, 4);
+    expect(Number(row?.lng)).toBeCloseTo(106.8231, 4);
+  });
 });

@@ -394,6 +394,8 @@ export function C06Detail() {
     setToast({ message: 'Phường đã nhận ý kiến và sẽ kiểm tra lại.', type: 'info' });
   };
   const handleSupplement = () => {
+    // Bỏ bản nháp đang dở (nếu có) để không trộn với dữ liệu của hồ sơ cần bổ sung.
+    dispatch({ type: 'CLEAR_DRAFT' });
     dispatch({
       type: 'SET_DRAFT',
       payload: {
@@ -405,9 +407,13 @@ export function C06Detail() {
         category: rawReport.category,
         title: rawReport.title,
         description: rawReport.description,
+        // Bản nháp nhớ hồ sơ đang bổ sung, kể cả khi đi qua bước đăng nhập (AC-C06-7).
+        supplementFor: rawReport.id,
+        aiSuggestion: undefined,
+        aiPhotoKey: undefined,
       },
     });
-    navigate('/bao-su-co/anh', { state: { supplementReportId: rawReport.id } });
+    navigate('/bao-su-co/anh');
   };
 
   const handleSubscribe = async (phone: string) => {

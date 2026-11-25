@@ -197,4 +197,6 @@ export interface ReportDraft {
   aiSuggestion?: AiSuggestionData;
   /** Khoá nhận diện ảnh đã gửi cho AI (độ dài + 64 ký tự đầu), đổi ảnh thì gọi lại AI. */
   aiPhotoKey?: string;
+  /** Mã hồ sơ `can_bo_sung` đang được bổ sung (AC-C06-7): bước gửi gọi API bổ sung, không tạo hồ sơ mới. */
+  supplementFor?: string;
 }

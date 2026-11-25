@@ -627,4 +627,8 @@ Giữ nguyên `DV-001 → DV-016` và `DB-007 → DB-016`: 64 hồ sơ (18/15/21
 | ROLE-001 | `tests/component/spec-v3-fr08.test.tsx` | Render App ở chế độ API | Có nút "Chuyển cổng nghiệp vụ" với 4 cổng |
 | E2E-DEMO-01 | `tests/e2e-api/demo-role-switch.spec.ts` | Một trình duyệt: người dân đăng nhập OTP và gửi → đăng nhập cán bộ → TNV → quay lại người dân gửi tiếp | Lần gửi thứ hai 201, không phải đăng nhập lại; cán bộ/TNV vào đúng cổng |
 | C04-DRAFT-001 | `tests/component/c04-dup.test.tsx` | Chế độ API, đã đăng nhập, gửi phản ánh thành công | Về trang chủ, bản nháp không còn ảnh |
+| C04-SUPP-001 | `tests/component/c04-dup.test.tsx` | Chế độ API, bản nháp có `supplementFor`, bấm "Gửi bổ sung" | Gọi `POST /citizen/reports/:code/supplement` kèm ảnh và vị trí; không gọi `POST /citizen/reports`; không mở hộp đối chiếu trùng với chính hồ sơ đó |
+| OWNER-006 | `tests/api/citizen-owner.test.ts` | Chủ hồ sơ `can_bo_sung` gửi bổ sung kèm ảnh và vị trí; lần khác gửi toạ độ sai | 200, `moi`, ảnh trước và vị trí được thay; toạ độ sai → 400 |
+| C09-READ-001 | `tests/component/c09-notifications.test.tsx` | Chế độ API, bấm "Đánh dấu đã đọc" | Gọi `POST /citizen/me/notifications/read` bằng token người dân |
+| E2E-CITIZEN-02 | `tests/e2e-api/citizen-owner-flows.spec.ts` | Chủ hồ sơ bổ sung TB-0063 và đánh giá 5 sao TB-0007, mở C09; người khác "Tôi cũng gặp" TB-0008; token người dân hỏng | TB-0063 `moi` và tổng số hồ sơ không đổi; TB-0007 `dong`; follow 200; token hỏng → `/ho-so?login=1&redirect=/phan-anh/TB-0024` và quay lại sau khi đăng nhập |
 

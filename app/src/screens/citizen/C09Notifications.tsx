@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
+import { apiDataSource, isApiMode } from '@/data';
 import { formatDateTime } from '@/domain/format';
 import { Button } from '@/components/ui';
 
@@ -38,11 +39,20 @@ export function C09Notifications() {
     [filter, myNotifications]
   );
 
-  const handleOpenReport = (reportId: string) => {
+  // Đánh dấu đã đọc ngay trên màn hình, rồi lưu ở máy chủ để lần đồng bộ sau không hiện lại "chưa đọc".
+  const markAllRead = () => {
     dispatch({
       type: 'MARK_NOTIFICATIONS_READ',
       payload: { phone: state.settings.phone },
     });
+    if (isApiMode()) {
+      apiDataSource.markNotificationsRead().catch((err) => {
+        console.error('Không lưu được trạng thái đã đọc:', err);
+      });
+    }
+  };
+  const handleOpenReport = (reportId: string) => {
+    markAllRead();
     navigate(`/phan-anh/${reportId}`);
   };
 
@@ -80,12 +90,7 @@ export function C09Notifications() {
           {isLoggedIn && unreadCount > 0 && (
             <button
               type="button"
-              onClick={() =>
-                dispatch({
-                  type: 'MARK_NOTIFICATIONS_READ',
-                  payload: { phone: state.settings.phone },
-                })
-              }
+              onClick={markAllRead}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#E6F3FD] px-3 py-2 text-xs font-extrabold text-[#0084E8] transition hover:bg-[#BAE6FD]/60 dark:bg-sky-950/60 dark:text-[#38BDF8]"
             >
               <CheckCheck className="h-4 w-4" aria-hidden="true" />

@@ -523,6 +523,28 @@ citizenRoutes.post('/reports/:id/supplement', optionalCitizenAuth, async (c) => 
   if (!creds.citizenPhone && !creds.reportKey) {
     requireCitizenLogin(undefined, 'Vui lòng đăng nhập số điện thoại của người gửi phản ánh');
   }
+  // AC-C06-7: bổ sung có thể kèm ảnh mới (thay bộ ảnh trước) và/hoặc vị trí mới, cùng giới hạn như lúc gửi.
+  const photos: string[] | null = Array.isArray(body.photos)
+    ? body.photos
+        .filter((p: unknown): p is string => typeof p === 'string' && p.trim() !== '')
+        .map((p: string) => p.trim())
+        .slice(0, 5)
+    : null;
+  const hasLocation = body.lat !== undefined || body.lng !== undefined;
+  const lat = parseFloat(body.lat);
+  const lng = parseFloat(body.lng);
+  if (
+    hasLocation &&
+    (isNaN(lat) || isNaN(lng) || lat < 10.9 || lat > 11.0 || lng < 106.7 || lng > 106.9)
+  ) {
+    throw new AppError('INVALID_LOCATION', 'Tọa độ vị trí ngoài phạm vi phường Trấn Biên', 400);
+  }
+  const address =
+    typeof body.address === 'string' && body.address.trim() ? body.address.trim() : null;
+  const locationNote =
+    typeof body.locationNote === 'string' && body.locationNote.trim()
+      ? body.locationNote.trim()
+      : null;
 
   const result = await sqlClient.begin(async (tx) => {
     const [report] = await tx`
@@ -539,6 +561,26 @@ citizenRoutes.post('/reports/:id/supplement', optionalCitizenAuth, async (c) => 
       ))
     ) {
       throw new AppError('FORBIDDEN', 'Chỉ người gửi phản ánh mới được bổ sung thông tin', 403);
+    }
+    // Sai trạng thái thì executeTransition ném lỗi và giao dịch huỷ cả phần ảnh/vị trí bên dưới.
+    if (photos && photos.length > 0) {
+      await tx`DELETE FROM report_photos WHERE report_id = ${report.id} AND kind = 'before';`;
+      let sort = 0;
+      for (const p of photos) {
+        await tx`
+          INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
+          VALUES (${report.id}, 'before', ${p}, ${sort++}, 'upload');
+        `;
+      }
+    }
+    if (hasLocation) {
+      await tx`
+        UPDATE reports SET
+          location = ST_GeographyFromText(${`POINT(${lng} ${lat})`}),
+          address = COALESCE(${address}, address),
+          location_note = COALESCE(${locationNote}, location_note)
+        WHERE id = ${report.id};
+      `;
     }
     return executeTransition(
       {
