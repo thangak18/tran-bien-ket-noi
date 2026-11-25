@@ -211,7 +211,16 @@ export async function runSeed(connectionString: string = databaseUrl(), options:
           ${r.anonymousFollows || 0}, ${mergedIntoUuid}, true, true, 1
         )
         ON CONFLICT (code) DO UPDATE SET
+          category = EXCLUDED.category,
           status = EXCLUDED.status,
+          status_before_merge = EXCLUDED.status_before_merge,
+          priority = EXCLUDED.priority,
+          location = EXCLUDED.location,
+          address = EXCLUDED.address,
+          location_note = EXCLUDED.location_note,
+          description = EXCLUDED.description,
+          department_id = EXCLUDED.department_id,
+          created_at = EXCLUDED.created_at,
           due_at = EXCLUDED.due_at,
           completed_at = EXCLUDED.completed_at,
           photos_approved = true,
@@ -389,5 +398,9 @@ export async function runSeed(connectionString: string = databaseUrl(), options:
 
 // Nếu gọi trực tiếp từ CLI
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  runSeed().catch(() => process.exit(1));
+  const isClean = process.argv.includes('--clean') || process.argv.includes('-c');
+  runSeed(databaseUrl(), { clean: isClean }).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }

@@ -18,6 +18,7 @@
     "config:set-sla": "tsx scripts/staff.ts set-sla",
     "demo:reset": "tsx scripts/ops.ts reset",
     "demo:clock": "tsx scripts/ops.ts clock",
+    "ai:try": "tsx scripts/ai-try.ts",
     "test": "vitest run --no-file-parallelism",
     "test:e2e": "playwright test",
     "test:e2e:api": "playwright test -c playwright.api.config.ts",

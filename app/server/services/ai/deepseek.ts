@@ -19,8 +19,17 @@ QUY TẮC BẮT BUỘC:
   "reason": "<lý do ngắn gọn bằng tiếng Việt, tối đa 80 ký tự>"
 }`;
 
+export interface DeepSeekSuggesterOptions {
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
+  timeoutMs?: number;
+}
+
 export class DeepSeekSuggester implements CategorySuggester {
   readonly provider = 'deepseek' as const;
+
+  constructor(private options?: DeepSeekSuggesterOptions) {}
 
   async suggest(image: ImageInput): Promise<SuggestionResult> {
     let dataUrl = image.dataUrl;
@@ -38,7 +47,7 @@ export class DeepSeekSuggester implements CategorySuggester {
       };
     }
 
-    const apiKey = env.DEEPSEEK_API_KEY;
+    const apiKey = this.options?.apiKey || env.DEEPSEEK_API_KEY;
     if (!apiKey) {
       return {
         category: null,
@@ -48,12 +57,16 @@ export class DeepSeekSuggester implements CategorySuggester {
       };
     }
 
+    const baseUrl = this.options?.baseUrl || env.DEEPSEEK_BASE_URL;
+    const model = this.options?.model || env.DEEPSEEK_MODEL;
+    const timeoutMs = this.options?.timeoutMs || env.AI_TIMEOUT_MS;
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), env.AI_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     const startTime = Date.now();
 
     try {
-      const endpoint = `${env.DEEPSEEK_BASE_URL.replace(/\/+$/, '')}/chat/completions`;
+      const endpoint = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -61,7 +74,7 @@ export class DeepSeekSuggester implements CategorySuggester {
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: env.DEEPSEEK_MODEL,
+          model,
           messages: [
             {
               role: 'system',

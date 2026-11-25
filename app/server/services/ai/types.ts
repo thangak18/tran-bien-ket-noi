@@ -9,6 +9,7 @@ export interface SuggestionResult {
 
 export interface ImageInput {
   dataUrl?: string;
+  path?: string;
   buffer?: Uint8Array;
   mimeType?: string;
 }

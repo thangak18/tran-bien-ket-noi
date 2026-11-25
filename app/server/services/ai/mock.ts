@@ -4,7 +4,7 @@ export class MockSuggester implements CategorySuggester {
   readonly provider = 'mock' as const;
 
   async suggest(image: ImageInput): Promise<SuggestionResult> {
-    const url = image.dataUrl || '';
+    const url = (image.dataUrl || '') + ' ' + (image.path || '');
 
     if (url.includes('den_duong')) {
       return {
