@@ -750,13 +750,14 @@ Mọi hàm nhận `now` như giai đoạn 1. Server lấy `now` từ `Clock`: `r
 
 ### 13.1. Vai trò
 
-Giữ **3 nhóm người dùng** như bảng 2. Hai vai trò nhân viên (`can_bo`, `tnv`) có tài khoản thật; người dân không có tài khoản.
+Hệ thống có ba nhóm người dùng nghiệp vụ (người dân, cán bộ, TNV) và vai trò vận hành thứ tư là Quản trị viên. Người dân không có tài khoản nhân viên.
 
 | Vai trò | Xác định bằng | Thiết bị | Cấp bởi |
 |---|---|---|---|
 | ND | SĐT đã xác thực OTP **hoặc** khoá chủ hồ sơ (13.4) **hoặc** không gì (chỉ xem công khai) | Mobile | Tự do |
-| CB | Tài khoản Supabase Auth + `staff_profiles.role='can_bo'` | Desktop | Script `staff:create` |
-| TNV | như trên, `role='tnv'` | Mobile | Script `staff:create` |
+| CB | Tài khoản Supabase Auth + `staff_profiles.role='can_bo'` | Desktop | Quản trị viên hoặc script |
+| TNV | Tài khoản Supabase Auth + `staff_profiles.role='tnv'` | Mobile | Quản trị viên hoặc script |
+| Admin | Tài khoản Supabase Auth + `staff_profiles.role='admin'` | Desktop | Seed / quản trị viên hiện hữu |
 
 ### 13.2. Đăng nhập nhân viên
 
@@ -787,18 +788,20 @@ Giữ nguyên trải nghiệm 3.4a (mã 4 số, link `?k=`, QR) nhưng chống d
 
 Ký hiệu: ✓ được · ✗ không · own = chỉ hồ sơ của mình (13.4) · assigned = chỉ nhiệm vụ giao cho mình hoặc mở.
 
-| Hành động | Công khai | ND (SĐT/ẩn danh) | TNV | CB |
-|---|:--:|:--:|:--:|:--:|
-| Xem hồ sơ công khai, bản đồ, KPI | ✓ | ✓ | ✓ | ✓ |
-| Gửi phản ánh (SĐT hoặc ẩn danh) | ✗ | ✓ | ✗ | ✗ |
-| Xem chi tiết đầy đủ + mã bí mật | ✗ | own | ✗ | ✗ |
-| Đánh giá / báo chưa giải quyết / bổ sung / đăng ký nhận tin | ✗ | own | ✗ | ✗ |
-| "Tôi cũng gặp" | ✗ | ✓ | ✗ | ✗ |
-| Xem hộp tiếp nhận + panel (SĐT che) | ✗ | ✗ | ✗ | ✓ |
-| Tiếp nhận, giao, hoàn thành, ngoại lệ, gộp/tách, gửi hộ | ✗ | ✗ | ✗ | ✓ |
-| Xem SĐT **đầy đủ** của người dân | ✗ | chính mình | ✗ | ✗ |
-| Xem nhiệm vụ, nhận nhiệm vụ, gửi kết quả xác minh | ✗ | ✗ | assigned | ✗ |
-| Đóng hồ sơ | ✗ | ✗ | ✗ | ✓ |
+| Hành động | Công khai | ND (SĐT/ẩn danh) | TNV | CB | Admin |
+|---|:--:|:--:|:--:|:--:|:--:|
+| Xem hồ sơ công khai, bản đồ, KPI | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Gửi phản ánh (SĐT hoặc ẩn danh) | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Xem chi tiết đầy đủ + mã bí mật | ✗ | own | ✗ | ✗ | ✗ |
+| Đánh giá / báo chưa giải quyết / bổ sung / đăng ký nhận tin | ✗ | own | ✗ | ✗ | ✗ |
+| "Tôi cũng gặp" | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Xem hộp tiếp nhận + panel (SĐT che) | ✗ | ✗ | ✗ | ✓ | ✗ |
+| Tiếp nhận, giao, hoàn thành, ngoại lệ, gộp/tách, gửi hộ | ✗ | ✗ | ✗ | ✓ | ✗ |
+| Xem SĐT **đầy đủ** của người dân | ✗ | chính mình | ✗ | ✗ | ✗ |
+| Xem nhiệm vụ, nhận nhiệm vụ, gửi kết quả xác minh | ✗ | ✗ | assigned | ✗ | ✗ |
+| Đóng hồ sơ | ✗ | ✗ | ✗ | ✓ | ✗ |
+| Quản lý tài khoản, bộ phận, cấu hình xử lý | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Xem thống kê quản trị và nhật ký quản trị | ✗ | ✗ | ✗ | ✗ | ✓ |
 
 Quyền xem SĐT đầy đủ của người dân: **không vai trò nhân viên nào có**. Khi cần gọi lại người dân (ngoài phạm vi), thêm sau bằng tính năng có nhật ký truy cập riêng.
 
@@ -824,24 +827,48 @@ Quyền xem SĐT đầy đủ của người dân: **không vai trò nhân viên
 
 ---
 
-## 14. Quản lý tài khoản và cấu hình bằng script
+## 14. Trang quản trị
 
-**Không có trang quản trị và không có vai trò quản trị** (chủ dự án quyết 25/11/2026). Vẫn chỉ 3 nhóm người dùng: người dân, cán bộ, TNV. Việc vận hành do nhà phát triển chạy script trên máy mình (cần `SUPABASE_SERVICE_ROLE_KEY` và `DATABASE_URL_DIRECT`), không có endpoint hay màn hình tương ứng.
+Trang `/quan-tri/*` dành riêng cho `admin`, được bảo vệ ở cả SPA và API. Admin quản lý tài khoản nhân viên, bộ phận, cấu hình SLA; xem thống kê và nhật ký quản trị. Admin **không** xem SĐT đầy đủ, không truy cập API nghiệp vụ `/officer/*` hoặc `/volunteer/*`, và không tiếp nhận/giao/đóng hồ sơ.
 
-| Script | Việc |
+### 14.1. Chức năng
+
+| Trang | Nội dung |
 |---|---|
-| `npm run staff:create -- --email … --name … --role can_bo\|tnv [--department …]` | Tạo tài khoản Supabase Auth + `staff_profiles`; in mật khẩu tạm **một lần** (hoặc nhận từ `--password`) |
-| `npm run staff:disable -- --email …` / `staff:enable` | Khoá/mở khoá (`is_active`); khoá có hiệu lực ở request kế tiếp (AC-AUTH-2) |
-| `npm run staff:reset-password -- --email …` | Cấp mật khẩu tạm mới |
-| `npm run staff:list` | Liệt kê tài khoản, vai trò, trạng thái |
-| `npm run config:set-sla -- --category den_duong --days 3 [--department …]` | Đổi hạn/bộ phận gợi ý (`category_settings`); chỉ áp dụng hồ sơ tiếp nhận sau đó |
-| `npm run demo:reset` / `demo:clock -- --mode fixed\|real [--at …]` | Đặt lại dữ liệu demo / đồng hồ; **từ chối chạy khi `DEMO_MODE` không bật** |
+| `/quan-tri` | Tổng hồ sơ, đã xử lý, trung bình ngày xử lý, quá hạn; phân bổ theo loại/bộ phận; số tài khoản theo vai trò. Mọi KPI truy vấn từ DB. |
+| `/quan-tri/tai-khoan` | Tìm/lọc tài khoản theo tên, email, vai trò, trạng thái; tạo, sửa tên/vai trò/bộ phận, khoá/mở khoá, cấp lại mật khẩu. Mật khẩu tạm chỉ trả một lần. |
+| `/quan-tri/bo-phan` | Xem, thêm, đổi tên, sắp xếp và bật/tắt bộ phận. Bộ phận đã có hồ sơ tham chiếu chỉ được ngừng hoạt động, không xoá. |
+| `/quan-tri/cau-hinh` | SLA 1–30 ngày và bộ phận mặc định cho từng loại; thay đổi chỉ áp dụng cho hồ sơ được tiếp nhận sau đó. |
+| `/quan-tri/nhat-ky` | Nhật ký thao tác quản trị, lọc người/hành động, phân trang. |
 
-- Tài khoản mẫu (CB Nguyễn Văn Minh, 3 TNV) do `db:seed` tạo (16.3).
-- Bộ phận đổi tên/thêm: sửa `departments` bằng migration hoặc seed; không xoá nếu đã có hồ sơ tham chiếu.
-- Việc quản lý tài khoản được Supabase Auth ghi log; không có bảng nhật ký riêng. Mọi thao tác của cán bộ/TNV trên hồ sơ đã có trong `report_timeline` (actor là `actor_staff_id`).
+### 14.2. Bảo vệ và toàn vẹn
 
-AC-OPS-1: `staff:create` trùng email báo lỗi bằng lời, không để lại bản ghi dở dang (Auth và `staff_profiles` cùng thành công hoặc cùng huỷ). · AC-OPS-2: Không script nào in khoá service hay DB URL. · AC-OPS-3: Không thể khoá tài khoản khiến hệ thống còn 0 cán bộ hoạt động (script cảnh báo, cần `--force`). · AC-OPS-4: Các script demo (`demo:reset`, `demo:clock`) từ chối thực thi khi biến môi trường `DEMO_MODE` không phải là `true`.
+- Mọi endpoint `/admin/*` yêu cầu token nhân viên có `staff_profiles.role='admin'`; vai trò luôn đọc từ DB. Không token → 401, sai vai trò → 403. Gọi `/officer/*` hoặc `/volunteer/*` bằng Admin → 403.
+- Không thể tự khoá hoặc tự hạ quyền admin hiện tại; luôn còn ít nhất một admin hoạt động. Không thể khoá/hạ quyền cán bộ cuối cùng đang hoạt động (AC-OPS-3) → 409.
+- Tạo Supabase Auth user và `staff_profiles` là một thao tác nguyên tử theo nghĩa thành công/cùng hoàn tác; không để tài khoản dở dang khi lỗi. Mọi thao tác ghi cấu hình/tài khoản và bộ phận ghi `admin_audit_log` trong cùng transaction với người thực hiện, mục tiêu và chi tiết đã loại dữ liệu nhạy cảm.
+- `admin_audit_log` bật RLS và không cấp policy cho `anon`/`authenticated`. Không ghi mật khẩu, token, service key, SĐT hoặc hash bí mật vào nhật ký/log.
+- Các endpoint quản trị không trả SĐT, `secretCode`, `ownerToken`, hash mật khẩu hoặc dữ liệu xác thực. Email tài khoản nhân viên chỉ hiển thị trong trang quản trị đã xác thực.
+
+### 14.3. API và CLI dùng chung
+
+API: `GET/POST /admin/staff`, `PATCH /admin/staff/:id`, `POST /admin/staff/:id/{disable|enable|reset-password}`, `GET/POST/PATCH /admin/departments`, `GET/PATCH /admin/category-settings`, `GET /admin/overview`, `GET /admin/audit-log`. Request được validate bằng Zod; lỗi trả thông báo tiếng Việt.
+
+CLI `scripts/staff.ts` tiếp tục được hỗ trợ và dùng chung service nghiệp vụ với API: liệt kê/tạo/khoá/mở khoá tài khoản, đặt lại mật khẩu và cập nhật SLA. Không nhận mật khẩu tùy chọn từ tham số dòng lệnh; mật khẩu tạm sinh ngẫu nhiên và chỉ hiển thị một lần. Seed tạo tài khoản “Quản trị viên Phường” idempotent, mật khẩu lấy từ `SEED_ADMIN_PASSWORD`.
+
+AC-OPS-1: Email trùng khi tạo nhân viên báo lỗi và không để lại Auth user/profile dở dang. · AC-OPS-2: Không script/API nào log service key, DB URL hay mật khẩu tạm. · AC-OPS-3: Không thể khoá/hạ quyền cán bộ cuối cùng đang hoạt động; API trả 409. · AC-OPS-4: Script demo (`demo:reset`, `demo:clock`) từ chối chạy khi `DEMO_MODE` không bật.
+
+### 14.4. Tiêu chí chấp nhận (AC-ADMIN-*)
+
+- AC-ADMIN-1: `/admin/*` không token → 401; token `can_bo`/`tnv` → 403; token admin đang hoạt động → truy cập được.
+- AC-ADMIN-2: Admin gọi bất kỳ endpoint `/officer/*` hoặc `/volunteer/*` → 403.
+- AC-ADMIN-3: Tạo email trùng không để lại Auth user/profile; mật khẩu tạm chỉ trả một lần và không xuất hiện trong log.
+- AC-ADMIN-4: Khoá/hạ quyền cán bộ cuối cùng đang hoạt động → 409; admin không thể tự khoá/tự hạ quyền và luôn còn admin hoạt động.
+- AC-ADMIN-5: Thao tác ghi thành công có audit log; nếu transaction lỗi thì cả thao tác và audit cùng rollback.
+- AC-ADMIN-6: Bộ phận được tham chiếu bởi hồ sơ không bị xoá; có thể đánh dấu không hoạt động.
+- AC-ADMIN-7: SLA ngoài 1–30 ngày hoặc bộ phận mặc định không hợp lệ → 422; thay đổi chỉ ảnh hưởng hồ sơ tiếp nhận sau đó.
+- AC-ADMIN-8: KPI tổng quan được tính từ DB và thống kê theo loại, bộ phận, vai trò; không có số KPI hard-code.
+- AC-ADMIN-9: Quét toàn bộ response `/admin/*` không tìm thấy SĐT (`0\d{9}`), `secretCode`, `ownerToken`, password hash hoặc service secret.
+- AC-ADMIN-10: Chế độ `VITE_DATA_SOURCE=local` hiển thị “Cần chế độ API” thay vì lỗi.
 
 ---
 

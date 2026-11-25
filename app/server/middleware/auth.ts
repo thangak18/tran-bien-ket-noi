@@ -14,9 +14,11 @@ export interface CitizenTokenPayload {
   role: 'citizen';
 }
 
+export type StaffRole = 'can_bo' | 'tnv' | 'admin';
+
 export interface StaffProfile {
   userId: string;
-  role: 'can_bo' | 'tnv';
+  role: StaffRole;
   displayName: string;
   departmentId: string | null;
   isActive: boolean;
@@ -38,7 +40,7 @@ export async function verifyCitizenToken(token: string): Promise<CitizenTokenPay
   return { phone: payload.phone, role: 'citizen' };
 }
 
-export async function createStaffToken(userId: string, role: 'can_bo' | 'tnv'): Promise<string> {
+export async function createStaffToken(userId: string, role: StaffRole): Promise<string> {
   return await new SignJWT({ sub: userId, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -108,7 +110,7 @@ export const optionalCitizenAuth = createMiddleware<AppEnv>(async (c, next) => {
 /**
  * Middleware bắt buộc xác thực Cán bộ / Tình nguyện viên
  */
-export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
+export function requireStaffAuth(allowedRoles?: StaffRole[]) {
   return createMiddleware<AppEnv>(async (c, next) => {
     const authHeader = c.req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {

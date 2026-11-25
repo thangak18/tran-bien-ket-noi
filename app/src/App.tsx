@@ -30,6 +30,14 @@ import { ForbiddenScreen } from './screens/auth/ForbiddenScreen';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthEvents } from './components/auth/AuthEvents';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
+import { AdminLayout } from './layouts/AdminLayout';
+import { AdminOverview } from './screens/admin/AdminOverview';
+import {
+  AdminAuditPage,
+  AdminCategorySettingsPage,
+  AdminDepartmentsPage,
+  AdminStaffPage,
+} from './screens/admin/AdminManagement';
 
 function SeniorSync() {
   const { state } = useAppStore();
@@ -220,6 +228,20 @@ export default function App() {
         />
         <Route path="/dang-nhap" element={<LoginScreen />} />
         <Route path="/khong-co-quyen" element={<ForbiddenScreen />} />
+        <Route
+          path="/quan-tri"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminOverview />} />
+          <Route path="tai-khoan" element={<AdminStaffPage />} />
+          <Route path="bo-phan" element={<AdminDepartmentsPage />} />
+          <Route path="cau-hinh" element={<AdminCategorySettingsPage />} />
+          <Route path="nhat-ky" element={<AdminAuditPage />} />
+        </Route>
         {import.meta.env.DEV && <Route path="/dev/ui" element={<DevUiGallery />} />}
       </Routes>
     </AppStoreProvider>

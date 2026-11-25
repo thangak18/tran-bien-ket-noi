@@ -215,8 +215,8 @@ Trình duyệt (SPA React, Vercel static)
    ▼
 Vercel Function  app/api/[...path].ts  (Hono, một điểm vào)
    │  ├─ middleware: CORS, request-id, xác thực, phân quyền, giới hạn tốc độ, zod
-   │  ├─ routes/: public · citizen · officer · volunteer · cron
-   │  ├─ services/: nghiệp vụ trong giao dịch (dùng chung src/domain/)
+   │  ├─ routes/: public · citizen · officer · volunteer · admin · cron
+   │  ├─ services/: nghiệp vụ trong giao dịch (dùng chung src/domain/), staffAdmin dùng chung API/CLI
    │  └─ providers/: OtpProvider, NotificationChannel (mock)  ← điểm cắm dịch vụ thật
    ▼
 Supabase
@@ -268,13 +268,13 @@ app/
 │   │   ├── migrations/           # SQL sinh bởi drizzle-kit + SQL tay (PostGIS, RLS, trigger, CHECK)
 │   │   └── seed.ts               # mock.json → DB
 │   ├── middleware/               # auth.ts, role.ts, rateLimit.ts, idempotency.ts, errors.ts
-│   ├── routes/                   # public.ts, citizen.ts, reports.ts, officer.ts, volunteer.ts, cron.ts
-│   ├── services/                 # reportService, transitionService, taskService, notifyService, ownerAccess, photoService
+│   ├── routes/                   # public.ts, citizen.ts, officer.ts, volunteer.ts, admin.ts, cron.ts
+│   ├── services/                 # reportService, transitionService, taskService, notifyService, ownerAccess, photoService, staffAdmin
 │   ├── providers/                # otp.ts, notification.ts (mock + interface)
 │   └── clock.ts
 ├── scripts/
 │   ├── db-verify.ts              # bất biến spec 16.3
-│   ├── staff.ts                  # staff:create/disable/enable/reset-password/list (spec 14)
+│   ├── staff.ts                  # CLI tương thích, gọi server/services/staffAdmin.ts (spec 14)
 │   └── ops.ts                    # config:set-sla, demo:reset, demo:clock
 ├── src/
 │   ├── data/                     # DataSource: types.ts, LocalDataSource.ts, ApiDataSource.ts, index.ts
@@ -304,6 +304,7 @@ Chỉ liệt kê **tên**; giá trị đặt ở `app/.env.local` (được `.gi
 | `CRON_SECRET` | server | Khóa bí mật xác thực Vercel Cron khi gọi `/api/v1/cron/*` |
 | `VITE_DATA_SOURCE` | client | `local` (mặc định offline) \| `api` (kết nối backend Supabase) |
 | `SEED_STAFF_PASSWORD` | máy chạy seed | Mật khẩu tài khoản nhân viên mẫu khi chạy `db:seed`, không ghi vào repo |
+| `SEED_ADMIN_PASSWORD` | máy chạy seed | Mật khẩu tài khoản quản trị viên mẫu khi chạy `db:seed`, không ghi vào repo |
 
 ## 14. Môi trường và triển khai
 
@@ -338,6 +339,7 @@ Chỉ liệt kê **tên**; giá trị đặt ở `app/.env.local` (được `.gi
 | Q5 – Tài khoản & vận hành | G2-10 | Script `staff:*`, `config:set-sla`, `demo:*` + màn `/dang-nhap` | 3h | AC-OPS-1 → 3 pass |
 | Q6 – Frontend | G2-07 | `DataSource`, `ApiDataSource`, async UI, map lỗi, tách demo | 14h | AC-DATA-1, 2: E2E-01/03/05/07 chạy cả hai chế độ |
 | Q7 – Vận hành | G2-11 | Env, 4 môi trường, cron, CI (Postgres service), hướng dẫn vận hành, kiểm thử bảo mật cuối (quét SĐT/mã) | 5h | Deploy production; checklist mục 17 |
+| Q8 – Quản trị | G2-11c–g | Migration cộng thêm, quyền admin, staffAdmin dùng chung CLI/API, API quản trị + audit log, dashboard và 5 màn hình quản trị responsive | 12h | AC-ADMIN-1 → 10; kiểm thử API/UI và ảnh review |
 | Sau – tuỳ chọn | G2-08, G2-09 | OTP/SMS thật, AI thật (**chờ chủ dự án quyết**); sửa 17 test cũ | – | – |
 | **Tổng** | | | **≈ 54h** | |
 
@@ -372,6 +374,7 @@ CI (GitHub Actions qua `.github/workflows/ci.yml`):
 
 - [ ] `db:verify` pass trên production sau seed.
 - [ ] Quét tự động `/public/*`, `/volunteer/*`: không SĐT/mã bí mật (AC-AUTH-6).
+- [ ] Quét tự động `/admin/*`: không SĐT, `secretCode`, `ownerToken`, hash mật khẩu hoặc service secret (AC-ADMIN-9).
 - [ ] RLS bật ở **mọi** bảng; thử đọc bằng khoá `anon` trả 0 dòng/403.
 - [ ] Bucket `report-photos` không công khai; thử mở URL không ký → 4xx.
 - [ ] Không có `SUPABASE_SERVICE_ROLE_KEY` trong bundle client (`grep` thư mục `dist`).

@@ -146,6 +146,29 @@ export async function runSeed(connectionString: string = databaseUrl(), options:
       `;
     }
 
+    const adminId = '55555555-5555-5555-5555-555555555555';
+    const adminEmail = 'admin@tranbien.gov.vn';
+    const adminPassword = requireEnv('SEED_ADMIN_PASSWORD');
+    const authAdminId = await ensureAuthUser({
+      id: adminId,
+      email: adminEmail,
+      password: adminPassword,
+    });
+    if (authAdminId !== adminId) {
+      throw new Error(
+        `User ${adminEmail} đã tồn tại trong Supabase Auth với id khác (${authAdminId}). Chạy "supabase db reset" rồi seed lại.`
+      );
+    }
+    await sql`
+      INSERT INTO staff_profiles (user_id, email, role, display_name, department_id, is_active)
+      VALUES (${adminId}, ${adminEmail}, 'admin', 'Quản trị viên Phường', NULL, true)
+      ON CONFLICT (user_id) DO UPDATE SET
+        email = ${adminEmail},
+        display_name = 'Quản trị viên Phường',
+        role = 'admin',
+        department_id = NULL;
+    `;
+
     // 4. Seed Reports from mock.json
     console.log('4. Đọc src/data/mock.json và nạp 64 hồ sơ...');
     const mockFile = path.resolve(__dirname, '../src/data/mock.json');

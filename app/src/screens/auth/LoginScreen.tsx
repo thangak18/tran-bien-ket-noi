@@ -4,6 +4,8 @@ import { ShieldCheck, Phone, Mail, Lock, ArrowRight, UserCheck, CheckCircle2 } f
 import { apiFetch, clearSession, notifySessionChanged } from '../../lib/api';
 import { setOfficerSession, setVolunteerSession } from '../../lib/portalSession';
 
+type StaffRole = 'can_bo' | 'tnv' | 'admin';
+
 export function LoginScreen() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ export function LoginScreen() {
   // Staff login state
   const [email, setEmail] = useState('cb.minh@tranbien.gov.vn');
   const [password, setPassword] = useState('');
-  const [staffRole, setStaffRole] = useState<'can_bo' | 'tnv'>('can_bo');
+  const [staffRole, setStaffRole] = useState<StaffRole>('can_bo');
 
   // Citizen login state
   const [phone, setPhone] = useState('0909000068');
@@ -36,7 +38,7 @@ export function LoginScreen() {
       try {
         const res = await apiFetch<{
           token: string;
-          user: { id: string; role: 'can_bo' | 'tnv'; displayName: string; email: string };
+          user: { id: string; role: StaffRole; displayName: string; email: string };
         }>('/auth/login', {
           method: 'POST',
           body: JSON.stringify({ email, password }),
@@ -56,7 +58,7 @@ export function LoginScreen() {
             unit: 'UBND P. Trấn Biên',
             phone: '',
           });
-        } else {
+        } else if (res.user.role === 'tnv') {
           setVolunteerSession({
             name: res.user.displayName,
             area: 'Đội TNV P. Trấn Biên',
@@ -69,7 +71,13 @@ export function LoginScreen() {
         if (redirectUrl) {
           navigate(redirectUrl);
         } else {
-          navigate(res.user.role === 'can_bo' ? '/can-bo' : '/tnv');
+          navigate(
+            res.user.role === 'admin'
+              ? '/quan-tri'
+              : res.user.role === 'can_bo'
+                ? '/can-bo'
+                : '/tnv'
+          );
         }
       } catch (err: unknown) {
         setLoading(false);
@@ -84,8 +92,13 @@ export function LoginScreen() {
     // Mock/Demo authentication for Staff in local mode
     setTimeout(() => {
       const isOfficer = staffRole === 'can_bo';
-      const token = isOfficer ? 'mock_can_bo' : 'mock_tnv';
-      const name = isOfficer ? 'Nguyễn Văn Minh (Cán bộ)' : 'Trần Thị Mai (TNV)';
+      const token = `mock_${staffRole}`;
+      const name =
+        staffRole === 'admin'
+          ? 'Quản trị viên Phường'
+          : isOfficer
+            ? 'Nguyễn Văn Minh (Cán bộ)'
+            : 'Trần Thị Mai (TNV)';
 
       localStorage.setItem('tbkn_auth_token', token);
       localStorage.setItem('tbkn_user_role', staffRole);
@@ -95,7 +108,7 @@ export function LoginScreen() {
       if (redirectUrl) {
         navigate(redirectUrl);
       } else {
-        navigate(isOfficer ? '/can-bo' : '/tnv');
+        navigate(staffRole === 'admin' ? '/quan-tri' : isOfficer ? '/can-bo' : '/tnv');
       }
     }, 400);
   };
@@ -211,7 +224,7 @@ export function LoginScreen() {
             }`}
           >
             <ShieldCheck className="h-4 w-4" />
-            Cán bộ / TNV
+            Cán bộ / TNV / Quản trị
           </button>
           <button
             type="button"
@@ -241,7 +254,7 @@ export function LoginScreen() {
           <form onSubmit={handleStaffLogin} className="space-y-4">
             <div>
               <label className="mb-1 block text-xs font-semibold text-gray-700">Vai trò</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -271,6 +284,21 @@ export function LoginScreen() {
                 >
                   <UserCheck className="h-4 w-4" />
                   Tình nguyện viên
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStaffRole('admin');
+                    setEmail('admin@tranbien.gov.vn');
+                  }}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-bold transition ${
+                    staffRole === 'admin'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Quản trị
                 </button>
               </div>
             </div>
