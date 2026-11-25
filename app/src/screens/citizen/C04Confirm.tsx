@@ -761,6 +761,8 @@ export function C04Confirm() {
     setOfflineError(false);
     setPendingMode(null);
     recordApiReport(res, verifiedPhone);
+    // Gửi thành công: xoá bản nháp để lần báo sau bắt đầu lại từ C02 (ảnh, loại, mô tả mới).
+    dispatch({ type: 'CLEAR_DRAFT' });
     navigate('/', {
       state: {
         submittedId: res.report.id,

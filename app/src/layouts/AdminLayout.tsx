@@ -8,7 +8,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { clearSession, isApiMode } from '../lib/api';
+import { clearStaffSession, isApiMode } from '../lib/api';
 
 const links = [
   { to: '/quan-tri', label: 'Tổng quan', icon: LayoutDashboard, end: true },
@@ -84,7 +84,7 @@ export function AdminLayout() {
             type="button"
             aria-label="Đăng xuất"
             onClick={() => {
-              clearSession();
+              clearStaffSession();
               navigate('/dang-nhap', { replace: true });
             }}
             className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-gray-600 hover:bg-gray-100"

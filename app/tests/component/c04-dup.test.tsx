@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { AppStoreProvider, AppState } from '@/store/AppStore';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { AppStoreProvider, AppState, useAppStore } from '@/store/AppStore';
 import { C04Confirm } from '@/screens/citizen/C04Confirm';
 import mockData from '@/data/mock.json';
 import { Report, Category } from '@/domain/types';
@@ -58,5 +58,54 @@ describe('Cảnh báo trùng trên màn Xác nhận gửi', () => {
     const t = reports.find((x) => x.id === 'TB-0009')!;
     renderAndConfirmLocation(mk(t.category, t.lat + 0.01, t.lng));
     expect(screen.queryByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' })).toBeNull();
+  });
+});
+
+function DraftProbe() {
+  const { state } = useAppStore();
+  return <p data-testid="draft-photos">{state.draft.photos.length}</p>;
+}
+
+describe('C04-DRAFT-001 – Gửi thành công thì xoá bản nháp (AC-C04-14, spec 13.3a)', () => {
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it('chế độ API, đã đăng nhập: gửi xong về trang chủ với bản nháp trống', async () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'api');
+    localStorage.setItem('tb_citizen_token', 'citizen-jwt');
+    const created = reports.find((x) => x.id === 'TB-0001')!;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      const body =
+        url.endsWith('/citizen/reports') && init?.method === 'POST'
+          ? { code: created.id }
+          : url.includes(`/public/reports/${created.id}`)
+            ? { ...created, code: created.id }
+            : { items: [] };
+      return new Response(JSON.stringify(body), {
+        status: init?.method === 'POST' ? 201 : 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    const t = reports.find((x) => x.id === 'TB-0009')!;
+    const s = mk(t.category, t.lat + 0.01, t.lng);
+    s.settings = { ...s.settings, phone: '0909000068' };
+    render(
+      <AppStoreProvider initialState={s}>
+        <MemoryRouter initialEntries={['/bao-su-co/xac-nhan']}>
+          <Routes>
+            <Route path="/bao-su-co/xac-nhan" element={<C04Confirm />} />
+            <Route path="/" element={<DraftProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </AppStoreProvider>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Tiếp tục chọn vị trí/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận vị trí' }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Gửi phản ánh/ })[0]!);
+    expect(await screen.findByTestId('draft-photos')).toHaveTextContent('0');
   });
 });

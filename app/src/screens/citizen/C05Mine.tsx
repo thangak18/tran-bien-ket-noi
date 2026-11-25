@@ -19,7 +19,7 @@ import {
   User,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { apiFetch, isApiMode, setCitizenToken } from '@/lib/api';
+import { apiFetch, clearCitizenSession, isApiMode, setCitizenToken } from '@/lib/api';
 import { filterMyReports } from '@/domain/access';
 import { useMyReports } from '@/data/useMyReports';
 import { computeKpi } from '@/domain/kpi';
@@ -89,6 +89,10 @@ export function C05Mine() {
   const [addressDraft, setAddressDraft] = useState(citizenAddress);
 
   const [otpOpen, setOtpOpen] = useState(() => loginRequired && !state.settings.phone);
+  // Phiên người dân hết hạn khi đang ở trang này (AC-SESSION-3): mở lại bước đăng nhập.
+  useEffect(() => {
+    if (loginRequired && !state.settings.phone) setOtpOpen(true);
+  }, [loginRequired, state.settings.phone]);
   const [otpStep, setOtpStep] = useState<'phone' | 'otp'>('phone');
   const [phoneInput, setPhoneInput] = useState(state.settings.phone ?? '');
   const [phoneError, setPhoneError] = useState('');
@@ -345,7 +349,8 @@ export function C05Mine() {
     dispatch({ type: 'SET_SETTINGS', payload: { phone: cleanPhone } });
     setOtpOpen(false);
     setToastMsg(`Đã đăng nhập số ${maskPhone(cleanPhone)}`);
-    if (redirectTarget && redirectTarget.startsWith('/')) {
+    // Chỉ quay về đường dẫn nội bộ (một dấu / ở đầu) để không bị chuyển ra trang ngoài.
+    if (redirectTarget && /^\/(?!\/)/.test(redirectTarget)) {
       navigate(redirectTarget, { replace: true });
     }
   };
@@ -378,7 +383,8 @@ export function C05Mine() {
   };
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') window.localStorage.removeItem('tb_citizen_token');
+    // Chỉ xoá phiên người dân; phiên cán bộ/TNV trên cùng thiết bị giữ nguyên (AC-SESSION-1).
+    if (isApiMode()) clearCitizenSession();
     dispatch({ type: 'SET_SETTINGS', payload: { phone: undefined } });
     setPhoneInput('');
     setToastMsg('Đã đăng xuất số điện thoại');

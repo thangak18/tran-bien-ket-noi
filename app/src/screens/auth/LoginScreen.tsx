@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Phone, Mail, Lock, ArrowRight, UserCheck, CheckCircle2 } from 'lucide-react';
-import { apiFetch, clearSession, notifySessionChanged } from '../../lib/api';
+import {
+  apiFetch,
+  clearCitizenSession,
+  clearStaffSession,
+  notifySessionChanged,
+  setCitizenToken,
+} from '../../lib/api';
 import { setOfficerSession, setVolunteerSession } from '../../lib/portalSession';
 
 type StaffRole = 'can_bo' | 'tnv' | 'admin';
@@ -44,8 +50,8 @@ export function LoginScreen() {
           body: JSON.stringify({ email, password }),
         });
 
-        // Phiên cũ (nếu có) bị thay thế hoàn toàn bởi phiên nhân viên mới.
-        clearSession();
+        // Phiên nhân viên cũ (nếu có) bị thay bằng phiên mới; phiên người dân giữ nguyên (AC-SESSION-1).
+        clearStaffSession();
         localStorage.setItem('tb_staff_token', res.token);
         localStorage.setItem('tbkn_auth_token', res.token);
         localStorage.setItem('tbkn_user_role', res.user.role);
@@ -158,12 +164,11 @@ export function LoginScreen() {
           method: 'POST',
           body: JSON.stringify({ phone, code: otp }),
         });
-        clearSession();
-        localStorage.setItem('tb_citizen_token', res.token);
-        localStorage.setItem('tbkn_auth_token', res.token);
-        localStorage.setItem('tbkn_user_role', 'citizen');
+        // Chỉ thay phiên người dân; phiên cán bộ/TNV trên cùng thiết bị giữ nguyên (AC-SESSION-1).
+        // Store đọc tbkn_user_phone khi phiên đổi để các màn người dân thấy SĐT đã đăng nhập.
+        clearCitizenSession();
         localStorage.setItem('tbkn_user_phone', phone);
-        notifySessionChanged();
+        setCitizenToken(res.token);
         setLoading(false);
         navigate(redirectUrl || '/cua-toi');
       } catch (err: unknown) {

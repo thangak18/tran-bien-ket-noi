@@ -492,7 +492,7 @@ export function C08Transparency({
         {/* Chú thích nguồn */}
         <footer className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 py-3 text-xs text-slate-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-slate-200">
           <p className="font-bold text-[var(--color-text)]">
-            Số liệu tổng hợp · Cổng thông tin Phường Trấn Biên
+            Số liệu tháng 11/2026 · Dữ liệu mẫu cuộc thi
           </p>
           {avgRating !== null && (
             <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">

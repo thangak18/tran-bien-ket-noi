@@ -11,7 +11,7 @@ import { Notification, Report, ReportDraft, Settings, VolunteerTask } from '../d
 import { DEMO_NOW } from '../domain/constants';
 import mockData from '../data/mock.json';
 import { loadPersistedState, saveStateDebounced, setupStorageSync } from './persistence';
-import { SESSION_CHANGED_EVENT } from '../lib/api';
+import { hasCitizenToken, isApiMode, SESSION_CHANGED_EVENT } from '../lib/api';
 
 const API_MODE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATA_SOURCE === 'api';
 
@@ -250,6 +250,32 @@ export function AppStoreProvider({
       console.error('Lỗi đồng bộ dữ liệu API vào store:', err);
     }
   }, []);
+
+  // Chế độ API: "đã đăng nhập SĐT" chỉ đúng khi còn token người dân (spec 13.3a, AC-SESSION-2).
+  const phone = state.settings.phone;
+  const syncCitizenPhone = useCallback(() => {
+    if (!isApiMode() || typeof window === 'undefined') return;
+    if (!hasCitizenToken()) {
+      if (phone) dispatch({ type: 'SET_SETTINGS', payload: { phone: undefined } });
+      return;
+    }
+    // Đăng nhập OTP ở /dang-nhap chỉ ghi localStorage: chép SĐT vào store để các màn người dân thấy.
+    const storedPhone = localStorage.getItem('tbkn_user_phone');
+    if (!phone && storedPhone) dispatch({ type: 'SET_SETTINGS', payload: { phone: storedPhone } });
+  }, [phone]);
+
+  useEffect(() => {
+    syncCitizenPhone();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === 'tb_citizen_token') syncCitizenPhone();
+    };
+    window.addEventListener(SESSION_CHANGED_EVENT, syncCitizenPhone);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(SESSION_CHANGED_EVENT, syncCitizenPhone);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [syncCitizenPhone]);
 
   useEffect(() => {
     if (!API_MODE) return;

@@ -15,10 +15,8 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <>{children}</>;
   }
 
-  const token =
-    localStorage.getItem('tb_staff_token') ||
-    localStorage.getItem('tb_citizen_token') ||
-    localStorage.getItem('tbkn_auth_token');
+  // Cổng nghiệp vụ chỉ nhận phiên nhân viên; token người dân không mở được cổng (spec 13.3a).
+  const token = localStorage.getItem('tb_staff_token') || localStorage.getItem('tbkn_auth_token');
   const role = localStorage.getItem('tbkn_user_role') as
     | 'can_bo'
     | 'tnv'
@@ -32,7 +30,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!allowedRoles.includes(role)) {
-    return <Navigate to="/khong-co-quyen" replace />;
+    // Sai vai trò: giữ đường dẫn để đăng nhập tài khoản đúng vai trò xong quay lại đúng cổng.
+    return (
+      <Navigate to={`/khong-co-quyen?redirect=${encodeURIComponent(location.pathname)}`} replace />
+    );
   }
 
   return <>{children}</>;

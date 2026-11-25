@@ -1,6 +1,6 @@
 # SPEC – Trấn Biên Kết Nối
 
-Phiên bản: **3.0 (25/11/2026)** · Mục 0–9 = nghiệp vụ và giao diện (nền là giai đoạn 1, đã nộp 24/11/2026, **đã sửa theo FR-08**). **Mục 10–17 = giai đoạn 2** (backend + database, mở 25/11/2026): khi mục 10–17 mâu thuẫn mục 1.2, 1.3, 2, 4.4, 5 thì mục 10–17 thắng.  
+Phiên bản: **3.1 (26/11/2026)** – bổ sung phiên đăng nhập theo cổng và nút chuyển cổng cho demo (mục 13.3a, AC-SESSION-*, AC-ROLE-1, AC-API-13). Nền: **3.0 (25/11/2026)** · Mục 0–9 = nghiệp vụ và giao diện (nền là giai đoạn 1, đã nộp 24/11/2026, **đã sửa theo FR-08**). **Mục 10–17 = giai đoạn 2** (backend + database, mở 25/11/2026): khi mục 10–17 mâu thuẫn mục 1.2, 1.3, 2, 4.4, 5 thì mục 10–17 thắng.  
 Nhãn: **[ĐỀ]** yêu cầu BTC · **[GĐ]** giả định thiết kế · **[KC]** cần kiểm chứng · **[ĐĐ]** đề xuất chờ chủ dự án duyệt
 
 ## Nguồn và thứ tự ưu tiên của v3.0
@@ -100,11 +100,11 @@ Có **4 vai trò**: Người dân, Cán bộ, Tình nguyện viên, Quản trị
 | Mã | Vai trò | Thiết bị | Đăng nhập |
 |---|---|---|---|
 | ND | Người dân | Mobile 390px | **Xem không cần đăng nhập** (C01, C06 công khai, C07, C08). **Gửi phản ánh, "Tôi cũng gặp", thông báo, đánh giá bắt buộc đăng nhập** bằng SĐT + OTP mô phỏng (`123456`, nhãn "Mô phỏng") |
-| CB | Cán bộ tiếp nhận | Desktop 1440px | Chế độ API: `/dang-nhap` (email + mật khẩu, Supabase Auth). Chế độ local: chuyển cổng bằng `PortalSwitcherFab`, không mật khẩu |
+| CB | Cán bộ tiếp nhận | Desktop 1440px | Chế độ API: `/dang-nhap` (email + mật khẩu, Supabase Auth). Cả hai chế độ có nút chuyển cổng `PortalSwitcherFab`; chế độ local vào không cần mật khẩu, chế độ API vẫn phải đăng nhập |
 | TNV | Thanh niên tình nguyện | Mobile 390px | Như CB |
 | QTV | Quản trị viên phường | Desktop 1440px | Chế độ API: `/dang-nhap`. Chế độ local: không dùng được, trang `/quan-tri/*` báo "Cần chế độ API" |
 
-- AC-ROLE-1: Chế độ API không có chỗ nào cho phép chọn vai trò nhân viên mà không đăng nhập; không còn "Demo Hub" làm đường vào. Chế độ local giữ `PortalSwitcherFab` (nút chuyển cổng) và Demo Hub `/demo`, có nhãn "Mô phỏng".
+- AC-ROLE-1: Chế độ API không có chỗ nào cho phép **vào** vai trò nhân viên mà không đăng nhập; không còn "Demo Hub" làm đường vào. Nút chuyển cổng `PortalSwitcherFab` (Người dân, Cán bộ, Tình nguyện viên, Quản trị) **hiện ở cả hai chế độ** để demo chuyển nhanh giữa các cổng: đây chỉ là đường tắt điều hướng. Ở chế độ API, mở cổng khi chưa đăng nhập → `/dang-nhap?redirect=`; đăng nhập sai vai trò → `/khong-co-quyen?redirect=`, nút "Đổi tài khoản" đăng nhập lại rồi quay về đúng cổng. (Sửa 25/11/2026 theo yêu cầu chủ dự án, trước đó ẩn nút ở chế độ API.)
 
 Tài khoản mẫu **[GĐ]**:
 - CB: "Nguyễn Văn Minh – Cán bộ tiếp nhận".
@@ -425,7 +425,7 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
     * Gợi ý (kể cả "không nhận ra") được lưu vào bản nháp và gửi kèm hồ sơ (AC-C02-5).
 - AC-C04-2: Mô tả tùy chọn ≤ 300 ký tự, placeholder "Ví dụ: ổ gà sâu, xe máy dễ té". *(Nút micro: [BONUS – HOÃN – B4].)*
 - AC-C04-5: **Gửi phản ánh bắt buộc đã đăng nhập SĐT (D1).** Đăng nhập = nhập SĐT (10 số, bắt đầu bằng 0) + OTP mô phỏng `123456` (nhãn "Mô phỏng", gợi ý "Mã demo: 123456"), thực hiện ở `/ho-so?login=1`. Dòng cam kết: "Số điện thoại chỉ dùng để báo tin và để cán bộ liên hệ khi cần bổ sung, không hiển thị công khai." (SĐT cán bộ/TNV có thể thấy, xem 7.7). Đã đăng nhập → bấm "Gửi phản ánh" gửi ngay, không hỏi lại.
-- AC-C04-14: **Chưa đăng nhập bấm "Gửi phản ánh" ở bước ③ (D1):** chuyển tới `/ho-so?login=1&redirect=/bao-su-co/xac-nhan?step=3`. **Bản nháp giữ nguyên** (ảnh, loại, vị trí, mô tả, `aiSuggestion`). Đăng nhập xong quay lại đúng bước ③ với dữ liệu cũ; người dân bấm "Gửi phản ánh" lần nữa để gửi (không tự gửi). Nếu bản nháp đã mất (xoá dữ liệu trình duyệt) → về C02 kèm thông báo bằng lời. API từ chối nếu thiếu token (AC-API-10).
+- AC-C04-14: **Chưa đăng nhập bấm "Gửi phản ánh" ở bước ③ (D1):** chuyển tới `/ho-so?login=1&redirect=/bao-su-co/xac-nhan?step=3`. **Bản nháp giữ nguyên** (ảnh, loại, vị trí, mô tả, `aiSuggestion`). Đăng nhập xong quay lại đúng bước ③ với dữ liệu cũ; người dân bấm "Gửi phản ánh" lần nữa để gửi (không tự gửi). Nếu bản nháp đã mất (xoá dữ liệu trình duyệt) → về C02 kèm thông báo bằng lời. API từ chối nếu thiếu token (AC-API-10). Gửi **thành công** thì xoá bản nháp ở cả hai chế độ (v3.1), để lần báo sau bắt đầu lại từ C02.
 - AC-C04-6: Thành công → màn thành công theo wireframe: ✅, "Phường đã nhận phản ánh", mã `TB-xxxx` ≥ 32px, đoạn "Tiếp theo: cán bộ phường sẽ xem và tiếp nhận, thường trong ngày làm việc. Bạn sẽ nhận tin nhắn khi có cập nhật.", nút "Theo dõi phản ánh" → C06, link "Về trang chủ". Hồ sơ gắn với SĐT đăng nhập (`reporterPhone`, `anonymous: false`) và hiện trong C05 của SĐT đó; **không** còn mã bí mật, link `?k=` hay `deviceReports` cho hồ sơ mới.
 - ~~AC-C04-10~~: **Đã bỏ theo FR-08** (link "Gửi không để lại số điện thoại" và sheet cảnh báo gửi ẩn danh).
 - ~~AC-C04-11~~: **Đã bỏ theo FR-08** (màn thành công ẩn danh với mã bí mật, QR `?k=`, "Lưu link theo dõi").
@@ -891,6 +891,7 @@ Mọi hàm nhận `now` như giai đoạn 1. Server lấy `now` từ `Clock`: `r
 - AC-API-8: Endpoint `/cron/*` bảo vệ bằng secret: gọi thiếu hoặc sai header `Authorization: Bearer <CRON_SECRET>` trả về HTTP 401 `UNAUTHORIZED`.
 - AC-API-10: **Gửi phản ánh bắt buộc đăng nhập.** `POST /citizen/reports` không có token người dân (hoặc chỉ có `X-Device-Id`) → HTTP 401 `CITIZEN_LOGIN_REQUIRED`, thông điệp "Vui lòng đăng nhập số điện thoại để gửi phản ánh", không tạo bản ghi. Có token → HTTP 201, hồ sơ `anonymous=false`, `reporter_phone` = SĐT trong token.
 - AC-API-11: **"Tôi cũng gặp" một lần cho mỗi SĐT.** `POST /citizen/reports/:code/follow` theo 12.3: không token → 401 `CITIZEN_LOGIN_REQUIRED`; lần đầu → 200 `alreadyFollowed:false`; lần sau cùng SĐT → 200 `alreadyFollowed:true` và `followerCount` không đổi (chặn cả khi hai request đến đồng thời, nhờ khoá `(report_id, phone)`).
+- AC-API-13: **Kết nối DB trên serverless (v3.1).** Function Vercel có thể bị đóng băng giữa hai lần gọi. Pool kết nối nhỏ (1 kết nối mỗi instance trên Vercel), đóng kết nối nhàn rỗi sau 20 giây và tối đa 5 phút mỗi kết nối, để lần gọi sau không dùng lại kết nối đã bị pooler cắt. Thư viện postgres.js tự mở kết nối mới cho truy vấn kế tiếp.
 - AC-API-12: **Phạm vi trả SĐT.** Chỉ các phản hồi liệt kê ở 12.1 mới có SĐT đầy đủ; test quét (AC-AUTH-6) và test quyền (AC-AUTH-9, 10) kiểm từng loại.
 - AC-API-9: Toàn vẹn giao dịch: Mọi thao tác đổi trạng thái thực thi trong Transaction với khóa bi quan `FOR UPDATE`, đảm bảo tính toàn vẹn và timeline không bị phân nhánh sai.
 
@@ -924,6 +925,15 @@ Hệ thống có **4 vai trò**: ba nhóm người dùng nghiệp vụ (người
 - Token chỉ chứng minh "tôi sở hữu SĐT này". **Quyền chủ hồ sơ = SĐT trong token trùng `reports.reporter_phone`** (3.4a). Người đã bấm "Tôi cũng gặp" nằm trong `report_followers` nhưng **không** là chủ hồ sơ. Với hồ sơ ẩn danh cũ: SĐT có nguồn `subscribe_later` hoặc `ownerToken` (13.4).
 - Token hết hạn hoặc thiếu ở thao tác bắt buộc đăng nhập → 401; UI chuyển tới `/ho-so?login=1&redirect=<trang hiện tại>` (AC-C04-14).
 - Đăng xuất = xoá token ở máy; đổi máy = xác thực OTP lại (AC-C05-7).
+
+### 13.3a. Phiên theo cổng trên cùng một thiết bị (v3.1)
+Lúc demo, một trình duyệt lần lượt đóng vai người dân, cán bộ, TNV, quản trị. Hai loại phiên phải **độc lập**:
+- **Phiên người dân**: token người dân (`tb_citizen_token`) + SĐT hiển thị. Ở chế độ API, "đã đăng nhập SĐT" **chỉ đúng khi còn token người dân hợp lệ**; `settings.phone` chỉ là bản sao để hiển thị, không bao giờ đứng một mình.
+- **Phiên nhân viên**: token nhân viên (`tb_staff_token`), vai trò, tên hiển thị, phiên cổng cán bộ/TNV.
+- AC-SESSION-1: Đăng nhập hoặc đăng xuất nhân viên **không** xoá phiên người dân; đăng xuất người dân **không** xoá phiên nhân viên.
+- AC-SESSION-2: Ở chế độ API, khi tải trang hoặc khi phiên thay đổi mà không còn token người dân thì xoá `settings.phone`: giao diện hiện trạng thái chưa đăng nhập (lời mời đăng nhập), không bao giờ hiện "đã đăng nhập" trong khi server sẽ trả 401.
+- AC-SESSION-3: API trả 401 ở thao tác người dân (gửi, "Tôi cũng gặp", đánh giá, bổ sung, thông báo) → chỉ xoá phiên **người dân**, giữ bản nháp, chuyển `/ho-so?login=1&redirect=<trang hiện tại>`. 401 ở thao tác nhân viên → chỉ xoá phiên **nhân viên**, chuyển `/dang-nhap?redirect=` (giữ hành vi cũ).
+- AC-SESSION-4: Gọi API người dân luôn gửi token người dân, gọi API nhân viên luôn gửi token nhân viên, kể cả khi thiết bị đang giữ cả hai.
 
 ### 13.4. Quyền chủ hồ sơ cho hồ sơ ẩn danh cũ [ĐĐ] (chỉ 6 hồ sơ lịch sử)
 
@@ -977,7 +987,7 @@ Quyền xem SĐT đầy đủ của người gửi (đảo ngược có chủ đ
 - AC-LOGIN-3: Đăng nhập thất bại (sai email hoặc mật khẩu) hiển thị thông báo lỗi tiếng Việt dễ hiểu ("Email hoặc mật khẩu không chính xác"), không tiết lộ sự tồn tại của email trong hệ thống.
 - AC-LOGIN-4: Tài khoản bị khoá (`is_active=false` trong `staff_profiles`): API trả về 403 `ACCOUNT_DISABLED`, màn hình hiển thị thông báo tài khoản bị tạm khoá.
 - AC-LOGIN-5: Phân quyền route: Người dùng truy cập route không đúng vai trò (ví dụ TNV vào `/can-bo` hoặc Cán bộ vào `/tnv`) được chuyển tới trang `/khong-co-quyen` có nút quay về đúng trang vai trò.
-- AC-LOGIN-6: Đăng xuất xoá toàn bộ phiên Supabase Auth và dữ liệu tài khoản trong client, điều hướng về `/dang-nhap`.
+- AC-LOGIN-6: Đăng xuất nhân viên xoá phiên nhân viên (token, vai trò, tên, phiên cổng) trong client và điều hướng về `/dang-nhap`; phiên người dân trên cùng thiết bị giữ nguyên (AC-SESSION-1).
 
 ---
 
@@ -1050,7 +1060,7 @@ AC-PHOTO-1: Ảnh tải lên bằng chữ ký hết hạn → 403. · AC-PHOTO-2
 | | `VITE_DATA_SOURCE=local` (**Chế độ demo offline**) | `VITE_DATA_SOURCE=api` (**Chế độ thật**) |
 |---|---|---|
 | Lưu ở | localStorage + `mock.json` như giai đoạn 1 | PostgreSQL qua API |
-| Đăng nhập nhân viên | Không – nút chuyển cổng `PortalSwitcherFab` và Demo Hub | Có – `/dang-nhap`; ẩn `PortalSwitcherFab` và Demo Hub (AC-ROLE-1) |
+| Đăng nhập nhân viên | Không – nút chuyển cổng `PortalSwitcherFab` và Demo Hub | Có – `/dang-nhap`; `PortalSwitcherFab` chỉ điều hướng, không có Demo Hub (AC-ROLE-1) |
 | Đăng nhập người dân (SĐT + OTP mô phỏng `123456`) | Có, nhãn "Mô phỏng" (D1 áp dụng cả hai chế độ) | Có, nhãn "Mô phỏng" |
 | Ảnh | data URL | data URL trong DB. Upload Supabase Storage chưa làm (10.5, 15) |
 | Triển khai | Một dự án Vercel riêng (giữ link đã nộp cho giám khảo, không đổi hành vi) | Dự án Vercel chính |

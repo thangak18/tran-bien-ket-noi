@@ -4,7 +4,6 @@ import { AppStoreProvider, useAppStore } from './store/AppStore';
 import { applyFontScale, resolveFontScale } from './lib/senior';
 import { applyTheme, getInitialTheme } from './lib/theme';
 import { PortalSwitcherFab } from './components/common/PortalSwitcherFab';
-import { isApiMode } from './lib/api';
 import { CitizenLayout } from './layouts/CitizenLayout';
 import { C01Home } from './screens/citizen/C01Home';
 import { WelcomeScreen, WELCOMED_STORAGE_KEY } from './screens/citizen/WelcomeScreen';
@@ -76,7 +75,8 @@ export default function App() {
       <SeniorSync />
       <AuthEvents />
       <WelcomeGate />
-      {!isApiMode() && <PortalSwitcherFab />}
+      {/* Đường tắt chuyển cổng cho demo, hiện ở mọi chế độ; ProtectedRoute vẫn bắt đăng nhập thật. */}
+      <PortalSwitcherFab />
       <Routes>
         <Route
           path="/"

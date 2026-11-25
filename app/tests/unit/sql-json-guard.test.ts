@@ -31,3 +31,13 @@ describe('DB-GUARD-001 – Không dùng sql.json() trong server', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('DB-GUARD-002 – Pool kết nối cho serverless (AC-API-13)', () => {
+  it('server/db/client.ts: 1 kết nối trên Vercel, đóng kết nối nhàn rỗi 20 giây, tối đa 5 phút', () => {
+    const client = readFileSync(path.join(SERVER_DIR, 'db/client.ts'), 'utf-8');
+    expect(client).toMatch(/prepare:\s*false/);
+    expect(client).toMatch(/max:\s*process\.env\.VERCEL\s*\?\s*1\s*:\s*10/);
+    expect(client).toMatch(/idle_timeout:\s*20\b/);
+    expect(client).toMatch(/max_lifetime:\s*(300|60\s*\*\s*5)\b/);
+  });
+});
