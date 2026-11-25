@@ -563,6 +563,9 @@ export function C04Confirm() {
     const nextPhotos = draft.photos.filter((_, i) => i !== index);
     dispatch({ type: 'SET_DRAFT', payload: { photos: nextPhotos } });
     setActivePhotoIndex((prev) => Math.max(0, Math.min(prev, nextPhotos.length - 1)));
+    if (nextPhotos.length === 0) {
+      navigate('/bao-su-co/anh', { state: { addingPhoto: true } });
+    }
   };
 
   // Mọi đường tới bước 2–3 (nút, thanh bước, ?step= trên URL) đều phải đã chọn loại.
@@ -955,7 +958,7 @@ export function C04Confirm() {
             type="button"
             onClick={handleBack}
             aria-label="Quay lại"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[var(--color-text)] transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[var(--color-text)] transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -1025,7 +1028,7 @@ export function C04Confirm() {
             </div>
 
             {/* Mobile Thumbnail Strip: [1] [+] */}
-            <div className="absolute right-4 bottom-8 left-4 flex items-center gap-2 overflow-x-auto">
+            <div className="absolute right-4 bottom-8 left-4 flex items-center gap-2 overflow-x-auto pt-2 pr-2">
               {displayPhotos.map((photoUrl, idx) => (
                 <div key={`m-${idx}-${photoUrl.slice(0, 16)}`} className="relative flex-shrink-0">
                   <button
@@ -1047,12 +1050,12 @@ export function C04Confirm() {
                       {idx + 1}
                     </span>
                   </button>
-                  {draft.photos.length > 1 && (
+                  {draft.photos.length > 0 && (
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
                       aria-label={`Xoá ảnh ${idx + 1}`}
-                      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-white hover:bg-red-600"
+                      className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700"
                     >
                       <X className="h-2.5 w-2.5" />
                     </button>
@@ -1101,7 +1104,7 @@ export function C04Confirm() {
                 </div>
 
                 {/* Thumbnails row */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <div className="flex items-center gap-2 overflow-x-auto pt-2 pr-2 pb-1">
                   {displayPhotos.map((photoUrl, idx) => (
                     <div
                       key={`d-${idx}-${photoUrl.slice(0, 16)}`}
@@ -1122,11 +1125,12 @@ export function C04Confirm() {
                           className="h-full w-full object-cover"
                         />
                       </button>
-                      {draft.photos.length > 1 && (
+                      {draft.photos.length > 0 && (
                         <button
                           type="button"
                           onClick={() => handleRemovePhoto(idx)}
-                          className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white"
+                          aria-label={`Xoá ảnh ${idx + 1}`}
+                          className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700"
                         >
                           <X className="h-2.5 w-2.5" />
                         </button>
@@ -1274,8 +1278,8 @@ export function C04Confirm() {
                         isActive
                           ? 'bg-[#0084E8] text-white shadow-sm'
                           : isDone
-                            ? 'bg-[#E6F3FD] text-[#0084E8] hover:bg-[#D0E8FC] dark:bg-sky-950/60 dark:text-[#38BDF8]'
-                            : 'text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 dark:text-slate-400'
+                            ? 'bg-[#E6F3FD] text-[#0084E8] hover:bg-[#D0E8FC] dark:bg-sky-950/60 dark:text-[#38BDF8] dark:hover:bg-sky-900/70 dark:hover:text-sky-200'
+                            : 'text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                       }`}
                     >
                       <span
@@ -1934,7 +1938,7 @@ export function C04Confirm() {
                 type="button"
                 onClick={() => setIsInspectDuplicateOpen(false)}
                 aria-label="Đóng cửa sổ đối chiếu"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-slate-500 hover:bg-white hover:text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-slate-500 hover:bg-white hover:text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>

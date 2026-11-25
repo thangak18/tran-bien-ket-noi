@@ -225,7 +225,7 @@ export function V02Verify() {
                   <span data-testid="task-id" className="font-bold text-[#0084E8]">
                     {task.id}
                   </span>{' '}
-                  · Hồ sơ {report.id} · {isInspection ? 'Nghiệm thu sau xử lý' : 'Xác minh ban đầu'}
+                  · Hồ sơ {report.id}
                 </p>
               </div>
             </div>
@@ -534,21 +534,12 @@ export function V02Verify() {
                         allowGallery={true}
                         allowVideo={true}
                         captureLabel="Chụp ảnh / Quay video tại chỗ"
-                        galleryLabel="Chọn từ máy"
-                        onAddSample={() => {
-                          const sample = `/demo-photos/${report.category}/1.jpg`;
-                          if (!mediaItems.includes(sample)) {
-                            setMediaItems((prev) => [...prev, sample].slice(0, 5));
-                            setActiveStep(3);
-                          }
-                        }}
-                        sampleLabel="Dùng ảnh mẫu (Demo)"
                       />
                       <div className="flex items-center gap-2.5 pt-2">
                         <button
                           type="button"
                           onClick={() => setActiveStep(1)}
-                          className="flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                          className="flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                         >
                           Quay lại
                         </button>
@@ -588,7 +579,7 @@ export function V02Verify() {
                         <button
                           type="button"
                           onClick={() => setActiveStep(2)}
-                          className="flex h-[52px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                          className="flex h-[52px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                         >
                           Quay lại
                         </button>

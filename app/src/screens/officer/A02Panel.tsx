@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   X,
   ChevronLeft,
@@ -12,13 +12,13 @@ import {
   CheckCircle2,
   UserCheck,
   Wrench,
-  GitMerge,
-  Split,
   ArrowLeft,
   Send,
   FileText,
   XCircle,
   Camera,
+  GitMerge,
+  Split,
 } from 'lucide-react';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { SelectField } from '@/components/ui';
@@ -115,7 +115,7 @@ export function A02Panel({
 
   const [exceptionMode, setExceptionMode] = useState<ExceptionMode>(null);
   const [exceptionReason, setExceptionReason] = useState('');
-
+  // Gộp / tách hồ sơ trùng (AC-A02-6, AC-A02-7)
   const [mergeTarget, setMergeTarget] = useState<Report | null>(null);
   const [splitTargetId, setSplitTargetId] = useState<string | null>(null);
 
@@ -199,7 +199,6 @@ export function A02Panel({
       (t) => t.reportId === reportIdVal && t.status === 'xong' && Boolean(t.result)
     );
   }, [state.volunteerTasks, reportIdVal]);
-
   // Phản ánh tương tự (AC-A02-6)
   const duplicates = useMemo(() => {
     if (!report || report.status === 'dong' || report.status === 'da_gop') return [];
@@ -490,24 +489,6 @@ export function A02Panel({
 
           {activeTab === 'chi_tiet' ? (
             <>
-              {/* Banner đã gộp */}
-              {report.status === 'da_gop' && report.mergedInto && (
-                <div className="flex items-center justify-between gap-2 rounded-2xl border border-purple-200 bg-purple-50 p-3 text-sm text-purple-950 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200">
-                  <div className="flex items-center gap-2">
-                    <GitMerge className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                    <span>
-                      Hồ sơ đã được gộp vào <strong>#{report.mergedInto}</strong>
-                    </span>
-                  </div>
-                  <Link
-                    to={`/can-bo/${report.mergedInto}`}
-                    className="text-xs font-semibold text-purple-700 dark:text-purple-300 underline"
-                  >
-                    Mở hồ sơ chính
-                  </Link>
-                </div>
-              )}
-
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-5 rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 sm:p-5 shadow-sm space-y-4 dark:border-slate-800">
                   {/* Gallery ảnh (AC-A02-1) */}
@@ -840,73 +821,55 @@ export function A02Panel({
                     </div>
                   )}
 
-                  {/* Nhóm nút thao tác theo trạng thái (AC-A02-3) */}
-                  <div className="space-y-2.5 rounded-card border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3.5">
-                    <div className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
-                      Thao tác điều phối
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {canAccept && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<CheckCircle2 className="h-4 w-4" />}
-                          onClick={handleAccept}
-                        >
-                          Tiếp nhận
-                        </Button>
-                      )}
+                  {/* Thao tác theo từng bước: Tiếp nhận -> Xác minh -> Giao xử lý -> Hoàn thành */}
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    {officerStageIndex === 1 && (
+                      <>
+                        {canAccept && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={<CheckCircle2 className="h-4 w-4" />}
+                            onClick={handleAccept}
+                          >
+                            Tiếp nhận
+                          </Button>
+                        )}
+                        {canSupplement && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={<Send className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('can_bo_sung')}
+                          >
+                            Yêu cầu bổ sung
+                          </Button>
+                        )}
+                      </>
+                    )}
 
-                      {canAssignTnv && (
-                        <Button
-                          variant={
-                            report.anonymous && report.status === 'moi' ? 'primary' : 'secondary'
-                          }
-                          size="sm"
-                          icon={<UserCheck className="h-4 w-4" />}
-                          onClick={() => setShowTnvModal(true)}
-                        >
-                          Giao TNV xác minh
-                        </Button>
-                      )}
-
-                      {canAssignDept && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<Wrench className="h-4 w-4" />}
-                          onClick={handleAssignDepartment}
-                        >
-                          Giao xử lý
-                        </Button>
-                      )}
-
-                      {canComplete && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<Camera className="h-4 w-4" />}
-                          onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
-                        >
-                          Cập nhật kết quả
-                        </Button>
-                      )}
-
-                      {canClose && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={<CheckCircle2 className="h-4 w-4" />}
-                          onClick={() => openExceptionModal('dong')}
-                        >
-                          Đóng
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Nút ngoại lệ (AC-A02-8) */}
-                    {(canSupplement || canRejectVerify) && (
-                      <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                    {officerStageIndex === 2 && (
+                      <>
+                        {canAssignTnv && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={<UserCheck className="h-4 w-4" />}
+                            onClick={() => setShowTnvModal(true)}
+                          >
+                            Giao TNV xác minh
+                          </Button>
+                        )}
+                        {canAssignDept && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={<Wrench className="h-4 w-4" />}
+                            onClick={handleAssignDepartment}
+                          >
+                            Giao xử lý
+                          </Button>
+                        )}
                         {canSupplement && (
                           <Button
                             variant="outline"
@@ -927,62 +890,31 @@ export function A02Panel({
                             Không xác nhận được
                           </Button>
                         )}
-                      </div>
+                      </>
+                    )}
+
+                    {officerStageIndex === 3 && canComplete && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={<Camera className="h-4 w-4" />}
+                        onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
+                      >
+                        Cập nhật kết quả
+                      </Button>
+                    )}
+
+                    {officerStageIndex === 4 && canClose && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<CheckCircle2 className="h-4 w-4" />}
+                        onClick={() => openExceptionModal('dong')}
+                      >
+                        Đóng
+                      </Button>
                     )}
                   </div>
-
-                  {/* Khối Kết quả xác minh của TNV (AC-A02-5) */}
-                  {completedTask?.result && (
-                    <div
-                      data-testid="tnv-verification-result"
-                      className="space-y-2.5 rounded-card border border-blue-200 bg-blue-50/60 p-3.5 text-sm dark:border-blue-900/60 dark:bg-blue-950/35"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-blue-950 dark:text-blue-200">
-                          {completedTask.type === 'nghiem_thu'
-                            ? 'Kết quả nghiệm thu TNV'
-                            : 'Kết quả xác minh'}
-                        </h3>
-                        <span className="text-xs text-blue-700 dark:text-blue-300">
-                          {completedTask.assignee || 'Tình nguyện viên'} ·{' '}
-                          {formatDateTime(completedTask.result.at)}
-                        </span>
-                      </div>
-
-                      {completedTask.result.photo && (
-                        <img
-                          src={completedTask.result.photo}
-                          alt="Ảnh xác minh của TNV"
-                          className="h-36 w-full rounded-btn object-cover border border-blue-200 dark:border-blue-800"
-                        />
-                      )}
-
-                      <div className="space-y-1 text-xs text-[var(--color-text)]">
-                        <div>
-                          <strong>1. Hiện trạng:</strong>{' '}
-                          {completedTask.result.exists === 'co'
-                            ? 'Có sự cố'
-                            : completedTask.result.exists === 'khong'
-                              ? 'Không có sự cố'
-                              : 'Không tìm thấy vị trí'}
-                        </div>
-                        {completedTask.result.severity && (
-                          <div>
-                            <strong>2. Mức độ:</strong>{' '}
-                            {completedTask.result.severity === 'nguy_hiem'
-                              ? 'Nguy hiểm'
-                              : completedTask.result.severity === 'trung_binh'
-                                ? 'Trung bình'
-                                : 'Nhẹ'}
-                          </div>
-                        )}
-                        <div>
-                          <strong>3. Ghi chú TNV:</strong>{' '}
-                          {completedTask.result.note || 'Không có ghi chú thêm'}
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Khối Đã gộp & Tách (AC-A02-7) */}
                   {report.mergedChildren && report.mergedChildren.length > 0 && (
@@ -1052,6 +984,58 @@ export function A02Panel({
                             </Button>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Khối Kết quả xác minh của TNV (AC-A02-5) */}
+                  {completedTask?.result && (
+                    <div
+                      data-testid="tnv-verification-result"
+                      className="space-y-2.5 rounded-card border border-blue-200 bg-blue-50/60 p-3.5 text-sm dark:border-blue-900/60 dark:bg-blue-950/35"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-blue-950 dark:text-blue-200">
+                          {completedTask.type === 'nghiem_thu'
+                            ? 'Kết quả nghiệm thu TNV'
+                            : 'Kết quả xác minh'}
+                        </h3>
+                        <span className="text-xs text-blue-700 dark:text-blue-300">
+                          {completedTask.assignee || 'Tình nguyện viên'} ·{' '}
+                          {formatDateTime(completedTask.result.at)}
+                        </span>
+                      </div>
+
+                      {completedTask.result.photo && (
+                        <img
+                          src={completedTask.result.photo}
+                          alt="Ảnh xác minh của TNV"
+                          className="h-36 w-full rounded-btn object-cover border border-blue-200 dark:border-blue-800"
+                        />
+                      )}
+
+                      <div className="space-y-1 text-xs text-[var(--color-text)]">
+                        <div>
+                          <strong>1. Hiện trạng:</strong>{' '}
+                          {completedTask.result.exists === 'co'
+                            ? 'Có sự cố'
+                            : completedTask.result.exists === 'khong'
+                              ? 'Không có sự cố'
+                              : 'Không tìm thấy vị trí'}
+                        </div>
+                        {completedTask.result.severity && (
+                          <div>
+                            <strong>2. Mức độ:</strong>{' '}
+                            {completedTask.result.severity === 'nguy_hiem'
+                              ? 'Nguy hiểm'
+                              : completedTask.result.severity === 'trung_binh'
+                                ? 'Trung bình'
+                                : 'Nhẹ'}
+                          </div>
+                        )}
+                        <div>
+                          <strong>3. Ghi chú TNV:</strong>{' '}
+                          {completedTask.result.note || 'Không có ghi chú thêm'}
+                        </div>
                       </div>
                     </div>
                   )}

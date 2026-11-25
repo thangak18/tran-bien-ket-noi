@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Camera,
-  Check,
-  CheckCircle2,
-  MapPin,
-  Sparkles,
-  Type,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Check, CheckCircle2, MapPin, Type } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { FontScale } from '@/domain/types';
 import { applyFontScale, FONT_SCALE_OPTIONS, resolveFontScale } from '@/lib/senior';
@@ -81,9 +72,11 @@ export function WelcomeScreen({ onComplete }: WelcomeScreenProps) {
             </button>
           )}
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#0084E8] to-[#0263B5] text-white shadow-sm">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-            </span>
+            <img
+              src="/logo-app.jpg"
+              alt="Logo Trấn Biên Kết Nối"
+              className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-xl object-cover shadow-sm"
+            />
             <span className="text-sm md:text-base font-extrabold tracking-tight text-[var(--color-text)]">
               Trấn Biên Kết Nối
             </span>

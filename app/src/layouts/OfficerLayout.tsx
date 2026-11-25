@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useInRouterContext, useLocation } from 'react-router-dom';
-import { Shield, Inbox, BarChart3, Search, Plus, User, LogIn, ChevronRight } from 'lucide-react';
+import { Inbox, BarChart3, Search, Plus, User, LogIn, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { getOfficerSession, OfficerSession, SESSION_CHANGE_EVENT } from '@/lib/portalSession';
 
@@ -124,9 +124,11 @@ function OfficerLayoutShell({
           '/can-bo',
           'group flex items-center gap-3 rounded-2xl px-2 py-1.5 mb-5 transition-colors duration-150 hover:bg-slate-50/80 dark:hover:bg-slate-800/40',
           <>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0084E8] to-[#0066B8] text-white shadow-[0_6px_16px_rgba(0,132,232,0.24)] transition-transform duration-150 group-hover:scale-105">
-              <Shield className="h-5 w-5" aria-hidden="true" />
-            </div>
+            <img
+              src="/logo-app.jpg"
+              alt="Logo Trấn Biên Kết Nối"
+              className="h-10 w-10 shrink-0 rounded-2xl object-cover shadow-[0_6px_16px_rgba(0,132,232,0.24)] transition-transform duration-150 group-hover:scale-105"
+            />
             <div className="min-w-0">
               <div className="truncate font-extrabold text-[var(--color-text)] text-[15px] tracking-tight">
                 Trấn Biên Kết Nối
@@ -140,7 +142,7 @@ function OfficerLayoutShell({
         )}
 
         {/* 2. Primary Navigation */}
-        <div className="px-2.5 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <div className="px-2.5 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
           Điều hành nội bộ
         </div>
         <nav className="space-y-1.5" aria-label="Điều hướng cán bộ">
@@ -150,8 +152,8 @@ function OfficerLayoutShell({
               item.to,
               `group relative flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm transition-all ${
                 item.active
-                  ? 'bg-[#E6F3FD] font-extrabold text-[#0084E8] shadow-2xs dark:bg-sky-950/70 dark:text-[#38BDF8]'
-                  : 'font-semibold text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white'
+                  ? 'bg-[#E6F3FD] font-extrabold text-[#0084E8] shadow-sm dark:bg-sky-950/70 dark:text-[#38BDF8] dark:ring-1 dark:ring-sky-800/60'
+                  : 'font-semibold text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white'
               }`,
               <>
                 <div className="flex items-center gap-3">
@@ -159,7 +161,7 @@ function OfficerLayoutShell({
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors ${
                       item.active
                         ? 'bg-[#0084E8] text-white shadow-xs dark:bg-[#38BDF8] dark:text-slate-950'
-                        : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-[#0084E8] dark:bg-slate-800 dark:text-slate-400'
+                        : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-[#0084E8] dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-slate-700 dark:group-hover:text-[#38BDF8]'
                     }`}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
@@ -169,7 +171,7 @@ function OfficerLayoutShell({
                 {item.active ? (
                   <span className="h-2 w-2 rounded-full bg-[#0084E8] dark:bg-[#38BDF8]" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-slate-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 dark:text-slate-600" />
+                  <ChevronRight className="h-4 w-4 text-slate-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 dark:text-slate-500" />
                 )}
               </>,
               item.active ? 'page' : undefined

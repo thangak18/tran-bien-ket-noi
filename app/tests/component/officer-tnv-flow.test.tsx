@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { AppStoreProvider, AppState } from '@/store/AppStore';
@@ -7,6 +7,15 @@ import { V01Tasks } from '@/screens/volunteer/V01Tasks';
 import { V02Verify } from '@/screens/volunteer/V02Verify';
 import mockData from '@/data/mock.json';
 import { Report } from '@/domain/types';
+
+vi.mock('@/lib/image', () => ({
+  compressImage: vi.fn(async () => ({
+    dataUrl: 'data:image/jpeg;base64,mockverify',
+    width: 100,
+    height: 100,
+    bytes: 10,
+  })),
+}));
 
 describe('Luồng liên vai trò: cán bộ giao TNV -> TNV gửi -> cán bộ xem kết quả', () => {
   it('chạy trọn luồng', async () => {
@@ -44,8 +53,9 @@ describe('Luồng liên vai trò: cán bộ giao TNV -> TNV gửi -> cán bộ x
     );
     render(<RouterProvider router={router} />);
 
-    // Cán bộ giao TNV
-    fireEvent.click(screen.getByRole('button', { name: /Giao TNV xác minh/i }));
+    // Cán bộ tiếp nhận rồi giao TNV
+    fireEvent.click(screen.getByRole('button', { name: /^Tiếp nhận$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Giao TNV xác minh/i }));
     // Trang A02 còn ô chọn bộ phận, nên chỉ tìm ô chọn TNV trong hộp thoại giao việc.
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByRole('combobox'), { target: { value: 'Lê Thảo Vy' } });
@@ -62,8 +72,14 @@ describe('Luồng liên vai trò: cán bộ giao TNV -> TNV gửi -> cán bộ x
     expect(nextToStep2).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Có' }));
     fireEvent.click(screen.getByRole('button', { name: 'Nguy hiểm' }));
-    // Tự động chuyển sang bước 2 -> chọn ảnh mẫu -> tự động chuyển sang bước 3
-    fireEvent.click(await screen.findByRole('button', { name: /Dùng ảnh mẫu/i }));
+    // Tự động chuyển sang bước 2 -> mở camera & chọn ảnh từ thiết bị -> tiếp tục bước 3
+    fireEvent.click(await screen.findByRole('button', { name: /Chụp ảnh \/ Quay video tại chỗ/i }));
+    const galleryInput = screen.getByLabelText(/Chọn từ thư viện thiết bị/i) as HTMLInputElement;
+    const sampleFile = new File(['mock-image'], 'verify.jpg', { type: 'image/jpeg' });
+    fireEvent.change(galleryInput, { target: { files: [sampleFile] } });
+    const nextToStep3 = await screen.findByRole('button', { name: /Tiếp tục ghi chú & gửi/i });
+    await waitFor(() => expect(nextToStep3).toBeEnabled());
+    fireEvent.click(nextToStep3);
     const send = await screen.findByRole('button', { name: /Gửi kết quả/i });
     expect(send).toBeEnabled();
     fireEvent.click(send);

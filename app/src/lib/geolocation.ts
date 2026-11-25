@@ -29,6 +29,13 @@ export function getCurrentLocation(options?: GeolocationOptions): Promise<Coordi
   const enableHighAccuracy = options?.enableHighAccuracy ?? true;
 
   return new Promise((resolve, reject) => {
+    if (
+      typeof window !== 'undefined' &&
+      window.localStorage?.getItem('tbkn:gps-enabled') === 'false'
+    ) {
+      return reject(new GeolocationError('denied', 'Định vị GPS đang tắt trong Cài đặt ứng dụng.'));
+    }
+
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       return reject(
         new GeolocationError('unsupported', 'Trình duyệt không hỗ trợ dịch vụ định vị.')

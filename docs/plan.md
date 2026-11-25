@@ -420,3 +420,4 @@ Xem bảng rủi ro ở `spec.md` mục 17. Bổ sung kỹ thuật:
 
 ### Ghi chú thư viện thêm (25/11/2026)
 - `esbuild` 0.24.2 (devDependency, cùng bản Vite đang dùng sẵn): `scripts/build-api.mjs` gói server Hono thành `api/_lib/server.mjs` trong `npm run build`. Lý do: Vercel biên dịch từng file `.ts` riêng và giữ import không đuôi; package `"type": "module"` nên Node báo `ERR_MODULE_NOT_FOUND` và mọi API production trả 500.
+- `xlsx` 0.20.3 (dependency, cài từ CDN chính thức `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`): xuất và nhập Excel ở hộp tiếp nhận A01 (`src/lib/inboxExcel.ts`). Không dùng bản `xlsx@0.18.5` trên npm vì có lỗ hổng khi đọc file không tin cậy (CVE-2023-30533 prototype pollution, CVE-2024-22363 ReDoS) và SheetJS không còn phát hành bản vá lên npm.
