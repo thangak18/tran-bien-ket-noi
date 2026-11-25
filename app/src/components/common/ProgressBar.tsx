@@ -20,16 +20,17 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
   if (steps.length === 0) return null;
 
+  // Giờ dưới mốc luôn theo giờ Việt Nam (UTC+7, spec 7.6), không theo múi giờ của thiết bị.
   const formatShortTime = (iso?: string) => {
     if (!iso) return '';
-    try {
-      const d = new Date(iso);
-      const hours = d.getHours().toString().padStart(2, '0');
-      const minutes = d.getMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
-    } catch {
-      return '';
-    }
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(d);
   };
 
   return (
