@@ -217,6 +217,19 @@ export class ApiDataSource implements DataSource {
     return this.requireReport(reportId);
   }
 
+  async isReportOwner(reportId: string): Promise<boolean> {
+    try {
+      await apiFetch(`/citizen/reports/${enc(reportId)}/owner`, {
+        headers: { ...citizenAuthHeaders(), ...reportKeyHeaders(reportId) },
+      });
+      return true;
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      if (status === 403 || status === 401 || status === 404) return false;
+      throw err;
+    }
+  }
+
   async unsubscribeReport(reportId: string, phone: string): Promise<Report> {
     await apiFetch(`/citizen/reports/${enc(reportId)}/subscribe?phone=${enc(phone)}`, {
       method: 'DELETE',

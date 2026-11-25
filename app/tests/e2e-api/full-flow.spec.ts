@@ -4,9 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SHOTS = path.resolve(__dirname, '../../../docs/review/giai-doan-2/screenshots');
+// Ảnh mẫu có sẵn trong dự án (tự chụp, không tải từ internet), dùng làm ảnh chọn từ thư viện.
+const PHOTO_BEFORE = path.resolve(__dirname, '../../public/demo-photos/rac_thai/1.jpg');
+const PHOTO_AFTER = path.resolve(__dirname, '../../public/demo-photos/rac_thai/2.jpg');
 
 const CB_EMAIL = 'cb.minh@tranbien.gov.vn';
 const TNV_EMAIL = 'tnv.mai@tranbien.gov.vn';
+const TNV_NAME = 'Trần Thị Mai';
 const CITIZEN_PHONE = '0912345678';
 const MOBILE = { width: 390, height: 844 };
 const DESKTOP = { width: 1440, height: 900 };
@@ -22,12 +26,27 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage: false });
 }
 
+/** Bỏ qua màn chào lần đầu để vào thẳng các màn hình cần kiểm tra. */
+async function skipWelcome(ctx: BrowserContext) {
+  await ctx.addInitScript(() => {
+    window.localStorage.setItem('tbkn:welcomed', '1');
+  });
+}
+
 async function newCitizenContext(browser: Browser): Promise<BrowserContext> {
-  return browser.newContext({
+  const ctx = await browser.newContext({
     viewport: MOBILE,
     geolocation: { latitude: 10.9505, longitude: 106.8225 },
     permissions: ['geolocation'],
   });
+  await skipWelcome(ctx);
+  return ctx;
+}
+
+async function newStaffContext(browser: Browser, viewport = DESKTOP): Promise<BrowserContext> {
+  const ctx = await browser.newContext({ viewport });
+  await skipWelcome(ctx);
+  return ctx;
 }
 
 async function staffLogin(page: Page, email: string, password: string, expectedPath: string) {
@@ -38,38 +57,58 @@ async function staffLogin(page: Page, email: string, password: string, expectedP
   await page.waitForURL(`**${expectedPath}`);
 }
 
-/** Gửi phản ánh từ màn C02 → C04 bằng ảnh mẫu và GPS giả lập; trả về phản hồi của API. */
+/** Bố cục điện thoại và máy tính cùng có trong DOM; chỉ lấy phần tử đang hiển thị. */
+function visibleText(page: Page, text: string) {
+  return page.getByText(text).locator('visible=true').first();
+}
+
+function visibleButton(page: Page, text: string | RegExp) {
+  return page.locator('button:visible', { hasText: text }).first();
+}
+
+/** Gửi phản ánh qua C02 (ảnh) → C04 (3 bước: loại, vị trí, mô tả & liên hệ); trả về phản hồi của API. */
 async function submitReport(
   page: Page,
-  options: { phone?: string; shotPrefix: string }
+  options: { phone?: string; title: string; shotPrefix: string }
 ): Promise<{ code: string; secretCode: string; ownerToken?: string }> {
   await page.goto('/bao-su-co/anh');
-  await page.getByRole('button', { name: /Dùng ảnh mẫu nhanh/ }).click();
+  await page.getByTestId('gallery-input').setInputFiles(PHOTO_BEFORE);
+  await expect(page.getByRole('img').first()).toBeVisible();
+  await visibleButton(page, 'Tiếp tục').click();
   await page.waitForURL('**/bao-su-co/xac-nhan');
-  // GPS giả lập → địa chỉ tự điền (chờ phần tử đang hiển thị, bố cục desktop bị ẩn ở màn hình điện thoại).
-  await expect(page.locator('body')).toContainText(/Đường .+, Phường Trấn Biên/);
-  await page
-    .getByRole('button', { name: /Rác thải/ })
-    .first()
-    .click();
 
+  // Bước 1: loại phản ánh
+  await visibleButton(page, 'Rác thải').click();
+  await visibleButton(page, 'Tiếp tục chọn vị trí').click();
+
+  // Bước 2: vị trí (GPS giả lập điền sẵn địa chỉ)
+  await expect(page.getByLabel('Địa chỉ', { exact: true })).toHaveValue(/Trấn Biên/);
+  await visibleButton(page, 'Xác nhận vị trí').click();
+  const dupDialog = page.getByRole('dialog', { name: 'Đối chiếu phản ánh tương tự' });
+  if (await dupDialog.isVisible().catch(() => false)) {
+    await dupDialog.getByRole('button', { name: /Không phải – gửi phản ánh mới/ }).click();
+  }
+
+  // Bước 3: mô tả & liên hệ
+  // API chưa lưu tiêu đề; mô tả được lưu nên dùng để nhận diện hồ sơ ở các màn sau.
+  await page.getByLabel('Mô tả thêm').fill(options.title);
   const created = page.waitForResponse(
     (r) => r.url().endsWith('/api/v1/citizen/reports') && r.request().method() === 'POST'
   );
 
   if (options.phone) {
-    await page.getByPlaceholder(/Số điện thoại nhận tin/).fill(options.phone);
+    await page.getByLabel(/Số điện thoại nhận tin/).fill(options.phone);
     await shot(page, `${options.shotPrefix}-xac-nhan`);
-    await page.getByRole('button', { name: 'Gửi phản ánh', exact: true }).click();
+    await visibleButton(page, 'Gửi phản ánh').click();
     const sheet = page.getByRole('dialog');
     await sheet.getByRole('button', { name: 'Tiếp tục' }).click();
-    await expect(sheet.getByText(/Mô phỏng/).first()).toBeVisible();
+    await expect(sheet.getByText('Mô phỏng').first()).toBeVisible();
     await shot(page, `${options.shotPrefix}-otp-mo-phong`);
     await sheet.getByRole('button', { name: /Tự động điền mã 123456/ }).click();
-    await sheet.getByRole('button', { name: 'Xác nhận' }).click();
+    await sheet.getByRole('button', { name: /Xác nhận & Đăng nhập/ }).click();
   } else {
     await shot(page, `${options.shotPrefix}-xac-nhan`);
-    await page.getByRole('button', { name: 'Gửi phản ánh', exact: true }).click();
+    await visibleButton(page, 'Gửi phản ánh').click();
   }
 
   const response = await created;
@@ -77,7 +116,16 @@ async function submitReport(
   const body = (await response.json()) as { code: string; secretCode: string; ownerToken?: string };
   expect(body.code).toMatch(/^TB-\d{4}$/);
   expect(body.secretCode).toMatch(/^\d{4}$/);
-  await page.waitForURL('**/?tab=ca-nhan');
+
+  if (options.phone) {
+    // Có SĐT: về trang chủ kèm thông báo đã gửi.
+    await page.waitForURL((url) => url.pathname === '/');
+    await expect(page.getByText(`Gửi phản ánh #${body.code} thành công!`)).toBeVisible();
+  } else {
+    // Ẩn danh: màn thành công hiện mã phản ánh và mã bí mật (chỉ một lần).
+    await expect(page.getByTestId('submitted-report-id')).toHaveText(body.code);
+    await expect(page.getByText(body.secretCode).first()).toBeVisible();
+  }
   await shot(page, `${options.shotPrefix}-da-gui`);
   return body;
 }
@@ -89,6 +137,8 @@ async function publicReport(page: Page, code: string): Promise<Record<string, un
 }
 
 test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)', () => {
+  const runId = Date.now().toString().slice(-6);
+  const phoneTitle = `E2E rác tồn đọng góc đường ${runId}`;
   let phoneReport: { code: string; secretCode: string; ownerToken?: string };
   let anonReport: { code: string; secretCode: string; ownerToken?: string };
   let citizenCtx: BrowserContext;
@@ -103,6 +153,7 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)'
     citizenPage = await citizenCtx.newPage();
     phoneReport = await submitReport(citizenPage, {
       phone: CITIZEN_PHONE,
+      title: phoneTitle,
       shotPrefix: '01a-dan-co-sdt',
     });
     // Hồ sơ có SĐT: không phát khoá chủ hồ sơ (chủ hồ sơ chứng minh bằng SĐT/OTP).
@@ -110,11 +161,14 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)'
 
     const anonCtx = await newCitizenContext(browser);
     const anonPage = await anonCtx.newPage();
-    anonReport = await submitReport(anonPage, { shotPrefix: '01b-dan-an-danh' });
+    anonReport = await submitReport(anonPage, {
+      title: `E2E ẩn danh ${runId}`,
+      shotPrefix: '01b-dan-an-danh',
+    });
     expect(anonReport.ownerToken).toBeTruthy();
     await anonCtx.close();
 
-    // API công khai không lộ SĐT, secretCode hay ownerToken; hồ sơ ẩn danh giữ anonymous.
+    // API công khai không lộ SĐT, secretCode hay ownerToken (cờ ẩn danh kiểm ở màn cán bộ, test 07).
     const phonePublic = JSON.stringify(await publicReport(citizenPage, phoneReport.code));
     const anonPublic = JSON.stringify(await publicReport(citizenPage, anonReport.code));
     for (const text of [phonePublic, anonPublic]) {
@@ -127,7 +181,7 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)'
   test('02 Cán bộ chưa đăng nhập bị chuyển về /dang-nhap; sai mật khẩu báo lỗi chung', async ({
     browser,
   }) => {
-    const ctx = await browser.newContext({ viewport: DESKTOP });
+    const ctx = await newStaffContext(browser);
     const page = await ctx.newPage();
     await page.goto('/can-bo');
     await page.waitForURL('**/dang-nhap**');
@@ -142,47 +196,54 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)'
   });
 
   test('03 Cán bộ đăng nhập thật, tiếp nhận và giao TNV xác minh', async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: DESKTOP });
+    const ctx = await newStaffContext(browser);
     const page = await ctx.newPage();
     await staffLogin(page, CB_EMAIL, staffPassword(), '/can-bo');
-    await expect(page.getByText(phoneReport.code).first()).toBeVisible();
+    // Không có màn đăng nhập mô phỏng ở chế độ API; hộp tiếp nhận hiện hồ sơ vừa gửi.
+    await expect(visibleText(page, phoneReport.code)).toBeVisible();
     await shot(page, '03a-can-bo-hop-tiep-nhan');
 
     await page.goto(`/can-bo/${phoneReport.code}`);
-    // SĐT hiển thị đã che
-    await expect(page.getByText(/0912 \*\*\* 678/)).toBeVisible();
+    // SĐT chỉ hiển thị dạng che
+    await expect(visibleText(page, '0912 *** 678')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(CITIZEN_PHONE);
     await shot(page, '03b-can-bo-chi-tiet-moi');
-    await page.getByRole('button', { name: 'Tiếp nhận phản ánh' }).click();
-    await expect(page.getByText('Đã tiếp nhận hồ sơ thành công!')).toBeVisible();
+    await visibleButton(page, /^Tiếp nhận$/).click();
+    await expect(page.getByText(`Đã tiếp nhận hồ sơ ${phoneReport.code}`)).toBeVisible();
     expect((await publicReport(page, phoneReport.code)).status).toBe('da_tiep_nhan');
 
-    await page.getByRole('button', { name: 'Giao TNV xác minh' }).click();
+    await visibleButton(page, 'Giao TNV xác minh').click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByRole('combobox').selectOption({ label: 'Trần Thị Mai' });
+    await dialog.getByRole('combobox').selectOption({ label: TNV_NAME });
     await shot(page, '03c-can-bo-giao-tnv');
     await dialog.getByRole('button', { name: 'Xác nhận giao' }).click();
-    await expect(page.getByText('Đã giao tình nguyện viên xác minh')).toBeVisible();
+    await expect(page.getByText(`Đã giao TNV ${TNV_NAME} xác minh`)).toBeVisible();
     expect((await publicReport(page, phoneReport.code)).status).toBe('cho_xac_minh');
     await ctx.close();
   });
 
   test('04 TNV đăng nhập, xác minh "Có sự cố" kèm ảnh', async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: MOBILE });
+    const ctx = await newStaffContext(browser, MOBILE);
     const page = await ctx.newPage();
     await staffLogin(page, TNV_EMAIL, staffPassword(), '/tnv');
-    const card = page.getByTestId('task-card').filter({ hasText: phoneReport.code });
+    const card = page.getByRole('button').filter({ hasText: phoneTitle }).first();
     await expect(card).toBeVisible();
     // Số điện thoại và mã bí mật không xuất hiện trên màn TNV
     await expect(page.locator('body')).not.toContainText(CITIZEN_PHONE);
+    await expect(page.locator('body')).not.toContainText(phoneReport.secretCode + ' ');
     await shot(page, '04a-tnv-danh-sach');
 
-    await card.getByRole('button', { name: /Làm tiếp|Nhận việc/ }).click();
+    await card.click();
+    await page.waitForURL('**/tnv/**');
     await page.getByRole('button', { name: 'Có', exact: true }).click();
-    await page.getByRole('button', { name: 'Trung bình' }).click();
-    await page.getByRole('button', { name: /Dùng ảnh mẫu/ }).click();
+    await page.getByRole('button', { name: 'Trung bình', exact: true }).click();
+    await page.getByLabel('Chọn ảnh tại chỗ').setInputFiles(PHOTO_BEFORE);
+    const submit = page.getByRole('button', { name: 'Gửi kết quả xác minh' });
+    await expect(submit).toBeEnabled();
     await shot(page, '04b-tnv-xac-minh');
-    await page.getByRole('button', { name: 'Gửi kết quả' }).click();
-    await expect(page.getByText('Đã gửi kết quả cho cán bộ')).toBeVisible();
+    await submit.click();
+    await page.waitForURL((url) => url.pathname === '/tnv');
+    await expect(page.getByText(`Đã gửi kết quả xác minh cho ${phoneReport.code}`)).toBeVisible();
     expect((await publicReport(page, phoneReport.code)).status).toBe('da_tiep_nhan');
     await ctx.close();
   });
@@ -190,38 +251,48 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)'
   test('05 Cán bộ xem kết quả xác minh, giao xử lý và hoàn thành kèm ảnh sau', async ({
     browser,
   }) => {
-    const ctx = await browser.newContext({ viewport: DESKTOP });
+    const ctx = await newStaffContext(browser);
     const page = await ctx.newPage();
     await staffLogin(page, CB_EMAIL, staffPassword(), '/can-bo');
     await page.goto(`/can-bo/${phoneReport.code}`);
-    await expect(page.getByTestId('verify-result')).toContainText('Có tồn tại');
-    await expect(page.getByTestId('verify-result')).toContainText('Trần Thị Mai');
+    const verify = page.getByTestId('tnv-verification-result');
+    await expect(verify).toContainText('Có sự cố');
+    await expect(verify).toContainText(TNV_NAME);
     await shot(page, '05a-can-bo-ket-qua-xac-minh');
+    // Lịch sử xử lý nội bộ vẫn còn sau khi danh sách được đồng bộ lại từ API.
+    await visibleButton(page, /^Lịch sử/).click();
+    await expect(page.getByTestId('officer-history-tab').locator('> div')).not.toHaveCount(0);
+    await visibleButton(page, /^Chi tiết/).click();
 
-    await page.getByRole('button', { name: 'Giao xử lý' }).click();
-    await expect(page.getByText(/Đã giao việc cho/)).toBeVisible();
+    await visibleButton(page, /^Giao xử lý$/).click();
+    await expect(page.getByText(/^Đã giao /).first()).toBeVisible();
     expect((await publicReport(page, phoneReport.code)).status).toBe('da_giao');
 
-    await page.getByRole('button', { name: /Cập nhật kết quả hoàn thành/ }).click();
+    await visibleButton(page, /^Cập nhật kết quả$/).click();
     await page.waitForURL('**/ket-qua');
-    await page.getByRole('button', { name: /Dùng ảnh mẫu/ }).click();
-    await page.locator('#result-note').fill('Đã dọn sạch rác và vệ sinh khu vực');
+    await page.locator('input[type="file"]').first().setInputFiles(PHOTO_AFTER);
+    await page.locator('#a03-result-note').fill('Đã dọn sạch rác và vệ sinh khu vực');
+    const confirm = page.getByRole('button', { name: 'Xác nhận hoàn thành' });
+    await expect(confirm).toBeEnabled();
     await shot(page, '05b-can-bo-cap-nhat-ket-qua');
-    await page.getByRole('button', { name: 'Xác nhận hoàn thành' }).click();
+    await confirm.click();
     await page.waitForURL(`**/can-bo/${phoneReport.code}`);
-    await expect(page.getByText('Hồ sơ đã được xử lý hoàn tất')).toBeVisible();
-    expect((await publicReport(page, phoneReport.code)).status).toBe('hoan_thanh');
+    await expect
+      .poll(async () => (await publicReport(page, phoneReport.code)).status)
+      .toBe('hoan_thanh');
     await ctx.close();
   });
 
-  test('06 Người dân xem Trước/Sau, bấm "Chưa giải quyết" -> hồ sơ mở lại', async () => {
+  test('06 Người dân (chủ hồ sơ) xem Trước/Sau, bấm "Chưa giải quyết" -> hồ sơ mở lại', async () => {
     await citizenPage.goto(`/phan-anh/${phoneReport.code}`);
     await expect(citizenPage.getByText(/Ảnh Trước \/ Sau xử lý/).first()).toBeVisible();
     await expect(citizenPage.getByText(/Vấn đề đã được giải quyết chưa/).first()).toBeVisible();
     await shot(citizenPage, '06a-dan-xem-truoc-sau');
 
-    citizenPage.once('dialog', (d) => void d.accept());
-    await citizenPage.locator('button:visible', { hasText: 'Chưa giải quyết' }).first().click();
+    await visibleButton(citizenPage, 'Chưa giải quyết').click();
+    const sheet = citizenPage.getByRole('dialog');
+    await sheet.locator('textarea').fill('Rác vẫn còn ở góc đường, chưa dọn hết');
+    await sheet.getByRole('button', { name: /Gửi phản hồi & Mở lại hồ sơ/ }).click();
     await expect
       .poll(async () => (await publicReport(citizenPage, phoneReport.code)).status)
       .toBe('mo_lai');
@@ -231,26 +302,28 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local)'
   test('07 Người không phải chủ hồ sơ không đánh giá được (403), hồ sơ ẩn danh hiện ở hộp cán bộ', async ({
     browser,
   }) => {
-    // Người lạ (không có SĐT/khoá) đánh giá hồ sơ ẩn danh chưa hoàn thành -> bị chặn trước khi xét trạng thái.
-    const strangerCtx = await browser.newContext({ viewport: MOBILE });
+    // Người lạ (không có SĐT/khoá) đánh giá hồ sơ ẩn danh -> bị chặn trước khi xét trạng thái.
+    const strangerCtx = await newCitizenContext(browser);
     const stranger = await strangerCtx.newPage();
     const denied = await stranger.request.post(
       `/api/v1/citizen/reports/${anonReport.code}/feedback`,
-      {
-        data: { resolved: true, rating: 5 },
-      }
+      { data: { resolved: true, rating: 5 } }
     );
     expect(denied.status()).toBe(403);
+    // Máy chủ không xác nhận người lạ là chủ hồ sơ (giao diện dựa vào đây để ẩn thẻ đánh giá).
+    const ownerCheck = await stranger.request.get(
+      `/api/v1/citizen/reports/${phoneReport.code}/owner`
+    );
+    expect(ownerCheck.status()).toBe(403);
     await strangerCtx.close();
 
-    const ctx = await browser.newContext({ viewport: DESKTOP });
+    const ctx = await newStaffContext(browser);
     const page = await ctx.newPage();
     await staffLogin(page, CB_EMAIL, staffPassword(), '/can-bo');
-    const row = page.getByText(anonReport.code).first();
-    await expect(row).toBeVisible();
+    await expect(visibleText(page, anonReport.code)).toBeVisible();
     await shot(page, '07-can-bo-hop-co-an-danh');
     await page.goto(`/can-bo/${anonReport.code}`);
-    await expect(page.getByText('Ẩn danh').first()).toBeVisible();
+    await expect(visibleText(page, 'Ẩn danh')).toBeVisible();
     await ctx.close();
   });
 });

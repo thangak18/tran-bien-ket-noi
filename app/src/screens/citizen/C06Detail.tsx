@@ -237,7 +237,7 @@ export function C06Detail() {
       if (!alreadyClaimed) void ds.claimReportByKey(rawReport.id, urlKey);
     }
   }, [rawReport, urlKey, state.settings.deviceReports, ds]);
-  const isOwner = useMemo(() => {
+  const localOwner = useMemo(() => {
     if (!rawReport) return false;
     return hasOwnerAccess(rawReport, {
       phone: state.settings.phone,
@@ -246,6 +246,23 @@ export function C06Detail() {
     });
   }, [rawReport, state.settings.phone, state.settings.deviceReports, urlKey]);
 
+  // Chế độ API: danh sách công khai không có SĐT người theo dõi; hỏi máy chủ (SĐT đã OTP hoặc khoá chủ hồ sơ).
+  const [apiOwner, setApiOwner] = useState(false);
+  const rawReportId = rawReport?.id;
+  const rawReportStatus = rawReport?.status;
+  useEffect(() => {
+    if (!isApiMode() || !rawReportId) return;
+    let cancelled = false;
+    ds.isReportOwner(rawReportId)
+      .then((owner) => {
+        if (!cancelled) setApiOwner(owner);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [ds, rawReportId, rawReportStatus, state.settings.phone]);
+  const isOwner = isApiMode() ? apiOwner : localOwner;
   // Nếu không phải chủ hồ sơ thì ẩn trường nhạy cảm qua toPublicReport
   const displayReport: Report | null = useMemo(() => {
     if (!rawReport) return null;

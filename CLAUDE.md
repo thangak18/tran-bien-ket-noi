@@ -14,6 +14,8 @@ Người dân chụp ảnh báo sự cố (đèn đường, ngập nước, rác
 
 ## 2. Trạng thái hiện tại (25/11/2026, cập nhật sau đợt review)
 
+**Cập nhật sau merge (25/11/2026):** `main` local đã gộp `feat/ui-upgrade-portals-theme` (giao diện mới, ưu tiên khi xung đột) rồi `feat/giai-doan-2` (backend/DB/DataSource). Giao diện mới nối lại qua DataSource; đo lại trên `main`: vitest 52 file / **313 pass**, `db:verify` 17/17, `mock:verify` 100%, e2e API **7/7** (spec viết lại cho UI mới). Chưa push. Nhánh `feat/admin` chưa merge (trái quyết định chỉ 3 vai trò).
+
 Giai đoạn 2 trên nhánh `feat/giai-doan-2` **đã chạy được ở máy local nhưng chưa xong hết**. Báo cáo cũ ghi "hoàn thành 100%, 229 test pass" là sai: các test đó chạy trên Postgres giả (lớp `cube/earthdistance`) và còn lỗ hổng bảo mật. Số liệu đo lại ngày 25/11/2026 (chi tiết: `docs/review/giai-doan-2/ket-qua-kiem-chung.md`):
 
 - Môi trường: Docker Desktop + Supabase local 2.1.1 (`npx supabase start --workdir ..` chạy trong `app/`), PostgreSQL 15 + **PostGIS thật**, Supabase Auth thật.
@@ -23,7 +25,8 @@ Giai đoạn 2 trên nhánh `feat/giai-doan-2` **đã chạy được ở máy l
 - Frontend: mọi màn hình ghi dữ liệu qua `DataSource` (`VITE_DATA_SOURCE=local|api`), xử lý 401/403/409/mất mạng. Xem `docs/review/giai-doan-2/fe.md`.
 
 **Việc còn lại / hạn chế** (đầy đủ ở `docs/review/giai-doan-2/be.md` mục 6, `fe.md` mục 5):
-- Upload ảnh lên Supabase Storage **chưa làm**: `/uploads/sign` là bản giả, ảnh lưu dạng data URL.
+- Upload ảnh lên Supabase Storage **chưa làm**: `/uploads/sign` là bản giả, ảnh lưu dạng data URL (route tạo hộ và xác minh TNV đã nới giới hạn độ dài để nhận data URL).
+- Trường "Tiêu đề phản ánh" của UI mới chưa có cột trong DB nên chế độ API không lưu tiêu đề.
 - Idempotency-Key lưu trong bộ nhớ (không bền trên Vercel); OTP mô phỏng luôn nhận `123456`.
 - Chưa chạy: GitHub Actions, Supabase cloud/Vercel, e2e WebKit (máy không tải được). Chưa có script `staff:reset-password`.
 - `npm audit`: 37 lỗ hổng (3 critical), chưa nâng gói: `docs/review/giai-doan-2/npm-audit.md`.

@@ -222,7 +222,8 @@ const resultSchema = z.object({
   }),
   severity: z.enum(['nhe', 'trung_binh', 'nguy_hiem']).optional(),
   note: z.string().trim().max(1000).optional(),
-  photoPath: z.string().trim().min(1).max(500).optional(),
+  // Chưa có tải ảnh lên Storage: ảnh tại chỗ có thể là data URL (ảnh đã nén ở trình duyệt).
+  photoPath: z.string().trim().min(1).max(2_000_000).optional(),
 });
 
 /**

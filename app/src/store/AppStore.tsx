@@ -92,11 +92,25 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         draft: { photos: [] },
       };
 
-    case 'SET_REPORTS':
+    case 'SET_REPORTS': {
+      // Danh sách từ API không kèm lịch sử xử lý; giữ lịch sử đã tải ở màn chi tiết nếu hồ sơ chưa đổi version.
+      const previous = new Map(state.reports.map((r) => [r.id, r]));
       return {
         ...state,
-        reports: action.payload,
+        reports: action.payload.map((r) => {
+          const old = previous.get(r.id);
+          if (
+            old &&
+            r.timeline.length === 0 &&
+            old.timeline.length > 0 &&
+            old.version === r.version
+          ) {
+            return { ...r, timeline: old.timeline };
+          }
+          return r;
+        }),
       };
+    }
 
     case 'SET_TASKS':
       return {

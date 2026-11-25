@@ -27,6 +27,7 @@ import {
   setOfficerSession,
 } from '@/lib/portalSession';
 import { useAppStore } from '@/store/AppStore';
+import { isApiMode } from '@/lib/api';
 import { useDataSource } from '@/data/useDataSource';
 import { useAction } from '@/data/useAction';
 import { ActionError } from '@/components/common/ActionError';
@@ -534,7 +535,8 @@ export function A01Inbox() {
 
   const resolvedPercentText = `${kpi.resolvedPercent.toFixed(1).replace('.', ',')}%`;
 
-  if (!officerSession) {
+  // Chế độ API: ProtectedRoute đã buộc đăng nhập thật, không hiện màn đăng nhập mô phỏng.
+  if (!officerSession && !isApiMode()) {
     return (
       <OfficerLayout>
         <PortalAuthFlow

@@ -38,6 +38,7 @@ import {
   submitVerification,
 } from '../store/officerActions';
 import { computeKpi } from '../domain/kpi';
+import { hasOwnerAccess } from '../domain/access';
 import { haversineMeters } from '../domain/geo';
 import { getCurrentVolunteer } from '../lib/volunteer';
 import mockData from './mock.json';
@@ -172,6 +173,16 @@ export class LocalDataSource implements DataSource {
   async claimReport(reportId: string, phone: string): Promise<Report> {
     this.write(subscribeLater(this.read(), reportId, phone, this.now));
     return findReport(this.read(), reportId);
+  }
+
+  async isReportOwner(reportId: string): Promise<boolean> {
+    const state = this.read();
+    const report = state.reports.find((r) => r.id === reportId);
+    if (!report) return false;
+    return hasOwnerAccess(report, {
+      phone: state.settings.phone,
+      deviceReports: state.settings.deviceReports,
+    });
   }
 
   async unsubscribeReport(reportId: string, phone: string): Promise<Report> {

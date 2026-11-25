@@ -328,7 +328,8 @@ export function V01Tasks() {
   // V01 · Nhiệm vụ TNV (/tnv)
   const displayedTasks = activeTab === 'todo' ? todoTasks : doneTasks;
 
-  if (!volunteerSession && location.pathname !== '/tnv/ho-so') {
+  // Chế độ API: ProtectedRoute đã buộc đăng nhập thật, không hiện màn đăng nhập mô phỏng.
+  if (!volunteerSession && !isApiMode() && location.pathname !== '/tnv/ho-so') {
     return (
       <VolunteerLayout>
         <div className="p-4 md:p-6">

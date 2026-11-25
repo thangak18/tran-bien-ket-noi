@@ -105,3 +105,19 @@ HTTP 200
 - GitHub Actions (`ci.yml` mới dùng Supabase local và secret sinh lúc chạy) chưa chạy vì không được push.
 - Chưa thử với Supabase cloud / Vercel (không được đăng nhập dịch vụ cloud).
 - E2E trên WebKit/điện thoại thật.
+
+## 6. Kiểm chứng lại sau khi merge vào `main` (25/11/2026)
+
+Thứ tự merge: `origin/feat/ui-upgrade-portals-theme` (commit `2999dd8`), rồi `feat/giai-doan-2` (commit `36b3689`). Xung đột ở màn hình được giải bằng bản UI của ui-upgrade, sau đó nối lại thao tác ghi qua DataSource.
+
+| Lệnh | Kết quả |
+|---|---|
+| `npx vitest run` (sau `npm run demo:reset`) | 52 file, 313 pass, 0 fail |
+| `npm run db:verify` | 17/17 |
+| `npm run mock:verify` | 100% |
+| `npm run lint`, `npm run build` | đạt |
+| `npm run test:e2e:api` | 7/7 (spec viết lại cho UI mới: C02 chọn ảnh → C04 ba bước → OTP 6 ô mô phỏng) |
+
+Sửa thêm trong lúc kiểm chứng: C06 hỏi máy chủ quyền chủ hồ sơ (`GET /citizen/reports/:code/owner`) ở chế độ API; danh sách đồng bộ không còn xoá lịch sử xử lý đã tải; màn đăng nhập mô phỏng của cổng cán bộ/TNV không hiện ở chế độ API.
+
+Một lần chạy vitest đầy đủ có 2 test DB fail (dữ liệu TB-0001 khác `mock.json`) rồi tự hết ở 3 lần chạy sau; nghi có tiến trình khác ghi vào cùng DB local lúc đó, chưa xác định được.

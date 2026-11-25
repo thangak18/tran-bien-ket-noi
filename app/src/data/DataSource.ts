@@ -96,6 +96,9 @@ export interface DataSource {
   /** Đăng ký nhận tin / xác nhận quyền sở hữu bằng SĐT */
   claimReport(reportId: string, phone: string): Promise<Report>;
 
+  /** Người xem trên thiết bị này có phải chủ hồ sơ (SĐT đã xác thực hoặc khoá chủ hồ sơ)? */
+  isReportOwner(reportId: string): Promise<boolean>;
+
   /** Huỷ nhận tin của một số điện thoại cho phản ánh */
   unsubscribeReport(reportId: string, phone: string): Promise<Report>;
   /** Nhận hồ sơ về thiết bị bằng mã bí mật (link ?k=) */
