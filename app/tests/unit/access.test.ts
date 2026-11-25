@@ -26,9 +26,28 @@ describe('UT-016b – Access (spec 3.4a, 3.4b, 3.6)', () => {
     timeline: [],
   };
 
-  it('1. SĐT thiết bị nằm trong followers -> hasOwnerAccess true', () => {
-    expect(hasOwnerAccess(report, { phone: '0909000068' })).toBe(true);
-    expect(hasOwnerAccess(report, { phone: '0909999999' })).toBe(false);
+  it('1a. Hồ sơ có SĐT (spec v3.0 3.4a): chỉ người gửi là chủ; người "Tôi cũng gặp" thì không', () => {
+    const phoneReport: Report = {
+      ...report,
+      anonymous: false,
+      reporterPhone: '0909000068',
+      followers: ['0909000068', '0912000001'],
+    };
+    expect(hasOwnerAccess(phoneReport, { phone: '0909000068' })).toBe(true);
+    expect(hasOwnerAccess(phoneReport, { phone: '0912000001' })).toBe(false);
+    expect(hasOwnerAccess(phoneReport, { phone: '0909999999' })).toBe(false);
+    // Hồ sơ có SĐT không dùng khoá thiết bị hay ?k= để thành chủ.
+    expect(hasOwnerAccess(phoneReport, { urlKey: '4821' })).toBe(false);
+  });
+
+  it('1b. Hồ sơ ẩn danh cũ: SĐT đã đăng ký nhận tin sau là chủ; chưa đăng ký thì không', () => {
+    expect(hasOwnerAccess({ ...report, subscribedLater: true }, { phone: '0909000068' })).toBe(
+      true
+    );
+    expect(hasOwnerAccess(report, { phone: '0909000068' })).toBe(false);
+    expect(hasOwnerAccess({ ...report, subscribedLater: true }, { phone: '0909999999' })).toBe(
+      false
+    );
   });
 
   it('2. deviceReports chứa {id, secretCode} đúng -> true; secretCode sai -> false', () => {

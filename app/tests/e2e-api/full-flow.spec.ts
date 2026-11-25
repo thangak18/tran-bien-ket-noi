@@ -141,11 +141,8 @@ async function submitReport(
   return body;
 }
 
-/** Gửi hồ sơ ẩn danh thẳng qua API (UI mới không còn đường gửi ẩn danh, nhưng API vẫn hỗ trợ). */
-async function submitAnonymousViaApi(
-  page: Page,
-  description: string
-): Promise<{ code: string; secretCode: string; ownerToken?: string }> {
+/** Spec v3.0 D1: API không còn nhận hồ sơ ẩn danh mới; thiếu token người dân → 401. */
+async function expectAnonymousRejected(page: Page) {
   const res = await page.request.post('/api/v1/citizen/reports', {
     headers: { 'Idempotency-Key': `e2e-anon-${Date.now()}` },
     data: {
@@ -154,13 +151,17 @@ async function submitAnonymousViaApi(
       lat: 10.9512,
       lng: 106.8231,
       address: 'Đ. Cách Mạng Tháng Tám, P. Trấn Biên',
-      description,
       anonymous: true,
     },
   });
-  expect(res.status()).toBe(201);
-  return (await res.json()) as { code: string; secretCode: string; ownerToken?: string };
+  expect(res.status()).toBe(401);
+  expect(((await res.json()) as { error: { code: string } }).error.code).toBe(
+    'CITIZEN_LOGIN_REQUIRED'
+  );
 }
+
+/** Hồ sơ ẩn danh cũ trong dữ liệu mẫu (6 hồ sơ, bất biến): TB-0042 đang chờ xác minh. */
+const LEGACY_ANON_CODE = 'TB-0042';
 
 async function publicReport(page: Page, code: string): Promise<Record<string, unknown>> {
   const res = await page.request.get(`/api/v1/public/reports/${code}`);
@@ -172,7 +173,6 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
   const runId = Date.now().toString().slice(-6);
   const phoneTitle = `E2E rác tồn đọng góc đường ${runId}`;
   let phoneReport: { code: string; secretCode: string; ownerToken?: string };
-  let anonReport: { code: string; secretCode: string; ownerToken?: string };
   let citizenCtx: BrowserContext;
   let citizenPage: Page;
 
@@ -180,7 +180,7 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     await citizenCtx?.close();
   });
 
-  test('01 Người dân đăng nhập SĐT (OTP mô phỏng) rồi gửi phản ánh; hồ sơ ẩn danh qua API', async ({
+  test('01 Người dân đăng nhập SĐT (OTP mô phỏng) rồi gửi phản ánh; API từ chối gửi ẩn danh', async ({
     browser,
   }) => {
     citizenCtx = await newCitizenContext(browser);
@@ -193,16 +193,14 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     // Hồ sơ có SĐT: không phát khoá chủ hồ sơ (chủ hồ sơ chứng minh bằng SĐT/OTP).
     expect(phoneReport.ownerToken).toBeUndefined();
 
-    // Hồ sơ ẩn danh (thiết bị khác, không token): API phát khoá chủ hồ sơ để thiết bị đó theo dõi.
+    // Thiết bị khác chưa đăng nhập: API từ chối gửi ẩn danh.
     const anonCtx = await newCitizenContext(browser);
-    const anonPage = await anonCtx.newPage();
-    anonReport = await submitAnonymousViaApi(anonPage, `E2E ẩn danh ${runId}`);
-    expect(anonReport.ownerToken).toBeTruthy();
+    await expectAnonymousRejected(await anonCtx.newPage());
     await anonCtx.close();
 
     // API công khai không lộ SĐT, secretCode hay ownerToken (cờ ẩn danh kiểm ở màn cán bộ, test 07).
     const phonePublic = JSON.stringify(await publicReport(citizenPage, phoneReport.code));
-    const anonPublic = JSON.stringify(await publicReport(citizenPage, anonReport.code));
+    const anonPublic = JSON.stringify(await publicReport(citizenPage, LEGACY_ANON_CODE));
     for (const text of [phonePublic, anonPublic]) {
       expect(text).not.toContain(CITIZEN_PHONE);
       expect(text).not.toMatch(/secret/i);
@@ -236,9 +234,11 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     await shot(page, '03a-can-bo-hop-tiep-nhan');
 
     await page.goto(`/can-bo/${phoneReport.code}`);
-    // SĐT chỉ hiển thị dạng che
-    await expect(visibleText(page, '0912 *** 678')).toBeVisible();
-    await expect(page.locator('body')).not.toContainText(CITIZEN_PHONE);
+    // Spec v3.0 D7: cán bộ thấy SĐT đầy đủ và nút "Gọi" để liên hệ người gửi.
+    await expect(visibleText(page, '0912 345 678')).toBeVisible();
+    await expect(
+      page.getByTestId('officer-call-reporter').locator('visible=true').first()
+    ).toHaveAttribute('href', `tel:${CITIZEN_PHONE}`);
     if (AI_IS_DEEPSEEK) {
       const ai = page.getByTestId('officer-ai-suggestion').locator('visible=true').first();
       await expect(ai).toContainText('Rác thải');
@@ -267,11 +267,19 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     await expect(card).toBeVisible();
     // Số điện thoại và mã bí mật không xuất hiện trên màn TNV
     await expect(page.locator('body')).not.toContainText(CITIZEN_PHONE);
+    await expect(page.locator('body')).not.toContainText('0912 345 678'); // V01 không có SĐT (PHONE-003)
     await expect(page.locator('body')).not.toContainText(phoneReport.secretCode + ' ');
     await shot(page, '04a-tnv-danh-sach');
 
     await card.click();
     await page.waitForURL('**/tnv/**');
+    // AC-V02-6: nhiệm vụ đang giao cho chính TNV này và chưa xong → có SĐT người gửi + nút "Gọi".
+    const contact = page.getByTestId('tnv-contact-phone');
+    await expect(contact).toContainText('0912 345 678');
+    await expect(contact.getByRole('link', { name: 'Gọi' })).toHaveAttribute(
+      'href',
+      `tel:${CITIZEN_PHONE}`
+    );
     // Wizard 3 bước: Thực tế → Ảnh/Video → Ghi chú & Gửi
     await page.getByRole('button', { name: 'Có', exact: true }).click();
     await page.getByRole('button', { name: 'Trung bình', exact: true }).click();
@@ -347,30 +355,30 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     ).toBeVisible();
   });
 
-  test('07 Người không phải chủ hồ sơ không đánh giá được (403), hồ sơ ẩn danh hiện ở hộp cán bộ', async ({
+  test('07 Người chưa đăng nhập không đánh giá được (401), không phải chủ (404); hồ sơ ẩn danh cũ hiện ở hộp cán bộ', async ({
     browser,
   }) => {
-    // Người lạ (không có SĐT/khoá) đánh giá hồ sơ ẩn danh -> bị chặn trước khi xét trạng thái.
+    // Người lạ chưa đăng nhập đánh giá hồ sơ → bị chặn trước khi xét trạng thái.
     const strangerCtx = await newCitizenContext(browser);
     const stranger = await strangerCtx.newPage();
     const denied = await stranger.request.post(
-      `/api/v1/citizen/reports/${anonReport.code}/feedback`,
+      `/api/v1/citizen/reports/${phoneReport.code}/feedback`,
       { data: { resolved: true, rating: 5 } }
     );
-    expect(denied.status()).toBe(403);
+    expect(denied.status()).toBe(401); // chưa đăng nhập SĐT (AC-AUTH-9)
     // Máy chủ không xác nhận người lạ là chủ hồ sơ (giao diện dựa vào đây để ẩn thẻ đánh giá).
     const ownerCheck = await stranger.request.get(
       `/api/v1/citizen/reports/${phoneReport.code}/owner`
     );
-    expect(ownerCheck.status()).toBe(403);
+    expect(ownerCheck.status()).toBe(404); // không phải chủ (AC-AUTH-4)
     await strangerCtx.close();
 
     const ctx = await newStaffContext(browser);
     const page = await ctx.newPage();
     await staffLogin(page, CB_EMAIL, staffPassword(), '/can-bo');
-    await expect(visibleText(page, anonReport.code)).toBeVisible();
+    await expect(visibleText(page, LEGACY_ANON_CODE)).toBeVisible();
     await shot(page, '07-can-bo-hop-co-an-danh');
-    await page.goto(`/can-bo/${anonReport.code}`);
+    await page.goto(`/can-bo/${LEGACY_ANON_CODE}`);
     await expect(visibleText(page, 'Ẩn danh')).toBeVisible();
     await ctx.close();
   });

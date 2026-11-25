@@ -33,7 +33,7 @@ import { useAction } from '@/data/useAction';
 import { ActionError } from '@/components/common/ActionError';
 import { computeKpi } from '@/domain/kpi';
 import { sortInbox, isOverdue, isDueSoon } from '@/domain/sorting';
-import { formatDate, formatDays } from '@/domain/format';
+import { formatDate, formatDays, formatPhone } from '@/domain/format';
 import { CATEGORY_CONFIGS, DEPARTMENTS, DEMO_NOW, officerLabel } from '@/domain/constants';
 import { Category, Report, Status, STATUSES } from '@/domain/types';
 import { STREETS, WARD_CENTER, nearestStreet } from '@/data/streets';
@@ -1010,7 +1010,7 @@ export function A01Inbox() {
                                 className="h-3.5 w-3.5 text-[var(--color-primary)] shrink-0"
                                 aria-hidden="true"
                               />
-                              <span>{report.reporterPhone}</span>
+                              <span>{formatPhone(report.reporterPhone)}</span>
                             </span>
                           ) : report.anonymous ? (
                             <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">

@@ -7,6 +7,7 @@ import {
   ClipboardList,
   ExternalLink,
   MapPin,
+  Phone,
 } from 'lucide-react';
 import { VolunteerLayout } from '@/layouts/VolunteerLayout';
 import { Button, Card, Chip, EmptyState, Toast } from '@/components/ui';
@@ -19,6 +20,8 @@ import { useDataSource } from '@/data/useDataSource';
 import { useAction } from '@/data/useAction';
 import { isApiMode } from '@/lib/api';
 import { ActionError } from '@/components/common/ActionError';
+import { getCurrentVolunteer } from '@/lib/volunteer';
+import { formatPhone } from '@/domain/format';
 import { V01Tasks } from './V01Tasks';
 
 type ExistsOption = 'co' | 'khong' | 'khong_tim_thay';
@@ -58,17 +61,16 @@ export function V02Verify() {
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Chế độ API: vào thẳng đường dẫn nhiệm vụ thì tải nhiệm vụ và hồ sơ từ máy chủ.
+  // Chế độ API: luôn tải chi tiết nhiệm vụ (danh sách không có SĐT người gửi, AC-V02-6) và hồ sơ nếu thiếu.
   useEffect(() => {
     if (!isApiMode() || !taskId || taskId === 'ban-do' || taskId === 'ho-so') return;
-    if (task && report) return;
     let cancelled = false;
-    setLoading(true);
+    if (!task || !report) setLoading(true);
     (async () => {
       try {
-        const t = task ?? (await ds.getVolunteerTaskById(taskId));
+        const t = await ds.getVolunteerTaskById(taskId);
         if (!t || cancelled) return;
-        if (!task) dispatch({ type: 'ADD_TASK', payload: t });
+        dispatch({ type: task ? 'UPDATE_TASK' : 'ADD_TASK', payload: t });
         if (!report) {
           const r = await ds.getReportById(t.reportId);
           if (r && !cancelled) dispatch({ type: 'ADD_REPORT', payload: { report: r } });
@@ -82,8 +84,9 @@ export function V02Verify() {
     return () => {
       cancelled = true;
     };
+    // Chỉ chạy lại khi đổi nhiệm vụ đang xem.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskId, !!task, !!report]);
+  }, [taskId]);
 
   if (taskId === 'ban-do' || taskId === 'ho-so') {
     return <V01Tasks />;
@@ -141,6 +144,13 @@ export function V02Verify() {
   const categoryLabel = CATEGORY_CONFIGS.find((c) => c.key === report.category)?.label ?? 'Sự cố';
   const isCompleted = task.status === 'xong';
   const isInspection = task.type === 'nghiem_thu';
+  // AC-V02-6: SĐT người gửi chỉ khi nhiệm vụ đang giao cho chính TNV này và chưa xong.
+  // API đã lọc sẵn (chỉ trả reporterPhone khi đủ điều kiện); chế độ local áp cùng quy tắc ở đây.
+  const contactPhone = isApiMode()
+    ? task.reporterPhone
+    : task.assignee !== null && task.assignee === getCurrentVolunteer() && task.status !== 'xong'
+      ? report.reporterPhone
+      : undefined;
   const directionsUrl = `https://www.openstreetmap.org/directions?from=&to=${encodeURIComponent(
     `${report.lat},${report.lng}`
   )}`;
@@ -303,6 +313,27 @@ export function V02Verify() {
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 </div>
+
+                {contactPhone && (
+                  <div
+                    data-testid="tnv-contact-phone"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100"
+                  >
+                    <div>
+                      <div className="font-bold">Liên hệ người gửi</div>
+                      <div className="mt-0.5 font-mono text-sm tabular-nums">
+                        {formatPhone(contactPhone)}
+                      </div>
+                    </div>
+                    <a
+                      href={`tel:${contactPhone}`}
+                      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-700"
+                    >
+                      <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+                      Gọi
+                    </a>
+                  </div>
+                )}
 
                 {report.description?.trim() && (
                   <div className="rounded-xl border border-slate-200/80 bg-[var(--color-surface)] p-3 text-xs text-[var(--color-text)] dark:border-slate-700">

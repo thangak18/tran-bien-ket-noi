@@ -34,7 +34,7 @@ import { CATEGORY_CONFIGS, DEPARTMENTS, VOLUNTEERS, officerLabel } from '@/domai
 import { CATEGORIES, Category, Priority, Report } from '@/domain/types';
 import { MediaItemPreview } from '@/components/common/MediaCapture';
 import { findDuplicates } from '@/domain/duplicates';
-import { formatDateTime, formatDistance } from '@/domain/format';
+import { formatDateTime, formatDistance, formatPhone } from '@/domain/format';
 import { isOverdue } from '@/domain/sorting';
 import { StatusChip } from '@/components/common/StatusChip';
 import { DelayChip } from '@/components/common/DelayChip';
@@ -661,9 +661,22 @@ export function A02Panel({
                           <span className="font-medium text-[var(--color-text)]">
                             {report.subscribedLater ? 'Ẩn danh · đã đăng ký nhận tin' : 'Ẩn danh'}
                           </span>
+                        ) : report.reporterPhone ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="font-semibold text-[var(--color-text)] tabular-nums">
+                              {formatPhone(report.reporterPhone)}
+                            </span>
+                            <a
+                              href={`tel:${report.reporterPhone}`}
+                              data-testid="officer-call-reporter"
+                              className="inline-flex items-center gap-1 rounded-lg bg-[#0084E8] px-2 py-1 text-[11px] font-extrabold text-white hover:bg-[#006EC4]"
+                            >
+                              Gọi
+                            </a>
+                          </span>
                         ) : (
-                          <span className="font-semibold text-[var(--color-text)] tabular-nums">
-                            {report.reporterPhone || 'Chưa có SĐT'}
+                          <span className="font-semibold text-[var(--color-text)]">
+                            Chưa có SĐT
                           </span>
                         )}
                         {report.onBehalf && (

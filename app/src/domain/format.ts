@@ -117,3 +117,10 @@ export function formatRelativeTime(isoString: string, now: string): string {
   const months = Math.max(1, Math.floor(diffMs / monthMs));
   return `${months} tháng trước`;
 }
+
+/** SĐT 10 số → nhóm "0909 000 068" (spec v3.0 AC-A01-10). Chuỗi khác giữ nguyên. */
+export function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length !== 10) return phone;
+  return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+}

@@ -668,7 +668,29 @@ export function C01Home() {
               })}
             </div>
 
-            {filteredMyReports.length === 0 ? (
+            {!state.settings.phone && myReports.length === 0 ? (
+              // AC-C05-1 / AC-C01-6: chưa đăng nhập thì mời đăng nhập, không nói "chưa gửi phản ánh nào".
+              <div
+                data-testid="personal-login-invite"
+                className="flex flex-col items-center gap-3 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-10 text-center"
+              >
+                <h2 className="text-base font-extrabold text-[var(--color-text)]">
+                  Đăng nhập để xem phản ánh của bạn
+                </h2>
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  Phản ánh gắn với số điện thoại của bạn. Đăng nhập bằng mã OTP để theo dõi tiến độ.
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/ho-so?login=1&redirect=${encodeURIComponent('/?tab=personal')}`)
+                  }
+                  className="rounded-2xl bg-[#0084E8] px-5 py-2.5 text-sm font-extrabold text-white hover:bg-[#006EC4]"
+                >
+                  Đăng nhập
+                </button>
+              </div>
+            ) : filteredMyReports.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#F0F9FF] text-3xl font-extrabold text-[#0084E8] dark:bg-sky-950/40 dark:text-[#38BDF8]">
                   0

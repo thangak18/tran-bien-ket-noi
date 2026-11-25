@@ -170,7 +170,11 @@ export function C04Confirm() {
   const [currentStep, setCurrentStep] = useState<WizardStep>(
     initialStepParam === 2 || initialStepParam === 3 ? (initialStepParam as WizardStep) : 1
   );
-  const [selectedCategory, setSelectedCategory] = useState<Category>(draft.category ?? 'mat_duong');
+  // AC-C04-15: không chọn sẵn loại. pickedCategory là lựa chọn thật của người dân (null = chưa chọn);
+  // selectedCategory chỉ là giá trị hiển thị dự phòng ở bước 2–3, vốn chỉ vào được khi đã chọn.
+  const [pickedCategory, setPickedCategory] = useState<Category | null>(draft.category ?? null);
+  const selectedCategory: Category = pickedCategory ?? 'mat_duong';
+  const [categoryHint, setCategoryHint] = useState<boolean>(false);
   // AC-C02-5: gợi ý AI chỉ để tham khảo, không bao giờ tự chọn loại thay người dân.
   const aiPhotoKey = aiPhoto ? `${aiPhoto.length}:${aiPhoto.slice(0, 64)}` : undefined;
   const savedAi = draft.aiPhotoKey === aiPhotoKey ? (draft.aiSuggestion ?? null) : null;
@@ -293,7 +297,7 @@ export function C04Confirm() {
 
   // Kiểm tra phản ánh nghi trùng <= 50m trong 14 ngày (spec 3.5 / 03d)
   const duplicateMatches = useMemo(() => {
-    if (!selectedCategory || draft.lat === undefined || draft.lng === undefined) {
+    if (!pickedCategory || draft.lat === undefined || draft.lng === undefined) {
       return [];
     }
     return findDuplicates(
@@ -305,7 +309,7 @@ export function C04Confirm() {
       reports,
       settings.demoNow
     );
-  }, [selectedCategory, draft.lat, draft.lng, reports, settings.demoNow]);
+  }, [pickedCategory, selectedCategory, draft.lat, draft.lng, reports, settings.demoNow]);
 
   const topDuplicate =
     duplicateMatches[Math.min(duplicateIndex, Math.max(0, duplicateMatches.length - 1))] ??
@@ -333,7 +337,7 @@ export function C04Confirm() {
     dispatch({
       type: 'SET_DRAFT',
       payload: {
-        category: nextCategory ?? selectedCategory,
+        category: nextCategory ?? pickedCategory ?? undefined,
         title: nextTitle !== undefined ? nextTitle : titleInput,
         description: nextDescription ?? description,
         locationNote: nextLocNote !== undefined ? nextLocNote : locationNoteInput,
@@ -561,8 +565,16 @@ export function C04Confirm() {
     setActivePhotoIndex((prev) => Math.max(0, Math.min(prev, nextPhotos.length - 1)));
   };
 
+  // Mọi đường tới bước 2–3 (nút, thanh bước, ?step= trên URL) đều phải đã chọn loại.
+  useEffect(() => {
+    if (currentStep > 1 && !pickedCategory) {
+      setCurrentStep(1);
+      setCategoryHint(true);
+    }
+  }, [currentStep, pickedCategory]);
   const handleSelectCategory = (category: Category) => {
-    setSelectedCategory(category);
+    setPickedCategory(category);
+    setCategoryHint(false);
     setDismissedDuplicate(false);
     syncDraftFields(category, description, locationNoteInput, titleInput);
   };
@@ -1303,7 +1315,7 @@ export function C04Confirm() {
                   loading={aiLoading}
                   error={aiError}
                   suggestion={aiSuggestion}
-                  selectedCategory={selectedCategory}
+                  selectedCategory={pickedCategory}
                   onUse={(cat) => handleSelectCategory(cat)}
                 />
 
@@ -1312,7 +1324,7 @@ export function C04Confirm() {
                     <CategoryTile
                       key={cat}
                       category={cat}
-                      selected={selectedCategory === cat}
+                      selected={pickedCategory === cat}
                       onSelect={handleSelectCategory}
                     />
                   ))}
@@ -1320,11 +1332,21 @@ export function C04Confirm() {
               </section>
 
               {/* Step 1 Footer CTA -> Step 2 */}
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
+                {!pickedCategory && (
+                  <p
+                    data-testid="category-required-hint"
+                    role={categoryHint ? 'alert' : undefined}
+                    className="text-center text-sm font-semibold text-amber-800 dark:text-amber-300"
+                  >
+                    Hãy chọn một loại sự cố để tiếp tục
+                  </p>
+                )}
                 <button
                   type="button"
+                  disabled={!pickedCategory}
                   onClick={() => setCurrentStep(2)}
-                  className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0084E8] px-5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition-all hover:bg-[#006EC4] active:scale-[0.99]"
+                  className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0084E8] px-5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition-all hover:bg-[#006EC4] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none dark:disabled:bg-slate-700"
                 >
                   <span>Tiếp tục chọn vị trí</span>
                   <ArrowRight className="h-5 w-5" />

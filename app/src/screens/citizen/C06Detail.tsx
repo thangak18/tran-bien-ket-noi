@@ -57,7 +57,9 @@ function saveFollowedId(reportId: string): void {
   }
 }
 
+// AC-C06-13: "Tôi cũng gặp" ẩn khi hồ sơ đã xử lý xong hoặc kết thúc.
 const CLOSED_OR_TERMINAL_STATUSES: ReadonlyArray<Status> = [
+  'hoan_thanh',
   'dong',
   'da_gop',
   'chuyen_co_quan',
@@ -329,7 +331,12 @@ export function C06Detail() {
     CATEGORY_CONFIGS.find((c) => c.key === displayReport.category) || CATEGORY_CONFIGS[0]!;
   const isCompletedOrClosed =
     displayReport.status === 'hoan_thanh' || displayReport.status === 'dong';
-  const isOpenForFollow = !CLOSED_OR_TERMINAL_STATUSES.includes(displayReport.status);
+  // Người gửi không tự "Tôi cũng gặp" cho hồ sơ của mình (AC-C06-13). Chế độ API: chủ hồ sơ = người gửi.
+  const isReporter = isApiMode()
+    ? isOwner
+    : Boolean(state.settings.phone && rawReport.reporterPhone === state.settings.phone);
+  const isOpenForFollow =
+    !CLOSED_OR_TERMINAL_STATUSES.includes(displayReport.status) && !isReporter;
   const totalFollowers = Math.max(1, followerCount(displayReport));
 
   const subscribedPhone =
@@ -422,16 +429,22 @@ export function C06Detail() {
   };
   const handleFollowIssue = async () => {
     if (hasFollowed) return;
-    const ok = await action.run(
-      async () => {
-        await ds.followReport(rawReport.id, state.settings.phone || undefined);
-        return true;
-      },
-      { onConflict: reloadReport }
-    );
-    if (!ok) return;
+    // AC-C06-13: chưa đăng nhập thì đăng nhập trước, xong quay lại đúng hồ sơ này.
+    if (!state.settings.phone) {
+      navigate(`/ho-so?login=1&redirect=${encodeURIComponent(`/phan-anh/${rawReport.id}`)}`);
+      return;
+    }
+    const res = await action.run(() => ds.followReport(rawReport.id, state.settings.phone), {
+      onConflict: reloadReport,
+    });
+    if (!res) return;
     saveFollowedId(rawReport.id);
     setHasFollowed(true);
+    if (res.alreadyFollowed) {
+      setToast({ message: 'Bạn đã báo vấn đề này', type: 'info' });
+      return;
+    }
+    if (isApiMode()) void reloadReport();
     setToast({ message: 'Đã ghi nhận! Bạn cũng đang theo dõi vấn đề này.', type: 'success' });
   };
   const handleBeforeAfterClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -690,7 +703,7 @@ export function C06Detail() {
                       : 'border-[#BAE6FD] bg-[#F0F9FF] text-[#0084E8] hover:border-[#0084E8] hover:bg-[#E0F2FE] active:scale-[0.99] dark:border-sky-800 dark:bg-sky-950/50 dark:text-[#38BDF8]'
                   }`}
                 >
-                  {hasFollowed ? 'Đã ghi nhận bạn cũng gặp vấn đề này' : 'Tôi cũng gặp vấn đề này'}
+                  {hasFollowed ? 'Bạn đã báo vấn đề này' : 'Tôi cũng gặp vấn đề này'}
                 </button>
               )}
             </section>
@@ -829,105 +842,108 @@ export function C06Detail() {
                       : 'border-[#BAE6FD] bg-[#F0F9FF] text-[#0084E8] hover:border-[#0084E8] hover:bg-[#E0F2FE] active:scale-[0.99] dark:border-sky-800 dark:bg-sky-950/50 dark:text-[#38BDF8]'
                   }`}
                 >
-                  {hasFollowed ? 'Đã ghi nhận bạn cũng gặp vấn đề này' : 'Tôi cũng gặp vấn đề này'}
+                  {hasFollowed ? 'Bạn đã báo vấn đề này' : 'Tôi cũng gặp vấn đề này'}
                 </button>
               )}
             </section>
 
             {/* 2. "Vấn đề đã được giải quyết chưa?" Rating & Action Card (Chỉ chủ phản ánh & cần đăng nhập, ẩn sau khi đã xác nhận) */}
-            {rawReport.status === 'hoan_thanh' && !rawReport.feedback && isOwner && (
-              <section
-                aria-label="Đánh giá kết quả xử lý"
-                className="rounded-3xl border border-[#BAE6FD] bg-[#F0F9FF] p-5 shadow-2xs space-y-3.5 dark:border-sky-800 dark:bg-sky-950/40"
-              >
-                <h2 className="text-[15px] font-extrabold text-[var(--color-text)]">
-                  Vấn đề đã được giải quyết chưa?
-                </h2>
+            {/* AC-C06-14: chưa đăng nhập thấy lời mời đăng nhập; đã đăng nhập nhưng không phải người gửi thì không thấy */}
+            {rawReport.status === 'hoan_thanh' &&
+              !rawReport.feedback &&
+              (isOwner || !state.settings.phone) && (
+                <section
+                  aria-label="Đánh giá kết quả xử lý"
+                  className="rounded-3xl border border-[#BAE6FD] bg-[#F0F9FF] p-5 shadow-2xs space-y-3.5 dark:border-sky-800 dark:bg-sky-950/40"
+                >
+                  <h2 className="text-[15px] font-extrabold text-[var(--color-text)]">
+                    Vấn đề đã được giải quyết chưa?
+                  </h2>
 
-                {!state.settings.phone ? (
-                  <div className="space-y-3 rounded-2xl bg-white/80 p-4 text-center dark:bg-slate-900/60">
-                    <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
-                      Vui lòng đăng nhập bằng số điện thoại để xác nhận kết quả và đánh giá mức độ
-                      hài lòng.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={() => setIsRatingAuthOpen(true)}
-                      className="w-full min-h-[var(--tap)]"
-                    >
-                      Đăng nhập để đánh giá
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    {/* 5 Interactive Stars */}
-                    <div className="flex flex-col items-center rounded-2xl bg-white/80 py-2.5 dark:bg-slate-900/60">
-                      <div className="flex items-center gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => {
-                          const active = star <= inlineRating;
-                          return (
-                            <button
-                              key={star}
-                              type="button"
-                              aria-label={`Đánh giá ${star} sao`}
-                              onClick={() => setInlineRating(star)}
-                              className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
-                            >
-                              <Star
-                                className={`h-7 w-7 transition-colors ${
-                                  active
-                                    ? 'fill-[#F59E0B] text-[#F59E0B]'
-                                    : 'fill-slate-200 text-slate-300 hover:text-amber-300 dark:fill-slate-700 dark:text-slate-600'
-                                }`}
-                              />
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="mt-1 text-xs font-bold text-[#0084E8] dark:text-[#38BDF8]">
-                        {inlineRating > 0
-                          ? `${inlineRating}/5 sao · ${INLINE_RATING_LABELS[inlineRating]} (Chạm để chọn)`
-                          : 'Chạm để chọn mức độ hài lòng'}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
+                  {!state.settings.phone ? (
+                    <div className="space-y-3 rounded-2xl bg-white/80 p-4 text-center dark:bg-slate-900/60">
+                      <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
+                        Vui lòng đăng nhập bằng số điện thoại để xác nhận kết quả và đánh giá mức độ
+                        hài lòng.
+                      </p>
+                      <Button
                         type="button"
-                        disabled={isSubmitting}
-                        onClick={() => {
-                          if (rawReport.status === 'hoan_thanh') {
-                            if (inlineRating > 0) {
-                              handleRatingSubmit({ rating: inlineRating, tags: [] });
+                        variant="primary"
+                        onClick={() => setIsRatingAuthOpen(true)}
+                        className="w-full min-h-[var(--tap)]"
+                      >
+                        Đăng nhập để đánh giá
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 5 Interactive Stars */}
+                      <div className="flex flex-col items-center rounded-2xl bg-white/80 py-2.5 dark:bg-slate-900/60">
+                        <div className="flex items-center gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => {
+                            const active = star <= inlineRating;
+                            return (
+                              <button
+                                key={star}
+                                type="button"
+                                aria-label={`Đánh giá ${star} sao`}
+                                onClick={() => setInlineRating(star)}
+                                className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
+                              >
+                                <Star
+                                  className={`h-7 w-7 transition-colors ${
+                                    active
+                                      ? 'fill-[#F59E0B] text-[#F59E0B]'
+                                      : 'fill-slate-200 text-slate-300 hover:text-amber-300 dark:fill-slate-700 dark:text-slate-600'
+                                  }`}
+                                />
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-[#0084E8] dark:text-[#38BDF8]">
+                          {inlineRating > 0
+                            ? `${inlineRating}/5 sao · ${INLINE_RATING_LABELS[inlineRating]} (Chạm để chọn)`
+                            : 'Chạm để chọn mức độ hài lòng'}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            if (rawReport.status === 'hoan_thanh') {
+                              if (inlineRating > 0) {
+                                handleRatingSubmit({ rating: inlineRating, tags: [] });
+                              } else {
+                                setIsRatingOpen(true);
+                              }
                             } else {
-                              setIsRatingOpen(true);
+                              setToast({
+                                message: `Cảm ơn bạn đã xác nhận đã giải quyết (${inlineRating || 5}/5 sao)!`,
+                                type: 'success',
+                              });
                             }
-                          } else {
-                            setToast({
-                              message: `Cảm ơn bạn đã xác nhận đã giải quyết (${inlineRating || 5}/5 sao)!`,
-                              type: 'success',
-                            });
-                          }
-                        }}
-                        className="flex h-11 items-center justify-center rounded-xl bg-[#15803D] px-4 text-sm font-extrabold text-white shadow-2xs transition hover:bg-[#166534] disabled:opacity-50"
-                      >
-                        Đã giải quyết
-                      </button>
+                          }}
+                          className="flex h-11 items-center justify-center rounded-xl bg-[#15803D] px-4 text-sm font-extrabold text-white shadow-2xs transition hover:bg-[#166534] disabled:opacity-50"
+                        >
+                          Đã giải quyết
+                        </button>
 
-                      <button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => setIsReopenOpen(true)}
-                        className="flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                      >
-                        Chưa giải quyết
-                      </button>
-                    </div>
-                  </>
-                )}
-              </section>
-            )}
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => setIsReopenOpen(true)}
+                          className="flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        >
+                          Chưa giải quyết
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </section>
+              )}
 
             {/* 3. Khối hành động chủ hồ sơ khi cần bổ sung (AC-C06-7) */}
             {isOwner && rawReport.status === 'can_bo_sung' && (

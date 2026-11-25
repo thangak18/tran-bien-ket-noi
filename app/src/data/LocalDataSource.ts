@@ -9,6 +9,7 @@ import {
   VolunteerOption,
   CreateOnBehalfInput,
   CreateOnBehalfResult,
+  FollowResult,
 } from './DataSource';
 import {
   AiSuggestionData,
@@ -160,6 +161,10 @@ export class LocalDataSource implements DataSource {
   }
 
   async createReport(payload: SubmitReportPayload): Promise<CreateReportResult> {
+    // Spec v3.0 D1 / AC-DATA-6: chế độ local áp cùng quy tắc với API, không có hồ sơ ẩn danh mới.
+    if (!payload.phone || payload.anonymous) {
+      throw new Error('Vui lòng đăng nhập số điện thoại để gửi phản ánh');
+    }
     const { state, report } = submitReport(this.read(), payload, this.now);
     this.write(state);
     return {
@@ -247,8 +252,15 @@ export class LocalDataSource implements DataSource {
     return findReport(this.read(), reportId);
   }
 
-  async followReport(reportId: string, phone?: string): Promise<void> {
-    this.write(followReport(this.read(), reportId, { phone, anonymous: !phone }));
+  async followReport(reportId: string, phone?: string): Promise<FollowResult> {
+    if (!phone) {
+      throw new Error('Vui lòng đăng nhập số điện thoại để báo bạn cũng gặp vấn đề này');
+    }
+    const report = findReport(this.read(), reportId);
+    if (report.reporterPhone === phone) throw new Error('Bạn là người gửi phản ánh này');
+    if (report.followers.includes(phone)) return { alreadyFollowed: true };
+    this.write(followReport(this.read(), reportId, { phone }));
+    return { alreadyFollowed: false };
   }
 
   async getVolunteerTasks(params?: VolunteerTaskQueryParams): Promise<VolunteerTask[]> {

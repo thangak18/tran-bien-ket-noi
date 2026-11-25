@@ -35,19 +35,29 @@ describe('VOL: Luồng tình nguyện viên (Spec 3.3, AC-V01/V02)', () => {
     expect(findSensitiveLeaks({ phone: '0909 *** 068', address: '12 Nguyễn Văn Trị' })).toEqual([]);
   });
 
-  it('VOL-001: danh sách, chi tiết và kết quả nhiệm vụ không chứa SĐT hay mã bí mật', async () => {
+  it('VOL-001 / PHONE-003 / PHONE-004: danh sách không có SĐT; chi tiết chỉ có SĐT khi giao cho chính TNV và chưa xong', async () => {
     const tnv = await createStaffToken(TNV_MAI_ID, 'tnv');
+    const otherTnv = await createStaffToken(TNV_NAM_ID, 'tnv');
     const report = await track('cho_xac_minh', PHONE);
     const task = await createTestTask(report.id, 'xac_minh', TNV_MAI_ID);
 
+    // PHONE-003: danh sách nhiệm vụ không bao giờ có SĐT hay mã bí mật.
     const list = await call(tnv, 'GET', '/volunteer/tasks');
     expect(list.status).toBe(200);
     expect(findSensitiveLeaks(list.data)).toEqual([]);
     expect(list.data.items.some((t: { id: string }) => t.id === task.code)).toBe(true);
 
+    // PHONE-004: TNV được giao, nhiệm vụ chưa xong → có SĐT đầy đủ (để gọi người gửi), không có mã bí mật.
     const detail = await call(tnv, 'GET', `/volunteer/tasks/${task.code}`);
     expect(detail.status).toBe(200);
-    expect(findSensitiveLeaks(detail.data)).toEqual([]);
+    expect(detail.data.reporterPhone).toBe(PHONE);
+    expect(JSON.stringify(detail.data)).not.toMatch(/secret_?code|owner_?token/i);
+
+    // TNV khác xem cùng nhiệm vụ → không có SĐT.
+    const other = await call(otherTnv, 'GET', `/volunteer/tasks/${task.code}`);
+    expect(other.status).toBe(200);
+    expect(other.data.reporterPhone).toBeUndefined();
+    expect(findSensitiveLeaks(other.data)).toEqual([]);
 
     const submit = await call(tnv, 'POST', `/volunteer/tasks/${task.code}/submit`, {
       exists: 'co',
@@ -56,6 +66,12 @@ describe('VOL: Luồng tình nguyện viên (Spec 3.3, AC-V01/V02)', () => {
     });
     expect(submit.status).toBe(200);
     expect(findSensitiveLeaks(submit.data)).toEqual([]);
+
+    // Nhiệm vụ đã xong → không còn SĐT, kể cả với TNV đã làm.
+    const done = await call(tnv, 'GET', `/volunteer/tasks/${task.code}`);
+    expect(done.status).toBe(200);
+    expect(done.data.reporterPhone).toBeUndefined();
+    expect(findSensitiveLeaks(done.data)).toEqual([]);
   });
 
   it('VOL-002: cán bộ và người dân không nhận hay nộp được nhiệm vụ TNV (403)', async () => {

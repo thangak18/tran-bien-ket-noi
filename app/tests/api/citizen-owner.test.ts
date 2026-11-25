@@ -40,15 +40,17 @@ describe('OWNER: chỉ chủ hồ sơ mới đánh giá / bổ sung (AUTHZ-009, 
     await purgeTestReports(created);
   });
 
-  it('OWNER-001: không có thông tin xác thực, khoá sai, hoặc chỉ "Tôi cũng gặp" -> 403, hồ sơ không đổi', async () => {
+  it('OWNER-001: chưa đăng nhập -> 401; khoá sai, SĐT khác hoặc chỉ "Tôi cũng gặp" -> 403; hồ sơ không đổi', async () => {
     const report = await track('hoan_thanh', { phone: OWNER_PHONE, ownerKey: KEY });
     await sqlClient`
       INSERT INTO report_followers (report_id, phone, source)
       VALUES (${report.id}::uuid, ${OTHER_PHONE}, 'also_me');
     `;
     const body = { resolved: true, rating: 5 };
-
-    expect((await post(`/citizen/reports/${report.code}/feedback`, body)).status).toBe(403);
+    // Spec v3.0 AC-AUTH-9: không có token và không có khoá → 401 CITIZEN_LOGIN_REQUIRED.
+    const anon = await post(`/citizen/reports/${report.code}/feedback`, body);
+    expect(anon.status).toBe(401);
+    expect(anon.data.error.code).toBe('CITIZEN_LOGIN_REQUIRED');
     expect(
       (await post(`/citizen/reports/${report.code}/feedback`, body, { 'X-Report-Key': 'khoa-sai' }))
         .status
@@ -134,7 +136,14 @@ describe('OWNER: chỉ chủ hồ sơ mới đánh giá / bổ sung (AUTHZ-009, 
   it('OWNER-005: bổ sung thông tin chỉ dành cho chủ hồ sơ (can_bo_sung -> moi)', async () => {
     const report = await track('can_bo_sung', { ownerKey: KEY });
     const denied = await post(`/citizen/reports/${report.code}/supplement`, { note: 'Thêm ảnh' });
-    expect(denied.status).toBe(403);
+    expect(denied.status).toBe(401);
+    const stranger = await createCitizenToken('0900000001');
+    const notOwner = await post(
+      `/citizen/reports/${report.code}/supplement`,
+      { note: 'Thêm ảnh' },
+      { Authorization: `Bearer ${stranger}` }
+    );
+    expect(notOwner.status).toBe(403);
     const [still] = await sqlClient`SELECT status FROM reports WHERE id = ${report.id}::uuid;`;
     expect(still?.status).toBe('can_bo_sung');
 

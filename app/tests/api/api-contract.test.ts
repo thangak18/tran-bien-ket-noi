@@ -5,7 +5,13 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { app } from '../../server/app';
 import { env } from '../../server/env';
-import { createStaffToken } from '../../server/middleware/auth';
+import { createCitizenToken, createStaffToken } from '../../server/middleware/auth';
+import { sqlClient } from '../../server/db/client';
+
+/** SĐT ngẫu nhiên cho từng test, tránh chạm hạn mức gửi theo SĐT. */
+function randomPhone(): string {
+  return `09${Math.floor(10_000_000 + Math.random() * 89_999_999)}`;
+}
 import mockData from '../../src/data/mock.json';
 
 describe('API Contract & Security Suite', () => {
@@ -135,15 +141,34 @@ describe('API Contract & Security Suite', () => {
       expect(verifyData.expiresIn).toBe('30d');
     });
 
-    it('API-CIT-002: Anonymous report submission generates 4-digit secretCode and ownerToken', async () => {
-      const randIp = `10.50.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200) + 1}`;
+    it('AUTH-CIT-001: gửi phản ánh không có token người dân → 401 CITIZEN_LOGIN_REQUIRED, không tạo hồ sơ', async () => {
+      const [before] = await sqlClient`SELECT count(*)::int AS n FROM reports`;
       const res = await app.request('/citizen/reports', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Device-Id': `test-device-${Date.now()}`,
-          'x-forwarded-for': randIp,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Id': `test-device-${Date.now()}` },
+        body: JSON.stringify({
+          category: 'den_duong',
+          lat: 10.952,
+          lng: 106.824,
+          address: 'Gần chợ Biên Hòa',
+          photos: ['/demo-photos/den_duong/1.jpg'],
+          anonymous: true,
+        }),
+      });
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error.code).toBe('CITIZEN_LOGIN_REQUIRED');
+      expect(data.error.message).toBe('Vui lòng đăng nhập số điện thoại để gửi phản ánh');
+      const [after] = await sqlClient`SELECT count(*)::int AS n FROM reports`;
+      expect(after?.n).toBe(before?.n);
+    });
+
+    it('AUTH-CIT-002: có token người dân → 201, mã bí mật 4 số, không có ownerToken, hồ sơ gắn SĐT', async () => {
+      const phone = randomPhone();
+      const token = await createCitizenToken(phone);
+      const res = await app.request('/citizen/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           category: 'den_duong',
           lat: 10.952,
@@ -151,23 +176,29 @@ describe('API Contract & Security Suite', () => {
           address: 'Gần chợ Biên Hòa',
           description: 'Đèn đường chập chờn lúc sáng lúc tắt',
           photos: ['/demo-photos/den_duong/1.jpg'],
+          anonymous: true, // bị bỏ qua: không còn hồ sơ ẩn danh mới
         }),
       });
-
       expect(res.status).toBe(201);
       const data = await res.json();
       expect(data.code).toMatch(/^TB-[0-9]{4}$/);
       expect(data.secretCode).toMatch(/^[0-9]{4}$/);
-      expect(data.ownerToken).toBeDefined();
+      expect(data.ownerToken).toBeUndefined();
+      const [row] = await sqlClient`
+        SELECT anonymous, reporter_phone FROM reports WHERE code = ${data.code}
+      `;
+      expect(row).toMatchObject({ anonymous: false, reporter_phone: phone });
     });
 
-    it('API-CIT-003: Lookup report by secret code', async () => {
+    it('API-CIT-003: tra cứu bằng mã bí mật; hồ sơ có SĐT không cấp ownerToken', async () => {
       const randIp = `10.50.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200) + 1}`;
       // Create report first
+      const lookupToken = await createCitizenToken(randomPhone());
       const createRes = await app.request('/citizen/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${lookupToken}`,
           'X-Device-Id': `test-lookup-${Date.now()}`,
           'x-forwarded-for': randIp,
         },
@@ -197,7 +228,8 @@ describe('API Contract & Security Suite', () => {
       expect(lookupRes.status).toBe(200);
       const lookupData = await lookupRes.json();
       expect(lookupData.id).toBe(created.code);
-      expect(lookupData.ownerToken).toBeDefined();
+      // Spec v3.0 (12.3): hồ sơ có SĐT tra cứu được nhưng không cấp ownerToken (quyền chủ chỉ qua đăng nhập).
+      expect(lookupData.ownerToken).toBeUndefined();
     });
   });
 
@@ -219,7 +251,7 @@ describe('API Contract & Security Suite', () => {
       }
     });
 
-    it('API-OFF-001: Officer reports endpoint requires officer auth and masks phone', async () => {
+    it('PHONE-002: /officer/reports cần đăng nhập cán bộ và trả SĐT đầy đủ (spec v3.0 D7)', async () => {
       // Without auth
       const noAuth = await app.request('/officer/reports');
       expect(noAuth.status).toBe(401);
@@ -233,10 +265,10 @@ describe('API Contract & Security Suite', () => {
       const data = await res.json();
       expect(Array.isArray(data.items)).toBe(true);
 
-      for (const r of data.items) {
-        if (r.reporterPhone) {
-          expect(r.reporterPhone).toContain('***');
-        }
+      const withPhone = data.items.filter((r: { reporterPhone?: string }) => r.reporterPhone);
+      expect(withPhone.length).toBeGreaterThan(0);
+      for (const r of withPhone) {
+        expect(r.reporterPhone).toMatch(/^0\d{9}$/);
       }
     });
   });

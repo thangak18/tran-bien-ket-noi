@@ -10,13 +10,10 @@ import {
   requireCitizenAuth,
 } from '../middleware/auth';
 import {
-  checkAnonQuota,
   checkLookupRateLimit,
   checkOtpRateLimit,
   checkOtpSendLimit,
   checkPhoneDailyLimit,
-  hashIp,
-  recordAnonSubmission,
   recordFailedLookup,
   recordOtpSend,
 } from '../middleware/rateLimit';
@@ -29,6 +26,17 @@ import { maskPhone } from '../../src/domain/privacy';
 import type { AppEnv } from '../types';
 
 export const citizenRoutes = new Hono<AppEnv>();
+
+/** Thao tác bắt buộc đăng nhập SĐT (spec v3.0, mục 12.1): thiếu token người dân → 401. */
+function requireCitizenLogin(
+  citizenPhone: string | undefined,
+  message = 'Vui lòng đăng nhập số điện thoại để gửi phản ánh'
+): string {
+  if (!citizenPhone) {
+    throw new AppError('CITIZEN_LOGIN_REQUIRED', message, 401);
+  }
+  return citizenPhone;
+}
 
 /**
  * 1. POST /citizen/otp/request - Yêu cầu mã OTP (Mô phỏng 123456)
@@ -127,7 +135,8 @@ citizenRoutes.post('/otp/verify', async (c) => {
  */
 citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async (c) => {
   const body = await c.req.json();
-  const citizenPhone = c.get('citizenPhone') as string | undefined;
+  // Spec v3.0 D1 (FR-08): gửi phản ánh bắt buộc đăng nhập SĐT; không còn hồ sơ ẩn danh mới.
+  const citizenPhone = requireCitizenLogin(c.get('citizenPhone') as string | undefined);
 
   const category = body.category;
   if (!['den_duong', 'ngap_nuoc', 'rac_thai', 'mat_duong'].includes(category)) {
@@ -143,25 +152,12 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
   const address = body.address?.trim() || 'Khu vực phường Trấn Biên';
   const description = body.description?.trim() || null;
   const locationNote = body.locationNote?.trim() || null;
-  const isAnonymous = body.anonymous === true || !citizenPhone;
+  await checkPhoneDailyLimit(citizenPhone);
 
-  const deviceId = c.req.header('X-Device-Id') || 'web-browser';
-  const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
-
-  if (isAnonymous) {
-    await checkAnonQuota(deviceId, ip);
-    await recordAnonSubmission(deviceId, ip);
-  } else if (citizenPhone) {
-    await checkPhoneDailyLimit(citizenPhone);
-  }
-
-  // Sinh mã bí mật 4 số ngẫu nhiên
+  // Mã bí mật 4 số dùng để tra cứu (mã phản ánh + mã bí mật). Chủ hồ sơ chứng minh bằng SĐT đăng nhập,
+  // nên hồ sơ mới không phát ownerToken.
   const secretCode = generateSecretCode();
   const secretHash = hashPepper(secretCode);
-
-  // Sinh ownerToken ngẫu nhiên
-  const ownerToken = crypto.randomBytes(24).toString('hex');
-  const ownerTokenHash = hashPepper(ownerToken);
   const now = await getDemoNow();
   const pointWkt = `POINT(${lng} ${lat})`;
   const photos = Array.isArray(body.photos) ? body.photos : [];
@@ -201,8 +197,8 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
       ) VALUES (
         ${nextCode}, ${category}, 'moi', 'binh_thuong', ST_GeographyFromText(${pointWkt}),
         ${address}, ${locationNote}, ${description}, ${now}::timestamptz,
-        ${isAnonymous ? null : citizenPhone}, ${isAnonymous}, false, false,
-        ${secretHash}, ${ownerTokenHash}, 0, true, false, 1,
+        ${citizenPhone}, false, false, false,
+        ${secretHash}, null, 0, true, false, 1,
         ${aiSuggestion ? JSON.stringify(aiSuggestion) : null}::jsonb
       )
       RETURNING id, code;
@@ -232,14 +228,12 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
       );
     `;
 
-    // Nếu người dân có số điện thoại, ghi nhận follower
-    if (!isAnonymous && citizenPhone) {
-      await tx`
-        INSERT INTO report_followers (report_id, phone, source)
-        VALUES (${created.id}, ${citizenPhone}, 'reporter')
-        ON CONFLICT DO NOTHING;
-      `;
-    }
+    // Người gửi nhận tin báo của hồ sơ mình
+    await tx`
+      INSERT INTO report_followers (report_id, phone, source)
+      VALUES (${created.id}, ${citizenPhone}, 'reporter')
+      ON CONFLICT DO NOTHING;
+    `;
 
     return created;
   });
@@ -250,7 +244,6 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
       uuid: newReport.id,
       code: newReport.code,
       secretCode,
-      ownerToken: isAnonymous ? ownerToken : undefined,
       message: 'Gửi phản ánh thành công',
     },
     201
@@ -305,7 +298,16 @@ const handleLookup = async (c: Context<AppEnv>) => {
     throw new AppError('INVALID_SECRET', 'Mã xác thực không chính xác', 400);
   }
 
-  // Tra cứu thành công: sinh ownerToken mới
+  // Spec v3.0 (12.3): hồ sơ có SĐT không cấp ownerToken, quyền chủ chỉ qua đăng nhập SĐT.
+  if (!report.anonymous) {
+    return c.json({
+      id: report.code,
+      uuid: report.id,
+      code: report.code,
+      message: 'Tra cứu thành công. Đăng nhập số điện thoại người gửi để đánh giá hoặc bổ sung.',
+    });
+  }
+  // Hồ sơ ẩn danh cũ: sinh ownerToken mới cho thiết bị này
   const lookupToken = crypto.randomBytes(24).toString('hex');
   const lookupTokenHash = hashPepper(lookupToken);
   await sqlClient`
@@ -357,6 +359,16 @@ citizenRoutes.post('/reports/:id/claim', optionalCitizenAuth, async (c) => {
     throw new AppError('INVALID_SECRET', 'Mã bí mật không chính xác', 400);
   }
 
+  // Spec v3.0 (12.3): chỉ hồ sơ ẩn danh cũ nhận khoá/đăng ký nhận tin qua link ?k=.
+  // Hồ sơ có SĐT: không cấp khoá, không ghi SĐT người mở link vào followers (tránh thành chủ hồ sơ).
+  if (!report.anonymous) {
+    return c.json({
+      success: true,
+      id: report.code,
+      code: report.code,
+      message: 'Hồ sơ này xác thực chủ bằng đăng nhập số điện thoại người gửi',
+    });
+  }
   // Cấp ownerToken
   const ownerToken = crypto.randomBytes(24).toString('hex');
   const ownerTokenHash = hashPepper(ownerToken);
@@ -412,6 +424,10 @@ citizenRoutes.post('/reports/:id/feedback', optionalCitizenAuth, async (c) => {
   const body = feedbackSchema.parse(await c.req.json().catch(() => ({})));
   const now = await getDemoNow();
   const creds = ownerCredentials(c);
+  // Spec v3.0 AC-AUTH-9: chưa đăng nhập (và không có khoá của hồ sơ ẩn danh cũ) → 401.
+  if (!creds.citizenPhone && !creds.reportKey) {
+    requireCitizenLogin(undefined, 'Vui lòng đăng nhập số điện thoại của người gửi phản ánh');
+  }
 
   const output = await sqlClient.begin(async (tx) => {
     const [report] = await tx`
@@ -503,6 +519,10 @@ citizenRoutes.post('/reports/:id/supplement', optionalCitizenAuth, async (c) => 
   const body = await c.req.json().catch(() => ({}));
   const note = typeof body.note === 'string' ? body.note.trim().slice(0, 1000) : '';
   const creds = ownerCredentials(c);
+  // Spec v3.0 AC-AUTH-9: chưa đăng nhập (và không có khoá của hồ sơ ẩn danh cũ) → 401.
+  if (!creds.citizenPhone && !creds.reportKey) {
+    requireCitizenLogin(undefined, 'Vui lòng đăng nhập số điện thoại của người gửi phản ánh');
+  }
 
   const result = await sqlClient.begin(async (tx) => {
     const [report] = await tx`
@@ -540,50 +560,38 @@ citizenRoutes.post('/reports/:id/supplement', optionalCitizenAuth, async (c) => 
  */
 citizenRoutes.post('/reports/:id/follow', optionalCitizenAuth, async (c) => {
   const codeOrId = c.req.param('id');
-  const body = await c.req.json().catch(() => ({}));
-  const citizenPhone = (c.get('citizenPhone') as string) || body.phone?.replace(/\s+/g, '');
+  // Spec v3.0 D4: phải đăng nhập; mỗi SĐT ghi nhận một lần; người gửi không tự "Tôi cũng gặp".
+  const citizenPhone = requireCitizenLogin(
+    c.get('citizenPhone') as string | undefined,
+    'Vui lòng đăng nhập số điện thoại để báo bạn cũng gặp vấn đề này'
+  );
 
   const [report] = await sqlClient`
-    SELECT id, anonymous_follows FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
+    SELECT id, reporter_phone FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
   `;
-
   if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
-
-  if (citizenPhone && /^0[0-9]{9}$/.test(citizenPhone)) {
-    const [existing] = await sqlClient`
-      SELECT 1 FROM report_followers WHERE report_id = ${report.id} AND phone = ${citizenPhone} LIMIT 1;
-    `;
-    if (existing) {
-      throw new AppError('ALREADY_FOLLOWED', 'Số điện thoại này đã theo dõi phản ánh này rồi', 400);
-    }
-    await sqlClient`
-      INSERT INTO report_followers (report_id, phone, source)
-      VALUES (${report.id}, ${citizenPhone}, 'also_me');
-    `;
-  } else {
-    const deviceId = c.req.header('X-Device-Id') || 'web-browser';
-    const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
-    const anonIdentifier = 'anon:' + hashIp(deviceId + ':' + ip);
-    const [existing] = await sqlClient`
-      SELECT 1 FROM report_followers WHERE report_id = ${report.id} AND phone = ${anonIdentifier} LIMIT 1;
-    `;
-    if (existing) {
-      throw new AppError(
-        'ALREADY_FOLLOWED',
-        'Thiết bị hoặc IP này đã theo dõi phản ánh này rồi',
-        400
-      );
-    }
-    await sqlClient`
-      INSERT INTO report_followers (report_id, phone, source)
-      VALUES (${report.id}, ${anonIdentifier}, 'also_me');
-    `;
-    await sqlClient`
-      UPDATE reports SET anonymous_follows = anonymous_follows + 1 WHERE id = ${report.id};
-    `;
+  if (report.reporter_phone && report.reporter_phone === citizenPhone) {
+    throw new AppError('FORBIDDEN', 'Bạn là người gửi phản ánh này', 403);
   }
 
-  return c.json({ success: true, message: 'Đã ghi nhận phản ánh của bạn' });
+  // ON CONFLICT trên khoá (report_id, phone): an toàn khi bấm nhiều lần hoặc gọi đồng thời.
+  const inserted = await sqlClient`
+    INSERT INTO report_followers (report_id, phone, source)
+    VALUES (${report.id}, ${citizenPhone}, 'also_me')
+    ON CONFLICT DO NOTHING
+    RETURNING 1;
+  `;
+  const [countRow] = await sqlClient`
+    SELECT (SELECT count(*)::int FROM report_followers WHERE report_id = ${report.id})
+      + (SELECT anonymous_follows FROM reports WHERE id = ${report.id}) AS n;
+  `;
+  const alreadyFollowed = inserted.length === 0;
+  return c.json({
+    success: true,
+    alreadyFollowed,
+    followerCount: Number(countRow?.n ?? 0),
+    message: alreadyFollowed ? 'Bạn đã báo vấn đề này' : 'Đã ghi nhận phản ánh của bạn',
+  });
 });
 
 /**
@@ -685,7 +693,8 @@ citizenRoutes.get('/reports/:code/owner', optionalCitizenAuth, async (c) => {
   );
 
   if (!isOwner) {
-    throw new AppError('FORBIDDEN', 'Bạn không có quyền quản lý hồ sơ này', 403);
+    // AC-AUTH-4: không phải chủ → 404 (không tiết lộ hồ sơ có tồn tại hay không với người lạ).
+    throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ của bạn', 404);
   }
 
   // Lấy ảnh trước & sau

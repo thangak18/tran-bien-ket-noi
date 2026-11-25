@@ -7,31 +7,30 @@ export interface AccessContext {
 }
 
 /**
- * Kiểm tra xem người xem có quyền chủ hồ sơ hay không (spec 3.4a, UT-016b)
- * Điều kiện:
- * 1. SĐT đã xác thực trên thiết bị nằm trong followers của hồ sơ.
- * 2. Thiết bị có cặp {id, secretCode} khớp trong deviceReports.
- * 3. URL có tham số k khớp secretCode của hồ sơ.
+ * Quyền chủ hồ sơ (spec v3.0 mục 3.4a).
+ * - Hồ sơ có SĐT: chỉ người đã đăng nhập có SĐT trùng `reporterPhone`. Người "Tôi cũng gặp"
+ *   nằm trong `followers` nhưng KHÔNG phải chủ hồ sơ.
+ * - Hồ sơ ẩn danh cũ: SĐT đã đăng ký nhận tin sau, hoặc khoá thiết bị {id, secretCode},
+ *   hoặc URL có ?k= khớp secretCode.
  */
 export function hasOwnerAccess(report: Report, context: AccessContext): boolean {
-  // 1. SĐT nằm trong followers
-  if (context.phone && report.followers?.includes(context.phone)) {
-    return true;
+  if (!report.anonymous) {
+    return Boolean(context.phone && report.reporterPhone && report.reporterPhone === context.phone);
   }
 
-  // 2. deviceReports khớp id và secretCode
+  // Hồ sơ ẩn danh cũ: followers của hồ sơ ẩn danh chỉ gồm người đăng ký nhận tin sau.
+  if (context.phone && report.subscribedLater && report.followers?.includes(context.phone)) {
+    return true;
+  }
   if (context.deviceReports && report.secretCode) {
     const hasDeviceMatch = context.deviceReports.some(
       (d) => d.id === report.id && d.secretCode === report.secretCode
     );
     if (hasDeviceMatch) return true;
   }
-
-  // 3. urlKey khớp secretCode
   if (context.urlKey && report.secretCode && context.urlKey === report.secretCode) {
     return true;
   }
-
   return false;
 }
 

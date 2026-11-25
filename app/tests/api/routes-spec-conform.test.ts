@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeAll } from 'vitest';
 import { app } from '../../server/app';
-import { createStaffToken } from '../../server/middleware/auth';
+import { createCitizenToken, createStaffToken } from '../../server/middleware/auth';
 import crypto from 'node:crypto';
 
 describe('Spec 12 Route Conformance Test Suite (/api/v1)', () => {
@@ -80,18 +80,19 @@ describe('Spec 12 Route Conformance Test Suite (/api/v1)', () => {
   describe('12.3 Citizen Endpoints', () => {
     let createdCode: string;
     let createdSecretCode: string;
-    let validOwnerToken: string;
+    let reporterToken: string;
     const testIp = `10.99.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200)}`;
+    const reporterPhone = `09${Math.floor(10_000_000 + Math.random() * 89_999_999)}`;
 
-    it('POST /api/v1/reports tạo phản ánh mới và trả secretCode + ownerToken', async () => {
-      const idempotencyKey = crypto.randomUUID();
-      const testDeviceId = `dev-test-${crypto.randomUUID()}`;
+    it('POST /api/v1/reports (có token người dân) tạo phản ánh, trả secretCode, không có ownerToken', async () => {
+      reporterToken = await createCitizenToken(reporterPhone);
       const res = await app.request('/api/v1/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey,
-          'X-Device-Id': testDeviceId,
+          Authorization: `Bearer ${reporterToken}`,
+          'Idempotency-Key': crypto.randomUUID(),
+          'X-Device-Id': `dev-test-${crypto.randomUUID()}`,
           'x-forwarded-for': testIp,
         },
         body: JSON.stringify({
@@ -100,50 +101,45 @@ describe('Spec 12 Route Conformance Test Suite (/api/v1)', () => {
           lng: 106.821,
           address: '100 Nguyễn Văn Trị',
           description: 'Đèn đường chập chờn ban đêm',
-          anonymous: true,
         }),
       });
 
       expect(res.status).toBe(201);
       const data = await res.json();
       expect(data.code).toMatch(/^TB-[0-9]{4}$/);
-      expect(data.secretCode).toBeDefined();
-      expect(data.ownerToken).toBeDefined();
+      expect(data.secretCode).toMatch(/^[0-9]{4}$/);
+      expect(data.ownerToken).toBeUndefined();
       createdCode = data.code;
       createdSecretCode = data.secretCode;
-      validOwnerToken = data.ownerToken;
     });
 
-    it('POST /api/v1/reports/lookup tra cứu bằng proof mã bí mật trả về ownerToken', async () => {
+    it('POST /api/v1/reports/lookup với hồ sơ có SĐT: tra cứu được nhưng không cấp ownerToken', async () => {
       const res = await app.request('/api/v1/reports/lookup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-forwarded-for': testIp,
-        },
-        body: JSON.stringify({
-          code: createdCode,
-          proof: createdSecretCode,
-        }),
-      });
-
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.ownerToken).toBeDefined();
-      validOwnerToken = data.ownerToken; // Cập nhật token mới nhất được cấp
-    });
-
-    it('GET /api/v1/reports/:code/owner với X-Report-Key trả về chi tiết chủ sở hữu', async () => {
-      const res = await app.request(`/api/v1/reports/${createdCode}/owner`, {
-        headers: {
-          'X-Report-Key': validOwnerToken,
-        },
+        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': testIp },
+        body: JSON.stringify({ code: createdCode, proof: createdSecretCode }),
       });
 
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.code).toBe(createdCode);
+      expect(data.ownerToken).toBeUndefined();
+    });
+
+    it('GET /api/v1/reports/:code/owner: người gửi (token SĐT) là chủ; SĐT khác → 404', async () => {
+      const res = await app.request(`/api/v1/reports/${createdCode}/owner`, {
+        headers: { Authorization: `Bearer ${reporterToken}` },
+      });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.code).toBe(createdCode);
       expect(data.isOwner).toBe(true);
+
+      const strangerToken = await createCitizenToken('0900000002');
+      const denied = await app.request(`/api/v1/reports/${createdCode}/owner`, {
+        headers: { Authorization: `Bearer ${strangerToken}` },
+      });
+      expect(denied.status).toBe(404);
     });
 
     it('GET /api/v1/me/reports với token người dân', async () => {

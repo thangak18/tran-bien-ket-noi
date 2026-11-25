@@ -150,6 +150,8 @@ export interface VolunteerTask {
   assignee: string | null;
   status: VolunteerTaskStatus;
   result?: VolunteerTaskResult;
+  /** SĐT người gửi: API chỉ trả khi nhiệm vụ đang giao cho chính TNV này và chưa xong (AC-V02-6). */
+  reporterPhone?: string;
 }
 
 /**

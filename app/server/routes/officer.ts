@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { requireStaffAuth, StaffProfile, hashPepper } from '../middleware/auth';
-import { maskPhone } from '../../src/domain/privacy';
 import { getDemoNow } from '../clock';
 import { executeTransition } from '../services/transition';
 import { generateSecretCode, nextReportCode, nextTaskCode } from '../services/identifiers';
@@ -167,7 +166,8 @@ officerRoutes.get('/reports', async (c) => {
       new Date(r.due_at).getTime() < new Date(now).getTime(),
     createdAt: r.created_at,
     completedAt: r.completed_at,
-    reporterPhone: maskPhone(r.reporter_phone), // Bảo đảm cán bộ chỉ thấy SĐT che (Spec 4.1)
+    // Spec v3.0 D7 (FR-08): cán bộ thấy SĐT đầy đủ để liên hệ; hồ sơ ẩn danh cũ không có số.
+    reporterPhone: r.reporter_phone ?? null,
     anonymous: r.anonymous,
     subscribedLater: r.subscribed_later,
     onBehalf: r.on_behalf,
@@ -603,7 +603,7 @@ officerRoutes.get('/reports/:code', async (c) => {
     dueAt: report.due_at,
     createdAt: report.created_at,
     completedAt: report.completed_at,
-    reporterPhone: maskPhone(report.reporter_phone),
+    reporterPhone: report.reporter_phone ?? null,
     anonymous: report.anonymous,
     subscribedLater: report.subscribed_later,
     onBehalf: report.on_behalf,

@@ -9,7 +9,7 @@ interface AiSuggestionBannerProps {
   loading: boolean;
   error: boolean;
   suggestion: AiSuggestionData | null;
-  selectedCategory: Category;
+  selectedCategory: Category | null;
   onUse: (category: Category) => void;
 }
 

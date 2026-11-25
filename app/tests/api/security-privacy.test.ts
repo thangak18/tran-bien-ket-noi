@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { app } from '../../server/app';
 import { sqlClient } from '../../server/db/client';
-import { createStaffToken, hashPepper } from '../../server/middleware/auth';
+import { createCitizenToken, createStaffToken, hashPepper } from '../../server/middleware/auth';
 import crypto from 'node:crypto';
 
 describe('L7: Security, Privacy & Anti-Abuse Test Suite', () => {
@@ -142,91 +142,70 @@ describe('L7: Security, Privacy & Anti-Abuse Test Suite', () => {
   });
 
   describe('3. Rate Limiting & Abuse Prevention', () => {
-    it('QUOTA-ANON: Max 3 anonymous reports per 24 hours per IP triggers 429 ANON_QUOTA_EXCEEDED', async () => {
-      const testIp = `172.31.${Math.floor(Math.random() * 250 + 1)}.${Math.floor(Math.random() * 250 + 1)}`;
-      const testDeviceId = `device-anon-${crypto.randomUUID()}`;
-
-      const payload = {
-        category: 'den_duong',
-        address: 'Hẻm 12 Huỳnh Văn Nghệ, P. Trấn Biên',
-        lat: 10.9555,
-        lng: 106.8255,
-        description: 'Đèn đường chớp tắt',
-        anonymous: true,
-      };
-
-      // 3 lần gửi thành công với nội dung khác nhau
-      for (let i = 0; i < 3; i++) {
-        const res = await app.request('/api/v1/citizen/reports', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-forwarded-for': testIp,
-            'X-Device-Id': testDeviceId,
-            'Idempotency-Key': `idem-anon-${Date.now()}-${i}`,
-          },
-          body: JSON.stringify({
-            ...payload,
-            description: `Đèn đường chớp tắt lần ${i}`,
-            lat: 10.9555 + i * 0.001,
-          }),
-        });
-        expect(res.status).toBe(201);
-      }
-
-      // Lần thứ 4 trong ngày: Chặn 429
-      const blockedRes = await app.request('/api/v1/citizen/reports', {
+    it('ANON-REJECT: gửi ẩn danh (không token, anonymous: true) bị từ chối 401, không tạo hồ sơ (spec v3.0 D1)', async () => {
+      const [before] = await sqlClient`SELECT count(*)::int AS n FROM reports`;
+      const res = await app.request('/api/v1/citizen/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-forwarded-for': testIp,
-          'X-Device-Id': testDeviceId,
-          'Idempotency-Key': `idem-anon-${Date.now()}-blocked`,
+          'X-Device-Id': `device-anon-${crypto.randomUUID()}`,
+          'Idempotency-Key': `idem-anon-${Date.now()}`,
         },
         body: JSON.stringify({
-          ...payload,
-          description: 'Đèn đường chớp tắt lần 4',
-          lat: 10.9599,
+          category: 'den_duong',
+          address: 'Hẻm 12 Huỳnh Văn Nghệ, P. Trấn Biên',
+          lat: 10.9555,
+          lng: 106.8255,
+          anonymous: true,
         }),
       });
-
-      expect(blockedRes.status).toBe(429);
-      const data = await blockedRes.json();
-      expect(data.error?.code).toBe('ANON_QUOTA_EXCEEDED');
+      expect(res.status).toBe(401);
+      expect((await res.json()).error?.code).toBe('CITIZEN_LOGIN_REQUIRED');
+      const [after] = await sqlClient`SELECT count(*)::int AS n FROM reports`;
+      expect(after?.n).toBe(before?.n);
     });
-
-    it('RATE-FOLLOW: Anonymous "Tôi cũng gặp" allows only 1 follow per device/IP per report', async () => {
-      const testIp = `10.88.77.${Math.floor(Math.random() * 200 + 10)}`;
-      const testDeviceId = `dev-follow-${Date.now()}`;
-      const targetReport = 'TB-0002';
-
-      // Lần 1: Thành công
-      const res1 = await app.request(`/api/v1/citizen/reports/${targetReport}/follow`, {
+    it('FOLLOW-001: "Tôi cũng gặp" không có token → 401 CITIZEN_LOGIN_REQUIRED', async () => {
+      const res = await app.request('/api/v1/citizen/reports/TB-0002/follow', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-forwarded-for': testIp,
-          'X-Device-Id': testDeviceId,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Id': `dev-${Date.now()}` },
         body: JSON.stringify({}),
       });
-      expect(res1.status).toBe(200);
-
-      // Lần 2 từ cùng thiết bị/IP: Bị từ chối ALREADY_FOLLOWED
-      const res2 = await app.request(`/api/v1/citizen/reports/${targetReport}/follow`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-forwarded-for': testIp,
-          'X-Device-Id': testDeviceId,
-        },
-        body: JSON.stringify({}),
-      });
-      expect(res2.status).toBe(400);
-      const data2 = await res2.json();
-      expect(data2.error?.code).toBe('ALREADY_FOLLOWED');
+      expect(res.status).toBe(401);
+      expect((await res.json()).error?.code).toBe('CITIZEN_LOGIN_REQUIRED');
     });
+    it('FOLLOW-002: cùng SĐT bấm 2 lần → lần 2 alreadyFollowed, số người cùng báo không đổi; người gửi → 403', async () => {
+      const phone = `09${Math.floor(10_000_000 + Math.random() * 89_999_999)}`;
+      const token = await createCitizenToken(phone);
+      const follow = async (t: string) => {
+        const res = await app.request('/api/v1/citizen/reports/TB-0002/follow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+          body: JSON.stringify({}),
+        });
+        return { status: res.status, data: await res.json() };
+      };
+      try {
+        const first = await follow(token);
+        expect(first.status).toBe(200);
+        expect(first.data.alreadyFollowed).toBe(false);
+        const second = await follow(token);
+        expect(second.status).toBe(200);
+        expect(second.data.alreadyFollowed).toBe(true);
+        expect(second.data.followerCount).toBe(first.data.followerCount);
 
+        const [owner] = await sqlClient`SELECT reporter_phone FROM reports WHERE code = 'TB-0002'`;
+        if (owner?.reporter_phone) {
+          const self = await follow(await createCitizenToken(String(owner.reporter_phone)));
+          expect(self.status).toBe(403);
+        }
+      } finally {
+        await sqlClient`
+          DELETE FROM report_followers
+          WHERE phone = ${phone}
+            AND report_id = (SELECT id FROM reports WHERE code = 'TB-0002');
+        `;
+      }
+    });
     it('RATE-RATING: Submitting feedback twice on the same report is blocked with ALREADY_RATED', async () => {
       // Tạo một phản ánh mới ở trạng thái hoan_thanh để test feedback
       const testCode = `TB-RATE-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;

@@ -9,6 +9,7 @@ import {
   VolunteerOption,
   CreateOnBehalfInput,
   CreateOnBehalfResult,
+  FollowResult,
 } from './DataSource';
 import {
   AiSuggestionData,
@@ -117,6 +118,7 @@ export function mapApiTask(raw: Json): VolunteerTask {
           at: String(result.at ?? ''),
         }
       : undefined,
+    reporterPhone: str(raw.reporterPhone),
   };
 }
 
@@ -309,12 +311,13 @@ export class ApiDataSource implements DataSource {
     return this.requireReport(reportId);
   }
 
-  async followReport(reportId: string, phone?: string): Promise<void> {
-    await apiFetch(`/citizen/reports/${enc(reportId)}/follow`, {
-      method: 'POST',
-      headers: citizenAuthHeaders(),
-      body: JSON.stringify({ phone }),
-    });
+  async followReport(reportId: string): Promise<FollowResult> {
+    // SĐT lấy từ token người dân ở server; không gửi SĐT trong body.
+    const res = await apiFetch<{ alreadyFollowed?: boolean }>(
+      `/citizen/reports/${enc(reportId)}/follow`,
+      { method: 'POST', headers: citizenAuthHeaders(), body: JSON.stringify({}) }
+    );
+    return { alreadyFollowed: Boolean(res.alreadyFollowed) };
   }
 
   async getVolunteerTasks(params?: VolunteerTaskQueryParams): Promise<VolunteerTask[]> {

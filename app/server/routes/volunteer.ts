@@ -134,6 +134,7 @@ volunteerRoutes.get('/tasks', async (c) => {
  */
 volunteerRoutes.get('/tasks/:id', async (c) => {
   const codeOrId = c.req.param('id');
+  const staff = c.get('staff') as StaffProfile;
 
   const [t] = await sqlClient`
     SELECT
@@ -142,6 +143,7 @@ volunteerRoutes.get('/tasks/:id', async (c) => {
       r.category as report_category,
       r.address as report_address,
       r.description as report_description,
+      r.reporter_phone as report_reporter_phone,
       ST_X(r.location::geometry) as report_lng,
       ST_Y(r.location::geometry) as report_lat,
       sp.display_name as assignee_name
@@ -161,10 +163,18 @@ volunteerRoutes.get('/tasks/:id', async (c) => {
     SELECT storage_path FROM report_photos WHERE report_id = ${t.report_id} AND kind = 'verify' ORDER BY created_at DESC LIMIT 1;
   `;
 
+  // Spec v3.0 AC-V02-6: SĐT người gửi chỉ cho TNV đang được giao chính nhiệm vụ này và chưa xong.
+  const canSeePhone =
+    staff.role === 'tnv' &&
+    t.assignee_id === staff.userId &&
+    t.status !== 'xong' &&
+    Boolean(t.report_reporter_phone);
+  const { report_reporter_phone: reporterPhone, ...row } = t;
   return c.json({
-    ...mapTask(t as unknown as TaskRow, verifyPhoto?.storage_path as string | undefined),
+    ...mapTask(row as unknown as TaskRow, verifyPhoto?.storage_path as string | undefined),
     description: t.report_description,
     photos: photos.map((p) => p.storage_path),
+    ...(canSeePhone ? { reporterPhone } : {}),
   });
 });
 

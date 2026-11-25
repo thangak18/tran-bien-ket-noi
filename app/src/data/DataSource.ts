@@ -32,6 +32,10 @@ export interface OfficerReportQueryParams {
   overdueOnly?: boolean;
 }
 
+export interface FollowResult {
+  alreadyFollowed: boolean;
+}
+
 export interface CreateReportResult {
   report: Report;
   secretCode?: string;
@@ -124,7 +128,11 @@ export interface DataSource {
   ): Promise<Report>;
 
   /** Theo dõi / Tôi cũng gặp sự cố này */
-  followReport(reportId: string, phone?: string): Promise<void>;
+  /**
+   * "Tôi cũng gặp" (spec v3.0 D4): phải đăng nhập SĐT, mỗi SĐT một lần, người gửi không tự báo.
+   * alreadyFollowed = true khi SĐT này đã báo trước đó (số người cùng báo không đổi).
+   */
+  followReport(reportId: string, phone?: string): Promise<FollowResult>;
 
   /** TNV: Lấy danh sách nhiệm vụ xác minh */
   getVolunteerTasks(params?: VolunteerTaskQueryParams): Promise<VolunteerTask[]>;

@@ -43,24 +43,26 @@ describe('Frontend DataSource Abstraction (spec 16.1, AC-DATA-1)', () => {
       ds = new LocalDataSource();
     });
 
-    it('createReport sinh mã tiếp theo TB-0065 và mã bí mật 4 số', async () => {
-      const res = await ds.createReport({
-        category: 'den_duong',
+    it('createReport chưa có SĐT (ẩn danh) bị từ chối; có SĐT thì sinh TB-0065 và mã bí mật 4 số', async () => {
+      const base = {
+        category: 'den_duong' as const,
         photos: ['/demo-photos/den_duong/1.jpg'],
         lat: 10.952,
         lng: 106.824,
         address: 'Đường Phan Chu Trinh',
-        anonymous: true,
-      });
-
+      };
+      // Spec v3.0 D1 / AC-DATA-6: chế độ local cũng không còn hồ sơ ẩn danh mới.
+      await expect(ds.createReport({ ...base, anonymous: true })).rejects.toThrow(
+        'Vui lòng đăng nhập số điện thoại để gửi phản ánh'
+      );
+      const res = await ds.createReport({ ...base, phone: '0911222333', anonymous: false });
       expect(res.report.id).toBe('TB-0065');
+      expect(res.report.anonymous).toBe(false);
+      expect(res.report.reporterPhone).toBe('0911222333');
       expect(res.secretCode).toMatch(/^[0-9]{4}$/);
-      expect(res.ownerToken).toBeDefined();
-
       const lookup = await ds.lookupReport('TB-0065', res.secretCode!);
       expect(lookup.id).toBe('TB-0065');
     });
-
     it('supplementReport thêm timeline và ghi chú cho hồ sơ can_bo_sung', async () => {
       const reports = await ds.getReports();
       const target = reports.find((r) => r.status === 'can_bo_sung');

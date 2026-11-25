@@ -25,6 +25,10 @@ export function describeActionError(err: unknown): DescribedError {
     if (err.code === 'NETWORK_ERROR' || err.status === 0) {
       return { kind: 'network', message: err.message };
     }
+    if (err.status === 401 && err.code === 'CITIZEN_LOGIN_REQUIRED') {
+      // Chưa đăng nhập SĐT (spec v3.0): giữ lời nhắc của server, không gọi là "phiên hết hạn".
+      return { kind: 'unauthorized', message: err.message };
+    }
     if (err.status === 401) {
       return {
         kind: 'unauthorized',

@@ -78,7 +78,8 @@ export function hashPepper(val: string): string {
 export const requireCitizenAuth = createMiddleware<AppEnv>(async (c, next) => {
   const authHeader = c.req.header('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    throw new AppError('UNAUTHORIZED', 'Yêu cầu đăng nhập người dân', 401);
+    // Spec v3.0 mục 12.1: thiếu token người dân → CITIZEN_LOGIN_REQUIRED (token sai/hết hạn vẫn là UNAUTHORIZED).
+    throw new AppError('CITIZEN_LOGIN_REQUIRED', 'Vui lòng đăng nhập số điện thoại', 401);
   }
   const token = authHeader.slice(7);
   try {
