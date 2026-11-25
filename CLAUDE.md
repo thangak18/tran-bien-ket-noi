@@ -12,7 +12,13 @@ Người dân chụp ảnh báo sự cố (đèn đường, ngập nước, rác
 - Repo GitHub (private): `thangak18/tran-bien-ket-noi`. Deploy: Vercel project `tran-bien-ket-noi` (Root Directory = `app`, SPA rewrite trong `vercel.json`).
 - Bài thuyết minh đã nộp: `thuyet-minh.md` + `Tran-Bien-Ket-Noi_Thuyet-minh.pdf`, sơ đồ trong `assets/`.
 
-## 2. Trạng thái hiện tại (25/11/2026, cập nhật sau đợt review)
+## 2. Trạng thái hiện tại (26/11/2026)
+
+**Cập nhật 26/11/2026 (chưa commit):**
+- **Đăng xuất người dân tức thì:** `AppStore.tsx` ghi ngay `localStorage` khi đổi SĐT (không chờ debounce 100ms), `persistence.ts` huỷ timer debounce cũ và thêm `flushPendingSaves` (`beforeunload`/`pagehide`), đồng bộ xoá `phone` giữa các tab qua `storage` event, `C05Mine.tsx` xoá thông báo cũ trong store khi đăng xuất.
+- **Cổng Quản trị chế độ `local`:** Thêm mục **Cổng Quản trị** (`/quan-tri`) vào `PortalSwitcherFab.tsx` (chỉ hiện ở chế độ `local`). Tạo `src/data/localAdminStore.ts` để cả 5 màn `/quan-tri/*` hoạt động với dữ liệu mô phỏng (nhãn `Mô phỏng`, KPI tính từ `AppStore`). Đã cập nhật `spec.md` (`AC-ADMIN-10`) và `tests.md` (`ADMIN-UI-001`).
+- **Thông báo realtime 3 cổng:** Thêm `buildOfficerNotifications`, `buildVolunteerNotifications` (không lộ SĐT), `buildCitizenNotifications` trong `src/domain/notifications.ts`; tạo `PortalNotificationBell.tsx` cho Cán bộ và TNV; đặt chuông thông báo ngay cạnh icon tìm kiếm ở `C01Home.tsx` và `OfficerLayout.tsx`; bổ sung nút *"Xem tin nhắn mẫu"* có `<MockLabel />` ở `C09Notifications.tsx`; chuyển `BottomSheet.tsx` sang `createPortal(..., document.body)` để hết lỗi bị thanh bộ lọc che hoặc kẹt trong sidebar.
+- **Kiểm chứng:** `vitest` (các bộ test liên quan: 27/27 pass), `eslint`, `prettier`, `tsc --noEmit` (0 lỗi), `mock:verify` (100% PASS).
 
 **Cập nhật sau merge lần 2 (25/11/2026):** `main` gộp thêm bản mới của `feat/ui-upgrade-portals-theme` (proposal + UI: C09 thông báo, V03 bản đồ TNV, MediaCapture), `feat/admin` (vai trò admin, `/quan-tri`, migration `20261125020000_admin`) và `feat/ai-deepseek` (AI gợi ý loại, migration `20261125030000_ai_suggestion`). Theo UI mới người dân phải đăng nhập SĐT (OTP mô phỏng) mới gửi được; API vẫn nhận hồ sơ ẩn danh. Đo trên `main`: vitest 58 file / 349 pass (Supabase local), e2e API 8/8 trên local và trên Supabase cloud, `db:verify` 17/17 trên cloud. Cloud đã có đủ 4 migration. Kết nối DB tắt prepared statement nên server không được dùng `sql.json()` (có test DB-GUARD-001).
 

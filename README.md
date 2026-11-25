@@ -26,11 +26,11 @@ TranBienKetNoi_Workspace/
     ├── api/                  # Vercel Function Node.js handler ([...path].ts)
     ├── server/               # Hono backend engine: routes, middleware, db client, schema
     ├── scripts/              # Seed, db-verify, staff CLI, ops CLI
-    ├── src/domain/           # nghiệp vụ thuần: types, constants, transitions, duplicates, privacy…
-    ├── src/data/             # DataSource abstraction (LocalDataSource, ApiDataSource)
+    ├── src/domain/           # nghiệp vụ thuần: types, constants, transitions, duplicates, privacy, notifications…
+    ├── src/data/             # DataSource abstraction (LocalDataSource, ApiDataSource, localAdminStore)
     ├── src/lib/              # api client, auth, geolocation, image, senior, share
-    ├── src/store/            # AppStore + citizenActions + officerActions
-    ├── src/screens/          # citizen / officer / volunteer / auth / demo
+    ├── src/store/            # AppStore + citizenActions + officerActions + persistence
+    ├── src/screens/          # citizen / officer / volunteer / admin / auth / dev
     ├── src/data/mock.json    # 64 hồ sơ mẫu
     └── public/demo-photos/   # ảnh minh hoạ
 ```
@@ -54,3 +54,4 @@ npm run demo:reset    # Đặt lại dữ liệu mẫu cho giám khảo
 - Database giai đoạn 2: **PostgreSQL + PostGIS** (lý do ở `CLAUDE.md` mục 6.1).
 - Bất biến dữ liệu mẫu: 64 phản ánh (18/15/21/10), 47 đã xử lý, TB 3,2 ngày; không lộ số điện thoại và mã bí mật ở phần công khai.
 - Mọi thứ chưa làm thật (OTP, SMS/Zalo, AI) phải gắn nhãn "Mô phỏng".
+- **Cập nhật 26/11/2026:** Chế độ `local` khởi chạy sạch trên trình duyệt thật (`tbkn:live:v2`, 0 phản ánh mẫu để nhập liệu thật) trong khi vẫn giữ `app/src/data/mock.json` cho bộ test & `npm run mock:verify`; tách bundle bằng `React.lazy` + dynamic `import('xlsx')` (`index.js` = `106,39 kB gzip`); bổ sung migration `20261126000000_title_and_idempotency.sql`, upload ảnh Supabase Storage `report-photos`, endpoint PostGIS `GET /public/duplicates`, tra cứu mã `TB-xxxx` ở C05 và lưu bền nút Thông báo đẩy.

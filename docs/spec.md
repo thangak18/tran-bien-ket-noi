@@ -102,7 +102,7 @@ Có **4 vai trò**: Người dân, Cán bộ, Tình nguyện viên, Quản trị
 | ND | Người dân | Mobile 390px | **Xem không cần đăng nhập** (C01, C06 công khai, C07, C08). **Gửi phản ánh, "Tôi cũng gặp", thông báo, đánh giá bắt buộc đăng nhập** bằng SĐT + OTP mô phỏng (`123456`, nhãn "Mô phỏng") |
 | CB | Cán bộ tiếp nhận | Desktop 1440px | Chế độ API: `/dang-nhap` (email + mật khẩu, Supabase Auth). Chế độ local: chuyển cổng bằng `PortalSwitcherFab`, không mật khẩu |
 | TNV | Thanh niên tình nguyện | Mobile 390px | Như CB |
-| QTV | Quản trị viên phường | Desktop 1440px | Chế độ API: `/dang-nhap`. Chế độ local: không dùng được, trang `/quan-tri/*` báo "Cần chế độ API" |
+| QTV | Quản trị viên phường | Desktop 1440px | Chế độ API: `/dang-nhap`. Chế độ local: chuyển cổng bằng `PortalSwitcherFab`, chạy dữ liệu mô phỏng (nhãn "Mô phỏng", KPI tính từ `AppStore`) |
 
 - AC-ROLE-1: Chế độ API không có chỗ nào cho phép chọn vai trò nhân viên mà không đăng nhập; không còn "Demo Hub" làm đường vào. Chế độ local giữ `PortalSwitcherFab` (nút chuyển cổng) và Demo Hub `/demo`, có nhãn "Mô phỏng".
 
@@ -185,6 +185,10 @@ Người nhận: mọi SĐT trong `followers` của hồ sơ (người gửi, ng
 **Thông báo chỉ dành cho người đã đăng nhập (D5):** chuông và trang C09 `/thong-bao` chỉ hiện danh sách khi đã đăng nhập SĐT; chưa đăng nhập hiện lời mời đăng nhập. "Nhận tin báo" (cả "Tôi cũng gặp" lẫn đăng ký nhận tin của hồ sơ ẩn danh cũ) cũng chỉ hiện với người đã đăng nhập.
 
 Hiển thị: chuông + trang C09 (AC-C09-1 → 3), toast khi có thông báo mới, xem trước dạng tin nhắn SMS có nhãn "Mô phỏng".
+
+**Thông báo điều hành cho Cán bộ và Tình nguyện viên (tính tự động từ dữ liệu `AppStore`, cập nhật realtime theo thao tác và lưu trạng thái đã đọc trên thiết bị):**
+- **Cán bộ phường** (chuông trên `OfficerLayout`): nhận thông báo khi người dân gửi phản ánh mới (`moi`), hồ sơ quá hạn / sắp đến hạn, người dân báo "Chưa giải quyết" (`mo_lai`), hoặc TNV vừa nộp kết quả xác minh/nghiệm thu (`task.status = xong`); chạm vào thông báo mở thẳng `/can-bo/:id`.
+- **Tình nguyện viên** (chuông trên `VolunteerLayout`): nhận thông báo chỉ thị của cán bộ khi có nhiệm vụ xác minh ban đầu hoặc nghiệm thu sau xử lý được giao cho mình / nhiệm vụ mở gần nhất (kèm ghi chú chỉ thị từ timeline nếu có); chạm mở thẳng `/tnv/:taskId`. **Không bao giờ chứa SĐT người dân** (7.7).
 
 ### 3.4a. Quyền "chủ hồ sơ" [GĐ]
 
@@ -379,7 +383,7 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 
 ### C01 – Trang chủ người dân
 
-- AC-C01-1: Thứ tự khối từ trên xuống: Header ("Phường Trấn Biên" + nút quét QR + chuông; chuông chưa đăng nhập dẫn tới lời mời đăng nhập ở C09) → thẻ kêu gọi "Thấy chỗ hư hỏng? Chụp một tấm, phường sẽ lo." + nút "Báo sự cố" → "Phản ánh của bạn" → "Quanh đây" → dải số liệu.
+- AC-C01-1: Thứ tự khối từ trên xuống: Header ("Phản ánh" + hàng nút góc phải: **chuông thông báo** đặt ngay cạnh nút **tìm kiếm**, nút **quét QR**, nút **bản đồ**; chuông có badge số chưa đọc và dẫn tới C09) → thẻ kêu gọi "Thấy chỗ hư hỏng? Chụp một tấm, phường sẽ lo." + nút "Báo sự cố" → "Phản ánh của bạn" → "Quanh đây" → dải số liệu.
 - AC-C01-6: "Phản ánh của bạn": thẻ cho mỗi hồ sơ của **SĐT đã đăng nhập** (cộng hồ sơ ẩn danh cũ còn trong `deviceReports`), mới nhất trước, trượt ngang có chấm phân trang. Mỗi thẻ: icon + tên loại, mã, ProgressBar ngang 4 mốc có giờ, câu "Cập nhật mới nhất" (3.4c), DelayChip nếu chậm (3.6a). Chạm → C06. **Chưa đăng nhập hoặc không có hồ sơ → ẩn khối.**
 - AC-C01-7: "Quanh đây": 3 hồ sơ gần nhất (GPS nếu đã cấp, không thì tâm phường) gồm icon loại, nhãn trạng thái, khoảng cách; link "Xem bản đồ" → C07.
 - AC-C01-3: Dải số liệu: "Tháng 11: 47/64 phản ánh đã xử lý →" tính từ dữ liệu, chạm → C08.
@@ -495,7 +499,7 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 
 ### A01 – Hộp tiếp nhận cán bộ
 
-- AC-A01-1: Header: tên cán bộ, ô tìm kiếm (mã/địa chỉ). *(Nút "Tạo phản ánh hộ": [BONUS – HOÃN – B5].)*
+- AC-A01-1: Header: tên cán bộ, ô tìm kiếm (mã/địa chỉ), **nút chuông thông báo điều hành** đặt ngay cạnh ô tìm kiếm (và trên sidebar desktop). *(Nút "Tạo phản ánh hộ": [BONUS – HOÃN – B5].)*
 - AC-A01-2: 4 thẻ KPI giống C08 + thẻ "Quá hạn" và "Sắp đến hạn" (tính theo 3.6).
 - AC-A01-3: Bảng cột: Mã · Ảnh · Loại · Địa chỉ · **SĐT** (AC-A01-10) · Trạng thái (nhãn CB) · Bộ phận · Hạn · Cờ (Ẩn danh). *(Cột "Người cùng báo", cờ Nghi trùng / Gửi hộ: bonus B2, B5.)*
 - AC-A01-9: Bộ lọc thêm "Nguồn": Có SĐT / Ẩn danh (nhóm "Ẩn danh" chỉ gồm 6 hồ sơ cũ, 3.4b).
@@ -531,7 +535,7 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 
 ### V01 – Nhiệm vụ TNV
 
-- AC-V01-1: TNV đã đăng nhập (chế độ API) hoặc đã chọn TNV mẫu bằng nút chuyển cổng (chế độ local); danh sách gồm nhiệm vụ giao cho mình + nhiệm vụ mở, sắp theo khoảng cách. **Không có SĐT ở danh sách** (D7).
+- AC-V01-1: TNV đã đăng nhập (chế độ API) hoặc đã chọn TNV mẫu bằng nút chuyển cổng (chế độ local); danh sách gồm nhiệm vụ giao cho mình + nhiệm vụ mở, sắp theo khoảng cách; có nút chuông thông báo chỉ thị cán bộ trên `VolunteerLayout`. **Không có SĐT ở danh sách và thông báo** (D7).
 - AC-V01-2: Mỗi thẻ: nhãn loại nhiệm vụ "Xác minh ban đầu" / "Nghiệm thu sau xử lý", loại sự cố, địa chỉ, khoảng cách.
 - AC-V01-3: Tab: Cần làm / Đã xong. Trống → "Hiện chưa có nhiệm vụ".
 
@@ -817,6 +821,7 @@ Kết quả phải khớp `haversineMeters` ở client trong sai số 1 m (test 
 | `GET /public/reports/:code` | C06 cho người ngoài | `PublicReport` (bỏ SĐT, mã bí mật, followers → `followerCount`, timeline bỏ tên cá nhân; ảnh chỉ khi `photos_approved`) |
 | `GET /public/kpi?month=2026-11` | KPI C08/A01, **tính bằng SQL từ bảng `reports`** | `{total, resolved, open, avgDays, byCategory[]}` |
 | `GET /public/recent-results?limit=6` | AC-C08-3 | thẻ Trước → Sau |
+| `GET /public/duplicates?lat&lng&category&excludeId?` | Tìm tối đa 3 phản ánh nghi trùng (≤ 50 m, cùng loại, ≤ 14 ngày) bằng PostGIS `find_duplicate_reports` | danh sách công khai kèm `distanceMeters` |
 
 ### 12.3. Người dân
 
@@ -824,8 +829,8 @@ Kết quả phải khớp `haversineMeters` ở client trong sai số 1 m (test 
 |---|---|---|
 | `POST /citizen/otp/request` `{phone}` | công khai, giới hạn 5/giờ/SĐT, 20/giờ/IP | Gửi OTP (mock) |
 | `POST /citizen/otp/verify` `{phone, code}` | công khai | Đúng → `{token}` (JWT người dân, 30 ngày) |
-| `POST /uploads/sign` `{kind:'before', contentType, size}` | token người dân | Trả URL ký sẵn để tải ảnh lên Storage (15). *(Ảnh hiện lưu data URL, 10.5)* |
-| `POST /citizen/reports` | **token người dân bắt buộc (D1)** | Gửi phản ánh: `category`, ảnh (1–3), `lat`, `lng`, `address`, `locationNote?`, `description?`, `aiSuggestion?`. Server lấy SĐT từ token: `reporter_phone` = SĐT token, `anonymous=false`. **Không token → 401 `CITIZEN_LOGIN_REQUIRED`**, không tạo hồ sơ. Trường `anonymous` không còn được chấp nhận. Trả `{code}`; không trả `secretCode`/`ownerToken` cho hồ sơ mới. Giới hạn chống spam theo SĐT: 13.4 mục 5 |
+| `POST /uploads/sign` `{contentType, sizeBytes}` & `GET /uploads/signed-url?path=` | token người dân / nhân viên | Cấp signed upload URL lên bucket riêng tư `report-photos` của Supabase Storage và signed read URL tạm thời (3600s) (15) |
+| `POST /citizen/reports` | **token người dân bắt buộc (D1)** | Gửi phản ánh: `category`, ảnh (1–3), `lat`, `lng`, `address`, `locationNote?`, `title?`, `description?`, `aiSuggestion?`. Server lấy SĐT từ token: `reporter_phone` = SĐT token, `anonymous=false`. **Không token → 401 `CITIZEN_LOGIN_REQUIRED`**, không tạo hồ sơ. Trường `anonymous` không còn được chấp nhận. Trả `{code}`; không trả `secretCode`/`ownerToken` cho hồ sơ mới. Giới hạn chống spam theo SĐT: 13.4 mục 5 |
 | `GET /citizen/me/reports` | token người dân | Hồ sơ có `reporter_phone` = SĐT token và hồ sơ đã bấm "Tôi cũng gặp" (`report_followers`) |
 | `POST /citizen/reports/lookup` `{code, proof}` | công khai, giới hạn thử | **Chỉ hồ sơ ẩn danh cũ.** `proof` = 4 số cuối SĐT đã đăng ký nhận tin hoặc mã bí mật (AC-C05-7) → `{ownerToken}`. Hồ sơ có SĐT: không cấp `ownerToken` (quyền chủ chỉ qua đăng nhập) |
 | `POST /citizen/reports/:code/claim` `{secretCode}` | công khai, giới hạn thử | **Chỉ hồ sơ ẩn danh cũ.** Mở link `?k=` (3.4a.c) → `{ownerToken}` |
@@ -923,7 +928,7 @@ Hệ thống có **4 vai trò**: ba nhóm người dùng nghiệp vụ (người
 - Xác thực SĐT: `otp/request` → `otp/verify`. Đúng → API ký JWT riêng (`HS256`, khoá `CITIZEN_JWT_SECRET`) với `sub = HMAC(phone)`, claim `phone`, hạn 30 ngày; lưu ở localStorage (thay `settings.phone`).
 - Token chỉ chứng minh "tôi sở hữu SĐT này". **Quyền chủ hồ sơ = SĐT trong token trùng `reports.reporter_phone`** (3.4a). Người đã bấm "Tôi cũng gặp" nằm trong `report_followers` nhưng **không** là chủ hồ sơ. Với hồ sơ ẩn danh cũ: SĐT có nguồn `subscribe_later` hoặc `ownerToken` (13.4).
 - Token hết hạn hoặc thiếu ở thao tác bắt buộc đăng nhập → 401; UI chuyển tới `/ho-so?login=1&redirect=<trang hiện tại>` (AC-C04-14).
-- Đăng xuất = xoá token ở máy; đổi máy = xác thực OTP lại (AC-C05-7).
+- Đăng xuất = xoá token và SĐT ở máy **ngay lập tức** (ghi trực tiếp `localStorage`, huỷ timer debounce đang chờ, đồng bộ sang các tab khác qua `storage` event, xoá thông báo cũ trong store) để tải lại trang không khôi phục phiên cũ; đổi máy = xác thực OTP lại (AC-C05-7).
 
 ### 13.4. Quyền chủ hồ sơ cho hồ sơ ẩn danh cũ [ĐĐ] (chỉ 6 hồ sơ lịch sử)
 
@@ -1022,7 +1027,7 @@ AC-OPS-1: Email trùng khi tạo nhân viên báo lỗi và không để lại A
 - AC-ADMIN-7: SLA ngoài 1–30 ngày hoặc bộ phận mặc định không hợp lệ → 422; thay đổi chỉ ảnh hưởng hồ sơ tiếp nhận sau đó.
 - AC-ADMIN-8: KPI tổng quan được tính từ DB và thống kê theo loại, bộ phận, vai trò; không có số KPI hard-code.
 - AC-ADMIN-9: Quét toàn bộ response `/admin/*` không tìm thấy SĐT (`0\d{9}`), `secretCode`, `ownerToken`, password hash hoặc service secret.
-- AC-ADMIN-10: Chế độ `VITE_DATA_SOURCE=local` hiển thị “Cần chế độ API” thay vì lỗi.
+- AC-ADMIN-10: Chế độ `VITE_DATA_SOURCE=local` mở được `/quan-tri/*` qua `PortalSwitcherFab` với nhãn "Mô phỏng", KPI tổng quan tính từ dữ liệu store (không hard-code), thao tác tài khoản/bộ phận/SLA/nhật ký lưu cục bộ.
 
 ---
 
@@ -1127,5 +1132,5 @@ Mỗi câu ghi **cách đã xử lý tạm trong spec** để code không bị c
 13. **QR hiển thị ở đâu.** FR-08 chỉ nói "quét QR". Đã giả định QR là link `/phan-anh/:id` hiển thị ở thẻ chia sẻ C06 (AC-C06-11); màn thành công không còn QR (đã bỏ cùng gửi ẩn danh).
 14. **Màn đã có trong UI nhưng chưa có AC:** màn chào `WelcomeScreen` (chọn cỡ chữ lần đầu), `/can-bo/thong-ke`, `/can-bo/ho-so`, `/tnv/thong-ke`, `/tnv/ho-so`, `/tim-kiem`, `/dev/ui` (chỉ dev). Spec chỉ liệt kê route (mục 8).
 15. **B2 trong UI.** UI đã có hộp nghi trùng và "tham gia hồ sơ trùng" ở C04 trong khi spec còn đánh dấu B2 [BONUS – HOÃN] (trừ "Tôi cũng gặp" đã chuyển sang lõi). Cần quyết định mở B2 chính thức hay tắt trên UI.
-16. **Ảnh data URL (D11).** Ảnh vẫn lưu trong DB, chưa upload Supabase Storage; ghi ở 10.5 và bảng rủi ro. Mục 15 vẫn là thiết kế đích.
+16. **Ảnh Supabase Storage (D11 – cập nhật 26/11):** Đã nối `POST /uploads/sign` và `GET /uploads/signed-url` với bucket riêng tư `report-photos` của Supabase Storage; `ApiDataSource.createReport` tự động tải ảnh `data:image/...` lên Storage trước khi ghi DB (chỉ fallback data URL khi `DEMO_MODE=true` và Storage chưa sẵn sàng).
 17. **`secret_code_hash` cho hồ sơ mới.** Server vẫn sinh để giữ DV-014 ("mọi hồ sơ có `secretCode` 4 số"); không trả cho người dân. Có thể bỏ ràng buộc này ở lần cập nhật sau.

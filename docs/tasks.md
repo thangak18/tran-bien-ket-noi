@@ -294,11 +294,19 @@ Số liệu thật: `docs/review/giai-doan-2/ket-qua-kiem-chung.md`.
 - [x] Q3c Chủ hồ sơ mới được đánh giá/bổ sung (OWNER-001…005); TNV không thấy SĐT (VOL-000…007).
 - [x] Q2b Mọi chuyển trạng thái qua `transition.ts`; mã bí mật tạo hộ ngẫu nhiên bằng `crypto` (OFF-001…009, TRANS-006).
 - [x] Q6b Màn hình A01–A03, V01–V02, C04, C06 nối qua DataSource; xử lý 401/403/409/mất mạng; e2e API 7/7.
-- [ ] Q4 Lưu ảnh: ký URL tải lên Supabase Storage thật, kiểm tra magic bytes khi gắn hồ sơ (hiện `/uploads/sign` là bản giả).
-- [ ] Q2c Idempotency-Key bền vững; thực thi `OTP_PROVIDER`/`ALLOW_MOCK_OTP`; giới hạn đăng nhập ở API; thống nhất 400/422 (AC-API-4).
-- [ ] Q5b Script `staff:reset-password`; endpoint dùng `find_duplicate_reports`; "Phản ánh của tôi" ở chế độ API qua `/citizen/me/reports`.
-- [ ] Q7b Chạy thử CI trên GitHub; cấu hình Supabase cloud và Vercel (chủ dự án làm); nâng gói có lỗ hổng (`npm-audit.md`).
+- [x] Q4 Lưu ảnh: ký URL tải lên Supabase Storage thật (`report-photos`) + `GET /uploads/signed-url` + tự động upload từ `ApiDataSource.createReport` (26/11).
+- [x] Q2c Idempotency-Key bền vững trên PostgreSQL (`idempotency_keys`); thực thi `OTP_PROVIDER`/`ALLOW_MOCK_OTP` ở runtime (26/11).
+- [x] Q5b Endpoint `GET /public/duplicates` dùng PostGIS `find_duplicate_reports`; "Phản ánh của tôi" chế độ API qua `/citizen/me/reports` (26/11).
+- [ ] Q7b Chạy thử CI trên GitHub; cấu hình Supabase cloud và Vercel (chủ dự án làm); nâng gói có lỗ hổng (`npm-audit.md` – 3 gói production không breaking `hono`, `react-router-dom`, `@supabase/supabase-js` và 2 gói breaking `drizzle-orm`, `zod`).
 
+
+## Đợt cập nhật 26/11/2026
+
+- [x] (26/11) **Đăng xuất người dân tức thì:** Ghi ngay `localStorage` khi đổi SĐT trong `AppStore.tsx`, huỷ debounce cũ trong `persistence.ts`, thêm `flushPendingSaves` (`beforeunload`/`pagehide`), đồng bộ xoá `phone` giữa các tab và xoá thông báo cũ trong `C05Mine.tsx` (test `UT-023` mục 7–8, `citizen-home-mine.test.tsx`).
+- [x] (26/11) **Cổng Quản trị chế độ local & Chuyển cổng:** Thêm **Cổng Quản trị** (`/quan-tri`) vào `PortalSwitcherFab.tsx`; tạo `src/data/localAdminStore.ts` để toàn bộ 5 màn `/quan-tri/*` chạy được ở chế độ `local` với nhãn **Mô phỏng** và KPI tính động từ `AppStore` (`AC-ADMIN-10`, `admin-access.test.tsx`).
+- [x] (26/11) **Thông báo realtime 3 cổng & sửa hiển thị popup:** Thêm `buildOfficerNotifications`, `buildVolunteerNotifications` (không lộ SĐT), `buildCitizenNotifications` trong `src/domain/notifications.ts`; tạo `PortalNotificationBell.tsx` gắn vào `OfficerLayout` (cạnh ô tìm kiếm + sidebar) và `VolunteerLayout`; thêm chuông cạnh nút tìm kiếm ở `C01Home.tsx`; bổ sung nút *"Xem tin nhắn mẫu"* kèm `MockLabel` ở `C09Notifications.tsx`; chuyển `BottomSheet.tsx` sang `createPortal` để hết lỗi bị che/kẹt trong sidebar (`UT-017` mục 6–8, `CT-038`).
+- [x] (26/11) **Sửa 7 lỗi Nhóm A:** (1) Tách khoá khởi chạy sạch `tbkn:live:v2` trên trình duyệt thật và giữ `mock.json` cho test/`mock:verify`; (2) Thêm `officerUpdateReport` vào `DataSource`/`LocalDataSource`/`ApiDataSource` + bỏ import `@/store/officerActions` ở `A02Panel.tsx`; (3) Khôi phục `fontScale` trong `persistence.ts`; (4) Cô lập "Tôi cũng gặp" theo `phone:reportId` ở `C06Detail.tsx`; (5) Tính tháng động & khôi phục dòng chú thích `AC-C08-4` ở `C08Transparency.tsx`; (6) Cập nhật mục 2 Chính sách bảo mật theo FR-08 ở `C05Mine.tsx`; (7) Chỉnh `MAX_PHOTOS = 3` ở `C04Confirm.tsx`.
+- [x] (26/11) **Hoàn thiện 6 hạng mục Nhóm B:** (1) Tách bundle `React.lazy` + dynamic `import('xlsx')` đưa `index.js` về `106,39 kB gzip`; (2) Nối upload ảnh Supabase Storage `report-photos`; (3) Đồng bộ cột `reports.title` (migration `20261126000000_title_and_idempotency.sql` + API + `ApiDataSource`); (4) Thêm ô tra cứu mã `TB-xxxx` tại `C05Mine.tsx` (F8-13); (5) Lưu bền nút "Thông báo đẩy" vào `localStorage` tại `C05Mine.tsx` & `OfficerProfile.tsx`; (6) Hardening backend (`idempotency_keys` trên Postgres, chặn OTP runtime, `GET /public/duplicates` dùng PostGIS) + fallback ảnh `onError` ở `C07Nearby.tsx` + xác nhận `npm ci` & `npm run build` pass.
 
 ## Câu hỏi mở giai đoạn 2
 

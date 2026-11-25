@@ -150,7 +150,9 @@ Seed chạy lại được nhiều lần. Muốn xoá mọi dữ liệu phát si
 ```bash
 npm run dev
 ```
-Mở `http://localhost:5173`. Chế độ offline (mô phỏng, mặc định): `VITE_DATA_SOURCE=local`. Chế độ dùng API và DB thật: đặt `VITE_DATA_SOURCE=api` trong `app/.env.local` rồi chạy lại `npm run dev`; đăng nhập cán bộ/TNV ở `/dang-nhap` bằng email trên và `SEED_STAFF_PASSWORD`.
+Mở `http://localhost:5173`.
+- **Chế độ `local` (mặc định):** Trên trình duyệt thật, ứng dụng khởi chạy sạch (`tbkn:live:v2`, 0 phản ánh mẫu) để nhập liệu và trình diễn trực tiếp mà không lẫn dữ liệu cũ; trong bộ kiểm thử tự động (`vitest` / `npm run mock:verify`), hệ thống nạp đủ 64 hồ sơ mẫu từ `app/src/data/mock.json` để kiểm tra 16 bất biến dữ liệu.
+- **Chế độ `api`:** Đặt `VITE_DATA_SOURCE=api` trong `app/.env.local`, áp dụng đầy đủ migration (gồm `20261126000000_title_and_idempotency.sql` cho cột `reports.title` và bảng `idempotency_keys`), tạo bucket riêng tư `report-photos` trên Supabase Storage rồi chạy lại `npm run dev`; đăng nhập cán bộ/TNV ở `/dang-nhap` bằng email mẫu và `SEED_STAFF_PASSWORD`.
 
 ### 3.6. Kiểm chứng nhanh
 ```bash

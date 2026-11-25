@@ -280,7 +280,8 @@ app/
 │   ├── staff.ts                  # CLI tương thích, gọi server/services/staffAdmin.ts (spec 14)
 │   └── ops.ts                    # config:set-sla, demo:reset, demo:clock
 ├── src/
-│   ├── data/                     # DataSource: types.ts, LocalDataSource.ts, ApiDataSource.ts, index.ts
+│   ├── data/                     # DataSource: types.ts, LocalDataSource.ts, ApiDataSource.ts, localAdminStore.ts, index.ts
+│   ├── components/common/        # PortalNotificationBell.tsx (chuông thông báo Cán bộ/TNV), PortalSwitcherFab.tsx, MockLabel.tsx
 │   ├── lib/api.ts                # fetch wrapper: token, lỗi → thông báo tiếng Việt, Idempotency-Key
 │   ├── auth/                     # AuthProvider, RequireRole, LoginPage (/dang-nhap)
 └── tests/
@@ -417,7 +418,27 @@ Xem bảng rủi ro ở `spec.md` mục 17. Bổ sung kỹ thuật:
 - Script dùng chung `app/scripts/lib` (env bắt buộc, Supabase Auth admin) thay cho các URL/pepper mặc định.
 - E2E chế độ API chạy bằng `npm run test:e2e:api`; dùng Google Chrome cài sẵn (`channel: chrome`, đổi bằng `PW_CHANNEL`).
 
+## 20. Ghi chú cập nhật 26/11/2026 (Nhóm A, Nhóm B & khởi chạy sạch trình duyệt)
+
+- **Khởi chạy sạch trên trình duyệt thật:** Ở chế độ `local`, trình duyệt thật dùng khoá `tbkn:live:v2` với mặc định `0` phản ánh mẫu để nhập liệu thực tế mà không bị trộn dữ liệu mock cũ; môi trường test `jsdom` và `npm run mock:verify` vẫn dùng `tbkn:v1` + `src/data/mock.json` (giữ nguyên toàn bộ bất biến 64/47/3,2).
+- **Tối ưu bundle (code-guidelines mục 9):** Tách route bằng `React.lazy` + `<Suspense>` trong `src/App.tsx` và chuyển `xlsx` sang dynamic `import('xlsx')` trong `src/lib/inboxExcel.ts`. Bundle chính `index.js` giảm từ `2.033 kB` (`559,86 kB gzip`) xuống `407,91 kB` (`106,39 kB gzip`), đạt chuẩn `< 500 kB gzip`.
+- **Đồng bộ dữ liệu & Hardening backend:**
+  - Migration `supabase/migrations/20261126000000_title_and_idempotency.sql`: thêm cột `reports.title` và bảng `idempotency_keys` (bật RLS, TTL 24 giờ) thay thế `Map` bộ nhớ.
+  - `POST /uploads/sign` & `GET /uploads/signed-url`: nối Supabase Storage bucket riêng tư `report-photos`; `ApiDataSource.createReport` tự tải ảnh trước khi gửi phản ánh.
+  - `POST /citizen/otp/request`: chặn ở runtime (`503`) khi `OTP_PROVIDER=real` chưa cấu hình hoặc `ALLOW_MOCK_OTP=false`.
+  - `GET /public/duplicates`: gọi hàm PostGIS `find_duplicate_reports(...)`.
+  - `DataSource.officerUpdateReport` + `PATCH /officer/reports/:code`: hỗ trợ lưu phân loại, ưu tiên, bộ phận và hạn xử lý đồng nhất giữa `local` và `api`.
+- **Hoàn thiện UI/UX:** Khôi phục `fontScale` sau reload, cô lập trạng thái "Tôi cũng gặp" theo `phone:reportId`, khôi phục chú thích nguồn tháng động ở C08, cập nhật mục 2 Chính sách bảo mật theo FR-08, đưa `MAX_PHOTOS = 3` ở C04, thêm ô tra cứu nhanh `TB-xxxx` ở C05, lưu bền nút "Thông báo đẩy" ở C05 & OfficerProfile, và thêm `onError` fallback ảnh ở C07.
+
 
 ### Ghi chú thư viện thêm (25/11/2026)
 - `esbuild` 0.24.2 (devDependency, cùng bản Vite đang dùng sẵn): `scripts/build-api.mjs` gói server Hono thành `api/_lib/server.mjs` trong `npm run build`. Lý do: Vercel biên dịch từng file `.ts` riêng và giữ import không đuôi; package `"type": "module"` nên Node báo `ERR_MODULE_NOT_FOUND` và mọi API production trả 500.
 - `xlsx` 0.20.3 (dependency, cài từ CDN chính thức `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`): xuất và nhập Excel ở hộp tiếp nhận A01 (`src/lib/inboxExcel.ts`). Không dùng bản `xlsx@0.18.5` trên npm vì có lỗ hổng khi đọc file không tin cậy (CVE-2023-30533 prototype pollution, CVE-2024-22363 ReDoS) và SheetJS không còn phát hành bản vá lên npm.
+
+### Ghi chú cập nhật 26/11/2026
+- **Đăng xuất người dân tức thì (`persistence.ts`, `AppStore.tsx`, `C05Mine.tsx`):** Khi `state.settings.phone` thay đổi (đăng nhập/đăng xuất), `AppStoreProvider` gọi `saveState` ngay lập tức thay vì debounce 100ms, huỷ timer debounce cũ để không ghi đè lại SĐT cũ, thêm `flushPendingSaves` trên `beforeunload`/`pagehide`, và chuẩn hoá `setupStorageSync` để xoá `phone` đồng bộ giữa các tab.
+- **Cổng Quản trị ở chế độ local (`localAdminStore.ts`, `AdminLayout.tsx`, `PortalSwitcherFab.tsx`):** Bổ sung mục **Cổng Quản trị** (`/quan-tri`) vào `PortalSwitcherFab` (chỉ hiện ở chế độ `local`, giữ nguyên `AC-ROLE-1` ở chế độ `api`). Trang quản trị chạy dữ liệu mô phỏng lưu trên `localStorage` (`tbkn:admin:local:v1`), gắn `<MockLabel />` trên header và tính KPI trực tiếp từ `AppStore` (`computeKpi`, `isOverdue`).
+- **Thông báo realtime 3 cổng (`domain/notifications.ts`, `PortalNotificationBell.tsx`, `C09Notifications.tsx`, `C01Home.tsx`, `BottomSheet.tsx`):**
+  - Thêm hàm thuần `buildOfficerNotifications`, `buildVolunteerNotifications` (không lộ SĐT người dân) và `buildCitizenNotifications`.
+  - Gắn nút chuông thông báo ngay cạnh nút tìm kiếm ở `C01Home` (người dân) và `OfficerLayout` (cán bộ), cùng chuông chỉ thị cho TNV trên `VolunteerLayout`; bổ sung nút *"Xem tin nhắn mẫu"* kèm `<MockLabel />` ở `C09Notifications` (`AC-C09-3`).
+  - `BottomSheet` render qua `createPortal(..., document.body)` để không bị kẹt trong stacking context của sidebar `sticky` hay bị thanh bộ lọc che tiêu đề.

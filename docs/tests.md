@@ -86,6 +86,9 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 3. `buildNotification` cho mỗi sự kiện spec 3.4 thay đúng biến, không còn ký tự `{`.
 4. Chuyển `cho_xac_minh` → `da_tiep_nhan` không sinh thông báo (nhãn công khai không đổi bước).
 5. `haversineMeters` giữa 2 điểm cách nhau 0,0004° vĩ độ ≈ 44,5 m (sai số ±1 m).
+6. `buildOfficerNotifications`: sinh thông báo phản ánh mới, quá hạn, mở lại, kết quả TNV và trỏ về `/can-bo/:id`.
+7. `buildVolunteerNotifications`: sinh thông báo chỉ thị cán bộ / nhiệm vụ mở cho TNV, trỏ về `/tnv/:taskId` và **không chứa SĐT** (`0\d{9}`).
+8. `buildCitizenNotifications`: gộp thông báo realtime trong store với mốc đã xử lý (`hoan_thanh`/`dong`) của hồ sơ thuộc SĐT đăng nhập.
 
 ### UT-018 – Streets
 1. ≥ 10 đường, mỗi đường có tên và tọa độ trong khung spec 5.3.
@@ -129,6 +132,8 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 4. `reset` xoá dữ liệu và nạp lại mock.
 5. `setItem` ném `QuotaExceededError` → action trả lỗi có thông điệp tiếng Việt, state không mất.
 6. `deviceReports` khung `left` không xuất hiện ở khung `right`.
+7. `saveState` huỷ timer debounce đang chờ để không ghi đè lại SĐT cũ sau khi đăng xuất.
+8. `storage` event không còn trường `phone` → `SET_SETTINGS` truyền `phone: undefined` để đồng bộ đăng xuất giữa các tab.
 
 ### UT-035 – lib
 1. `geolocation`: mock `getCurrentPosition` không gọi callback → reject `timeout` sau 10s (fake timers); `PERMISSION_DENIED` → `denied`.
@@ -183,7 +188,7 @@ Quy ước thời gian: mọi test dùng `now = 2026-11-24T09:00:00+07:00` trừ
 | CT-034 | MapView | Marker có icon loại + nhãn `aria-label` "{loại} – {trạng thái}"; nút "Chú giải" mở bảng có chữ; attribution OSM; onTap trả lat/lng; tile lỗi → `onTileError` |
 | CT-036 | PhoneOtpSheet | Có dòng "chỉ dùng để báo tin cho bạn…"; SĐT 9 số → lỗi; `0909000068` → OTP; sai → lỗi; `123456` → `onVerified`; nhãn "Mô phỏng" |
 | CT-037 | BeforeAfter, CategoryTile, LocationRow, ReportCard, LatestUpdate | BeforeAfter không có ảnh sau → ô "Chưa có ảnh sau xử lý"; alt "Trước xử lý"/"Sau xử lý". CategoryTile `aria-pressed`, chọn bằng bàn phím, có ✓ khi chọn. LocationRow có nút "Đổi" khi truyền `onChange`. ReportCard hiện ảnh, loại, mã, StatusChip, câu cập nhật 1 dòng |
-| CT-038 | NotificationBell | Số chưa đọc đúng; mở danh sách → đánh dấu đã đọc; SmsPreview có "Mô phỏng" |
+| CT-038 | NotificationBell, PortalNotificationBell, SmsPreview, C09 | Số chưa đọc đúng; mở danh sách → đánh dấu đã đọc; SmsPreview có "Mô phỏng"; chuông Cán bộ hiện phản ánh mới/quá hạn/mở lại/kết quả TNV và mở `/can-bo/:id`; chuông TNV hiện chỉ thị cán bộ/nhiệm vụ mở không lộ SĐT và mở `/tnv/:taskId`; C09 có nút "Xem tin nhắn mẫu" kèm nhãn "Mô phỏng" |
 | CT-039 | **[Chỉ áp dụng hồ sơ ẩn danh cũ, FR-08]** TrackingLinkCard, SubscribeCard | Mã bí mật ≥ 28px, QR mã hoá đúng URL `?k=`; "Lưu link" gọi share hoặc toast "Đã sao chép link"; SubscribeCard → OTP → "Đang nhận tin qua 0909 *** 068 · Huỷ" |
 | CT-039b | RatingSheet | Có "Chưa đến 30 giây"; 5 sao có nhãn chữ; chọn 5 sao → chip tích cực, chọn 2 sao → chip "Xử lý chậm"…; "Gửi đánh giá" tắt khi chưa chọn sao; trả `{rating, tags, comment}` |
 | CT-040 | C01 | Thứ tự khối đúng AC-C01-1; không có hồ sơ trên máy → ẩn "Phản ánh của bạn"; có 2 hồ sơ → 2 thẻ trượt ngang có ProgressBar; "Quanh đây" đúng 3 mục kèm khoảng cách; dải "47/64" tính từ store và dẫn tới `/minh-bach` **[FR-08: chưa đăng nhập cũng ẩn khối 'Phản ánh của bạn']** |
@@ -513,7 +518,7 @@ Các test này gọi `app.request` trên DB PostGIS thật và Supabase Auth th�
 | ADMIN-LEAK-001 | `tests/api/admin-privacy.test.ts` | Quét mọi response `/admin/*` theo regex `0\d{9}` và từ khoá nhạy cảm | Không có SĐT, `secretCode`, `ownerToken`, hash mật khẩu hoặc service secret |
 | ADMIN-DB-001 | migration/schema tests | Chạy migration mới trên schema hiện tại | Thêm enum `admin` và bảng audit; không thay đổi/xoá schema hoặc migration cũ |
 | ADMIN-DB-002 | database policy test | Đọc `admin_audit_log` bằng anon/authenticated | Bị từ chối, không có policy đọc/ghi công khai |
-| ADMIN-UI-001 | component tests | Admin truy cập 5 route quản trị; local mode | API mode hiển thị đúng màn; local mode báo “Cần chế độ API” |
+| ADMIN-UI-001 | component tests | Admin truy cập 5 route quản trị; local mode | API mode hiển thị đúng màn; local mode hiển thị trang quản trị với nhãn “Mô phỏng” và KPI tính từ dữ liệu |
 | ADMIN-E2E-001 | `tests/e2e/admin.spec.ts` | Đăng nhập admin → tạo TNV → khoá → thử đăng nhập TNV → mở khoá → đổi SLA đèn đường | Các thao tác thành công; trong lúc khoá login báo “tài khoản bị tạm khoá” |
 | ADMIN-UI-002 | kiểm tra thủ công / screenshot | Dashboard, danh sách và modal tài khoản, cấu hình, nhật ký tại 1440px; danh sách tại 390px | Không tràn ngang; bảng desktop đầy đủ; mobile hiển thị card; ảnh lưu ở `docs/review/admin/` |
 
@@ -615,3 +620,14 @@ Các ID dưới đây ngoài danh sách yêu cầu ban đầu, thêm để mỗi
 ### 19.7. Bất biến dữ liệu không đổi sau FR-08
 
 Giữ nguyên `DV-001 → DV-016` và `DB-007 → DB-016`: 64 hồ sơ (18/15/21/10), 47 đã xử lý, 17 chưa hoàn tất, trung bình 3,2 ngày (sai số ≤ 0,005), đúng 6 hồ sơ `anonymous` trong đó 1 `subscribedLater`, `reporter_phone` rỗng ở cả 6, mọi hồ sơ có `secret_code_hash`. Hồ sơ tạo bởi AUTH-CIT-002 (từ `TB-0065`) không làm sai các kiểm tra này (`is_seed`).
+
+### 19.8. Kiểm thử bổ sung 26/11/2026 (Nhóm A, Nhóm B & khởi chạy sạch)
+
+| ID | File | Tình huống | Kết quả mong đợi |
+|---|---|---|---|
+| PERSIST-FONT-001 | `tests/unit/persistence.test.ts` (#9) | Lưu `fontScale: 'xlarge'` và nạp lại qua `loadPersistedState` | Khôi phục đúng `settings.fontScale === 'xlarge'` |
+| FOLLOW-ISO-001 | `tests/component/spec-v3-fr08.test.tsx` | Tài khoản A bấm "Tôi cũng gặp" trên hồ sơ rồi đổi sang tài khoản B trên cùng thiết bị | Tài khoản A thấy "Bạn đã báo vấn đề này"; tài khoản B vẫn thấy nút "Tôi cũng gặp vấn đề này" |
+| C05-LOOKUP-001 | `tests/component/citizen-home-mine.test.tsx` | Nhập mã `TB-9999` không tồn tại vào ô "Tra cứu theo mã phản ánh" | Hiển thị thông báo lỗi tiếng Việt `role="alert"` |
+| C05-PUSH-001 | `tests/component/citizen-home-mine.test.tsx` | Tắt công tắc "Thông báo đẩy" ở C05, unmount rồi mount lại | Giữ nguyên trạng thái `aria-checked="false"` từ `localStorage` (`tbkn:push-enabled:citizen`) |
+| LAZY-ROUTE-001 | `tests/component/router.test.tsx`, `dev-ui.test.tsx` | Render toàn bộ 13 route + `/dev/ui` sau khi tách `React.lazy` | Tải bất đồng bộ và hiển thị đúng tiêu đề từng màn; `vite build` tạo `index.js` = `106,39 kB gzip` (< 500 kB) |
+| CI-INSTALL-001 | `npm ci` + `npm run build` | Cài đặt sạch từ `package-lock.json` và build production | Cài đủ 565 gói, `tsc --noEmit` + `vite build` + `build-api.mjs` đều exit code 0 |
