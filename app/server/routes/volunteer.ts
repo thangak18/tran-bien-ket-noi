@@ -1,14 +1,70 @@
 import { Hono, type Context } from 'hono';
+import { z } from 'zod';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { requireStaffAuth, StaffProfile } from '../middleware/auth';
 import { getDemoNow } from '../clock';
+import { executeTransition } from '../services/transition';
 import type { AppEnv } from '../types';
 
 export const volunteerRoutes = new Hono<AppEnv>();
 
-// Tất cả route tình nguyện viên yêu cầu vai trò tnv hoặc can_bo
+// Đọc nhiệm vụ: TNV và cán bộ. Ghi (nhận việc, nộp kết quả): chỉ TNV (xem từng route).
 volunteerRoutes.use('*', requireStaffAuth(['tnv', 'can_bo']));
+const tnvOnly = requireStaffAuth(['tnv']);
+
+/**
+ * Dữ liệu trả về cho TNV KHÔNG chứa số điện thoại hay mã bí mật của người dân:
+ * các truy vấn bên dưới không chọn các cột đó.
+ */
+interface TaskRow {
+  id: string;
+  code: string;
+  report_id: string;
+  report_code: string;
+  type: string;
+  status: string;
+  assignee_id: string | null;
+  assignee_name: string | null;
+  report_category: string;
+  report_address: string;
+  report_lat: number | string;
+  report_lng: number | string;
+  distance_meters?: number | string | null;
+  result_exists: string | null;
+  result_severity: string | null;
+  result_note: string | null;
+  result_at: string | null;
+}
+
+function mapTask(t: TaskRow, resultPhoto?: string) {
+  return {
+    id: t.code,
+    uuid: t.id,
+    reportId: t.report_code,
+    reportUuid: t.report_id,
+    type: t.type,
+    status: t.status,
+    assigneeId: t.assignee_id,
+    assignee: t.assignee_name ?? null,
+    assigneeName: t.assignee_name,
+    category: t.report_category,
+    address: t.report_address,
+    lat: Number(t.report_lat),
+    lng: Number(t.report_lng),
+    distanceMeters: t.distance_meters ? Math.round(Number(t.distance_meters)) : undefined,
+    result:
+      t.result_exists != null
+        ? {
+            exists: t.result_exists,
+            severity: t.result_severity ?? undefined,
+            photo: resultPhoto ?? '',
+            note: t.result_note ?? undefined,
+            at: t.result_at,
+          }
+        : undefined,
+  };
+}
 
 /**
  * 1. GET /volunteer/tasks - Danh sách nhiệm vụ (tìm kiếm theo GPS hoặc trạng thái)
@@ -21,16 +77,15 @@ volunteerRoutes.get('/tasks', async (c) => {
   const radius = query.radius ? parseFloat(query.radius) : 5000;
   const staff = c.get('staff') as StaffProfile;
 
-  let tasksQuery;
+  let rows: TaskRow[];
   if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
     const pointWkt = `POINT(${lng} ${lat})`;
-    tasksQuery = await sqlClient`
-      SELECT 
+    rows = (await sqlClient`
+      SELECT
         t.*,
         r.code as report_code,
         r.category as report_category,
         r.address as report_address,
-        r.reporter_phone as report_phone,
         ST_X(r.location::geometry) as report_lng,
         ST_Y(r.location::geometry) as report_lat,
         ST_Distance(r.location, ST_GeographyFromText(${pointWkt})) as distance_meters,
@@ -40,20 +95,19 @@ volunteerRoutes.get('/tasks', async (c) => {
       LEFT JOIN staff_profiles sp ON sp.user_id = t.assignee_id
       WHERE ST_DWithin(r.location, ST_GeographyFromText(${pointWkt}), ${radius})
         AND (${status ? sqlClient`t.status = ${status}` : sqlClient`true`})
-      ORDER BY 
+      ORDER BY
         CASE WHEN t.status = 'dang_lam' AND t.assignee_id = ${staff.userId}::uuid THEN 0
              WHEN t.status = 'cho_nhan' THEN 1
              ELSE 2 END,
         distance_meters ASC;
-    `;
+    `) as unknown as TaskRow[];
   } else {
-    tasksQuery = await sqlClient`
-      SELECT 
+    rows = (await sqlClient`
+      SELECT
         t.*,
         r.code as report_code,
         r.category as report_category,
         r.address as report_address,
-        r.reporter_phone as report_phone,
         ST_X(r.location::geometry) as report_lng,
         ST_Y(r.location::geometry) as report_lat,
         sp.display_name as assignee_name
@@ -61,40 +115,15 @@ volunteerRoutes.get('/tasks', async (c) => {
       JOIN reports r ON r.id = t.report_id
       LEFT JOIN staff_profiles sp ON sp.user_id = t.assignee_id
       WHERE (${status ? sqlClient`t.status = ${status}` : sqlClient`true`})
-      ORDER BY 
+      ORDER BY
         CASE WHEN t.status = 'dang_lam' AND t.assignee_id = ${staff.userId}::uuid THEN 0
              WHEN t.status = 'cho_nhan' THEN 1
              ELSE 2 END,
         t.code DESC;
-    `;
+    `) as unknown as TaskRow[];
   }
 
-  const items = tasksQuery.map((t) => ({
-    id: t.code,
-    uuid: t.id,
-    reportId: t.report_code,
-    reportUuid: t.report_id,
-    type: t.type,
-    status: t.status,
-    assigneeId: t.assignee_id,
-    assigneeName: t.assignee_name,
-    category: t.report_category,
-    address: t.report_address,
-    lat: Number(t.report_lat),
-    lng: Number(t.report_lng),
-    distanceMeters: t.distance_meters ? Math.round(Number(t.distance_meters)) : undefined,
-    result:
-      t.result_exists != null
-        ? {
-            exists: t.result_exists === 'true',
-            severity: t.result_severity,
-            note: t.result_note,
-            at: t.result_at,
-          }
-        : undefined,
-  }));
-
-  return c.json({ items });
+  return c.json({ items: rows.map((t) => mapTask(t)) });
 });
 
 /**
@@ -104,12 +133,11 @@ volunteerRoutes.get('/tasks/:id', async (c) => {
   const codeOrId = c.req.param('id');
 
   const [t] = await sqlClient`
-    SELECT 
+    SELECT
       t.*,
       r.code as report_code,
       r.category as report_category,
       r.address as report_address,
-      r.reporter_phone as report_phone,
       r.description as report_description,
       ST_X(r.location::geometry) as report_lng,
       ST_Y(r.location::geometry) as report_lat,
@@ -123,35 +151,27 @@ volunteerRoutes.get('/tasks/:id', async (c) => {
 
   if (!t) throw new AppError('NOT_FOUND', 'Không tìm thấy nhiệm vụ', 404);
 
-  // Lấy ảnh đính kèm của phản ánh
   const photos = await sqlClient`
-    SELECT storage_path FROM report_photos WHERE report_id = ${t.report_id} AND kind = 'before';
+    SELECT storage_path FROM report_photos WHERE report_id = ${t.report_id} AND kind = 'before' ORDER BY sort;
+  `;
+  const [verifyPhoto] = await sqlClient`
+    SELECT storage_path FROM report_photos WHERE report_id = ${t.report_id} AND kind = 'verify' ORDER BY created_at DESC LIMIT 1;
   `;
 
   return c.json({
-    id: t.code,
-    uuid: t.id,
-    reportId: t.report_code,
-    type: t.type,
-    status: t.status,
-    category: t.report_category,
-    address: t.report_address,
+    ...mapTask(t as unknown as TaskRow, verifyPhoto?.storage_path as string | undefined),
     description: t.report_description,
     photos: photos.map((p) => p.storage_path),
-    lat: Number(t.report_lat),
-    lng: Number(t.report_lng),
-    assigneeName: t.assignee_name,
   });
 });
 
 /**
  * 3. POST /volunteer/tasks/:id/claim - Nhận việc (giao dịch khóa dòng FOR UPDATE - CONC-002)
  */
-volunteerRoutes.post('/tasks/:id/claim', async (c) => {
+volunteerRoutes.post('/tasks/:id/claim', tnvOnly, async (c) => {
   const codeOrId = c.req.param('id');
   const staff = c.get('staff') as StaffProfile;
 
-  // Sử dụng giao dịch sqlClient.begin với FOR UPDATE
   const result = await sqlClient.begin(async (tx) => {
     const [task] = await tx`
       SELECT id, code, status, assignee_id
@@ -172,6 +192,11 @@ volunteerRoutes.post('/tasks/:id/claim', async (c) => {
       );
     }
 
+    // Nhiệm vụ đã giao đích danh cho TNV khác thì không được nhận.
+    if (task.assignee_id && task.assignee_id !== staff.userId) {
+      throw new AppError('FORBIDDEN', 'Nhiệm vụ này đã được giao cho tình nguyện viên khác', 403);
+    }
+
     await tx`
       UPDATE volunteer_tasks
       SET status = 'dang_lam', assignee_id = ${staff.userId}::uuid
@@ -184,99 +209,121 @@ volunteerRoutes.post('/tasks/:id/claim', async (c) => {
   return c.json({ success: true, task: result });
 });
 
+const EXISTS_VALUES = ['co', 'khong', 'khong_tim_thay'] as const;
+
+const resultSchema = z.object({
+  exists: z.union([z.enum(EXISTS_VALUES), z.boolean()]).transform((v) => {
+    if (v === true) return 'co' as const;
+    if (v === false) return 'khong' as const;
+    return v;
+  }),
+  severity: z.enum(['nhe', 'trung_binh', 'nguy_hiem']).optional(),
+  note: z.string().trim().max(1000).optional(),
+  photoPath: z.string().trim().min(1).max(500).optional(),
+});
+
 /**
- * 4. POST /volunteer/tasks/:id/result & POST /volunteer/tasks/:id/submit - Nộp kết quả xác minh / nghiệm thu (Spec 12.5, AC-V02)
+ * 4. POST /volunteer/tasks/:id/result & /submit - Nộp kết quả xác minh / nghiệm thu (Spec 3.3, AC-V02)
+ *
+ * - TNV chỉ nộp được nhiệm vụ của mình (hoặc nhiệm vụ còn mở, tự động nhận).
+ * - xac_minh + "Có": hệ thống chuyển cho_xac_minh -> da_tiep_nhan qua services/transition.ts.
+ * - xac_minh + "Không"/"Không tìm thấy": chỉ ghi kết quả, cán bộ xác nhận khong_xac_nhan.
+ * - nghiem_thu: chỉ ghi kết quả, cán bộ đóng hồ sơ (mo_lai -> dong) theo Spec 3.3.
  */
 const handleTaskResult = async (c: Context<AppEnv>) => {
   const codeOrId = c.req.param('id');
-  const body = await c.req.json();
-  const rawExists = body.exists;
-  const exists = rawExists === true || rawExists === 'co' || rawExists === 'true';
-  const severity = body.severity || 'binh_thuong';
-  const note = body.note?.trim() || null;
-  const photoPath = body.photoPath || body.photo;
+  const raw = await c.req.json().catch(() => null);
+  const parsed = resultSchema.safeParse({
+    ...(raw ?? {}),
+    photoPath: raw?.photoPath ?? raw?.photo,
+  });
+  if (!parsed.success) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      'Kết quả xác minh không hợp lệ',
+      400,
+      parsed.error.issues
+    );
+  }
+  const { exists, severity, note } = parsed.data;
+  const photoPath = parsed.data.photoPath;
   const staff = c.get('staff') as StaffProfile;
   const now = await getDemoNow();
 
-  const [task] = await sqlClient`
-    SELECT t.*, r.id as report_id, r.code as report_code
-    FROM volunteer_tasks t
-    JOIN reports r ON r.id = t.report_id
-    WHERE t.code = ${codeOrId} OR t.id::text = ${codeOrId}
-    LIMIT 1;
-  `;
-
-  if (!task) throw new AppError('NOT_FOUND', 'Không tìm thấy nhiệm vụ', 404);
-
-  // Cập nhật kết quả task
-  await sqlClient`
-    UPDATE volunteer_tasks
-    SET 
-      status = 'xong',
-      result_exists = ${String(exists)},
-      result_severity = ${severity},
-      result_note = ${note},
-      result_at = ${now}::timestamptz
-    WHERE id = ${task.id};
-  `;
-
-  // Lưu ảnh kết quả xác minh vào report_photos nếu có (kind = 'verify')
-  if (photoPath && typeof photoPath === 'string') {
-    await sqlClient`
-      INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
-      VALUES (${task.report_id}, 'verify', ${photoPath.trim()}, 0, 'volunteer');
+  const output = await sqlClient.begin(async (tx) => {
+    const [task] = await tx`
+      SELECT t.id, t.code, t.type, t.status, t.assignee_id, t.report_id
+      FROM volunteer_tasks t
+      WHERE t.code = ${codeOrId} OR t.id::text = ${codeOrId}
+      FOR UPDATE;
     `;
-  }
+    if (!task) throw new AppError('NOT_FOUND', 'Không tìm thấy nhiệm vụ', 404);
 
-  // Kích hoạt chuyển trạng thái hồ sơ tương ứng (Spec 3.3, 3.4c)
-  if (task.type === 'xac_minh') {
-    if (exists) {
-      // Có sự cố thật -> chuyển da_tiep_nhan
-      await sqlClient`UPDATE reports SET status = 'da_tiep_nhan' WHERE id = ${task.report_id};`;
-      await sqlClient`
-        INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-        VALUES (
-          ${task.report_id}, ${now}::timestamptz, 'da_tiep_nhan', 'staff', ${staff.userId}::uuid,
-          ${staff.displayName}, ${`TNV đã xác minh: Có sự cố thực tế. ${note || ''}`}
-        );
-      `;
-    } else {
-      // Không có sự cố -> chuyển khong_xac_nhan
-      await sqlClient`UPDATE reports SET status = 'khong_xac_nhan' WHERE id = ${task.report_id};`;
-      await sqlClient`
-        INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-        VALUES (
-          ${task.report_id}, ${now}::timestamptz, 'khong_xac_nhan', 'staff', ${staff.userId}::uuid,
-          ${staff.displayName}, ${`TNV xác minh: Hiện trường không có sự cố. ${note || ''}`}
-        );
-      `;
+    if (task.status === 'xong') {
+      throw new AppError('TASK_ALREADY_DONE', 'Nhiệm vụ này đã được nộp kết quả trước đó', 409);
     }
-  } else if (task.type === 'nghiem_thu') {
-    if (!exists) {
-      // Sự cố đã được khắc phục xong (không còn tồn tại) -> đóng
-      await sqlClient`UPDATE reports SET status = 'dong' WHERE id = ${task.report_id};`;
-      await sqlClient`
-        INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-        VALUES (
-          ${task.report_id}, ${now}::timestamptz, 'dong', 'staff', ${staff.userId}::uuid,
-          ${staff.displayName}, ${`TNV nghiệm thu: Sự cố đã khắc phục tốt. ${note || ''}`}
-        );
-      `;
-    } else {
-      // Sự cố vẫn còn tồn tại -> mở lại
-      await sqlClient`UPDATE reports SET status = 'mo_lai' WHERE id = ${task.report_id};`;
-      await sqlClient`
-        INSERT INTO report_timeline (report_id, at, status, actor_type, actor_staff_id, actor_label, note)
-        VALUES (
-          ${task.report_id}, ${now}::timestamptz, 'mo_lai', 'staff', ${staff.userId}::uuid,
-          ${staff.displayName}, ${`TNV nghiệm thu: Sự cố vẫn còn tồn tại, đề nghị tiếp tục xử lý. ${note || ''}`}
-        );
-      `;
+    if (task.assignee_id && task.assignee_id !== staff.userId) {
+      throw new AppError('FORBIDDEN', 'Nhiệm vụ này thuộc về tình nguyện viên khác', 403);
     }
-  }
+    if (!photoPath) {
+      throw new AppError('VALIDATION_ERROR', 'Cần có ảnh chụp tại hiện trường', 400);
+    }
+    if (exists === 'co' && task.type === 'xac_minh' && !severity) {
+      throw new AppError('VALIDATION_ERROR', 'Cần chọn mức độ khi xác nhận có sự cố', 400);
+    }
 
-  return c.json({ success: true, message: 'Đã nộp kết quả thành công' });
+    await tx`
+      UPDATE volunteer_tasks
+      SET status = 'xong',
+          assignee_id = ${staff.userId}::uuid,
+          result_exists = ${exists},
+          result_severity = ${exists === 'co' ? (severity ?? null) : null},
+          result_note = ${note ?? null},
+          result_at = ${now}::timestamptz
+      WHERE id = ${task.id};
+    `;
+
+    await tx`
+      INSERT INTO report_photos (report_id, kind, storage_path, sort, source)
+      VALUES (${task.report_id}, 'verify', ${photoPath}, 0, 'storage');
+    `;
+
+    let reportStatus: string | undefined;
+    if (task.type === 'xac_minh' && exists === 'co') {
+      const [report] = await tx`SELECT status FROM reports WHERE id = ${task.report_id};`;
+      if (report?.status === 'cho_xac_minh') {
+        const severityLabel =
+          severity === 'nguy_hiem' ? 'nguy hiểm' : severity === 'trung_binh' ? 'trung bình' : 'nhẹ';
+        const result = await executeTransition(
+          {
+            reportId: task.report_id as string,
+            targetStatus: 'da_tiep_nhan',
+            actor: {
+              role: 'system',
+              actorType: 'staff',
+              actorLabel: 'Tình nguyện viên',
+              staffId: staff.userId,
+            },
+            params: {
+              note: `TNV xác minh: có sự cố (mức độ ${severityLabel})${note ? `. ${note}` : ''}`,
+            },
+          },
+          tx
+        );
+        reportStatus = String(result.report.status);
+      }
+    }
+
+    return { taskCode: task.code as string, reportStatus };
+  });
+
+  return c.json({
+    success: true,
+    message: 'Đã nộp kết quả thành công',
+    task: { id: output.taskCode, status: 'xong' },
+    reportStatus: output.reportStatus,
+  });
 };
 
-volunteerRoutes.post('/tasks/:id/result', handleTaskResult);
-volunteerRoutes.post('/tasks/:id/submit', handleTaskResult);
+volunteerRoutes.post('/tasks/:id/result', tnvOnly, handleTaskResult);
+volunteerRoutes.post('/tasks/:id/submit', tnvOnly, handleTaskResult);

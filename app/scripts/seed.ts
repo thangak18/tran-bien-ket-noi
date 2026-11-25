@@ -20,7 +20,12 @@ export function idToUuid(id: string): string {
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }
 
-export async function runSeed(connectionString: string = databaseUrl()) {
+export interface SeedOptions {
+  /** true: xoá toàn bộ hồ sơ và dữ liệu phát sinh (kể cả hồ sơ thử/demo) trước khi nạp lại bộ 64 hồ sơ chuẩn. */
+  clean?: boolean;
+}
+
+export async function runSeed(connectionString: string = databaseUrl(), options: SeedOptions = {}) {
   console.log('--- BẮT ĐẦU CHẠY SEED DỮ LIỆU ---');
   console.log(`Kết nối DB: ${maskDbUrl(connectionString)}`);
 
@@ -153,6 +158,18 @@ export async function runSeed(connectionString: string = databaseUrl()) {
 
     // Tắt trigger report_timeline tạm thời nếu cần re-seed xóa timeline cũ
     await sql`ALTER TABLE report_timeline DISABLE TRIGGER report_timeline_immutable_trigger;`;
+
+    if (options.clean) {
+      console.log(
+        '   Dọn dữ liệu phát sinh (hồ sơ, nhiệm vụ, thông báo, OTP, hạn mức) trước khi nạp lại...'
+      );
+      await sql`DELETE FROM notifications;`;
+      await sql`DELETE FROM reports;`; // cascade: ảnh, người theo dõi, timeline, cờ trùng, đánh giá, nhiệm vụ
+      await sql`DELETE FROM phone_otps;`;
+      await sql`DELETE FROM anonymous_submissions;`;
+      await sql`DELETE FROM access_attempts;`;
+      await sql`DELETE FROM pending_uploads;`;
+    }
 
     for (const r of reports) {
       const reportUuid = idToUuid(r.id);

@@ -1,3 +1,4 @@
+import type { Sql, TransactionSql } from 'postgres';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
 import { canTransition } from '../../src/domain/status';
@@ -43,12 +44,19 @@ export interface ExecuteTransitionResult {
  * Đảm bảo tính toàn vẹn dữ liệu, chống xung đột phiên bản (409) và kiểm soát ma trận trạng thái.
  */
 export async function executeTransition(
-  options: ExecuteTransitionOptions
+  options: ExecuteTransitionOptions,
+  existingTx?: TransactionSql
 ): Promise<ExecuteTransitionResult> {
   const { reportId, targetStatus, actor, params, clientVersion } = options;
   const now = await getDemoNow();
 
-  return await sqlClient.begin(async (sql) => {
+  // Nếu gọi từ một transaction có sẵn (ví dụ TNV nộp kết quả), dùng lại để mọi thay đổi cùng thành công hoặc cùng huỷ.
+  const runInTransaction = <T>(fn: (sql: Sql) => Promise<T>): Promise<T> =>
+    existingTx
+      ? fn(existingTx as unknown as Sql)
+      : (sqlClient.begin((tx) => fn(tx as unknown as Sql)) as Promise<T>);
+
+  return await runInTransaction(async (sql) => {
     // 1. Khóa hàng hồ sơ để đảm bảo tuần tự hóa cập nhật (FOR UPDATE)
     const [report] = await sql`
       SELECT * FROM reports
@@ -71,8 +79,14 @@ export async function executeTransition(
       );
     }
 
-    // 3. Kiểm tra ma trận chuyển trạng thái và phân quyền vai trò
-    if (!canTransition(currentStatus, targetStatus, actor.role)) {
+    // 3. Kiểm tra ma trận chuyển trạng thái và phân quyền vai trò.
+    //    "Tách" (Spec 3.3): hồ sơ da_gop chỉ được CB đưa về đúng trạng thái trước khi gộp.
+    const isSplit =
+      currentStatus === 'da_gop' &&
+      actor.role === 'CB' &&
+      !!report.status_before_merge &&
+      targetStatus === report.status_before_merge;
+    if (!isSplit && !canTransition(currentStatus, targetStatus, actor.role)) {
       throw new AppError(
         'TRANSITION_NOT_ALLOWED',
         `Không thể chuyển trạng thái từ "${currentStatus}" sang "${targetStatus}" với vai trò ${actor.role}`,
@@ -135,10 +149,14 @@ export async function executeTransition(
       params?.departmentId !== undefined ? params.departmentId : (report.department_id ?? null);
     const resultNote =
       params?.resultNote !== undefined ? params.resultNote : (report.result_note ?? null);
-    const mergedInto =
-      params?.mergedInto !== undefined ? params.mergedInto : (report.merged_into ?? null);
-    const statusBeforeMerge =
-      targetStatus === 'da_gop'
+    const mergedInto = isSplit
+      ? null
+      : params?.mergedInto !== undefined
+        ? params.mergedInto
+        : (report.merged_into ?? null);
+    const statusBeforeMerge = isSplit
+      ? null
+      : targetStatus === 'da_gop'
         ? params?.statusBeforeMerge || currentStatus
         : (report.status_before_merge ?? null);
 

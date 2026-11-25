@@ -465,3 +465,29 @@ Kiểm tra trực tiếp trên PostgreSQL + PostGIS thật bằng `npm run db:ve
 - [ ] **UI-G2-06**: Nút bấm đang gửi yêu cầu hiển thị spinner hoặc trạng thái đang xử lý, ngăn bấm liên tiếp.
 - [ ] **UI-G2-07**: Chế độ chữ lớn (Senior Mode) hoạt động mượt mà ở cả 2 chế độ `local` và `api`.
 
+
+---
+
+## 15. Kiểm thử BE bổ sung (đăng nhập, TNV, cán bộ) – chạy trên Supabase local
+
+Các test này gọi `app.request` trên DB PostGIS thật và Supabase Auth thật (`npm run test`).
+
+| ID | File | Kiểm tra | Kết quả mong đợi |
+|---|---|---|---|
+| LOGIN-001…002 | `tests/api/staff-login.test.ts` | Đăng nhập đúng email + mật khẩu (cán bộ, TNV) | 200, vai trò lấy từ `staff_profiles`, token dùng được; TNV vào `/officer` bị 403 |
+| LOGIN-003…004 | `staff-login.test.ts` | Sai mật khẩu; thiếu hoặc rỗng mật khẩu; body không phải JSON | 401 `INVALID_CREDENTIALS`, thông báo chung, không cấp token (thiếu mật khẩu cũng 401, không phải 400) |
+| LOGIN-005…006 | `staff-login.test.ts` | Email không tồn tại; tài khoản người dân đúng mật khẩu nhưng không phải nhân viên | 401, cùng mã và cùng thông báo với sai mật khẩu (không lộ email nào tồn tại) |
+| LOGIN-007 | `staff-login.test.ts` | Cách đăng nhập cũ: chỉ `role`, chuỗi con `can_bo`/`cb.`/`minh`, không mật khẩu | 401, không cấp token |
+| LOGIN-008 | `staff-login.test.ts` | Tài khoản bị khoá, mật khẩu đúng | 403 `ACCOUNT_DISABLED` |
+| VOL-000…001 | `tests/api/volunteer-flow.test.ts` | Danh sách, chi tiết, kết quả nhiệm vụ của TNV | Không có SĐT, `secretCode`, `ownerToken` (có test kiểm chứng hàm dò rò rỉ) |
+| VOL-002…003 | `volunteer-flow.test.ts` | Cán bộ/người dân nhận hoặc nộp nhiệm vụ TNV; TNV nộp thay TNV khác | 403 (AUTHZ-003, AUTHZ-004), nhiệm vụ không đổi |
+| VOL-004 | `volunteer-flow.test.ts` | Thiếu ảnh, thiếu mức độ khi "Có", giá trị lạ | 400, nhiệm vụ vẫn `dang_lam` |
+| VOL-005 | `volunteer-flow.test.ts` | Giao TNV → TNV báo "Có" | Hồ sơ `cho_xac_minh` → `da_tiep_nhan` qua `transition.ts`, version +1, timeline có `actor_staff_id` của TNV; nộp lần hai → 409 |
+| VOL-006…007 | `volunteer-flow.test.ts` | TNV báo "Không có"; nhiệm vụ nghiệm thu | Chỉ ghi kết quả; cán bộ xác nhận `khong_xac_nhan` hoặc đóng `mo_lai` → `dong` (Spec 3.3) |
+| OFF-001…002 | `tests/api/officer-flow.test.ts` | Tiếp nhận; hai yêu cầu đồng thời cùng version | Bộ phận + hạn mặc định; đúng 1 thành công, 1 `409`, timeline đúng 1 mục |
+| OFF-003…005 | `officer-flow.test.ts` | Chuyển sai ma trận; hoàn thành thiếu ảnh/mô tả; cán bộ đóng `hoan_thanh` | 409 `TRANSITION_NOT_ALLOWED` / 400 / 409, hồ sơ không đổi |
+| OFF-006 | `officer-flow.test.ts` | Gộp rồi tách | Khôi phục đúng trạng thái trước khi gộp qua `transition.ts` |
+| OFF-007…008 | `officer-flow.test.ts` | Tạo hồ sơ hộ | Mã bí mật 4 số ngẫu nhiên (crypto), chỉ lưu hash, trả một lần, không còn `0000`; đầu vào sai → 400 |
+| OFF-009 | `officer-flow.test.ts` | Người dân/không token/TNV gọi endpoint cán bộ | 403 / 401 / 403 |
+| OFF-010 | `officer-flow.test.ts` | Cron | Chỉ nhận `Authorization: Bearer <CRON_SECRET>`; header cũ `X-Cron-Secret` bị 401 |
+| PG-001…005 | `tests/api/postgis-dwithin.test.ts` | Tìm trùng bằng `ST_DWithin` | Xem mục 12 |

@@ -19,12 +19,6 @@ DO $$ BEGIN
     CHECK (rating IS NULL OR rating BETWEEN 1 AND 5);
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
-DO $$ BEGIN
-  ALTER TABLE reports
-    ADD CONSTRAINT reports_secret_hash_not_empty_check
-    CHECK (length(secret_code_hash) >= 16);
-EXCEPTION WHEN duplicate_object THEN null; END $$;
-
 -- 3. Index cho khoá ngoại (tránh quét toàn bảng khi join / xoá cascade)
 CREATE INDEX IF NOT EXISTS reports_department_idx ON reports (department_id);
 CREATE INDEX IF NOT EXISTS reports_merged_into_idx ON reports (merged_into) WHERE merged_into IS NOT NULL;

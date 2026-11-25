@@ -22,6 +22,7 @@ import {
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { getDemoNow } from '../clock';
 import { executeTransition } from '../services/transition';
+import { generateSecretCode } from '../services/identifiers';
 import { maskPhone } from '../../src/domain/privacy';
 import type { AppEnv } from '../types';
 
@@ -153,7 +154,7 @@ citizenRoutes.post('/reports', idempotencyMiddleware, optionalCitizenAuth, async
   }
 
   // Sinh mã bí mật 4 số ngẫu nhiên
-  const secretCode = Math.floor(1000 + Math.random() * 9000).toString();
+  const secretCode = generateSecretCode();
   const secretHash = hashPepper(secretCode);
 
   // Sinh ownerToken ngẫu nhiên

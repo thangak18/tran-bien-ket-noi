@@ -1,15 +1,22 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import crypto from 'node:crypto';
 import { executeTransition } from '../../server/services/transition';
 import { sqlClient } from '../../server/db/client';
+import { purgeTestReports } from './helpers';
 
 describe('L4: Transition Service & Concurrency Locking (Spec 3.3)', () => {
   let testReportId: string;
   let testCode: string;
+  const createdIds: string[] = [];
+
+  afterAll(async () => {
+    await purgeTestReports(createdIds);
+  });
 
   beforeEach(async () => {
     testReportId = crypto.randomUUID();
+    createdIds.push(testReportId);
     testCode = `TB-${crypto.randomBytes(4).toString('hex')}`;
 
     // Tạo hồ sơ mẫu mới ở trạng thái 'moi' cho từng test

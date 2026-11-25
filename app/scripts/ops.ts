@@ -15,7 +15,7 @@ async function resetDemo() {
     process.exit(1);
   }
   console.log('🔄 Đang khôi phục lại dữ liệu mẫu 64 hồ sơ...');
-  await runSeed();
+  await runSeed(databaseUrl(), { clean: true });
   console.log('✅ Khôi phục dữ liệu mẫu hoàn tất!');
 }
 

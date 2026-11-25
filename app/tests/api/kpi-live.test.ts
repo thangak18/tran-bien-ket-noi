@@ -1,10 +1,15 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { app } from '../../server/app';
 import { createStaffToken } from '../../server/middleware/auth';
 import { sqlClient } from '../../server/db/client';
+import { purgeTestReports } from './helpers';
 
+const createdIds: string[] = [];
 describe('L5: Live KPI Calculation over Real Data (without hardcoded is_seed filter)', () => {
+  afterAll(async () => {
+    await purgeTestReports(createdIds);
+  });
   it('KPI-001: Returns live totals and dynamically increases when a new report is added', async () => {
     // 1. Initial check
     const initialRes = await app.request('/public/kpi');
@@ -17,6 +22,7 @@ describe('L5: Live KPI Calculation over Real Data (without hardcoded is_seed fil
     const uniqueNum = Date.now().toString().slice(-6);
     const newReportId = `88888888-8888-8888-8888-${uniqueNum.padStart(12, '0')}`;
     const newReportCode = `TB-KPI-${uniqueNum}`;
+    createdIds.push(newReportId);
     await sqlClient`
       INSERT INTO reports (
         id, code, category, status, priority, location, address,
