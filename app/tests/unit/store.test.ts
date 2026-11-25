@@ -9,11 +9,10 @@ describe('UT-020 – Store (plan 4)', () => {
     localStorage.clear();
   });
 
-  it('1. Khởi tạo không có localStorage -> state = mock', () => {
+  it('1. Khởi tạo không có localStorage -> state rỗng (không mock data)', () => {
     const state = loadInitialState(STORAGE_KEY);
-    expect(state.reports).toHaveLength(64);
-    expect(state.volunteerTasks).toHaveLength(4);
-    expect(state.reports[0]?.id).toBe('TB-0001');
+    expect(state.reports).toHaveLength(0);
+    expect(state.volunteerTasks).toHaveLength(0);
   });
 
   it('2. Có localStorage hợp lệ -> state = localStorage', () => {
@@ -35,11 +34,11 @@ describe('UT-020 – Store (plan 4)', () => {
     expect(state.reports[0]?.address).toBe('Địa chỉ lưu trữ');
   });
 
-  it('3. localStorage hỏng (JSON lỗi) -> fallback mock + không crash', () => {
+  it('3. localStorage hỏng (JSON lỗi) -> fallback state rỗng + không crash', () => {
     localStorage.setItem(STORAGE_KEY, 'invalid json {{{');
     const state = loadInitialState(STORAGE_KEY);
-    expect(state.reports).toHaveLength(64);
-    expect(state.reports[0]?.id).toBe('TB-0001');
+    expect(state.reports).toHaveLength(0);
+    expect(state.volunteerTasks).toHaveLength(0);
   });
 
   it('4. Reducer xử lý HYDRATE', () => {

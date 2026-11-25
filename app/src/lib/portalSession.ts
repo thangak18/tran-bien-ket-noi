@@ -17,26 +17,18 @@ export interface VolunteerSession {
   phone: string;
 }
 
-export const MOCK_OFFICER_ACCOUNTS: OfficerSession[] = [
-  {
-    name: DEFAULT_OFFICER,
-    roleTitle: 'Cán bộ Đô thị & Hạ tầng',
-    unit: 'UBND P. Trấn Biên',
-    phone: '02513820001',
-  },
-  {
-    name: 'Trần Quốc Bảo',
-    roleTitle: 'Phó Chủ tịch UBND phường',
-    unit: 'UBND P. Trấn Biên',
-    phone: '02513820002',
-  },
-];
+const JSDOM_OFFICER_FALLBACK: OfficerSession = {
+  name: DEFAULT_OFFICER,
+  roleTitle: 'Cán bộ Đô thị & Hạ tầng',
+  unit: 'UBND P. Trấn Biên',
+  phone: '02513820001',
+};
 
-export const MOCK_VOLUNTEER_ACCOUNTS: VolunteerSession[] = VOLUNTEERS.map((name, idx) => ({
-  name,
-  area: `Đội TNV Khu phố ${idx + 1}, P. Trấn Biên`,
-  phone: `090810000${idx + 1}`,
-}));
+const JSDOM_VOLUNTEER_FALLBACK: VolunteerSession = {
+  name: VOLUNTEERS[0] ?? 'Tình nguyện viên',
+  area: 'Đội TNV Khu phố 1, P. Trấn Biên',
+  phone: '0908100001',
+};
 
 function isJsdom(): boolean {
   return typeof navigator !== 'undefined' && navigator.userAgent.includes('jsdom');
@@ -50,11 +42,11 @@ function notifySessionChange(): void {
 
 export function getOfficerSession(): OfficerSession | null {
   if (typeof window === 'undefined') {
-    return isJsdom() ? MOCK_OFFICER_ACCOUNTS[0]! : null;
+    return isJsdom() ? JSDOM_OFFICER_FALLBACK : null;
   }
   const raw = window.localStorage.getItem(OFFICER_SESSION_KEY);
   if (!raw) {
-    return isJsdom() ? MOCK_OFFICER_ACCOUNTS[0]! : null;
+    return isJsdom() ? JSDOM_OFFICER_FALLBACK : null;
   }
   if (raw === 'signed_out') return null;
   try {
@@ -79,11 +71,11 @@ export function clearOfficerSession(): void {
 
 export function getVolunteerSession(): VolunteerSession | null {
   if (typeof window === 'undefined') {
-    return isJsdom() ? MOCK_VOLUNTEER_ACCOUNTS[0]! : null;
+    return isJsdom() ? JSDOM_VOLUNTEER_FALLBACK : null;
   }
   const raw = window.localStorage.getItem(VOLUNTEER_SESSION_KEY);
   if (!raw) {
-    return isJsdom() ? MOCK_VOLUNTEER_ACCOUNTS[0]! : null;
+    return isJsdom() ? JSDOM_VOLUNTEER_FALLBACK : null;
   }
   if (raw === 'signed_out') return null;
   try {

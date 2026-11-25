@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, Camera, Folder, Square, Trash2, Video, X, Zap, ZapOff } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Camera,
+  Folder,
+  Square,
+  Trash2,
+  Video,
+  Zap,
+  ZapOff,
+} from 'lucide-react';
 import { compressImage } from '@/lib/image';
 import {
   blobToMediaSource,
@@ -25,24 +36,27 @@ export interface CameraCaptureModalProps {
   open: boolean;
   onClose: () => void;
   onCaptured: (mediaSrc: string) => void;
+  onSelectFiles?: (files: FileList | null) => void;
   currentCount: number;
   maxItems?: number;
   allowVideo?: boolean;
+  allowGallery?: boolean;
   title?: string;
 }
 
 /**
- * Modal camera trực tiếp (WebRTC) hỗ trợ chụp ảnh & quay video tối đa 5 phút.
- * Tự động fallback sang input camera gốc của thiết bị nếu trình duyệt không hỗ trợ / từ chối quyền.
+ * Modal camera trực tiếp (WebRTC) giao diện toàn màn hình giống C02Photo, hỗ trợ chụp ảnh & quay video tối đa 5 phút.
  */
 export function CameraCaptureModal({
   open,
   onClose,
   onCaptured,
+  onSelectFiles,
   currentCount,
   maxItems = MAX_MEDIA_ITEMS,
   allowVideo = true,
-  title = 'Chụp ảnh / Quay video tại chỗ',
+  allowGallery = true,
+  title = 'Chụp phản ánh',
 }: CameraCaptureModalProps) {
   const [mode, setMode] = useState<'photo' | 'video'>('photo');
   const [liveReady, setLiveReady] = useState(false);
@@ -59,6 +73,7 @@ export function CameraCaptureModal({
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const nativeCameraInputRef = useRef<HTMLInputElement | null>(null);
+  const modalGalleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -316,195 +331,233 @@ export function CameraCaptureModal({
 
   if (!open) return null;
 
-  return (
+  const modalNode = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-[100] !mt-0 flex flex-col justify-between overflow-hidden bg-slate-950 text-white"
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
-      <div className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#0F172A] text-white shadow-2xl">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Camera className="h-4 w-4 text-sky-400" />
-            <span className="text-sm font-bold">{title}</span>
-            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold">
-              {currentCount}/{maxItems}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleToggleFlash}
-              aria-label={flashOn ? 'Tắt đèn flash' : 'Bật đèn flash'}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
-            >
-              {flashOn ? (
-                <Zap className="h-4 w-4 text-amber-300" />
-              ) : (
-                <ZapOff className="h-4 w-4" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Đóng camera"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Viewfinder */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-950">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className={`h-full w-full object-cover transition-opacity duration-200 ${
-              liveReady ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
-
-          {/* Rule of thirds grid */}
-          <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3">
-            <div className="border-r border-b border-white/10" />
-            <div className="border-r border-b border-white/10" />
-            <div className="border-b border-white/10" />
-            <div className="border-r border-b border-white/10" />
-            <div className="border-r border-b border-white/10" />
-            <div className="border-b border-white/10" />
-            <div className="border-r border-white/10" />
-            <div className="border-r border-white/10" />
-            <div />
-          </div>
-
-          {shutterFlash && <div className="pointer-events-none absolute inset-0 bg-white/80" />}
-
-          {isRecording && (
-            <div className="absolute top-3 left-3 flex items-center gap-2 rounded-full bg-rose-600/95 px-3 py-1 text-xs font-bold shadow-md">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-              <span>
-                REC {formatDuration(recordingSeconds)} /{' '}
-                {formatDuration(MAX_VIDEO_DURATION_SECONDS)}
-              </span>
-            </div>
-          )}
-
-          {!liveReady && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-              <Camera className="h-10 w-10 text-sky-400 opacity-80" />
-              <p className="max-w-sm text-xs text-slate-300">
-                {cameraError || 'Đang khởi động camera...'}
-              </p>
-              <button
-                type="button"
-                onClick={() => nativeCameraInputRef.current?.click()}
-                className="rounded-xl bg-sky-500 px-4 py-2 text-xs font-bold text-white hover:bg-sky-600"
-              >
-                Mở camera thiết bị
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Hidden native capture input */}
-        <input
-          ref={nativeCameraInputRef}
-          type="file"
-          accept={allowVideo ? 'image/*,video/*' : 'image/*'}
-          capture="environment"
-          onChange={handleNativeCapture}
-          className="hidden"
-          aria-label="Camera thiết bị"
+      {/* Crisp Studio Camera Viewfinder Backdrop */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(56,189,248,0.16),transparent_48%),radial-gradient(circle_at_80%_75%,rgba(14,165,233,0.12),transparent_45%),linear-gradient(180deg,#111827_0%,#0B1120_100%)]"
+      >
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, rgba(148,163,184,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.18) 1px, transparent 1px)',
+            backgroundSize: '33.333% 33.333%',
+          }}
         />
+      </div>
 
-        {cameraError && liveReady && (
-          <div className="flex items-center gap-2 bg-rose-950/80 px-4 py-2 text-xs text-rose-200">
-            <AlertCircle className="h-4 w-4 shrink-0" />
+      {/* Live WebRTC Camera Stream */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+          liveReady ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
+      {shutterFlash && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-40 bg-white/85 transition-opacity"
+        />
+      )}
+
+      {isRecording && (
+        <div className="absolute top-16 left-4 z-30 flex items-center gap-2 rounded-full bg-rose-600/95 px-3 py-1.5 text-xs font-bold text-white shadow-lg">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" />
+          <span>
+            REC {formatDuration(recordingSeconds)} / {formatDuration(MAX_VIDEO_DURATION_SECONDS)}
+          </span>
+        </div>
+      )}
+
+      {/* Top Bar: [←]  [Chụp phản ánh]  [0/5 ảnh] */}
+      <div className="relative z-20 flex items-center justify-between px-4 pt-4">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Đóng camera"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl bg-black/45 text-white backdrop-blur-md transition hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
+
+        <span className="text-base font-bold tracking-tight text-white drop-shadow-xs">
+          {title}
+        </span>
+
+        <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+          {currentCount}/{maxItems} ảnh
+        </span>
+      </div>
+
+      {/* Error Banner */}
+      {cameraError && (
+        <div className="relative z-20 mx-auto mt-2 w-full max-w-[430px] px-4">
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-2xl border border-red-400/50 bg-red-950/90 px-3.5 py-2.5 text-xs text-red-100 backdrop-blur-md"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" aria-hidden="true" />
             <span>{cameraError}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Center 4 White Rounded Corner Brackets */}
+      <div className="relative z-10 my-auto flex flex-col items-center justify-center px-6 py-6">
+        <div className="relative flex h-56 w-56 sm:h-64 sm:w-64 items-center justify-center">
+          <span className="absolute top-0 left-0 h-11 w-11 rounded-tl-2xl border-t-[3.5px] border-l-[3.5px] border-white drop-shadow-sm" />
+          <span className="absolute top-0 right-0 h-11 w-11 rounded-tr-2xl border-t-[3.5px] border-r-[3.5px] border-white drop-shadow-sm" />
+          <span className="absolute bottom-0 left-0 h-11 w-11 rounded-bl-2xl border-b-[3.5px] border-l-[3.5px] border-white drop-shadow-sm" />
+          <span className="absolute right-0 bottom-0 h-11 w-11 rounded-br-2xl border-r-[3.5px] border-b-[3.5px] border-white drop-shadow-sm" />
+        </div>
+      </div>
+
+      {/* Hidden native capture & gallery inputs */}
+      <input
+        ref={nativeCameraInputRef}
+        type="file"
+        accept={allowVideo ? 'image/*,video/*' : 'image/*'}
+        capture="environment"
+        onChange={handleNativeCapture}
+        className="hidden"
+        aria-label="Camera thiết bị"
+      />
+      <input
+        ref={modalGalleryInputRef}
+        type="file"
+        accept={allowVideo ? 'image/*,video/*' : 'image/*'}
+        multiple
+        onChange={(e) => {
+          onSelectFiles?.(e.target.files);
+          e.target.value = '';
+          onClose();
+        }}
+        className="hidden"
+        aria-label="Chọn từ thư viện thiết bị"
+      />
+
+      {/* Bottom Controls matching C02Photo */}
+      <div className="relative z-20 mx-auto flex w-full max-w-[430px] flex-col items-center gap-3 px-4 pb-6">
+        {allowVideo && (
+          <div className="inline-flex rounded-full border border-white/15 bg-black/60 p-1 text-xs font-semibold backdrop-blur-md">
+            <button
+              type="button"
+              disabled={isRecording}
+              onClick={() => setMode('photo')}
+              className={`rounded-full px-3.5 py-1 transition ${
+                mode === 'photo'
+                  ? 'bg-[#0084E8] text-white shadow-sm'
+                  : 'text-slate-200 hover:text-white'
+              } disabled:opacity-50`}
+            >
+              Chụp ảnh
+            </button>
+            <button
+              type="button"
+              disabled={isRecording}
+              onClick={() => setMode('video')}
+              className={`rounded-full px-3.5 py-1 transition ${
+                mode === 'video'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'text-slate-200 hover:text-white'
+              } disabled:opacity-50`}
+            >
+              Quay video (≤ 5p)
+            </button>
           </div>
         )}
 
-        {/* Bottom Controls */}
-        <div className="flex flex-col items-center gap-3 bg-[#0B1120] px-4 py-4">
-          {allowVideo && (
-            <div className="inline-flex rounded-full bg-white/10 p-1 text-xs font-semibold">
-              <button
-                type="button"
-                disabled={isRecording}
-                onClick={() => setMode('photo')}
-                className={`rounded-full px-3.5 py-1 transition-colors ${
-                  mode === 'photo' ? 'bg-sky-500 text-white' : 'text-slate-300 hover:text-white'
-                } disabled:opacity-50`}
-              >
-                Chụp ảnh
-              </button>
-              <button
-                type="button"
-                disabled={isRecording}
-                onClick={() => setMode('video')}
-                className={`rounded-full px-3.5 py-1 transition-colors ${
-                  mode === 'video' ? 'bg-rose-500 text-white' : 'text-slate-300 hover:text-white'
-                } disabled:opacity-50`}
-              >
-                Quay video (≤ 5 phút)
-              </button>
-            </div>
-          )}
+        {/* Guide Pill */}
+        <div className="rounded-full bg-black/60 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+          {isProcessing
+            ? 'Đang lưu tệp...'
+            : mode === 'video'
+              ? isRecording
+                ? 'Đang quay video hiện trường...'
+                : 'Nhấn nút đỏ để quay video (tối đa 5 phút)'
+              : 'Đưa sự cố vào khung hình để chụp'}
+        </div>
 
-          <div className="flex w-full items-center justify-between">
+        {/* Symmetric Pill Dock: [Flash]  [Shutter / Record]  [Folder] */}
+        <div className="flex h-[80px] w-[326px] max-w-full items-center justify-between rounded-[40px] border border-white/15 bg-[#141824]/90 px-6 shadow-2xl backdrop-blur-md">
+          <button
+            type="button"
+            onClick={handleToggleFlash}
+            aria-label={flashOn ? 'Tắt đèn flash' : 'Bật đèn flash'}
+            aria-pressed={flashOn}
+            className={`flex h-11 w-11 items-center justify-center rounded-full transition ${
+              flashOn
+                ? 'bg-amber-400/25 text-amber-300'
+                : 'bg-white/10 text-white/90 hover:bg-white/20'
+            }`}
+          >
+            {flashOn ? (
+              <Zap className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <ZapOff className="h-5 w-5" aria-hidden="true" />
+            )}
+          </button>
+
+          {mode === 'photo' ? (
             <button
               type="button"
-              onClick={() => nativeCameraInputRef.current?.click()}
-              disabled={isRecording || isProcessing}
-              className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/20 disabled:opacity-40"
+              onClick={handleCapturePhoto}
+              disabled={isProcessing}
+              aria-label="Chụp ảnh ngay"
+              className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-[3px] border-white bg-[#0084E8] shadow-[0_4px_18px_rgba(0,132,232,0.55)] transition hover:scale-105 active:scale-95 disabled:opacity-50"
+            />
+          ) : isRecording ? (
+            <button
+              type="button"
+              onClick={stopRecording}
+              aria-label="Dừng quay video"
+              className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-[3px] border-rose-300 bg-rose-600/30 shadow-[0_4px_18px_rgba(225,29,72,0.55)] transition hover:scale-105 active:scale-95"
             >
-              Camera máy
+              <Square className="h-6 w-6 fill-rose-500 text-rose-500" />
             </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleStartRecording}
+              disabled={isProcessing}
+              aria-label="Bắt đầu quay video"
+              className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-[3px] border-white bg-rose-600 shadow-[0_4px_18px_rgba(225,29,72,0.55)] transition hover:scale-105 active:scale-95 disabled:opacity-50"
+            />
+          )}
 
-            {mode === 'photo' ? (
-              <button
-                type="button"
-                onClick={handleCapturePhoto}
-                disabled={isProcessing}
-                aria-label="Chụp ảnh ngay"
-                className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white/80 bg-white/15 p-1 transition-transform active:scale-95 disabled:opacity-50"
-              >
-                <span className="h-full w-full rounded-full bg-white" />
-              </button>
-            ) : isRecording ? (
-              <button
-                type="button"
-                onClick={stopRecording}
-                aria-label="Dừng quay video"
-                className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-rose-400 bg-rose-600/30 transition-transform active:scale-95"
-              >
-                <Square className="h-6 w-6 fill-rose-500 text-rose-500" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleStartRecording}
-                disabled={isProcessing}
-                aria-label="Bắt đầu quay video"
-                className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white/80 bg-rose-600/20 p-1.5 transition-transform active:scale-95 disabled:opacity-50"
-              >
-                <span className="h-full w-full rounded-full bg-rose-500" />
-              </button>
-            )}
-
-            <div className="w-20 text-right text-[11px] text-slate-400">
-              {isProcessing ? 'Đang lưu...' : mode === 'video' ? 'Tối đa 5p' : 'Ảnh HD'}
-            </div>
-          </div>
+          {allowGallery ? (
+            <button
+              type="button"
+              onClick={() => modalGalleryInputRef.current?.click()}
+              disabled={isRecording || isProcessing}
+              aria-label="Chọn ảnh / video từ thiết bị"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white/90 transition hover:bg-white/20 disabled:opacity-40"
+            >
+              <Folder className="h-5 w-5" aria-hidden="true" />
+            </button>
+          ) : (
+            <div className="h-11 w-11" aria-hidden="true" />
+          )}
         </div>
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalNode, document.body);
+  }
+  return modalNode;
 }
 
 export interface MediaItemPreviewProps {
@@ -531,9 +584,6 @@ export interface MediaCaptureFieldProps {
   allowGallery?: boolean;
   allowVideo?: boolean;
   captureLabel?: string;
-  galleryLabel?: string;
-  onAddSample?: () => void;
-  sampleLabel?: string;
 }
 
 /**
@@ -546,14 +596,10 @@ export function MediaCaptureField({
   allowGallery = true,
   allowVideo = true,
   captureLabel = 'Chụp ảnh / Quay video',
-  galleryLabel = 'Chọn từ thiết bị',
-  onAddSample,
-  sampleLabel = 'Dùng ảnh mẫu',
 }: MediaCaptureFieldProps) {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleCaptured = (mediaSrc: string) => {
     setErrorMsg(null);
@@ -649,52 +695,15 @@ export function MediaCaptureField({
       )}
 
       {items.length < maxItems && (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setCameraOpen(true)}
-            disabled={isProcessing}
-            className="inline-flex flex-1 min-w-[160px] items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-primary)]/60 bg-[var(--color-primary)]/5 px-4 py-3 text-xs font-bold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/10 disabled:opacity-50"
-          >
-            <Camera className="h-4 w-4 shrink-0" />
-            <span>{captureLabel}</span>
-          </button>
-
-          {allowGallery && (
-            <>
-              <button
-                type="button"
-                onClick={() => galleryInputRef.current?.click()}
-                disabled={isProcessing}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-xs font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-elevated)] disabled:opacity-50"
-              >
-                <Folder className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
-                <span>{isProcessing ? 'Đang xử lý...' : galleryLabel}</span>
-              </button>
-              <input
-                ref={galleryInputRef}
-                type="file"
-                accept={allowVideo ? 'image/*,video/*' : 'image/*'}
-                multiple
-                onChange={(e) => {
-                  void handleGalleryFiles(e.target.files);
-                  e.target.value = '';
-                }}
-                className="hidden"
-              />
-            </>
-          )}
-
-          {onAddSample && (
-            <button
-              type="button"
-              onClick={onAddSample}
-              className="inline-flex items-center justify-center rounded-2xl border border-[var(--color-border)] px-3 py-3 text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-            >
-              {sampleLabel}
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setCameraOpen(true)}
+          disabled={isProcessing}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-primary)]/60 bg-[var(--color-primary)]/5 px-4 py-3 text-xs font-bold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/10 disabled:opacity-50"
+        >
+          <Camera className="h-4 w-4 shrink-0" />
+          <span>{isProcessing ? 'Đang xử lý...' : captureLabel}</span>
+        </button>
       )}
 
       <p className="text-[11px] text-[var(--color-text-muted)]">
@@ -715,10 +724,14 @@ export function MediaCaptureField({
         open={cameraOpen}
         onClose={() => setCameraOpen(false)}
         onCaptured={handleCaptured}
+        onSelectFiles={(files) => {
+          void handleGalleryFiles(files);
+        }}
         currentCount={items.length}
         maxItems={maxItems}
         allowVideo={allowVideo}
-        title={captureLabel}
+        allowGallery={allowGallery}
+        title="Chụp phản ánh"
       />
     </div>
   );

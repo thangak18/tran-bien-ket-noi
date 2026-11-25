@@ -1,7 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, ReactNode, Dispatch } from 'react';
 import { Notification, Report, ReportDraft, Settings, VolunteerTask } from '../domain/types';
 import { DEMO_NOW } from '../domain/constants';
-import mockData from '../data/mock.json';
 import { loadPersistedState, saveStateDebounced, setupStorageSync } from './persistence';
 
 export interface AppState {
@@ -24,12 +23,12 @@ export type AppAction =
   | { type: 'UPDATE_TASK'; payload: VolunteerTask }
   | { type: 'MARK_NOTIFICATIONS_READ'; payload?: { phone?: string } };
 
-export const DEFAULT_STORAGE_KEY = 'tbkn:v1';
+export const DEFAULT_STORAGE_KEY = 'tbkn:v2';
 
 export function getInitialState(): AppState {
   return {
-    reports: JSON.parse(JSON.stringify(mockData.reports)),
-    volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)),
+    reports: [],
+    volunteerTasks: [],
     notifications: [],
     settings: {
       seniorMode: false,

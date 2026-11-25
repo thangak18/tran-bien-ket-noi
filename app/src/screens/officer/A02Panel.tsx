@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   X,
   ChevronLeft,
@@ -12,8 +12,6 @@ import {
   CheckCircle2,
   UserCheck,
   Wrench,
-  GitMerge,
-  Split,
   ArrowLeft,
   Send,
   FileText,
@@ -29,8 +27,6 @@ import {
   assignDepartment,
   requestSupplement,
   closeReport,
-  mergeReports,
-  splitReportAction,
   getCategoryConfig,
 } from '@/store/officerActions';
 import { canTransition, transition } from '@/domain/status';
@@ -43,8 +39,7 @@ import {
 } from '@/domain/constants';
 import { CATEGORIES, Category, Priority, Report } from '@/domain/types';
 import { MediaItemPreview } from '@/components/common/MediaCapture';
-import { findDuplicates } from '@/domain/duplicates';
-import { formatDateTime, formatDistance } from '@/domain/format';
+import { formatDateTime } from '@/domain/format';
 import { isOverdue } from '@/domain/sorting';
 import { StatusChip } from '@/components/common/StatusChip';
 import { DelayChip } from '@/components/common/DelayChip';
@@ -121,9 +116,6 @@ export function A02Panel({
   const [exceptionMode, setExceptionMode] = useState<ExceptionMode>(null);
   const [exceptionReason, setExceptionReason] = useState('');
 
-  const [mergeTarget, setMergeTarget] = useState<Report | null>(null);
-  const [splitTargetId, setSplitTargetId] = useState<string | null>(null);
-
   const handleClose = useMemo(
     () => () => {
       if (onClose) {
@@ -158,7 +150,7 @@ export function A02Panel({
   }, [reportIdVal, reportCategory, reportPriority, reportDepartment, reportDueAt, reportCreatedAt]);
 
   // Phím Esc đóng panel khi không mở modal
-  const hasOpenModal = Boolean(showTnvModal || exceptionMode || mergeTarget || splitTargetId);
+  const hasOpenModal = Boolean(showTnvModal || exceptionMode);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -179,16 +171,6 @@ export function A02Panel({
       (t) => t.reportId === reportIdVal && t.status === 'xong' && Boolean(t.result)
     );
   }, [state.volunteerTasks, reportIdVal]);
-
-  // Phản ánh tương tự (AC-A02-6)
-  const duplicates = useMemo(() => {
-    if (!report || report.status === 'dong' || report.status === 'da_gop') return [];
-    return findDuplicates(
-      { id: report.id, category: report.category, lat: report.lat, lng: report.lng },
-      state.reports,
-      now
-    );
-  }, [report, state.reports, now]);
 
   const showSuccess = (message: string) => {
     setToast({ message, type: 'success' });
@@ -305,34 +287,6 @@ export function A02Panel({
     }
 
     setExceptionMode(null);
-  };
-
-  const handleConfirmMerge = () => {
-    if (!report || !mergeTarget) return;
-    const nextState = mergeReports(
-      state,
-      report.id,
-      [mergeTarget.id],
-      { actor: DEFAULT_OFFICER },
-      now
-    );
-    dispatch({ type: 'HYDRATE', payload: nextState });
-    showSuccess(`Đã gộp ${mergeTarget.id} vào ${report.id}`);
-    setMergeTarget(null);
-  };
-
-  const handleConfirmSplit = () => {
-    if (!report || !splitTargetId) return;
-    const nextState = splitReportAction(
-      state,
-      report.id,
-      splitTargetId,
-      { actor: DEFAULT_OFFICER },
-      now
-    );
-    dispatch({ type: 'HYDRATE', payload: nextState });
-    showSuccess(`Đã tách hồ sơ ${splitTargetId}`);
-    setSplitTargetId(null);
   };
 
   const renderPanelContent = () => {
@@ -476,24 +430,6 @@ export function A02Panel({
 
           {activeTab === 'chi_tiet' ? (
             <>
-              {/* Banner đã gộp */}
-              {report.status === 'da_gop' && report.mergedInto && (
-                <div className="flex items-center justify-between gap-2 rounded-2xl border border-purple-200 bg-purple-50 p-3 text-sm text-purple-950 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200">
-                  <div className="flex items-center gap-2">
-                    <GitMerge className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                    <span>
-                      Hồ sơ đã được gộp vào <strong>#{report.mergedInto}</strong>
-                    </span>
-                  </div>
-                  <Link
-                    to={`/can-bo/${report.mergedInto}`}
-                    className="text-xs font-semibold text-purple-700 dark:text-purple-300 underline"
-                  >
-                    Mở hồ sơ chính
-                  </Link>
-                </div>
-              )}
-
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-5 rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 sm:p-5 shadow-sm space-y-4 dark:border-slate-800">
                   {/* Gallery ảnh (AC-A02-1) */}
@@ -782,73 +718,55 @@ export function A02Panel({
                     </div>
                   )}
 
-                  {/* Nhóm nút thao tác theo trạng thái (AC-A02-3) */}
-                  <div className="space-y-2.5 rounded-card border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3.5">
-                    <div className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
-                      Thao tác điều phối
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {canAccept && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<CheckCircle2 className="h-4 w-4" />}
-                          onClick={handleAccept}
-                        >
-                          Tiếp nhận
-                        </Button>
-                      )}
+                  {/* Thao tác theo từng bước: Tiếp nhận -> Xác minh -> Giao xử lý -> Hoàn thành */}
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    {officerStageIndex === 1 && (
+                      <>
+                        {canAccept && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={<CheckCircle2 className="h-4 w-4" />}
+                            onClick={handleAccept}
+                          >
+                            Tiếp nhận
+                          </Button>
+                        )}
+                        {canSupplement && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={<Send className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('can_bo_sung')}
+                          >
+                            Yêu cầu bổ sung
+                          </Button>
+                        )}
+                      </>
+                    )}
 
-                      {canAssignTnv && (
-                        <Button
-                          variant={
-                            report.anonymous && report.status === 'moi' ? 'primary' : 'secondary'
-                          }
-                          size="sm"
-                          icon={<UserCheck className="h-4 w-4" />}
-                          onClick={() => setShowTnvModal(true)}
-                        >
-                          Giao TNV xác minh
-                        </Button>
-                      )}
-
-                      {canAssignDept && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<Wrench className="h-4 w-4" />}
-                          onClick={handleAssignDepartment}
-                        >
-                          Giao xử lý
-                        </Button>
-                      )}
-
-                      {canComplete && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<Camera className="h-4 w-4" />}
-                          onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
-                        >
-                          Cập nhật kết quả
-                        </Button>
-                      )}
-
-                      {canClose && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={<CheckCircle2 className="h-4 w-4" />}
-                          onClick={() => openExceptionModal('dong')}
-                        >
-                          Đóng
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Nút ngoại lệ (AC-A02-8) */}
-                    {(canSupplement || canRejectVerify) && (
-                      <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                    {officerStageIndex === 2 && (
+                      <>
+                        {canAssignTnv && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={<UserCheck className="h-4 w-4" />}
+                            onClick={() => setShowTnvModal(true)}
+                          >
+                            Giao TNV xác minh
+                          </Button>
+                        )}
+                        {canAssignDept && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={<Wrench className="h-4 w-4" />}
+                            onClick={handleAssignDepartment}
+                          >
+                            Giao xử lý
+                          </Button>
+                        )}
                         {canSupplement && (
                           <Button
                             variant="outline"
@@ -869,7 +787,29 @@ export function A02Panel({
                             Không xác nhận được
                           </Button>
                         )}
-                      </div>
+                      </>
+                    )}
+
+                    {officerStageIndex === 3 && canComplete && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={<Camera className="h-4 w-4" />}
+                        onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
+                      >
+                        Cập nhật kết quả
+                      </Button>
+                    )}
+
+                    {officerStageIndex === 4 && canClose && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<CheckCircle2 className="h-4 w-4" />}
+                        onClick={() => openExceptionModal('dong')}
+                      >
+                        Đóng
+                      </Button>
                     )}
                   </div>
 
@@ -922,78 +862,6 @@ export function A02Panel({
                           <strong>3. Ghi chú TNV:</strong>{' '}
                           {completedTask.result.note || 'Không có ghi chú thêm'}
                         </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Khối Đã gộp & Tách (AC-A02-7) */}
-                  {report.mergedChildren && report.mergedChildren.length > 0 && (
-                    <div className="space-y-2 rounded-card border border-purple-200 bg-purple-50/50 p-3.5">
-                      <h3 className="text-sm font-semibold text-purple-950">
-                        Hồ sơ đã gộp ({report.mergedChildren.length})
-                      </h3>
-                      <div className="space-y-1.5">
-                        {report.mergedChildren.map((childId) => (
-                          <div
-                            key={childId}
-                            className="flex items-center justify-between rounded-btn bg-[var(--color-surface)] px-3 py-2 text-xs border border-purple-200 dark:border-purple-800/60"
-                          >
-                            <span className="font-semibold text-purple-900">#{childId}</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              icon={<Split className="h-3.5 w-3.5" />}
-                              onClick={() => setSplitTargetId(childId)}
-                            >
-                              Tách
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Khối Phản ánh tương tự (AC-A02-6) */}
-                  {duplicates.length > 0 && (
-                    <div
-                      data-testid="similar-reports-block"
-                      className="space-y-2.5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5"
-                    >
-                      <h3 className="text-sm font-semibold text-text-main">
-                        Phản ánh tương tự ({duplicates.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {duplicates.map(({ report: dup, distanceMeters }) => (
-                          <div
-                            key={dup.id}
-                            className="flex items-center gap-3 rounded-btn border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5"
-                          >
-                            {dup.photos[0] && (
-                              <img
-                                src={dup.photos[0]}
-                                alt={dup.id}
-                                className="h-12 w-12 shrink-0 rounded-lg object-cover"
-                              />
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 text-xs">
-                                <span className="font-bold text-primary">{dup.id}</span>
-                                <span className="text-text-sub">
-                                  cách {formatDistance(distanceMeters)}
-                                </span>
-                              </div>
-                              <div className="truncate text-xs text-text-main">{dup.address}</div>
-                            </div>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              icon={<GitMerge className="h-3.5 w-3.5" />}
-                              onClick={() => setMergeTarget(dup)}
-                            >
-                              Gộp vào hồ sơ này
-                            </Button>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   )}
@@ -1137,63 +1005,6 @@ export function A02Panel({
               </div>
             </div>
           </div>
-        </Modal>
-
-        {/* Modal Xác nhận gộp (AC-A02-6, AC-A02-7) */}
-        <Modal
-          isOpen={Boolean(mergeTarget)}
-          onClose={() => setMergeTarget(null)}
-          title="Xác nhận gộp hồ sơ trùng"
-          footer={
-            <>
-              <Button variant="ghost" size="sm" onClick={() => setMergeTarget(null)}>
-                Huỷ
-              </Button>
-              <Button variant="primary" size="sm" onClick={handleConfirmMerge}>
-                Xác nhận gộp
-              </Button>
-            </>
-          }
-        >
-          {mergeTarget && (
-            <div className="space-y-2 text-sm">
-              <p>Bạn có chắc muốn gộp hai hồ sơ sau?</p>
-              <div className="rounded-btn bg-slate-50 p-3 text-xs space-y-1 border border-slate-200">
-                <div>
-                  <strong>Hồ sơ chính (giữ lại):</strong> #{report.id} – {report.address}
-                </div>
-                <div>
-                  <strong>Hồ sơ bị gộp (chuyển sang Đã gộp):</strong> #{mergeTarget.id} –{' '}
-                  {mergeTarget.address}
-                </div>
-              </div>
-              <p className="text-xs text-text-sub">
-                Ảnh và người theo dõi của #{mergeTarget.id} sẽ được chuyển sang #{report.id}.
-              </p>
-            </div>
-          )}
-        </Modal>
-
-        {/* Modal Xác nhận tách (AC-A02-7) */}
-        <Modal
-          isOpen={Boolean(splitTargetId)}
-          onClose={() => setSplitTargetId(null)}
-          title="Xác nhận tách hồ sơ"
-          footer={
-            <>
-              <Button variant="ghost" size="sm" onClick={() => setSplitTargetId(null)}>
-                Huỷ
-              </Button>
-              <Button variant="primary" size="sm" onClick={handleConfirmSplit}>
-                Xác nhận tách
-              </Button>
-            </>
-          }
-        >
-          <p className="text-sm">
-            Tách hồ sơ <strong>#{splitTargetId}</strong> khỏi hồ sơ chính{' '}
-            <strong>#{report.id}</strong> và khôi phục trạng thái trước khi gộp?
-          </p>
         </Modal>
       </aside>
     );

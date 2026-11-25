@@ -142,12 +142,11 @@ describe('UT-023 – Persistence & Multi-frame Sync (plan 4, AC-DEMO-3/4)', () =
 
     // Reset
     const resetted = resetStorage();
-    expect(resetted.reports).toHaveLength(64);
-    expect(resetted.reports[0]?.id).toBe('TB-0001');
+    expect(resetted.reports).toHaveLength(0);
 
     // Kiểm tra load lại từ storage sau reset
     const reloaded = loadPersistedState('left');
-    expect(reloaded.reports).toHaveLength(64);
+    expect(reloaded.reports).toHaveLength(0);
   });
 
   it('5. setItem ném QuotaExceededError -> action trả lỗi có thông điệp tiếng Việt, state không mất', () => {
@@ -160,7 +159,7 @@ describe('UT-023 – Persistence & Multi-frame Sync (plan 4, AC-DEMO-3/4)', () =
     expect(() => saveState(state, 'left')).toThrowError(/bộ nhớ|đầy|đặt lại dữ liệu/i);
 
     // State không mất
-    expect(state.reports).toHaveLength(64);
+    expect(state.reports).toHaveLength(0);
 
     spy.mockRestore();
   });

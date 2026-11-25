@@ -6,13 +6,6 @@ import { Toast } from '@/components/ui/Toast';
 
 export type PortalAccent = 'sky' | 'emerald' | 'blue';
 
-export interface PortalMockAccount {
-  name: string;
-  subtitle: string;
-  address: string;
-  phone: string;
-}
-
 export interface PortalAuthFlowProps {
   portalLabel: string;
   roleSummary?: string;
@@ -21,7 +14,6 @@ export interface PortalAuthFlowProps {
   addressLabel?: string;
   addressPlaceholder?: string;
   reports?: Report[];
-  mockAccounts?: PortalMockAccount[];
   onCancel?: () => void;
   onAuthenticated: (record: CitizenAccountRecord) => void;
 }
@@ -56,7 +48,6 @@ export function PortalAuthFlow({
   addressLabel = 'Địa bàn / Đơn vị',
   addressPlaceholder = 'VD: Khu phố 3, P. Trấn Biên',
   reports = [],
-  mockAccounts,
   onCancel,
   onAuthenticated,
 }: PortalAuthFlowProps) {
@@ -176,47 +167,6 @@ export function PortalAuthFlow({
 
         {step === 'phone' && (
           <div className="space-y-4">
-            {mockAccounts && mockAccounts.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Chọn nhanh tài khoản demo
-                </div>
-                <div className="space-y-1.5">
-                  {mockAccounts.map((acc) => (
-                    <button
-                      key={acc.phone}
-                      type="button"
-                      onClick={() => {
-                        const record: CitizenAccountRecord = {
-                          phone: acc.phone,
-                          name: acc.name,
-                          address: acc.address,
-                          createdAt: new Date().toISOString(),
-                        };
-                        saveAccountRecord(record);
-                        onAuthenticated(record);
-                      }}
-                      className="flex w-full items-center justify-between rounded-2xl border border-slate-200/90 bg-slate-50/70 px-3.5 py-2.5 text-left transition-all duration-150 hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-slate-800"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
-                          {acc.name}
-                        </div>
-                        <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-                          {acc.subtitle}
-                        </div>
-                      </div>
-                      <span className={`shrink-0 text-xs font-bold ${palette.icon}`}>
-                        Vào ngay ›
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <div className="relative py-1 text-center text-[11px] font-medium text-slate-400">
-                  <span className="bg-white px-2 dark:bg-slate-900">hoặc đăng nhập SĐT</span>
-                </div>
-              </div>
-            )}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
                 Số điện thoại

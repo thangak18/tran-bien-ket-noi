@@ -1,14 +1,4 @@
-import {
-  Bell,
-  ChevronRight,
-  MapPin,
-  Moon,
-  PhoneCall,
-  RotateCcw,
-  Shield,
-  Sun,
-  Type,
-} from 'lucide-react';
+import { Bell, ChevronRight, MapPin, Moon, PhoneCall, Shield, Sun, Type } from 'lucide-react';
 import { FontScale } from '@/domain/types';
 import { FONT_SCALE_OPTIONS } from '@/lib/senior';
 import { PortalAccent } from './PortalAuthFlow';
@@ -25,7 +15,6 @@ export interface PortalSettingsCardsProps {
   onToggleGps?: () => void;
   onOpenHotline?: () => void;
   onOpenPrivacy?: () => void;
-  onResetDemo?: () => void;
 }
 
 const ACTIVE_PILL: Record<PortalAccent, string> = {
@@ -53,7 +42,6 @@ export function PortalSettingsCards({
   onToggleGps,
   onOpenHotline,
   onOpenPrivacy,
-  onResetDemo,
 }: PortalSettingsCardsProps) {
   const activeClass = ACTIVE_PILL[accent];
   const switchOnClass = SWITCH_ON[accent];
@@ -181,7 +169,7 @@ export function PortalSettingsCards({
       )}
 
       {/* Support & System Links */}
-      {(onOpenHotline || onOpenPrivacy || onResetDemo) && (
+      {(onOpenHotline || onOpenPrivacy) && (
         <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
           {onOpenHotline && (
             <button
@@ -211,19 +199,6 @@ export function PortalSettingsCards({
                 </span>
               </div>
               <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-          )}
-          {onResetDemo && (
-            <button
-              type="button"
-              onClick={onResetDemo}
-              className="flex w-full items-center justify-between p-4 text-left text-rose-600 transition-colors duration-150 hover:bg-rose-50/60 dark:text-rose-400 dark:hover:bg-rose-950/30"
-            >
-              <div className="flex items-center gap-3">
-                <RotateCcw className="h-4 w-4" />
-                <span className="text-sm font-semibold">Khôi phục dữ liệu mẫu</span>
-              </div>
-              <ChevronRight className="h-4 w-4 opacity-60" />
             </button>
           )}
         </div>

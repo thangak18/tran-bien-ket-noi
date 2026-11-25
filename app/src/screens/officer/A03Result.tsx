@@ -60,14 +60,6 @@ export function A03Result() {
 
   const completedAtIso = `${completedDate}T09:00:00+07:00`;
 
-  const handleAddSamplePhoto = () => {
-    if (afterPhotos.length >= 5) return;
-    const samplePath = `/demo-photos/after/${report.category}.jpg`;
-    if (!afterPhotos.includes(samplePath)) {
-      setAfterPhotos((prev) => [...prev, samplePath].slice(0, 5));
-    }
-  };
-
   const handleConfirm = () => {
     if (!isValid) return;
     try {
@@ -174,9 +166,6 @@ export function A03Result() {
                 allowGallery={true}
                 allowVideo={true}
                 captureLabel="Chụp ảnh / Quay video tại chỗ"
-                galleryLabel="Chọn từ máy"
-                onAddSample={handleAddSamplePhoto}
-                sampleLabel="+ Dùng ảnh mẫu"
               />
             </div>
 

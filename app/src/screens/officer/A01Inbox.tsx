@@ -1,43 +1,39 @@
-﻿import React, { useMemo, useState, useRef } from 'react';
+﻿import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   CheckCircle2,
+  Download,
   FileText,
   Hourglass,
   TrendingUp,
+  Upload,
   Users,
   EyeOff,
   Phone,
   Filter,
   RotateCcw,
-  MapPin,
   Image as ImageIcon,
 } from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { MediaCaptureField } from '@/components/common/MediaCapture';
+import { OnBehalfWizard } from '@/components/officer/OnBehalfWizard';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
-import { SelectField } from '@/components/ui';
+import { SelectField, Toast } from '@/components/ui';
+import { DateInputDdMmYyyy } from '@/components/ui/DateInputDdMmYyyy';
+import { exportReportsToExcel, parseReportsFromExcel } from '@/lib/inboxExcel';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
-import {
-  getOfficerSession,
-  MOCK_OFFICER_ACCOUNTS,
-  OfficerSession,
-  setOfficerSession,
-} from '@/lib/portalSession';
+import { getOfficerSession, OfficerSession, setOfficerSession } from '@/lib/portalSession';
 import { useAppStore } from '@/store/AppStore';
-import { createOnBehalf } from '@/store/officerActions';
 import { computeKpi } from '@/domain/kpi';
 import { sortInbox, isOverdue, isDueSoon } from '@/domain/sorting';
 import { formatDate, formatDays } from '@/domain/format';
 import { CATEGORY_CONFIGS, DEPARTMENTS, DEMO_NOW, officerLabel } from '@/domain/constants';
-import { Category, Notification, Report, Status, STATUSES } from '@/domain/types';
-import { STREETS, WARD_CENTER, nearestStreet } from '@/data/streets';
-import { Button, EmptyState, Modal, Tabs, TextField } from '@/components/ui';
+import { Category, Status, STATUSES } from '@/domain/types';
+import { Button, EmptyState, Tabs } from '@/components/ui';
 import { StatusChip } from '@/components/common/StatusChip';
-import { SmsPreview } from '@/components/citizen/SmsPreview';
-import { MapView } from '@/components/map/MapView';
 
 type QuickTab = 'can_xu_ly' | 'tat_ca' | 'da_xu_ly';
 type SourceFilter = 'tat_ca' | 'co_sdt' | 'an_danh' | 'gui_ho';
@@ -66,296 +62,8 @@ function getOverdueDays(dueAt: string | undefined, now: string): number {
   return Math.max(1, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
 }
 
-interface OnBehalfModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  now: string;
-}
-
-function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
-  const { state, dispatch } = useAppStore();
-  const navigate = useNavigate();
-
-  const [phone, setPhone] = useState('');
-  const [category, setCategory] = useState<Category>('den_duong');
-  const [lat, setLat] = useState(WARD_CENTER.lat);
-  const [lng, setLng] = useState(WARD_CENTER.lng);
-  const [address, setAddress] = useState(STREETS[0]?.name ?? 'Cách Mạng Tháng Tám');
-  const [description, setDescription] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [error, setError] = useState('');
-  const [createdResult, setCreatedResult] = useState<{
-    report: Report;
-    notification: Notification;
-  } | null>(null);
-
-  const resetForm = () => {
-    setPhone('');
-    setCategory('den_duong');
-    setLat(WARD_CENTER.lat);
-    setLng(WARD_CENTER.lng);
-    setAddress(STREETS[0]?.name ?? 'Cách Mạng Tháng Tám');
-    setDescription('');
-    setPhotos([]);
-    setError('');
-    setCreatedResult(null);
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
-  const handleStreetChange = (streetName: string) => {
-    const found = STREETS.find((s) => s.name === streetName);
-    if (found) {
-      setLat(found.lat);
-      setLng(found.lng);
-      setAddress(found.name);
-    }
-  };
-
-  const handleMapTap = (tapLat: number, tapLng: number) => {
-    setLat(tapLat);
-    setLng(tapLng);
-    const street = nearestStreet(tapLat, tapLng);
-    setAddress(`Gần đường ${street.name}`);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanPhone = phone.replace(/\s+/g, '');
-    if (!/^0\d{8,10}$/.test(cleanPhone)) {
-      setError('Vui lòng nhập số điện thoại hợp lệ (bắt đầu bằng 0, 9-11 chữ số).');
-      return;
-    }
-    if (!address.trim()) {
-      setError('Vui lòng nhập hoặc chọn địa chỉ sự cố.');
-      return;
-    }
-
-    const res = createOnBehalf(
-      state,
-      {
-        phone: cleanPhone,
-        category,
-        lat,
-        lng,
-        address: address.trim(),
-        description: description.trim() || undefined,
-        photos: photos.length > 0 ? photos : undefined,
-      },
-      now
-    );
-
-    dispatch({
-      type: 'ADD_REPORT',
-      payload: { report: res.report, notification: res.notification },
-    });
-    setCreatedResult({ report: res.report, notification: res.notification });
-    setError('');
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={
-        createdResult
-          ? `Đã tạo phản ánh hộ #${createdResult.report.id}`
-          : 'Tạo phản ánh hộ người dân'
-      }
-      className="max-w-xl max-h-[90vh] overflow-y-auto"
-    >
-      {createdResult ? (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-            Hồ sơ <strong>#{createdResult.report.id}</strong> đã được tiếp nhận (trạng thái:{' '}
-            <strong>Đã tiếp nhận</strong>, hạn xử lý:{' '}
-            <strong>{formatDate(createdResult.report.dueAt)}</strong>).
-          </div>
-
-          <SmsPreview
-            phone={createdResult.report.reporterPhone || phone}
-            message={createdResult.notification.message}
-          />
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={handleClose}>
-              Đóng
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                const targetId = createdResult.report.id;
-                handleClose();
-                navigate(`/can-bo/${targetId}`);
-              }}
-              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)]"
-            >
-              Xem chi tiết hồ sơ
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div
-              role="alert"
-              className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800"
-            >
-              {error}
-            </div>
-          )}
-
-          <TextField
-            label="Số điện thoại người dân *"
-            placeholder="Ví dụ: 0909000123"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
-              Loại sự cố *
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {CATEGORY_CONFIGS.map((cfg) => {
-                const active = category === cfg.key;
-                return (
-                  <button
-                    key={cfg.key}
-                    type="button"
-                    onClick={() => setCategory(cfg.key)}
-                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
-                      active
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]'
-                        : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]'
-                    }`}
-                  >
-                    {CATEGORY_ICONS[cfg.key]}
-                    <span>{cfg.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label
-              htmlFor="on-behalf-street"
-              className="block text-sm font-medium text-[var(--color-text)]"
-            >
-              Vị trí (chọn đường hoặc chạm bản đồ) *
-            </label>
-            <SelectField
-              id="on-behalf-street"
-              value={STREETS.find((s) => s.name === address)?.name ?? ''}
-              onChange={(e) => handleStreetChange(e.target.value)}
-            >
-              <option value="">-- Chọn tuyến đường trong phường --</option>
-              {STREETS.map((s) => (
-                <option key={s.name} value={s.name}>
-                  {s.name}
-                </option>
-              ))}
-            </SelectField>
-
-            <div className="h-40 w-full overflow-hidden rounded-xl border border-gray-200">
-              <MapView
-                center={[lat, lng]}
-                zoom={15}
-                markers={[
-                  {
-                    id: 'new-on-behalf',
-                    lat,
-                    lng,
-                    category,
-                    status: 'da_tiep_nhan',
-                    title: address,
-                  },
-                ]}
-                onTap={handleMapTap}
-                autoLocateUser={true}
-                showLocateButton={true}
-                hideBuiltInLegend={true}
-                className="h-full w-full"
-              />
-            </div>
-
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>
-                Tọa độ: {lat.toFixed(4)}, {lng.toFixed(4)}
-              </span>
-            </div>
-
-            <TextField
-              label="Địa chỉ cụ thể *"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Số nhà, tên đường, điểm mốc..."
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="on-behalf-desc"
-              className="mb-1 block text-sm font-medium text-[var(--color-text)]"
-            >
-              Mô tả chi tiết (tùy chọn)
-            </label>
-            <textarea
-              id="on-behalf-desc"
-              rows={2}
-              maxLength={300}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ghi chú nội dung người dân phản ánh qua điện thoại / trực tiếp..."
-              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-            />
-          </div>
-
-          <div>
-            <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[var(--color-text)]">
-              <ImageIcon className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden="true" />
-              <span>Ảnh / Video đính kèm (tùy chọn, tối đa 5 mục)</span>
-            </div>
-            <MediaCaptureField
-              items={photos}
-              onChange={setPhotos}
-              maxItems={5}
-              allowGallery={true}
-              allowVideo={true}
-              captureLabel="Chụp ảnh / Quay video"
-              galleryLabel="Chọn từ máy"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-            <Button type="button" variant="outline" size="sm" onClick={handleClose}>
-              Huỷ
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-contrast)]"
-            >
-              Tiếp nhận & tạo hồ sơ
-            </Button>
-          </div>
-        </form>
-      )}
-    </Modal>
-  );
-}
-
 export function A01Inbox() {
-  const { state } = useAppStore();
+  const { state, dispatch } = useAppStore();
   const navigate = useNavigate();
   const [officerSession, setLocalOfficerSession] = useState<OfficerSession | null>(() =>
     getOfficerSession()
@@ -374,8 +82,14 @@ export function A01Inbox() {
   const [dateTo, setDateTo] = useState('');
   const [isOnBehalfOpen, setIsOnBehalfOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [excelToast, setExcelToast] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
+  const excelInputRef = useRef<HTMLInputElement | null>(null);
 
   const kpi = useMemo(
     () => computeKpi(state.reports, currentMonth, now),
@@ -481,6 +195,73 @@ export function A01Inbox() {
 
   const resolvedPercentText = `${kpi.resolvedPercent.toFixed(1).replace('.', ',')}%`;
 
+  const PAGE_SIZE = 20;
+  const totalPages = Math.max(1, Math.ceil(filteredAndSorted.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedReports = useMemo(
+    () => filteredAndSorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filteredAndSorted, safePage]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchQuery,
+    quickTab,
+    categoryFilter,
+    statusFilter,
+    departmentFilter,
+    sourceFilter,
+    dateFrom,
+    dateTo,
+  ]);
+
+  const handleExportExcel = () => {
+    if (filteredAndSorted.length === 0) {
+      setExcelToast({ type: 'error', message: 'Không có hồ sơ nào để xuất Excel.' });
+      return;
+    }
+    exportReportsToExcel(filteredAndSorted, now.slice(0, 10));
+    setExcelToast({
+      type: 'success',
+      message: `Đã xuất ${filteredAndSorted.length} hồ sơ ra file Excel.`,
+    });
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const { items, skipped } = await parseReportsFromExcel(file, state, now);
+      if (items.length === 0) {
+        setExcelToast({
+          type: 'error',
+          message: 'Không tìm thấy dòng dữ liệu hợp lệ trong file Excel.',
+        });
+        return;
+      }
+      for (const item of items) {
+        dispatch({
+          type: 'ADD_REPORT',
+          payload: { report: item.report, notification: item.notification },
+        });
+      }
+      setExcelToast({
+        type: 'success',
+        message:
+          skipped > 0
+            ? `Đã nhập ${items.length} hồ sơ từ Excel (bỏ qua ${skipped} dòng trống).`
+            : `Đã nhập ${items.length} hồ sơ từ Excel.`,
+      });
+    } catch {
+      setExcelToast({
+        type: 'error',
+        message: 'Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng (.xlsx, .xls, .csv).',
+      });
+    }
+  };
+
   if (!officerSession) {
     return (
       <OfficerLayout>
@@ -492,17 +273,10 @@ export function A01Inbox() {
           addressLabel="Đơn vị công tác"
           addressPlaceholder="VD: UBND P. Trấn Biên"
           reports={state.reports}
-          mockAccounts={MOCK_OFFICER_ACCOUNTS.map((a) => ({
-            name: a.name,
-            subtitle: `${a.roleTitle} · ${a.unit}`,
-            address: a.unit,
-            phone: a.phone,
-          }))}
           onAuthenticated={(record) => {
-            const matched = MOCK_OFFICER_ACCOUNTS.find((a) => a.phone === record.phone);
             const next: OfficerSession = {
               name: record.name,
-              roleTitle: matched?.roleTitle ?? 'Cán bộ tiếp nhận & điều phối',
+              roleTitle: 'Cán bộ tiếp nhận & điều phối',
               unit: record.address || 'UBND P. Trấn Biên',
               phone: record.phone,
             };
@@ -609,6 +383,14 @@ export function A01Inbox() {
         </div>
       </section>
 
+      {excelToast && (
+        <Toast
+          type={excelToast.type}
+          message={excelToast.message}
+          onClose={() => setExcelToast(null)}
+        />
+      )}
+
       {/* Quick Tabs & Filters */}
       <section className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 md:p-4 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -623,7 +405,33 @@ export function A01Inbox() {
             className="border-b-0 pb-0"
           />
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-bold text-[var(--color-text)] transition hover:border-[#0084E8]/40 hover:text-[#0084E8]"
+            >
+              <Download className="h-3.5 w-3.5 text-[#0084E8]" aria-hidden="true" />
+              <span>Xuất Excel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => excelInputRef.current?.click()}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-bold text-[var(--color-text)] transition hover:border-emerald-500/40 hover:text-emerald-700 dark:hover:text-emerald-400"
+            >
+              <Upload className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+              <span>Nhập Excel</span>
+            </button>
+            <input
+              ref={excelInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={(e) => void handleImportExcel(e)}
+              className="hidden"
+              aria-label="Chọn file Excel để nhập hồ sơ"
+            />
+
             <button
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
@@ -752,12 +560,11 @@ export function A01Inbox() {
             >
               Từ ngày
             </label>
-            <input
+            <DateInputDdMmYyyy
               id="filter-date-from"
-              type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-semibold text-[var(--color-text)]"
+              onChange={setDateFrom}
+              ariaLabel="Từ ngày (dd/mm/yyyy)"
             />
           </div>
 
@@ -768,12 +575,11 @@ export function A01Inbox() {
             >
               Đến ngày
             </label>
-            <input
+            <DateInputDdMmYyyy
               id="filter-date-to"
-              type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-semibold text-[var(--color-text)]"
+              onChange={setDateTo}
+              ariaLabel="Đến ngày (dd/mm/yyyy)"
             />
           </div>
         </div>
@@ -795,7 +601,7 @@ export function A01Inbox() {
           <>
             {/* Mobile Compact Card List */}
             <div className="md:hidden divide-y divide-[var(--color-border)]">
-              {filteredAndSorted.map((report) => {
+              {paginatedReports.map((report) => {
                 const catCfg = CATEGORY_CONFIGS.find((c) => c.key === report.category);
                 const overdue = isOverdue(report, now);
                 const overdueDays = overdue ? getOverdueDays(report.dueAt, now) : 0;
@@ -877,7 +683,7 @@ export function A01Inbox() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {filteredAndSorted.map((report, index) => {
+                  {paginatedReports.map((report, index) => {
                     const catCfg = CATEGORY_CONFIGS.find((c) => c.key === report.category);
                     const overdue = isOverdue(report, now);
                     const dueSoon = !overdue && isDueSoon(report, now);
@@ -1015,11 +821,57 @@ export function A01Inbox() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Footer (max 20 items/page) */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-xs">
+              <span className="font-medium text-[var(--color-text-muted)]">
+                Hiển thị {(safePage - 1) * PAGE_SIZE + 1}–
+                {Math.min(safePage * PAGE_SIZE, filteredAndSorted.length)} /{' '}
+                {filteredAndSorted.length} hồ sơ
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={safePage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  aria-label="Trang trước"
+                  className="inline-flex h-8 items-center gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 font-bold text-[var(--color-text)] transition hover:bg-[var(--color-surface-elevated)] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Trước</span>
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    aria-current={page === safePage ? 'page' : undefined}
+                    className={`flex h-8 min-w-[32px] items-center justify-center rounded-xl px-2 font-extrabold transition ${
+                      page === safePage
+                        ? 'bg-[#0084E8] text-white shadow-2xs'
+                        : 'border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  aria-label="Trang sau"
+                  className="inline-flex h-8 items-center gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 font-bold text-[var(--color-text)] transition hover:bg-[var(--color-surface-elevated)] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <span>Sau</span>
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
           </>
         )}
       </section>
 
-      <OnBehalfModal isOpen={isOnBehalfOpen} onClose={() => setIsOnBehalfOpen(false)} now={now} />
+      <OnBehalfWizard isOpen={isOnBehalfOpen} onClose={() => setIsOnBehalfOpen(false)} now={now} />
     </OfficerLayout>
   );
 }

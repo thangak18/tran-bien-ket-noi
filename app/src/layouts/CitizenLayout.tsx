@@ -99,16 +99,18 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
     <aside
       data-testid="citizen-sidebar"
       aria-label="Thanh điều hướng máy tính"
-      className="hidden md:flex md:w-[228px] lg:w-[272px] shrink-0 flex-col border-r border-slate-200/85 bg-[var(--color-surface)] px-3 lg:px-4 py-5 sticky top-0 h-screen select-none dark:border-slate-800"
+      className="hidden md:flex md:w-[228px] lg:w-[272px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-3 lg:px-4 py-5 sticky top-0 h-screen select-none"
     >
       {/* 1. Brand Identity Header */}
       <Link
         to="/"
         className="group flex items-center gap-3 rounded-2xl px-2 py-1.5 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0084E8] to-[#0066B8] text-white shadow-[0_6px_16px_rgba(0,132,232,0.28)] transition-transform group-hover:scale-105">
-          <DualSpeechBubblesIcon className="h-5 w-5" />
-        </div>
+        <img
+          src="/logo-app.jpg"
+          alt="Logo Trấn Biên Kết Nối"
+          className="h-11 w-11 shrink-0 rounded-2xl object-cover shadow-[0_6px_16px_rgba(0,132,232,0.28)] transition-transform group-hover:scale-105"
+        />
         <div className="min-w-0">
           <div className="truncate text-[16px] font-extrabold tracking-tight text-[var(--color-text)]">
             Trấn Biên Kết Nối
@@ -141,7 +143,7 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
       </div>
 
       {/* 3. Main Navigation Links */}
-      <div className="px-2.5 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      <div className="px-2.5 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
         Danh mục chính
       </div>
       <nav className="space-y-1.5" aria-label="Điều hướng chính trên máy tính">
@@ -151,8 +153,8 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
             to={item.to}
             className={`group relative flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm transition-all ${
               item.active
-                ? 'bg-[#E6F3FD] font-extrabold text-[#0084E8] shadow-2xs dark:bg-sky-950/70 dark:text-[#38BDF8]'
-                : 'font-semibold text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white'
+                ? 'bg-[#E6F3FD] font-extrabold text-[#0084E8] shadow-sm dark:bg-sky-950/70 dark:text-[#38BDF8] dark:ring-1 dark:ring-sky-800/60'
+                : 'font-semibold text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -160,7 +162,7 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors ${
                   item.active
                     ? 'bg-[#0084E8] text-white shadow-xs dark:bg-[#38BDF8] dark:text-slate-950'
-                    : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-[#0084E8] dark:bg-slate-800 dark:text-slate-400'
+                    : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-[#0084E8] dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-slate-700 dark:group-hover:text-[#38BDF8]'
                 }`}
               >
                 {item.icon}
@@ -170,7 +172,7 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
             {item.active ? (
               <span className="h-2 w-2 rounded-full bg-[#0084E8] dark:bg-[#38BDF8]" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-slate-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 dark:text-slate-600" />
+              <ChevronRight className="h-4 w-4 text-slate-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 dark:text-slate-500" />
             )}
           </Link>
         ))}
@@ -181,7 +183,7 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
         <button
           type="button"
           onClick={onOpenHotline}
-          className="group flex w-full items-center justify-between gap-2.5 rounded-2xl border border-teal-200/90 bg-gradient-to-r from-teal-50/90 to-emerald-50/60 p-3 text-left transition-all hover:border-teal-300 hover:shadow-xs dark:border-teal-800/80 dark:from-teal-950/50 dark:to-emerald-950/30"
+          className="group flex w-full items-center justify-between gap-2.5 rounded-2xl border border-teal-200/90 bg-gradient-to-r from-teal-50/90 to-emerald-50/60 p-3 text-left transition-all hover:border-teal-300 hover:shadow-xs dark:border-teal-800/80 dark:from-teal-950/50 dark:to-emerald-950/30 dark:hover:border-teal-600 dark:hover:from-teal-950/70 dark:hover:to-emerald-950/50"
         >
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0F766E] text-white shadow-xs transition-transform group-hover:scale-105">
@@ -199,7 +201,7 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
           <ChevronRight className="h-4 w-4 text-teal-600/70 transition-transform group-hover:translate-x-0.5 dark:text-teal-400" />
         </button>
 
-        <div className="flex items-center justify-between border-t border-slate-200/80 px-2 pt-3 dark:border-slate-800">
+        <div className="flex items-center justify-between border-t border-[var(--color-border)] px-2 pt-3">
           <div>
             <div className="text-xs font-extrabold text-[var(--color-text)]">
               UBND Phường Trấn Biên
@@ -208,8 +210,8 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
               Tiếp nhận &amp; xử lý hiện trường
             </div>
           </div>
-          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-            v1.2
+          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+            v1.0
           </span>
         </div>
       </div>

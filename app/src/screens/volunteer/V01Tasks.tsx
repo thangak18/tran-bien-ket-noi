@@ -5,12 +5,7 @@ import { VolunteerLayout } from '@/layouts/VolunteerLayout';
 import { VolunteerProfileView } from '@/screens/volunteer/VolunteerProfileView';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
 import { Button, Card, EmptyState, Tabs, Toast } from '@/components/ui';
-import {
-  getVolunteerSession,
-  MOCK_VOLUNTEER_ACCOUNTS,
-  setVolunteerSession,
-  VolunteerSession,
-} from '@/lib/portalSession';
+import { getVolunteerSession, setVolunteerSession, VolunteerSession } from '@/lib/portalSession';
 import { MapView } from '@/components/map/MapView';
 import { CATEGORY_CONFIGS, VOLUNTEERS } from '@/domain/constants';
 import { formatDistance } from '@/domain/format';
@@ -324,12 +319,6 @@ export function V01Tasks() {
             addressLabel="Đội / Khu phố phụ trách"
             addressPlaceholder="VD: Đội TNV Khu phố 3"
             reports={state.reports}
-            mockAccounts={MOCK_VOLUNTEER_ACCOUNTS.map((a) => ({
-              name: a.name,
-              subtitle: a.area,
-              address: a.area,
-              phone: a.phone,
-            }))}
             onAuthenticated={(record) => {
               const next: VolunteerSession = {
                 name: record.name,

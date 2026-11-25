@@ -889,7 +889,7 @@ export function C04Confirm() {
             type="button"
             onClick={handleBack}
             aria-label="Quay lại"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[var(--color-text)] transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[var(--color-text)] transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -1203,8 +1203,8 @@ export function C04Confirm() {
                         isActive
                           ? 'bg-[#0084E8] text-white shadow-sm'
                           : isDone
-                            ? 'bg-[#E6F3FD] text-[#0084E8] hover:bg-[#D0E8FC] dark:bg-sky-950/60 dark:text-[#38BDF8]'
-                            : 'text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 dark:text-slate-400'
+                            ? 'bg-[#E6F3FD] text-[#0084E8] hover:bg-[#D0E8FC] dark:bg-sky-950/60 dark:text-[#38BDF8] dark:hover:bg-sky-900/70 dark:hover:text-sky-200'
+                            : 'text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                       }`}
                     >
                       <span
@@ -1845,7 +1845,7 @@ export function C04Confirm() {
                 type="button"
                 onClick={() => setIsInspectDuplicateOpen(false)}
                 aria-label="Đóng cửa sổ đối chiếu"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-slate-500 hover:bg-white hover:text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-slate-500 hover:bg-white hover:text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
