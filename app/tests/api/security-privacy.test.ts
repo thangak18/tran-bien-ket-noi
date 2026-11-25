@@ -249,7 +249,7 @@ describe('L7: Security, Privacy & Anti-Abuse Test Suite', () => {
       // Lần 1: Đánh giá thành công
       const fb1 = await app.request(`/api/v1/citizen/reports/${inserted!.code}/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Report-Key': 'token123' },
         body: JSON.stringify({
           resolved: true,
           rating: 5,
@@ -262,7 +262,7 @@ describe('L7: Security, Privacy & Anti-Abuse Test Suite', () => {
       // Lần 2: Thử đánh giá lại -> Bị chặn 400 ALREADY_RATED
       const fb2 = await app.request(`/api/v1/citizen/reports/${inserted!.code}/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Report-Key': 'token123' },
         body: JSON.stringify({
           resolved: true,
           rating: 4,

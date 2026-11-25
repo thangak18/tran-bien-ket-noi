@@ -30,6 +30,7 @@ const acceptSchema = z.object({
   version: z.number().int().optional(),
   category: z.enum(CATEGORIES).optional(),
   departmentId: z.string().trim().min(1).optional(),
+  department: z.string().trim().min(1).optional(),
   dueAt: z.string().datetime({ offset: true }).optional(),
   note: z.string().trim().max(500).optional(),
 });
@@ -64,6 +65,36 @@ const onBehalfSchema = z.object({
   photos: z.array(z.string().trim().min(1).max(500)).max(5).optional(),
 });
 
+interface PhotoRow {
+  report_id: string;
+  kind: string;
+  storage_path: string;
+  sort: number;
+}
+
+function photosByKind(photos: PhotoRow[], reportId: string, kind: string): string[] {
+  return photos
+    .filter((p) => p.report_id === reportId && p.kind === kind)
+    .sort((a, b) => a.sort - b.sort)
+    .map((p) => p.storage_path);
+}
+
+/** Tìm id bộ phận từ id (doi_ve_sinh) hoặc tên đầy đủ do giao diện gửi lên. */
+async function resolveDepartmentId(
+  tx: typeof sqlClient,
+  input: { departmentId?: string; department?: string }
+): Promise<string | undefined> {
+  const value = input.departmentId ?? input.department;
+  if (!value) return undefined;
+  const [dept] = await tx`
+    SELECT id FROM departments WHERE id = ${value} OR name = ${value} LIMIT 1;
+  `;
+  if (!dept) {
+    throw new AppError('VALIDATION_ERROR', `Không tìm thấy bộ phận "${value}"`, 400);
+  }
+  return dept.id as string;
+}
+
 /**
  * 1. GET /officer/reports - Danh sách hồ sơ dành cho cán bộ
  */
@@ -74,7 +105,7 @@ officerRoutes.get('/reports', async (c) => {
   const departmentId = query.departmentId;
   const isOverdue = query.isOverdue === 'true';
   const search = query.search?.trim();
-  const limit = Math.min(query.limit ? parseInt(query.limit, 10) : 50, 100);
+  const limit = Math.min(query.limit ? parseInt(query.limit, 10) : 100, 200);
   const offset = query.offset ? parseInt(query.offset, 10) : 0;
   const now = await getDemoNow();
 
@@ -104,6 +135,15 @@ officerRoutes.get('/reports', async (c) => {
     LIMIT ${limit} OFFSET ${offset};
   `;
 
+  const reportIds = reports.map((r) => r.id as string);
+  const photoRows =
+    reportIds.length > 0
+      ? ((await sqlClient`
+          SELECT report_id, kind, storage_path, sort FROM report_photos
+          WHERE report_id IN ${sqlClient(reportIds)};
+        `) as unknown as PhotoRow[])
+      : [];
+
   const items = reports.map((r) => ({
     id: r.code,
     uuid: r.id,
@@ -118,6 +158,7 @@ officerRoutes.get('/reports', async (c) => {
     description: r.description || undefined,
     departmentId: r.department_id,
     departmentName: r.department_name,
+    department: r.department_name || undefined,
     dueAt: r.due_at,
     isOverdue:
       r.status !== 'hoan_thanh' &&
@@ -128,8 +169,14 @@ officerRoutes.get('/reports', async (c) => {
     completedAt: r.completed_at,
     reporterPhone: maskPhone(r.reporter_phone), // Bảo đảm cán bộ chỉ thấy SĐT che (Spec 4.1)
     anonymous: r.anonymous,
+    subscribedLater: r.subscribed_later,
+    onBehalf: r.on_behalf,
     followerCount: (r.follower_count ? Number(r.follower_count) : 0) + (r.anonymous_follows || 0),
     photosApproved: r.photos_approved,
+    photos: photosByKind(photoRows, r.id as string, 'before'),
+    resultPhotos: photosByKind(photoRows, r.id as string, 'after'),
+    resultNote: r.result_note || undefined,
+    version: r.version,
   }));
 
   return c.json({ items, total: items.length });
@@ -215,7 +262,10 @@ officerRoutes.post('/reports/:id/accept', async (c) => {
     if (category !== report.category) {
       await tx`UPDATE reports SET category = ${category}::category WHERE id = ${report.id};`;
     }
-    const departmentId = body.departmentId ?? cfg?.default_department_id ?? null;
+    const departmentId =
+      (await resolveDepartmentId(tx as unknown as typeof sqlClient, body)) ??
+      cfg?.default_department_id ??
+      null;
     const dueAt =
       body.dueAt ??
       new Date(new Date(now).getTime() + (cfg?.sla_days ?? 3) * 24 * 60 * 60 * 1000).toISOString();
@@ -322,7 +372,7 @@ officerRoutes.post('/reports/:id/assign-volunteer', async (c) => {
 officerRoutes.post('/reports/:id/assign-dept', async (c) => {
   const codeOrId = c.req.param('id');
   const body = await c.req.json();
-  const departmentId = body.departmentId;
+  const departmentId = await resolveDepartmentId(sqlClient, body);
   const staff = c.get('staff') as StaffProfile;
   const now = await getDemoNow();
 
@@ -526,12 +576,20 @@ officerRoutes.get('/reports/:code', async (c) => {
     ORDER BY t.at ASC;
   `;
 
+  const [parent] = report.merged_into
+    ? await sqlClient`SELECT code FROM reports WHERE id = ${report.merged_into};`
+    : [];
+  const children = await sqlClient`
+    SELECT code FROM reports WHERE merged_into = ${report.id} ORDER BY code;
+  `;
+
   return c.json({
     id: report.code,
     uuid: report.id,
     code: report.code,
     category: report.category,
     status: report.status,
+    statusBeforeMerge: report.status_before_merge || undefined,
     priority: report.priority,
     lat: Number(report.lat),
     lng: Number(report.lng),
@@ -540,26 +598,39 @@ officerRoutes.get('/reports/:code', async (c) => {
     description: report.description || undefined,
     departmentId: report.department_id,
     departmentName: report.department_name,
+    department: report.department_name || undefined,
     dueAt: report.due_at,
     createdAt: report.created_at,
     completedAt: report.completed_at,
     reporterPhone: maskPhone(report.reporter_phone),
     anonymous: report.anonymous,
+    subscribedLater: report.subscribed_later,
+    onBehalf: report.on_behalf,
     followerCount:
       (report.follower_count ? Number(report.follower_count) : 0) + (report.anonymous_follows || 0),
     photosApproved: report.photos_approved,
     resultNote: report.result_note || undefined,
     version: report.version,
-    photos: photos.map((p) => ({
-      kind: p.kind,
-      url: p.storage_path,
-    })),
+    mergedInto: parent?.code || undefined,
+    mergedChildren: children.map((ch) => ch.code),
+    photos: photosByKind(photos as unknown as PhotoRow[], report.id as string, 'before'),
+    resultPhotos: photosByKind(photos as unknown as PhotoRow[], report.id as string, 'after'),
     timeline: timeline.map((t) => ({
       at: t.at,
       status: t.status,
       actor: t.staff_name || t.actor_label,
       note: t.note || undefined,
     })),
+    feedback:
+      report.feedback_resolved != null
+        ? {
+            resolved: Boolean(report.feedback_resolved),
+            rating: report.feedback_rating != null ? Number(report.feedback_rating) : undefined,
+            tags: report.feedback_tags || [],
+            comment: report.feedback_comment || undefined,
+            at: report.feedback_at,
+          }
+        : undefined,
   });
 });
 
@@ -603,7 +674,7 @@ officerRoutes.patch('/reports/:code', async (c) => {
 officerRoutes.post('/reports/:id/assign-department', async (c) => {
   const codeOrId = c.req.param('id');
   const body = await c.req.json();
-  const departmentId = body.departmentId;
+  const departmentId = await resolveDepartmentId(sqlClient, body);
   const staff = c.get('staff') as StaffProfile;
   const now = await getDemoNow();
 
@@ -688,8 +759,11 @@ officerRoutes.post('/reports/:id/transfer', async (c) => {
   const staff = c.get('staff') as StaffProfile;
   const body = await c.req.json();
   const reason = body.reason || body.note;
-  const targetAgency = body.targetAgency || 'Cơ quan chức năng cấp trên';
+  const targetAgency = typeof body.targetAgency === 'string' ? body.targetAgency.trim() : '';
 
+  if (!targetAgency) {
+    throw new AppError('BAD_REQUEST', 'Cần nhập tên cơ quan tiếp nhận chuyển', 400);
+  }
   if (!reason || reason.trim().length < 10) {
     throw new AppError('BAD_REQUEST', 'Cần nhập lý do chuyển cơ quan ít nhất 10 ký tự', 400);
   }

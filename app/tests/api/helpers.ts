@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { app } from '../../server/app';
 import { sqlClient } from '../../server/db/client';
+import { hashPepper } from '../../server/middleware/auth';
 
 export const CB_ID = '11111111-1111-1111-1111-111111111111';
 export const TNV_MAI_ID = '22222222-2222-2222-2222-222222222222';
@@ -14,7 +15,7 @@ export interface TestReport {
 /** Tạo hồ sơ thử (is_seed = false) ở trạng thái mong muốn, không đụng tới 64 hồ sơ mẫu. */
 export async function createTestReport(
   status: string = 'moi',
-  options: { phone?: string | null; category?: string } = {}
+  options: { phone?: string | null; category?: string; ownerKey?: string } = {}
 ): Promise<TestReport> {
   const id = crypto.randomUUID();
   const code = `TB-${crypto.randomBytes(4).toString('hex')}`;
@@ -22,11 +23,12 @@ export async function createTestReport(
   await sqlClient`
     INSERT INTO reports (
       id, code, category, status, priority, location, address,
-      reporter_phone, anonymous, secret_code_hash, completed_at, version, is_seed
+      reporter_phone, anonymous, secret_code_hash, owner_token_hash, completed_at, version, is_seed
     ) VALUES (
       ${id}::uuid, ${code}, ${options.category ?? 'rac_thai'}::category, ${status}::report_status, 'binh_thuong',
       ST_GeographyFromText('POINT(106.8225 10.9505)'), '123 Đường Test',
       ${options.phone ?? null}, ${options.phone ? false : true}, ${'h'.repeat(32)},
+      ${options.ownerKey ? hashPepper(options.ownerKey) : null},
       ${completed ? new Date().toISOString() : null}::timestamptz, 1, false
     );
   `;

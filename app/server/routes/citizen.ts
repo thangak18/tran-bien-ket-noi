@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono';
+import { z } from 'zod';
 import crypto from 'node:crypto';
 import { sqlClient } from '../db/client';
 import { AppError } from '../middleware/errorHandler';
@@ -22,7 +23,8 @@ import {
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { getDemoNow } from '../clock';
 import { executeTransition } from '../services/transition';
-import { generateSecretCode } from '../services/identifiers';
+import { generateSecretCode, nextTaskCode } from '../services/identifiers';
+import { isReportOwner } from '../services/ownership';
 import { maskPhone } from '../../src/domain/privacy';
 import type { AppEnv } from '../types';
 
@@ -368,124 +370,153 @@ citizenRoutes.post('/reports/:id/claim', optionalCitizenAuth, async (c) => {
   });
 });
 
+const feedbackSchema = z
+  .object({
+    resolved: z.boolean(),
+    rating: z.coerce.number().int().min(1).max(5).optional(),
+    tags: z.array(z.string().trim().min(1).max(60)).max(10).optional(),
+    comment: z.string().trim().max(1000).optional(),
+  })
+  .refine((v) => !v.resolved || v.rating !== undefined, {
+    message: 'Vui lòng chọn số sao để đánh giá',
+    path: ['rating'],
+  });
+
+/** Lấy thông tin xác thực chủ hồ sơ từ request (header X-Report-Key và JWT người dân). */
+function ownerCredentials(c: Context<AppEnv>) {
+  return {
+    reportKey: c.req.header('X-Report-Key')?.trim() || undefined,
+    citizenPhone: c.get('citizenPhone') as string | undefined,
+  };
+}
+
 /**
- * 6. POST /citizen/reports/:id/feedback - Đánh giá kết quả xử lý (Hài lòng -> đóng, Chưa -> mở lại & tạo task TNV)
+ * 6. POST /citizen/reports/:id/feedback - Đánh giá kết quả xử lý (chỉ chủ hồ sơ).
+ * Hài lòng -> dong; chưa giải quyết -> mo_lai và tạo nhiệm vụ nghiệm thu cho TNV (Spec 3.3, AC-C06-5).
  */
-citizenRoutes.post('/reports/:id/feedback', async (c) => {
+citizenRoutes.post('/reports/:id/feedback', optionalCitizenAuth, async (c) => {
   const codeOrId = c.req.param('id');
-  const body = await c.req.json();
-  const resolved = Boolean(body.resolved);
-  const rating = body.rating ? parseInt(body.rating, 10) : null;
-  const tags = Array.isArray(body.tags) ? body.tags : [];
-  const comment = body.comment?.trim() || null;
+  const body = feedbackSchema.parse(await c.req.json().catch(() => ({})));
   const now = await getDemoNow();
+  const creds = ownerCredentials(c);
 
-  const [report] = await sqlClient`
-    SELECT id, code, status, category, address
-    FROM reports
-    WHERE code = ${codeOrId} OR id::text = ${codeOrId}
-    LIMIT 1;
-  `;
-
-  if (!report) {
-    throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ phản ánh', 404);
-  }
-
-  if (report.status !== 'hoan_thanh' && report.status !== 'dong') {
-    throw new AppError(
-      'INVALID_STATE',
-      'Chỉ có thể đánh giá kết quả khi hồ sơ đã ở trạng thái hoàn thành',
-      400
-    );
-  }
-
-  // Kiểm tra xem đã có đánh giá chưa (tối đa 1 lần/phản ánh - L7)
-  const [existingFeedback] = await sqlClient`
-    SELECT report_id FROM feedback WHERE report_id = ${report.id} LIMIT 1;
-  `;
-  if (existingFeedback) {
-    throw new AppError('ALREADY_RATED', 'Phản ánh này đã được đánh giá, không thể gửi lại', 400);
-  }
-
-  // Lưu feedback
-  await sqlClient`
-    INSERT INTO feedback (report_id, resolved, rating, tags, comment, at)
-    VALUES (${report.id}, ${resolved}, ${rating}, ${JSON.stringify(tags)}::jsonb, ${comment}, ${now}::timestamptz);
-  `;
-
-  if (resolved) {
-    // Đã giải quyết -> chuyển trạng thái dong
-    await executeTransition({
-      reportId: report.id,
-      targetStatus: 'dong',
-      actor: {
-        role: 'system',
-        actorType: 'citizen',
-        actorLabel: 'Người dân',
-      },
-      params: { note: 'Đã xác nhận kết quả hài lòng' },
-    });
-  } else {
-    // Chưa giải quyết -> chuyển trạng thái mo_lai và tạo nhiệm vụ nghiệm thu cho TNV (Spec 3.3, 3.4c, DV-012)
-    await executeTransition({
-      reportId: report.id,
-      targetStatus: 'mo_lai',
-      actor: {
-        role: 'system',
-        actorType: 'citizen',
-        actorLabel: 'Người dân',
-      },
-      params: { note: comment || 'Chưa hài lòng với kết quả xử lý, yêu cầu mở lại' },
-    });
-
-    // Tạo Volunteer Task nghiệm thu
-    const [maxTask] = await sqlClient`
-      SELECT code FROM volunteer_tasks WHERE code ~ '^NV-[0-9]{3}$' ORDER BY code DESC LIMIT 1;
+  const output = await sqlClient.begin(async (tx) => {
+    const [report] = await tx`
+      SELECT id, code, status, reporter_phone, owner_token_hash
+      FROM reports
+      WHERE code = ${codeOrId} OR id::text = ${codeOrId}
+      FOR UPDATE;
     `;
-    let nextNum = 5;
-    if (maxTask?.code) {
-      const p = parseInt(maxTask.code.replace('NV-', ''), 10);
-      if (!isNaN(p)) nextNum = p + 1;
+    if (!report) {
+      throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ phản ánh', 404);
     }
-    const taskCode = `NV-${nextNum.toString().padStart(3, '0')}`;
-
-    await sqlClient`
-      INSERT INTO volunteer_tasks (code, report_id, type, status)
-      VALUES (${taskCode}, ${report.id}, 'nghiem_thu', 'cho_nhan');
+    if (
+      !(await isReportOwner(
+        tx as unknown as typeof sqlClient,
+        report as unknown as Parameters<typeof isReportOwner>[1],
+        creds
+      ))
+    ) {
+      throw new AppError('FORBIDDEN', 'Chỉ người gửi phản ánh mới được đánh giá kết quả', 403);
+    }
+    const [existingFeedback] = await tx`
+      SELECT report_id FROM feedback WHERE report_id = ${report.id} LIMIT 1;
     `;
-  }
+    if (existingFeedback) {
+      throw new AppError('ALREADY_RATED', 'Phản ánh này đã được đánh giá, không thể gửi lại', 400);
+    }
+
+    if (report.status !== 'hoan_thanh') {
+      throw new AppError(
+        'INVALID_STATE',
+        'Chỉ có thể đánh giá kết quả khi hồ sơ đã ở trạng thái hoàn thành',
+        400
+      );
+    }
+    await tx`
+      INSERT INTO feedback (report_id, resolved, rating, tags, comment, at)
+      VALUES (
+        ${report.id}, ${body.resolved}, ${body.resolved ? (body.rating ?? null) : null},
+        ${JSON.stringify(body.tags ?? [])}::jsonb, ${body.comment ?? null}, ${now}::timestamptz
+      );
+    `;
+
+    const actor = {
+      role: 'system' as const,
+      actorType: 'citizen' as const,
+      actorLabel: 'Người dân',
+    };
+    if (body.resolved) {
+      await executeTransition(
+        {
+          reportId: report.id as string,
+          targetStatus: 'dong',
+          actor,
+          params: { note: 'Đã xác nhận kết quả hài lòng' },
+        },
+        tx
+      );
+    } else {
+      await executeTransition(
+        {
+          reportId: report.id as string,
+          targetStatus: 'mo_lai',
+          actor,
+          params: { note: body.comment || 'Chưa hài lòng với kết quả xử lý, yêu cầu mở lại' },
+        },
+        tx
+      );
+      const taskCode = await nextTaskCode(tx as unknown as typeof sqlClient);
+      await tx`
+        INSERT INTO volunteer_tasks (code, report_id, type, status)
+        VALUES (${taskCode}, ${report.id}, 'nghiem_thu', 'cho_nhan');
+      `;
+    }
+    return { resolved: body.resolved };
+  });
 
   return c.json({
     success: true,
-    resolved,
-    newStatus: resolved ? 'dong' : 'mo_lai',
+    resolved: output.resolved,
+    newStatus: output.resolved ? 'dong' : 'mo_lai',
   });
 });
 
 /**
- * 7. POST /citizen/reports/:id/supplement - Bổ sung thông tin khi hồ sơ ở trạng thái can_bo_sung
+ * 7. POST /citizen/reports/:id/supplement - Bổ sung thông tin khi hồ sơ ở trạng thái can_bo_sung (chỉ chủ hồ sơ)
  */
-citizenRoutes.post('/reports/:id/supplement', async (c) => {
+citizenRoutes.post('/reports/:id/supplement', optionalCitizenAuth, async (c) => {
   const codeOrId = c.req.param('id');
-  const body = await c.req.json();
-  const note = body.note?.trim();
+  const body = await c.req.json().catch(() => ({}));
+  const note = typeof body.note === 'string' ? body.note.trim().slice(0, 1000) : '';
+  const creds = ownerCredentials(c);
 
-  const [report] = await sqlClient`
-    SELECT id, status FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId} LIMIT 1;
-  `;
-
-  if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
-
-  const result = await executeTransition({
-    reportId: report.id,
-    targetStatus: 'moi',
-    actor: {
-      role: 'ND',
-      actorType: 'citizen',
-      actorLabel: 'Người dân',
-    },
-    params: { note: note || 'Đã bổ sung thông tin theo yêu cầu' },
-    clientVersion: body.version,
+  const result = await sqlClient.begin(async (tx) => {
+    const [report] = await tx`
+      SELECT id, status, reporter_phone, owner_token_hash
+      FROM reports WHERE code = ${codeOrId} OR id::text = ${codeOrId}
+      FOR UPDATE;
+    `;
+    if (!report) throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ', 404);
+    if (
+      !(await isReportOwner(
+        tx as unknown as typeof sqlClient,
+        report as unknown as Parameters<typeof isReportOwner>[1],
+        creds
+      ))
+    ) {
+      throw new AppError('FORBIDDEN', 'Chỉ người gửi phản ánh mới được bổ sung thông tin', 403);
+    }
+    return executeTransition(
+      {
+        reportId: report.id as string,
+        targetStatus: 'moi',
+        actor: { role: 'ND', actorType: 'citizen', actorLabel: 'Người dân' },
+        params: { note: note || 'Đã bổ sung thông tin theo yêu cầu' },
+        clientVersion: typeof body.version === 'number' ? body.version : undefined,
+      },
+      tx
+    );
   });
 
   return c.json({ success: true, newStatus: result.report.status, version: result.version });
@@ -633,22 +664,12 @@ citizenRoutes.get('/reports/:code/owner', optionalCitizenAuth, async (c) => {
     throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ phản ánh', 404);
   }
 
-  // Xác thực quyền chủ hồ sơ:
-  // (a) X-Report-Key khớp owner_token_hash
-  // (b) citizenPhone khớp reporter_phone hoặc nằm trong report_followers
-  let isOwner = false;
-  if (reportKey && hashPepper(reportKey) === report.owner_token_hash) {
-    isOwner = true;
-  } else if (citizenPhone) {
-    if (report.reporter_phone === citizenPhone) {
-      isOwner = true;
-    } else {
-      const [follower] = await sqlClient`
-        SELECT 1 FROM report_followers WHERE report_id = ${report.id} AND phone = ${citizenPhone} LIMIT 1;
-      `;
-      if (follower) isOwner = true;
-    }
-  }
+  // Xác thực quyền chủ hồ sơ (Spec 13.4): X-Report-Key hoặc SĐT của người gửi / người đăng ký nhận tin.
+  const isOwner = await isReportOwner(
+    sqlClient,
+    report as unknown as Parameters<typeof isReportOwner>[1],
+    { reportKey, citizenPhone }
+  );
 
   if (!isOwner) {
     throw new AppError('FORBIDDEN', 'Bạn không có quyền quản lý hồ sơ này', 403);
