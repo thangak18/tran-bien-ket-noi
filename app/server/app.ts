@@ -9,6 +9,7 @@ import { volunteerRoutes } from './routes/volunteer';
 import { cronRoutes } from './routes/cron';
 import { uploadRoutes } from './routes/uploads';
 import { authRoutes } from './routes/auth';
+import { adminRoutes } from './routes/admin';
 import type { AppEnv } from './types';
 
 const subApp = new Hono<AppEnv>();
@@ -20,6 +21,7 @@ subApp.route('/volunteer', volunteerRoutes);
 subApp.route('/cron', cronRoutes);
 subApp.route('/uploads', uploadRoutes);
 subApp.route('/auth', authRoutes);
+subApp.route('/admin', adminRoutes);
 
 // Health check
 subApp.get('/health', (c) => {

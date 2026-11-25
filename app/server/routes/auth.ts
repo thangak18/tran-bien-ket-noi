@@ -62,7 +62,7 @@ async function verifyPasswordWithSupabase(email: string, password: string): Prom
 }
 
 /**
- * POST /auth/login & POST /auth/staff-login - Đăng nhập Cán bộ / Tình nguyện viên (Spec 13.2).
+ * POST /auth/login & POST /auth/staff-login - Đăng nhập nhân viên (Spec 13.2).
  * Mật khẩu được kiểm tra bởi Supabase Auth; vai trò lấy từ bảng staff_profiles theo user id,
  * không bao giờ suy ra từ email hay từ dữ liệu client gửi lên.
  */

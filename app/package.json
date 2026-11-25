@@ -15,6 +15,7 @@
     "staff:create": "tsx scripts/staff.ts create",
     "staff:disable": "tsx scripts/staff.ts disable",
     "staff:enable": "tsx scripts/staff.ts enable",
+    "staff:reset-password": "tsx scripts/staff.ts reset-password",
     "config:set-sla": "tsx scripts/staff.ts set-sla",
     "demo:reset": "tsx scripts/ops.ts reset",
     "demo:clock": "tsx scripts/ops.ts clock",

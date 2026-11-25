@@ -5,6 +5,13 @@ interface AdminUser {
   email?: string;
 }
 
+export class AuthEmailAlreadyExistsError extends Error {
+  constructor() {
+    super('Email đã tồn tại trong Supabase Auth');
+    this.name = 'AuthEmailAlreadyExistsError';
+  }
+}
+
 function adminHeaders(): Record<string, string> {
   const key = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
   return {
@@ -80,7 +87,7 @@ export async function ensureAuthUser(params: {
 /** Tạo user mới trong Supabase Auth; email đã tồn tại thì báo lỗi, không đổi mật khẩu của tài khoản cũ. */
 export async function createAuthUser(params: { email: string; password: string }): Promise<string> {
   if (await findUserByEmail(params.email)) {
-    throw new Error(`Email ${params.email} đã tồn tại trong hệ thống`);
+    throw new AuthEmailAlreadyExistsError();
   }
   const res = await fetch(authUrl('/admin/users'), {
     method: 'POST',
@@ -91,6 +98,18 @@ export async function createAuthUser(params: { email: string; password: string }
     throw new Error(`Tạo user ${params.email} thất bại (HTTP ${res.status})`);
   }
   return ((await res.json()) as AdminUser).id;
+}
+
+/** Đặt mật khẩu mới cho một user hiện hữu trong Supabase Auth. */
+export async function updateAuthUserPassword(id: string, password: string): Promise<void> {
+  const res = await fetch(authUrl(`/admin/users/${id}`), {
+    method: 'PUT',
+    headers: adminHeaders(),
+    body: JSON.stringify({ password, email_confirm: true }),
+  });
+  if (!res.ok) {
+    throw new Error(`Cập nhật mật khẩu tài khoản thất bại (HTTP ${res.status})`);
+  }
 }
 
 /** Xoá user khỏi Supabase Auth (dùng để hoàn tác khi bước ghi profile thất bại). */

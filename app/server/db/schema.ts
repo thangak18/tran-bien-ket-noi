@@ -72,6 +72,7 @@ export const categorySettings = pgTable('category_settings', {
 
 export const staffProfiles = pgTable('staff_profiles', {
   userId: uuid('user_id').primaryKey(),
+  email: text('email'),
   role: staffRoleEnum('role').notNull(),
   displayName: text('display_name').notNull(),
   departmentId: text('department_id').references(() => departments.id),
