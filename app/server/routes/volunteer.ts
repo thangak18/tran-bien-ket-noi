@@ -35,9 +35,10 @@ interface TaskRow {
   result_severity: string | null;
   result_note: string | null;
   result_at: string | null;
+  result_photo?: string | null;
 }
 
-function mapTask(t: TaskRow, resultPhoto?: string) {
+function mapTask(t: TaskRow, resultPhoto?: string | null) {
   return {
     id: t.code,
     uuid: t.id,
@@ -58,7 +59,7 @@ function mapTask(t: TaskRow, resultPhoto?: string) {
         ? {
             exists: t.result_exists,
             severity: t.result_severity ?? undefined,
-            photo: resultPhoto ?? '',
+            photo: resultPhoto ?? t.result_photo ?? '',
             note: t.result_note ?? undefined,
             at: t.result_at,
           }
@@ -89,7 +90,8 @@ volunteerRoutes.get('/tasks', async (c) => {
         ST_X(r.location::geometry) as report_lng,
         ST_Y(r.location::geometry) as report_lat,
         ST_Distance(r.location, ST_GeographyFromText(${pointWkt})) as distance_meters,
-        sp.display_name as assignee_name
+        sp.display_name as assignee_name,
+        (SELECT p.storage_path FROM report_photos p WHERE p.report_id = t.report_id AND p.kind = 'verify' ORDER BY p.created_at DESC LIMIT 1) as result_photo
       FROM volunteer_tasks t
       JOIN reports r ON r.id = t.report_id
       LEFT JOIN staff_profiles sp ON sp.user_id = t.assignee_id
@@ -110,7 +112,8 @@ volunteerRoutes.get('/tasks', async (c) => {
         r.address as report_address,
         ST_X(r.location::geometry) as report_lng,
         ST_Y(r.location::geometry) as report_lat,
-        sp.display_name as assignee_name
+        sp.display_name as assignee_name,
+        (SELECT p.storage_path FROM report_photos p WHERE p.report_id = t.report_id AND p.kind = 'verify' ORDER BY p.created_at DESC LIMIT 1) as result_photo
       FROM volunteer_tasks t
       JOIN reports r ON r.id = t.report_id
       LEFT JOIN staff_profiles sp ON sp.user_id = t.assignee_id

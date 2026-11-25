@@ -101,7 +101,7 @@ describe('L1: Auth Matrix & Privilege Escalation Prevention (Spec 13.5)', () => 
     });
     await sqlClient`
       INSERT INTO staff_profiles (user_id, email, role, display_name, department_id, is_active)
-      VALUES (${disabledStaffId}, 'nv.bi.khoa@tranbien.gov.vn', 'can_bo', 'Nhan Vien Bi Khoa', 'kinh_te', false)
+      VALUES (${disabledStaffId}, 'nv.bi.khoa@tranbien.gov.vn', 'can_bo', 'Nhan Vien Bi Khoa', NULL, false)
       ON CONFLICT (user_id) DO UPDATE SET is_active = false;
     `;
 

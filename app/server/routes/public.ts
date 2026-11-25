@@ -327,7 +327,8 @@ publicRoutes.get('/kpi', async (c) => {
   const total = totalRow?.count ?? 0;
   const resolved = resolvedRow?.count ?? 0;
   const resolutionRate = total > 0 ? (resolved / total) * 100 : 0;
-  const avgDays = parseFloat(avgRow?.avg_days || '3.2');
+  // KPI tính từ dữ liệu; chưa có hồ sơ nào xử lý xong thì trung bình là 0, không dùng giá trị cứng.
+  const avgDays = avgRow?.avg_days != null ? parseFloat(String(avgRow.avg_days)) : 0;
 
   return c.json({
     total,

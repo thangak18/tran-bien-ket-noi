@@ -39,7 +39,7 @@ export async function runSeed(connectionString: string = databaseUrl(), options:
       { id: 'doi_chieu_sang', name: 'Phòng KT-HT&ĐT – Đội chiếu sáng công cộng', sort: 2 },
       { id: 'doi_thoat_nuoc', name: 'Phòng KT-HT&ĐT – Đội thoát nước', sort: 3 },
       { id: 'doi_duy_tu', name: 'Phòng KT-HT&ĐT – Đội duy tu đường', sort: 4 },
-      { id: 'kinh_te', name: 'Bộ phận Kinh tế – Hạ tầng đô thị', sort: 5 },
+      { id: 'khu_pho', name: 'Khu phố (tổ dân phố)', sort: 5 },
     ];
 
     for (const d of departments) {
@@ -99,7 +99,7 @@ export async function runSeed(connectionString: string = databaseUrl(), options:
         email: 'cb.minh@tranbien.gov.vn',
         role: 'can_bo',
         display_name: 'Nguyễn Văn Minh',
-        department_id: 'kinh_te',
+        department_id: null,
       },
       {
         user_id: '22222222-2222-2222-2222-222222222222',
@@ -189,7 +189,7 @@ export async function runSeed(connectionString: string = databaseUrl(), options:
         else if (r.department.includes('chiếu sáng')) deptId = 'doi_chieu_sang';
         else if (r.department.includes('thoát nước')) deptId = 'doi_thoat_nuoc';
         else if (r.department.includes('duy tu')) deptId = 'doi_duy_tu';
-        else if (r.department.includes('Kinh tế')) deptId = 'kinh_te';
+        else if (r.department.includes('Khu phố')) deptId = 'khu_pho';
       }
 
       // Xác định merged_into uuid
