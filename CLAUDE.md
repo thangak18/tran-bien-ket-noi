@@ -17,7 +17,7 @@ Người dân chụp ảnh báo sự cố (đèn đường, ngập nước, rác
 **Giai đoạn 2 đã HOÀN THÀNH TRỌN VẸN trong đêm 25/11/2026** trên nhánh `feat/giai-doan-2`:
 - Full-stack hoàn chỉnh: Hono API + PostgreSQL/PostGIS + Drizzle ORM + React SPA + DataSource Abstraction.
 - Toàn bộ 39 test files (229 tests) PASS 100%. Đã sửa toàn bộ 17 test cũ sau đợt Redesign giao diện.
-- Toàn bộ 16 bất biến cơ sở dữ liệu (DV-001 đến DV-016) được kiểm tra trực tiếp qua `npm run db:verify` và ĐẠT 100%.
+- Toàn bộ 17 kiểm tra cơ sở dữ liệu (DV-001 đến DV-017) được kiểm tra trực tiếp qua `npm run db:verify` và ĐẠT 100%.
 - Đầy đủ tài liệu theo chuỗi truy vết: `docs/proposal_v3.md` -> `docs/spec.md` -> `docs/plan.md` -> `docs/tasks.md` -> `docs/tests.md` -> `docs/van-hanh.md`.
 - Báo cáo tổng kết đêm: `docs/bao-cao-dem-25-11.md`.
 - Sổ tay vận hành: `docs/van-hanh.md`.

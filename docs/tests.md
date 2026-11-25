@@ -381,7 +381,7 @@ Kiểm tra trực tiếp trên PostgreSQL + PostGIS thật bằng `npm run db:ve
 | ID | Tiêu chí bất biến | Kết quả mong đợi |
 |---|---|---|
 | DB-001 | Định nghĩa bảng và quan hệ | Đủ 16 bảng, quan hệ khoá ngoại toàn vẹn |
-| DB-002 | PostGIS không gian | Geometry Point(4326), GiST index hoạt động đúng |
+| DB-002 | PostGIS không gian | `postgis_version()` có giá trị; cột `reports.location` là `geography(Point,4326)`; index GiST hoạt động (`db:verify` DV-017) |
 | DB-003 | Bất biến timeline | Trigger chặn UPDATE/DELETE trên `report_timeline` |
 | DB-004 | RLS kích hoạt toàn bảng | Không thể đọc/ghi bằng Supabase anon key trực tiếp |
 | DB-005 | CHECK ràng buộc | `anonymous=true` ⇒ `reporter_phone IS NULL`; `hoan_thanh/dong` ⇒ `completed_at NOT NULL` |
@@ -396,6 +396,8 @@ Kiểm tra trực tiếp trên PostgreSQL + PostGIS thật bằng `npm run db:ve
 | DB-014 | Băm mã bí mật | Mọi hồ sơ có `secret_code_hash` (không lưu mã thô) |
 | DB-015 | Tiến trình timeline | Mọi hồ sơ có timeline đầy đủ các bước theo bảng chuyển trạng thái 3.3 |
 | DB-016 | Giờ hành chính | Mọi mục timeline do cán bộ/bộ phận ghi rơi vào 07:00–17:30 |
+| DB-017 | PostGIS thật | `npm run db:verify` báo 17/17 ĐẠT, gồm DV-017 (không còn lớp giả `cube/earthdistance`) |
+| PG-001…005 | Tìm trùng bằng `ST_DWithin` | `tests/api/postgis-dwithin.test.ts`: 30 m thì trùng, 80 m thì không; loại khác, quá 14 ngày, đã đóng thì không; kết quả khớp `domain/duplicates.ts` trên 64 hồ sơ mẫu |
 
 ---
 

@@ -30,8 +30,8 @@ officerRoutes.get('/reports', async (c) => {
     SELECT 
       r.*,
       d.name as department_name,
-      ST_X(r.location) as lng,
-      ST_Y(r.location) as lat,
+      ST_X(r.location::geometry) as lng,
+      ST_Y(r.location::geometry) as lat,
       (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count
     FROM reports r
     LEFT JOIN departments d ON d.id = r.department_id
@@ -405,8 +405,8 @@ officerRoutes.get('/reports/:code', async (c) => {
     SELECT 
       r.*,
       d.name as department_name,
-      ST_X(r.location) as lng,
-      ST_Y(r.location) as lat,
+      ST_X(r.location::geometry) as lng,
+      ST_Y(r.location::geometry) as lat,
       (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count,
       fb.resolved as feedback_resolved,
       fb.rating as feedback_rating,

@@ -1,20 +1,8 @@
 import postgres from 'postgres';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadLocalEnv, databaseUrl, maskDbUrl } from './lib/env';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-try {
-  process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch (_e) {
-  void _e;
-}
-
-const DATABASE_URL =
-  process.env.DATABASE_URL_DIRECT ||
-  process.env.DATABASE_URL ||
-  'postgresql://postgres:postgres@127.0.0.1:5432/tranbien';
+loadLocalEnv();
 
 interface CheckResult {
   id: string;
@@ -25,10 +13,10 @@ interface CheckResult {
 }
 
 export async function runDbVerify(
-  connectionString: string = DATABASE_URL
+  connectionString: string = databaseUrl()
 ): Promise<{ passed: boolean; checks: CheckResult[] }> {
   console.log('--- BẮT ĐẦU CHẠY DB:VERIFY (KIỂM TRA BẤT BIẾN DATABASE) ---');
-  console.log(`Kết nối DB: ${connectionString.replace(/:[^:@]+@/, ':***@')}`);
+  console.log(`Kết nối DB: ${maskDbUrl(connectionString)}`);
 
   const sql = postgres(connectionString, { max: 1 });
   const checks: CheckResult[] = [];
@@ -307,6 +295,29 @@ export async function runDbVerify(
       passed: nonRls.length === 0,
     });
 
+    // 17. DV-017: PostGIS thật (không phải lớp giả), cột location đúng kiểu geography(Point,4326), có index GIST
+    const [rowPostgis] = await sql`SELECT postgis_version() AS version;`;
+    const [rowGeo] = await sql`
+      SELECT type, srid FROM geography_columns
+      WHERE f_table_schema = 'public' AND f_table_name = 'reports' AND f_geography_column = 'location';
+    `;
+    const [rowGist] = await sql`
+      SELECT count(*)::int AS count FROM pg_indexes
+      WHERE schemaname = 'public' AND tablename = 'reports' AND indexdef ILIKE '%USING gist (location)%';
+    `;
+    const postgisOk =
+      !!rowPostgis?.version &&
+      rowGeo?.type === 'Point' &&
+      Number(rowGeo?.srid) === 4326 &&
+      (rowGist?.count ?? 0) >= 1;
+    checks.push({
+      id: 'DV-017',
+      name: 'PostGIS thật: postgis_version(), cột location geography(Point,4326), index GIST',
+      expected: 'postgis_version() có giá trị, Point/4326, ≥ 1 index GIST',
+      actual: `${rowPostgis?.version ?? 'không có PostGIS'}, ${rowGeo?.type ?? '?'}/${rowGeo?.srid ?? '?'}, ${rowGist?.count ?? 0} index GIST`,
+      passed: postgisOk,
+    });
+
     console.log('\n--- KẾT QUẢ KIỂM TRA BẤT BIẾN DB ---');
     let allPassed = true;
     for (const c of checks) {
@@ -323,7 +334,7 @@ export async function runDbVerify(
     }
 
     if (allPassed) {
-      console.log('\n🎉 TOÀN BỘ 16 BẤT BIẾN CƠ SỞ DỮ LIỆU ĐỀU ĐẠT CHUẨN!\n');
+      console.log('\n🎉 TOÀN BỘ 17 KIỂM TRA CƠ SỞ DỮ LIỆU ĐỀU ĐẠT CHUẨN!\n');
     } else {
       console.log('\n⚠️ CÓ BẤT BIẾN KHÔNG ĐẠT!\n');
     }

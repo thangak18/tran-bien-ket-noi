@@ -31,8 +31,8 @@ volunteerRoutes.get('/tasks', async (c) => {
         r.category as report_category,
         r.address as report_address,
         r.reporter_phone as report_phone,
-        ST_X(r.location) as report_lng,
-        ST_Y(r.location) as report_lat,
+        ST_X(r.location::geometry) as report_lng,
+        ST_Y(r.location::geometry) as report_lat,
         ST_Distance(r.location, ST_GeographyFromText(${pointWkt})) as distance_meters,
         sp.display_name as assignee_name
       FROM volunteer_tasks t
@@ -54,8 +54,8 @@ volunteerRoutes.get('/tasks', async (c) => {
         r.category as report_category,
         r.address as report_address,
         r.reporter_phone as report_phone,
-        ST_X(r.location) as report_lng,
-        ST_Y(r.location) as report_lat,
+        ST_X(r.location::geometry) as report_lng,
+        ST_Y(r.location::geometry) as report_lat,
         sp.display_name as assignee_name
       FROM volunteer_tasks t
       JOIN reports r ON r.id = t.report_id
@@ -111,8 +111,8 @@ volunteerRoutes.get('/tasks/:id', async (c) => {
       r.address as report_address,
       r.reporter_phone as report_phone,
       r.description as report_description,
-      ST_X(r.location) as report_lng,
-      ST_Y(r.location) as report_lat,
+      ST_X(r.location::geometry) as report_lng,
+      ST_Y(r.location::geometry) as report_lat,
       sp.display_name as assignee_name
     FROM volunteer_tasks t
     JOIN reports r ON r.id = t.report_id

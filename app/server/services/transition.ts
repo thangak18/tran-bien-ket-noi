@@ -214,7 +214,7 @@ export async function executeTransition(
 
     // 9. Lấy lại bản ghi sau khi cập nhật
     const [updated] = await sql`
-      SELECT r.*, d.name as department_name, ST_X(r.location) as lng, ST_Y(r.location) as lat
+      SELECT r.*, d.name as department_name, ST_X(r.location::geometry) as lng, ST_Y(r.location::geometry) as lat
       FROM reports r
       LEFT JOIN departments d ON d.id = r.department_id
       WHERE r.id = ${report.id};

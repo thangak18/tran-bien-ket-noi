@@ -552,7 +552,7 @@ citizenRoutes.get('/me/reports', requireCitizenAuth, async (c) => {
       r.id, r.code, r.category, r.status, r.address, r.location_note,
       r.description, r.created_at, r.due_at, r.priority, r.anonymous,
       r.subscribed_later, r.completed_at, r.result_note,
-      ST_X(r.location) as lng, ST_Y(r.location) as lat,
+      ST_X(r.location::geometry) as lng, ST_Y(r.location::geometry) as lat,
       d.name as department_name,
       (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count
     FROM reports r
@@ -613,8 +613,8 @@ citizenRoutes.get('/reports/:code/owner', optionalCitizenAuth, async (c) => {
     SELECT 
       r.*,
       d.name as department_name,
-      ST_X(r.location) as lng,
-      ST_Y(r.location) as lat,
+      ST_X(r.location::geometry) as lng,
+      ST_Y(r.location::geometry) as lat,
       (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count,
       fb.resolved as feedback_resolved,
       fb.rating as feedback_rating,

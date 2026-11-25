@@ -152,8 +152,8 @@ publicRoutes.get('/reports', async (c) => {
       SELECT 
         r.*,
         d.name as department_name,
-        ST_X(r.location) as lng,
-        ST_Y(r.location) as lat,
+        ST_X(r.location::geometry) as lng,
+        ST_Y(r.location::geometry) as lat,
         ST_Distance(r.location, ST_GeographyFromText(${pointWkt})) as distance_meters,
         (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count,
         fb.resolved as feedback_resolved,
@@ -175,8 +175,8 @@ publicRoutes.get('/reports', async (c) => {
       SELECT 
         r.*,
         d.name as department_name,
-        ST_X(r.location) as lng,
-        ST_Y(r.location) as lat,
+        ST_X(r.location::geometry) as lng,
+        ST_Y(r.location::geometry) as lat,
         (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count,
         fb.resolved as feedback_resolved,
         fb.rating as feedback_rating,
@@ -222,8 +222,8 @@ publicRoutes.get('/reports/:code', async (c) => {
     SELECT 
       r.*,
       d.name as department_name,
-      ST_X(r.location) as lng,
-      ST_Y(r.location) as lat,
+      ST_X(r.location::geometry) as lng,
+      ST_Y(r.location::geometry) as lat,
       (SELECT count(*)::int FROM report_followers f WHERE f.report_id = r.id) as follower_count,
       fb.resolved as feedback_resolved,
       fb.rating as feedback_rating,
@@ -375,8 +375,8 @@ publicRoutes.get('/recent-results', async (c) => {
   const reports = await sqlClient`
     SELECT 
       r.id, r.code, r.category, r.address, r.completed_at, r.result_note,
-      ST_X(r.location) as lng,
-      ST_Y(r.location) as lat
+      ST_X(r.location::geometry) as lng,
+      ST_Y(r.location::geometry) as lat
     FROM reports r
     WHERE r.status IN ('hoan_thanh', 'dong') AND r.completed_at IS NOT NULL
     ORDER BY r.completed_at DESC

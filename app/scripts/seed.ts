@@ -4,23 +4,15 @@ import crypto from 'node:crypto';
 import postgres from 'postgres';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-try {
-  process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch (_e) {
-  void _e;
-}
+import { loadLocalEnv, requireEnv, databaseUrl, maskDbUrl } from './lib/env';
+import { ensureAuthUser } from './lib/supabase-admin';
 
-const PEPPER = process.env.OWNER_KEY_PEPPER || 'tran-bien-ket-noi-secret-pepper-2026';
-const DATABASE_URL =
-  process.env.DATABASE_URL_DIRECT ||
-  process.env.DATABASE_URL ||
-  'postgresql://postgres:postgres@127.0.0.1:5432/tranbien';
+loadLocalEnv();
 
 function hashSecret(val: string): string {
-  return crypto.createHmac('sha256', PEPPER).update(val).digest('hex');
+  return crypto.createHmac('sha256', requireEnv('OWNER_KEY_PEPPER')).update(val).digest('hex');
 }
 
 export function idToUuid(id: string): string {
@@ -28,9 +20,9 @@ export function idToUuid(id: string): string {
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }
 
-export async function runSeed(connectionString: string = DATABASE_URL) {
+export async function runSeed(connectionString: string = databaseUrl()) {
   console.log('--- BẮT ĐẦU CHẠY SEED DỮ LIỆU ---');
-  console.log(`Kết nối DB: ${connectionString.replace(/:[^:@]+@/, ':***@')}`);
+  console.log(`Kết nối DB: ${maskDbUrl(connectionString)}`);
 
   const sql = postgres(connectionString, { max: 1 });
 
@@ -93,29 +85,34 @@ export async function runSeed(connectionString: string = DATABASE_URL) {
       `;
     }
 
-    // 3. Seed Staff Profiles
-    console.log('3. Nạp tài khoản nhân viên mẫu (staff_profiles)...');
+    // 3. Seed Staff: tạo user thật trong Supabase Auth (mật khẩu lấy từ biến môi trường), rồi ghi staff_profiles
+    console.log('3. Tạo tài khoản cán bộ/TNV trong Supabase Auth và nạp staff_profiles...');
+    const staffPassword = requireEnv('SEED_STAFF_PASSWORD');
     const staff = [
       {
         user_id: '11111111-1111-1111-1111-111111111111',
+        email: 'cb.minh@tranbien.gov.vn',
         role: 'can_bo',
         display_name: 'Nguyễn Văn Minh',
         department_id: 'kinh_te',
       },
       {
         user_id: '22222222-2222-2222-2222-222222222222',
+        email: 'tnv.mai@tranbien.gov.vn',
         role: 'tnv',
         display_name: 'Trần Thị Mai',
         department_id: null,
       },
       {
         user_id: '33333333-3333-3333-3333-333333333333',
+        email: 'tnv.nam@tranbien.gov.vn',
         role: 'tnv',
         display_name: 'Lê Hoàng Nam',
         department_id: null,
       },
       {
         user_id: '44444444-4444-4444-4444-444444444444',
+        email: 'tnv.quynhanh@tranbien.gov.vn',
         role: 'tnv',
         display_name: 'Phạm Quỳnh Anh',
         department_id: null,
@@ -123,10 +120,21 @@ export async function runSeed(connectionString: string = DATABASE_URL) {
     ];
 
     for (const s of staff) {
+      const authId = await ensureAuthUser({
+        id: s.user_id,
+        email: s.email,
+        password: staffPassword,
+      });
+      if (authId !== s.user_id) {
+        throw new Error(
+          `User ${s.email} đã tồn tại trong Supabase Auth với id khác (${authId}). Chạy "supabase db reset" rồi seed lại.`
+        );
+      }
       await sql`
-        INSERT INTO staff_profiles (user_id, role, display_name, department_id, is_active)
-        VALUES (${s.user_id}, ${s.role}, ${s.display_name}, ${s.department_id}, true)
+        INSERT INTO staff_profiles (user_id, email, role, display_name, department_id, is_active)
+        VALUES (${s.user_id}, ${s.email}, ${s.role}, ${s.display_name}, ${s.department_id}, true)
         ON CONFLICT (user_id) DO UPDATE SET
+          email = ${s.email},
           display_name = ${s.display_name},
           role = ${s.role},
           department_id = ${s.department_id};
@@ -279,44 +287,22 @@ export async function runSeed(connectionString: string = DATABASE_URL) {
       }
     }
 
-    // 4e. Duplicate flags - Phát hiện các cụm nghi trùng (cách 20-45m cùng loại trong nhóm mở)
-    console.log('4e. Gắn cờ các phản ánh nghi trùng lặp...');
+    // 4e. Cờ nghi trùng: cùng loại, cách nhau ≤ 50 m (ST_DWithin), cả hai hồ sơ còn mở
+    console.log('4e. Gắn cờ các phản ánh nghi trùng lặp (ST_DWithin)...');
     await sql`DELETE FROM report_duplicate_flags;`;
-    const openReports = (
-      reports as Array<{
-        status: string;
-        category: string;
-        lat?: number;
-        lng?: number;
-        location?: { lat: number; lng: number };
-        id: string;
-      }>
-    ).filter((r) => r.status !== 'dong' && r.status !== 'hoan_thanh');
-    for (let i = 0; i < openReports.length; i++) {
-      for (let j = i + 1; j < openReports.length; j++) {
-        const a = openReports[i];
-        const b = openReports[j];
-        if (a && b && a.category === b.category) {
-          const lat1 = a.lat ?? a.location?.lat ?? 0;
-          const lng1 = a.lng ?? a.location?.lng ?? 0;
-          const lat2 = b.lat ?? b.location?.lat ?? 0;
-          const lng2 = b.lng ?? b.location?.lng ?? 0;
-          // Approximate meters
-          const dlat = (lat2 - lat1) * 111320;
-          const dlng = (lng2 - lng1) * 111320 * Math.cos((lat1 * Math.PI) / 180);
-          const dist = Math.sqrt(dlat * dlat + dlng * dlng);
-          if (dist >= 15 && dist <= 50) {
-            const uuidA = idToUuid(a.id);
-            const uuidB = idToUuid(b.id);
-            await sql`
-              INSERT INTO report_duplicate_flags (report_id, other_report_id)
-              VALUES (${uuidA}, ${uuidB}), (${uuidB}, ${uuidA})
-              ON CONFLICT DO NOTHING;
-            `;
-          }
-        }
-      }
-    }
+    await sql`
+      INSERT INTO report_duplicate_flags (report_id, other_report_id)
+      SELECT a.id, b.id
+      FROM reports a
+      JOIN reports b
+        ON a.id <> b.id
+       AND a.category = b.category
+       AND ST_DWithin(a.location, b.location, 50)
+      WHERE a.is_seed AND b.is_seed
+        AND a.status NOT IN ('dong', 'hoan_thanh')
+        AND b.status NOT IN ('dong', 'hoan_thanh')
+      ON CONFLICT DO NOTHING;
+    `;
 
     // Bật lại trigger immutable
     await sql`ALTER TABLE report_timeline ENABLE TRIGGER report_timeline_immutable_trigger;`;

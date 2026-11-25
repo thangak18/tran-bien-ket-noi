@@ -3,77 +3,11 @@
 -- Spec 11 & Spec 15
 -- ==============================================================================
 
--- 1. PostGIS Extensions / Cube + Earthdistance Fallback
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-DO $$
-BEGIN
-  CREATE EXTENSION IF NOT EXISTS postgis;
-EXCEPTION WHEN OTHERS THEN
-  -- Fallback khi môi trường không có sẵn binary postgis
-  CREATE EXTENSION IF NOT EXISTS cube;
-  CREATE EXTENSION IF NOT EXISTS earthdistance;
-
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'geography') THEN
-    CREATE TYPE geography AS (lng double precision, lat double precision);
-  END IF;
-
-  CREATE OR REPLACE FUNCTION ST_GeographyFromText(txt text) RETURNS geography AS $fn$
-  DECLARE
-    coords text;
-    parts text[];
-  BEGIN
-    coords := substring(txt from '(?i)POINT\s*\(\s*([^)]+)\s*\)');
-    IF coords IS NULL THEN
-      RAISE EXCEPTION 'Invalid WKT Point: %', txt;
-    END IF;
-    parts := regexp_split_to_array(trim(coords), '\s+');
-    RETURN (parts[1]::double precision, parts[2]::double precision)::geography;
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-
-  CREATE OR REPLACE FUNCTION ST_MakePoint(lng double precision, lat double precision) RETURNS geography AS $fn$
-  BEGIN
-    RETURN (lng, lat)::geography;
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-
-  CREATE OR REPLACE FUNCTION ST_SetSRID(geo geography, srid integer) RETURNS geography AS $fn$
-  BEGIN
-    RETURN geo;
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-
-  CREATE OR REPLACE FUNCTION ST_X(geo geography) RETURNS double precision AS $fn$
-  BEGIN
-    RETURN (geo).lng;
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-
-  CREATE OR REPLACE FUNCTION ST_Y(geo geography) RETURNS double precision AS $fn$
-  BEGIN
-    RETURN (geo).lat;
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-
-  CREATE OR REPLACE FUNCTION ST_Distance(geo1 geography, geo2 geography) RETURNS double precision AS $fn$
-  BEGIN
-    RETURN earth_distance(ll_to_earth((geo1).lat, (geo1).lng), ll_to_earth((geo2).lat, (geo2).lng));
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-
-  CREATE OR REPLACE FUNCTION ST_DWithin(geo1 geography, geo2 geography, distance_meters double precision) RETURNS boolean AS $fn$
-  BEGIN
-    RETURN earth_distance(ll_to_earth((geo1).lat, (geo1).lng), ll_to_earth((geo2).lat, (geo2).lng)) <= distance_meters;
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-
-  CREATE OR REPLACE FUNCTION ST_AsGeoJSON(geo geography) RETURNS text AS $fn$
-  BEGIN
-    RETURN format('{"type":"Point","coordinates":[%s,%s]}', (geo).lng, (geo).lat);
-  END;
-  $fn$ LANGUAGE plpgsql IMMUTABLE;
-END $$;
+-- 1. Extensions
+-- PostGIS thật, đặt trong schema "extensions" để bảng spatial_ref_sys không nằm ở schema public.
+-- Không còn lớp giả lập geography/ST_* (đã gỡ ngày 25/11/2026: lớp giả che lỗi khi chạy PostGIS thật).
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions;
 
 -- 2. Enums (Spec 11.1)
 DO $$ BEGIN
@@ -150,7 +84,7 @@ CREATE TABLE IF NOT EXISTS reports (
   status report_status NOT NULL DEFAULT 'moi',
   status_before_merge report_status,
   priority priority NOT NULL DEFAULT 'binh_thuong',
-  location geography NOT NULL,
+  location geography(Point,4326) NOT NULL,
   address text NOT NULL,
   location_note text,
   description text,
@@ -192,11 +126,7 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 
 -- Chỉ mục Reports (Spec 11.2 & 11.4)
-DO $$ BEGIN
-  CREATE INDEX IF NOT EXISTS idx_reports_location_gist ON reports USING GIST (location);
-EXCEPTION WHEN OTHERS THEN
-  CREATE INDEX IF NOT EXISTS idx_reports_location_gist ON reports (location);
-END $$;
+CREATE INDEX IF NOT EXISTS idx_reports_location_gist ON reports USING GIST (location);
 CREATE INDEX IF NOT EXISTS reports_status_due_idx ON reports (status, due_at);
 CREATE INDEX IF NOT EXISTS reports_category_created_idx ON reports (category, created_at);
 CREATE INDEX IF NOT EXISTS reports_phone_idx ON reports (reporter_phone);

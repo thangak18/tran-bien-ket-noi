@@ -30,7 +30,7 @@ Tài liệu hướng dẫn cài đặt, vận hành, kiểm tra chất lượng 
                                    | SQL (Drizzle ORM + postgres-js)
 +----------------------------------v--------------------------------+
 |               CƠ SỞ DỮ LIỆU & LƯU TRỮ ĐÁM MÂY                    |
-|  - PostgreSQL 16 + PostGIS (hoặc cube/earthdistance fallback)    |
+|  - PostgreSQL 15 + PostGIS 3 thật (Supabase local qua Docker)    |
 |  - RLS (Row Level Security) kích hoạt 100% các bảng               |
 |  - Trigger bất biến: chặn UPDATE/DELETE trên report_timeline     |
 |  - Storage: Supabase Storage (S3-compatible) cho ảnh hiện trường  |
@@ -43,7 +43,7 @@ Tài liệu hướng dẫn cài đặt, vận hành, kiểm tra chất lượng 
 
 ### 2.1. Yêu cầu hệ thống
 - **Node.js**: Phiên bản 20.x trở lên.
-- **PostgreSQL**: Phiên bản 16.x có bật extension PostGIS (hoặc cube + earthdistance).
+- **Docker Desktop** và **Supabase CLI 2.1.1** (có sẵn trong `app/package.json`, chạy bằng `npx supabase`). Supabase local cung cấp PostgreSQL 15 + PostGIS 3 thật, Auth và Storage. Không còn lớp giả lập `cube/earthdistance`.
 - **Trình duyệt**: Chrome, Safari, Edge, Firefox hiện đại.
 
 ### 2.2. Biến môi trường (`app/.env.local`)
@@ -57,7 +57,7 @@ cp .env.example .env.local
 Chi tiết các biến:
 | Tên biến | Bắt buộc | Mặc định (Local) | Mô tả |
 |---|:---:|---|---|
-| `DATABASE_URL` | Có | `postgresql://postgres:postgres@127.0.0.1:5432/tranbien` | Chuỗi kết nối PostgreSQL (pooling) |
+| `DATABASE_URL` | Có | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` (Supabase local) | Chuỗi kết nối PostgreSQL (pooling) |
 | `DATABASE_URL_DIRECT` | Tùy chọn | Giống `DATABASE_URL` | Kết nối trực tiếp cho migrations |
 | `CITIZEN_JWT_SECRET` | Có | `tran-bien-citizen-jwt-secret-min-32-chars-long` | Khóa bí mật ký JWT 30 ngày cho người dân (≥ 32 ký tự) |
 | `OWNER_KEY_PEPPER` | Có | `tran-bien-ket-noi-secret-pepper-2026` | Chuỗi pepper băm secretCode |
@@ -78,11 +78,14 @@ cd app
 npm ci
 ```
 
-### 3.2. Áp dụng Migration Cơ sở Dữ liệu
+### 3.2. Khởi động Supabase local và áp dụng Migration
+Thư mục `supabase/` nằm ở gốc repo, nên khi chạy từ `app/` phải thêm `--workdir ..`:
 ```bash
-# Đẩy schema lên database
-npx drizzle-kit push
+cd app
+npx supabase start --workdir ..      # lần đầu sẽ pull image Docker
+npx supabase db reset --workdir ..   # áp dụng supabase/migrations/*.sql (PostGIS thật)
 ```
+Cổng mặc định: API `54321`, Postgres `54322`, Studio `54323`. Lệnh `npx supabase status -o env --workdir ..` in URL và khoá local để điền vào `app/.env.local`.
 
 ### 3.3. Nạp Dữ liệu Mẫu (Seed)
 Nạp 64 hồ sơ tháng 11/2026, 4 nhiệm vụ TNV, tài khoản nhân viên, SLA bộ phận:
@@ -121,7 +124,7 @@ Chạy kiểm tra trực tiếp trên các bảng PostgreSQL đang hoạt độn
 cd app
 npm run db:verify
 ```
-Kết quả kiểm tra 16 bất biến:
+Kết quả kiểm tra 17 mục:
 - `DV-001`: Đúng 64 hồ sơ tháng 11/2026 (`is_seed = true`).
 - `DV-002`: Phân bổ chuẩn: 18 Đèn đường, 15 Ngập nước, 21 Rác thải, 10 Mặt đường.
 - `DV-003`: Đúng 47 hồ sơ đã xử lý, 17 hồ sơ đang xử lý.
@@ -138,6 +141,7 @@ Kết quả kiểm tra 16 bất biến:
 - `DV-014`: Toàn bộ mốc xử lý của cán bộ/bộ phận rơi vào giờ hành chính (07:00–17:30).
 - `DV-015`: PostgreSQL Trigger chặn thành công hành vi sửa/xóa trên `report_timeline`.
 - `DV-016`: 100% bảng cơ sở dữ liệu đã kích hoạt Row-Level Security (RLS).
+- `DV-017`: PostGIS thật (`postgis_version()` có giá trị), cột `reports.location` là `geography(Point,4326)` và có index GIST.
 
 ---
 

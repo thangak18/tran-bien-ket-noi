@@ -1,24 +1,13 @@
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import postgres from 'postgres';
 import { runSeed } from './seed';
+import { loadLocalEnv, databaseUrl } from './lib/env';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-try {
-  process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch (_e) {
-  void _e;
-}
+loadLocalEnv();
 
 const DEMO_MODE = process.env.DEMO_MODE === 'true';
-const DATABASE_URL =
-  process.env.DATABASE_URL_DIRECT ||
-  process.env.DATABASE_URL ||
-  'postgresql://postgres:postgres@127.0.0.1:5432/tranbien';
 
-const sql = postgres(DATABASE_URL, { max: 1 });
+const sql = postgres(databaseUrl(), { max: 1 });
 
 async function resetDemo() {
   if (!DEMO_MODE) {
