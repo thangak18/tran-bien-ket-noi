@@ -51,7 +51,8 @@ jobs:
           done
           CITIZEN_JWT_SECRET="$(rnd)"; OWNER_KEY_PEPPER="$(rnd)"; CRON_SECRET="$(rnd)"
           SEED_STAFF_PASSWORD="Ci$(rnd)!1"
-          for secret in "$CITIZEN_JWT_SECRET" "$OWNER_KEY_PEPPER" "$CRON_SECRET" "$SEED_STAFF_PASSWORD"; do
+          SEED_ADMIN_PASSWORD="Ad$(rnd)!1"
+          for secret in "$CITIZEN_JWT_SECRET" "$OWNER_KEY_PEPPER" "$CRON_SECRET" "$SEED_STAFF_PASSWORD" "$SEED_ADMIN_PASSWORD"; do
             echo "::add-mask::$secret"
           done
           {
@@ -65,6 +66,7 @@ jobs:
             echo "OWNER_KEY_PEPPER=$OWNER_KEY_PEPPER"
             echo "CRON_SECRET=$CRON_SECRET"
             echo "SEED_STAFF_PASSWORD=$SEED_STAFF_PASSWORD"
+            echo "SEED_ADMIN_PASSWORD=$SEED_ADMIN_PASSWORD"
             echo "DEMO_MODE=true"
           } >> "$GITHUB_ENV"
 
