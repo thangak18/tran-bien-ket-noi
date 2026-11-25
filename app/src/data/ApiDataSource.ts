@@ -10,6 +10,7 @@ import {
   CreateOnBehalfInput,
   CreateOnBehalfResult,
   FollowResult,
+  SupplementInput,
 } from './DataSource';
 import {
   AiSuggestionData,
@@ -231,6 +232,14 @@ export class ApiDataSource implements DataSource {
     return this.requireReport(reportId);
   }
 
+  async markNotificationsRead(): Promise<void> {
+    if (Object.keys(citizenAuthHeaders()).length === 0) return;
+    await apiFetch('/citizen/me/notifications/read', {
+      method: 'POST',
+      headers: citizenAuthHeaders(),
+      body: JSON.stringify({}),
+    });
+  }
   async getMyNotifications(): Promise<Notification[] | null> {
     if (Object.keys(citizenAuthHeaders()).length === 0) return null;
     const res = await apiFetch<{ items?: Json[] }>('/citizen/me/notifications', {
@@ -290,11 +299,15 @@ export class ApiDataSource implements DataSource {
     return this.requireReport(res.code);
   }
 
-  async supplementReport(reportId: string, note: string): Promise<Report> {
+  async supplementReport(
+    reportId: string,
+    note: string,
+    extra: SupplementInput = {}
+  ): Promise<Report> {
     await apiFetch(`/citizen/reports/${enc(reportId)}/supplement`, {
       method: 'POST',
       headers: { ...citizenAuthHeaders(), ...reportKeyHeaders(reportId) },
-      body: JSON.stringify({ note }),
+      body: JSON.stringify({ note, ...extra }),
     });
     return this.requireReport(reportId);
   }

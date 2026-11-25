@@ -102,6 +102,8 @@ export interface DataSource {
 
   /** Thông báo tiến độ của người dân đang đăng nhập SĐT (null: chưa đăng nhập) */
   getMyNotifications(): Promise<Notification[] | null>;
+  /** Đánh dấu đã đọc mọi thông báo của SĐT đang đăng nhập (AC-C09-1); chế độ API lưu ở máy chủ. */
+  markNotificationsRead(): Promise<void>;
 
   /** Hồ sơ của người dân đang đăng nhập SĐT (hoặc lưu trên thiết bị này) */
   getMyReports(): Promise<Report[]>;
@@ -113,8 +115,8 @@ export interface DataSource {
   unsubscribeReport(reportId: string, phone: string): Promise<Report>;
   /** Nhận hồ sơ về thiết bị bằng mã bí mật (link ?k=) */
   claimReportByKey(reportId: string, secretCode: string): Promise<Report>;
-  /** Bổ sung thông tin / hình ảnh cho phản ánh */
-  supplementReport(reportId: string, note: string, photos?: string[]): Promise<Report>;
+  /** Bổ sung thông tin cho phản ánh `can_bo_sung` (AC-C06-7): ghi chú, ảnh mới và/hoặc vị trí mới. */
+  supplementReport(reportId: string, note: string, extra?: SupplementInput): Promise<Report>;
 
   /** Đánh giá mức độ hài lòng hoặc yêu cầu mở lại */
   submitFeedback(
@@ -248,4 +250,13 @@ export interface DataSource {
 
   /** Gợi ý loại sự cố từ ảnh bằng AI */
   suggestCategory(image: string): Promise<AiSuggestionData>;
+}
+
+/** Phần bổ sung kèm theo ghi chú. Bỏ trống trường nào thì giữ nguyên dữ liệu cũ của hồ sơ. */
+export interface SupplementInput {
+  photos?: string[];
+  lat?: number;
+  lng?: number;
+  address?: string;
+  locationNote?: string;
 }

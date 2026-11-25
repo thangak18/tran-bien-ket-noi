@@ -296,6 +296,8 @@ export function C04Confirm() {
   }, [dispatch, hasLocation]);
 
   // Kiểm tra phản ánh nghi trùng <= 50m trong 14 ngày (spec 3.5 / 03d)
+  // Đang bổ sung cho hồ sơ `can_bo_sung` (AC-C06-7): gửi cập nhật hồ sơ đó, không tạo hồ sơ mới.
+  const supplementFor = draft.supplementFor;
   const duplicateMatches = useMemo(() => {
     if (!pickedCategory || draft.lat === undefined || draft.lng === undefined) {
       return [];
@@ -308,8 +310,17 @@ export function C04Confirm() {
       },
       reports,
       settings.demoNow
-    );
-  }, [pickedCategory, selectedCategory, draft.lat, draft.lng, reports, settings.demoNow]);
+      // Hồ sơ đang bổ sung không phải "phản ánh tương tự" của chính nó.
+    ).filter((m) => m.report.id !== supplementFor);
+  }, [
+    pickedCategory,
+    selectedCategory,
+    draft.lat,
+    draft.lng,
+    reports,
+    settings.demoNow,
+    supplementFor,
+  ]);
 
   const topDuplicate =
     duplicateMatches[Math.min(duplicateIndex, Math.max(0, duplicateMatches.length - 1))] ??
@@ -750,6 +761,29 @@ export function C04Confirm() {
       return;
     }
 
+    if (supplementFor) {
+      const updated = await submitAction.run(() =>
+        ds.supplementReport(
+          supplementFor,
+          description.trim() || 'Đã bổ sung thông tin theo yêu cầu',
+          {
+            photos: draft.photos.length > 0 ? draft.photos : undefined,
+            lat: draft.lat,
+            lng: draft.lng,
+            address: draft.address,
+            locationNote: locationNoteInput.trim() || draft.locationNote,
+          }
+        )
+      );
+      if (!updated) return;
+      setOfflineError(false);
+      setPendingMode(null);
+      if (isApiMode()) dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
+      dispatch({ type: 'CLEAR_DRAFT' });
+      navigate(`/phan-anh/${supplementFor}`, { replace: true });
+      return;
+    }
+
     // Lỗi từ API được báo ngay trên màn hình, giữ nguyên bản nháp; không lưu cục bộ thay cho API.
     const res = await submitAction.run(() =>
       ds.createReport(buildPayload(false, verifiedPhone), {
@@ -966,7 +1000,7 @@ export function C04Confirm() {
           </button>
           <div>
             <h2 className="text-lg font-extrabold tracking-tight text-[var(--color-text)]">
-              Hoàn tất &amp; Gửi phản ánh
+              {supplementFor ? `Bổ sung cho hồ sơ #${supplementFor}` : 'Hoàn tất & Gửi phản ánh'}
             </h2>
             <p className="text-xs text-[var(--color-text-muted)]">
               Bước {currentStep}/3 · {WIZARD_STEPS[currentStep - 1]?.title}
@@ -1022,7 +1056,9 @@ export function C04Confirm() {
                 <ArrowLeft className="h-5 w-5" />
               </button>
 
-              <span className="text-base font-bold text-white drop-shadow-sm">Xác nhận gửi</span>
+              <span className="text-base font-bold text-white drop-shadow-sm">
+                {supplementFor ? `Bổ sung cho hồ sơ #${supplementFor}` : 'Xác nhận gửi'}
+              </span>
 
               <span className="rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
                 {displayPhotos.length}/{MAX_PHOTOS} ảnh
@@ -1868,7 +1904,13 @@ export function C04Confirm() {
                     className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0084E8] px-5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition-all hover:bg-[#006EC4] active:scale-[0.99]"
                   >
                     <Send className="h-4 w-4" />
-                    <span>{submitAction.pending ? 'Đang gửi…' : 'Gửi phản ánh'}</span>
+                    <span>
+                      {submitAction.pending
+                        ? 'Đang gửi…'
+                        : supplementFor
+                          ? 'Gửi bổ sung'
+                          : 'Gửi phản ánh'}
+                    </span>
                   </button>
                 ) : (
                   <button
