@@ -517,6 +517,9 @@ export function C04Confirm() {
     const nextPhotos = draft.photos.filter((_, i) => i !== index);
     dispatch({ type: 'SET_DRAFT', payload: { photos: nextPhotos } });
     setActivePhotoIndex((prev) => Math.max(0, Math.min(prev, nextPhotos.length - 1)));
+    if (nextPhotos.length === 0) {
+      navigate('/bao-su-co/anh', { state: { addingPhoto: true } });
+    }
   };
 
   const handleSelectCategory = (category: Category) => {
@@ -959,7 +962,7 @@ export function C04Confirm() {
             </div>
 
             {/* Mobile Thumbnail Strip: [1] [+] */}
-            <div className="absolute right-4 bottom-8 left-4 flex items-center gap-2 overflow-x-auto">
+            <div className="absolute right-4 bottom-8 left-4 flex items-center gap-2 overflow-x-auto pt-2 pr-2">
               {displayPhotos.map((photoUrl, idx) => (
                 <div key={`m-${idx}-${photoUrl.slice(0, 16)}`} className="relative flex-shrink-0">
                   <button
@@ -981,12 +984,12 @@ export function C04Confirm() {
                       {idx + 1}
                     </span>
                   </button>
-                  {draft.photos.length > 1 && (
+                  {draft.photos.length > 0 && (
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
                       aria-label={`Xoá ảnh ${idx + 1}`}
-                      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-white hover:bg-red-600"
+                      className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700"
                     >
                       <X className="h-2.5 w-2.5" />
                     </button>
@@ -1035,7 +1038,7 @@ export function C04Confirm() {
                 </div>
 
                 {/* Thumbnails row */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <div className="flex items-center gap-2 overflow-x-auto pt-2 pr-2 pb-1">
                   {displayPhotos.map((photoUrl, idx) => (
                     <div
                       key={`d-${idx}-${photoUrl.slice(0, 16)}`}
@@ -1056,11 +1059,12 @@ export function C04Confirm() {
                           className="h-full w-full object-cover"
                         />
                       </button>
-                      {draft.photos.length > 1 && (
+                      {draft.photos.length > 0 && (
                         <button
                           type="button"
                           onClick={() => handleRemovePhoto(idx)}
-                          className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white"
+                          aria-label={`Xoá ảnh ${idx + 1}`}
+                          className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700"
                         >
                           <X className="h-2.5 w-2.5" />
                         </button>
