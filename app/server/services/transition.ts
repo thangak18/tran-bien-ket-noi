@@ -144,7 +144,9 @@ export async function executeTransition(
           ? null
           : report.completed_at;
 
-    const dueAt = params?.dueAt ? new Date(params.dueAt) : (report.due_at ?? null);
+    // due_at đọc từ DB có thể là chuỗi hoặc Date tuỳ trình điều khiển, nên luôn chuẩn hoá bằng new Date().
+    const dueAtRaw = params?.dueAt ?? report.due_at ?? null;
+    const dueAt = dueAtRaw ? new Date(dueAtRaw) : null;
     const deptId =
       params?.departmentId !== undefined ? params.departmentId : (report.department_id ?? null);
     const resultNote =

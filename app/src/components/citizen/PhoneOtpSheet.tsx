@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +26,16 @@ export const PhoneOtpSheet: React.FC<PhoneOtpSheetProps> = ({
   const [phoneError, setPhoneError] = useState('');
   const [otpError, setOtpError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Mỗi lần mở hộp: bắt đầu lại từ bước nhập SĐT với số đã nhập ở màn hình trước.
+  useEffect(() => {
+    if (!isOpen) return;
+    setPhone(initialPhone);
+    setStep('phone');
+    setOtp('');
+    setPhoneError('');
+    setOtpError('');
+  }, [isOpen, initialPhone]);
 
   const validatePhone = (p: string): boolean => {
     const clean = p.replace(/\s+/g, '');

@@ -166,4 +166,22 @@ describe('L4: Transition Service & Concurrency Locking (Spec 3.3)', () => {
     const rejectionReason = (rejected[0] as PromiseRejectedResult).reason;
     expect(rejectionReason.status).toBe(409);
   });
+
+  it('TRANS-006: chuyển trạng thái không kèm dueAt vẫn giữ nguyên hạn xử lý đã có', async () => {
+    const due = '2026-11-27T10:00:00+07:00';
+    await sqlClient`
+      UPDATE reports SET status = 'da_tiep_nhan', due_at = ${due}::timestamptz
+      WHERE id = ${testReportId}::uuid;
+    `;
+    const result = await executeTransition({
+      reportId: testReportId,
+      targetStatus: 'cho_xac_minh',
+      actor: { role: 'CB', actorType: 'staff', actorLabel: 'Cán bộ Minh' },
+    });
+    expect(result.report.status).toBe('cho_xac_minh');
+    const [row] = await sqlClient`
+      SELECT due_at = ${due}::timestamptz AS same_due FROM reports WHERE id = ${testReportId}::uuid;
+    `;
+    expect(row?.same_due).toBe(true);
+  });
 });

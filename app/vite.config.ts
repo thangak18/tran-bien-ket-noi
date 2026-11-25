@@ -78,6 +78,6 @@ export default defineConfig({
     fileParallelism: false,
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['tests/e2e/**/*', 'node_modules/**/*'],
+    exclude: ['tests/e2e/**/*', 'tests/e2e-api/**/*', 'node_modules/**/*'],
   },
 } as VitestConfigExport);
