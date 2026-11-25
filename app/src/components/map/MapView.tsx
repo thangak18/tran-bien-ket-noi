@@ -4,8 +4,9 @@ import L from 'leaflet';
 import { Category, Status } from '@/domain/types';
 import { CATEGORY_CONFIGS, STATUS_CONFIGS } from '@/domain/constants';
 import { Modal } from '@/components/ui/Modal';
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info, Loader2, LocateFixed } from 'lucide-react';
 import { CategoryIcon, renderCategorySvgHtml } from '@/components/common/CategoryIcon';
+import { Coordinates, getCurrentLocation } from '@/lib/geolocation';
 
 export interface MapMarker {
   id: string;
@@ -31,6 +32,10 @@ export interface MapViewProps {
   onTileError?: () => void;
   simulateTileError?: boolean;
   hideBuiltInLegend?: boolean;
+  autoLocateUser?: boolean;
+  showLocateButton?: boolean;
+  locateButtonClassName?: string;
+  onUserLocationChange?: (coords: Coordinates) => void;
   errorBannerClassName?: string;
   className?: string;
 }
@@ -133,11 +138,57 @@ export const MapView: React.FC<MapViewProps> = ({
   onTileError,
   simulateTileError = false,
   hideBuiltInLegend = false,
+  autoLocateUser = false,
+  showLocateButton = false,
+  locateButtonClassName = 'bottom-4 right-4',
+  onUserLocationChange,
   errorBannerClassName = 'inset-x-4 top-4',
   className = '',
 }) => {
   const [showLegend, setShowLegend] = useState(false);
   const [tileErrorOccurred, setTileErrorOccurred] = useState(false);
+  const [liveUserLocation, setLiveUserLocation] = useState<[number, number] | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [focusOverride, setFocusOverride] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (!autoLocateUser) return;
+    if (typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom')) {
+      return;
+    }
+    let active = true;
+    getCurrentLocation({ timeoutMs: 5000 })
+      .then((coords) => {
+        if (!active) return;
+        setLiveUserLocation([coords.lat, coords.lng]);
+        onUserLocationChange?.(coords);
+      })
+      .catch(() => {
+        // Bỏ qua nếu người dùng chưa cấp quyền GPS
+      });
+    return () => {
+      active = false;
+    };
+  }, [autoLocateUser, onUserLocationChange]);
+
+  const handleLocateClick = async () => {
+    if (locating) return;
+    setLocating(true);
+    try {
+      const coords = await getCurrentLocation({ timeoutMs: 6000 });
+      const pair: [number, number] = [coords.lat, coords.lng];
+      setLiveUserLocation(pair);
+      setFocusOverride(pair);
+      onUserLocationChange?.(coords);
+    } catch {
+      // Giữ nguyên vị trí hiện tại nếu không lấy được GPS
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const effectiveCenter = focusOverride ?? center;
+  const effectiveUserLocation = liveUserLocation ?? userLocation;
 
   useEffect(() => {
     if (simulateTileError) {
@@ -177,13 +228,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
       {/* Map */}
       <MapContainer
-        center={center}
+        center={effectiveCenter}
         zoom={zoom}
         zoomControl={false}
         scrollWheelZoom={true}
         className="h-full w-full"
       >
-        <MapViewportSync center={center} zoom={zoom} />
+        <MapViewportSync center={effectiveCenter} zoom={zoom} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -210,9 +261,9 @@ export const MapView: React.FC<MapViewProps> = ({
           )}
 
         {/* Vị trí của bạn */}
-        {userLocation && (
+        {effectiveUserLocation && (
           <Marker
-            position={userLocation}
+            position={effectiveUserLocation}
             icon={L.divIcon({
               html: `
                 <div style="background-color: #2563eb; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 0 0 2px #2563eb;"></div>
@@ -241,6 +292,26 @@ export const MapView: React.FC<MapViewProps> = ({
           );
         })}
       </MapContainer>
+
+      {/* Nút GPS vị trí hiện tại */}
+      {showLocateButton && (
+        <div className={`absolute z-[999] ${locateButtonClassName}`}>
+          <button
+            type="button"
+            onClick={handleLocateClick}
+            disabled={locating}
+            aria-label="Lấy vị trí GPS hiện tại"
+            title="Vị trí hiện tại của tôi"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-md transition-all duration-150 hover:bg-[var(--color-surface-elevated)] active:scale-95 disabled:opacity-60"
+          >
+            {locating ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <LocateFixed className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Nút Chú giải góc dưới */}
       {!hideBuiltInLegend && (

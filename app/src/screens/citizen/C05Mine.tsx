@@ -16,6 +16,7 @@ import {
   MapPin,
   Moon,
   Phone,
+  QrCode,
   Search,
   Settings,
   ShieldCheck,
@@ -39,6 +40,7 @@ import {
   saveAccountRecord,
 } from '@/lib/accounts';
 import { SmsPreview } from '@/components/citizen/SmsPreview';
+import { QrScannerModal } from '@/components/citizen/QrScannerModal';
 import { HotlineModal } from '@/components/common/HotlineModal';
 import { Button, Modal, Toast } from '@/components/ui';
 
@@ -165,6 +167,8 @@ export function C05Mine() {
     }),
     [myReports]
   );
+
+  const [isQrOpen, setIsQrOpen] = useState(false);
 
   const handleSaveCitizenName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -822,7 +826,30 @@ export function C05Mine() {
           <div className="lg:col-span-5 space-y-5">
             {/* 1. Account Card: Logged-Out vs Logged-In */}
             {!isLoggedIn ? (
-              <section className="overflow-hidden rounded-3xl border border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] via-[#F8FCFF] to-white p-5 shadow-xs dark:border-sky-800/80 dark:from-sky-950/50 dark:via-slate-900 dark:to-slate-900">
+              <section className="overflow-hidden rounded-3xl border border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] via-[#F8FCFF] to-white p-5 shadow-xs space-y-4 dark:border-sky-800/80 dark:from-sky-950/50 dark:via-slate-900 dark:to-slate-900">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]">
+                      <User className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="text-base font-extrabold text-[var(--color-text)]">
+                        Đăng nhập tài khoản
+                      </div>
+                      <div className="text-xs text-[var(--color-text-muted)]">
+                        Đồng bộ phản ánh, nhận tin báo &amp; đánh giá xử lý
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenChangePhone}
+                    className="shrink-0 rounded-xl bg-[#0084E8] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#0073CC] active:scale-[0.98]"
+                  >
+                    Đăng nhập
+                  </button>
+                </div>
+
                 {/* Report Counters */}
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -1055,13 +1082,24 @@ export function C05Mine() {
                     </div>
                   )}
 
-                  <button
-                    type="submit"
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 text-sm font-extrabold text-[#0084E8] shadow-2xs transition-all hover:border-[#0084E8] hover:bg-[#0084E8] hover:text-white active:scale-[0.99] dark:border-sky-800 dark:bg-sky-950/60 dark:text-[#38BDF8] dark:hover:bg-[#0084E8] dark:hover:text-white"
-                  >
-                    <Search className="h-4 w-4" />
-                    <span>Tra cứu phản ánh</span>
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 text-sm font-extrabold text-[#0084E8] shadow-2xs transition-all hover:border-[#0084E8] hover:bg-[#0084E8] hover:text-white active:scale-[0.99] dark:border-sky-800 dark:bg-sky-950/60 dark:text-[#38BDF8] dark:hover:bg-[#0084E8] dark:hover:text-white"
+                    >
+                      <Search className="h-4 w-4" />
+                      <span>Tra cứu phản ánh</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsQrOpen(true)}
+                      aria-label="Quét mã QR phản ánh"
+                      className="flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-sm font-bold text-[var(--color-text)] transition-colors hover:border-[#0084E8] hover:text-[#0084E8]"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      <span>Quét QR</span>
+                    </button>
+                  </div>
 
                   {/* Quick 1-tap lookup chips for recent reports saved on this device */}
                   {state.settings.deviceReports.length > 0 && (
@@ -1169,31 +1207,77 @@ export function C05Mine() {
               </section>
             )}
 
-            {/* 2. Thông báo tiến độ gần đây (nếu có) */}
-            {myNotifications.length > 0 && (
+            {/* 2. Thông báo của tôi (chỉ hiển thị khi đã đăng nhập) */}
+            {isLoggedIn && (
               <section className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs space-y-3 dark:border-slate-800">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-[#0084E8]" />
                     <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Thông báo tiến độ mới nhất
+                      Thông báo của tôi
                     </h2>
+                    {myNotifications.filter((n) => !n.read).length > 0 && (
+                      <span className="rounded-full bg-[#0084E8] px-2 py-0.5 text-[10px] font-bold text-white">
+                        {myNotifications.filter((n) => !n.read).length} mới
+                      </span>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedNotification(myNotifications[0]!)}
-                    className="text-xs font-extrabold text-[#0084E8] hover:underline dark:text-[#38BDF8]"
-                  >
-                    Xem chi tiết
-                  </button>
+                  {myNotifications.some((n) => !n.read) && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        dispatch({
+                          type: 'MARK_NOTIFICATIONS_READ',
+                          payload: { phone: state.settings.phone },
+                        })
+                      }
+                      className="text-xs font-extrabold text-[#0084E8] hover:underline dark:text-[#38BDF8]"
+                    >
+                      Đánh dấu đã đọc
+                    </button>
+                  )}
                 </div>
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs leading-relaxed text-[var(--color-text)] dark:border-slate-800 dark:bg-slate-900/60">
-                  <p className="font-medium">{myNotifications[0]!.message}</p>
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
-                    <Clock className="h-3 w-3" />
-                    {formatDateTime(myNotifications[0]!.createdAt)}
-                  </p>
-                </div>
+
+                {myNotifications.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)]/60 p-4 text-center text-xs text-[var(--color-text-muted)]">
+                    Chưa có thông báo tiến độ nào. Khi bạn bật nhận tin báo hoặc gửi phản ánh mới,
+                    cập nhật sẽ hiện tại đây.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {myNotifications.slice(0, 6).map((n) => (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedNotification(n);
+                          dispatch({
+                            type: 'MARK_NOTIFICATIONS_READ',
+                            payload: { phone: state.settings.phone },
+                          });
+                        }}
+                        className={`w-full rounded-2xl border p-3.5 text-left text-xs leading-relaxed transition-colors ${
+                          !n.read
+                            ? 'border-sky-200 bg-sky-50/60 dark:border-sky-900/60 dark:bg-sky-950/35'
+                            : 'border-[var(--color-border)] bg-[var(--color-bg)]/60 hover:bg-[var(--color-surface-elevated)]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-[var(--color-primary)]">
+                            Hồ sơ #{n.reportId}
+                          </span>
+                          <span className="flex items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
+                            <Clock className="h-3 w-3" />
+                            {formatDateTime(n.createdAt)}
+                          </span>
+                        </div>
+                        <p className="mt-1 font-medium text-[var(--color-text)] line-clamp-2">
+                          {n.message}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 
@@ -1615,6 +1699,8 @@ export function C05Mine() {
           <Toast message={toastMsg} type="success" onClose={() => setToastMsg(null)} />
         </div>
       )}
+
+      <QrScannerModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />
     </div>
   );
 }

@@ -401,18 +401,33 @@ export function A02Panel({
       dong: 'Đóng hồ sơ phản ánh',
     };
 
+    const officerStageIndex = ['hoan_thanh', 'dong'].includes(report.status)
+      ? 4
+      : ['da_giao', 'mo_lai'].includes(report.status)
+        ? 3
+        : ['da_tiep_nhan', 'cho_xac_minh', 'can_bo_sung'].includes(report.status)
+          ? 2
+          : 1;
+
+    const workflowStages = [
+      { step: 1, label: 'Tiếp nhận' },
+      { step: 2, label: 'Xác minh' },
+      { step: 3, label: 'Giao xử lý' },
+      { step: 4, label: 'Hoàn thành' },
+    ];
+
     return (
       <aside
         data-testid="a02-panel"
-        className="flex h-full w-full flex-col bg-[var(--color-surface)] border-l border-[var(--color-border)] shadow-lg"
+        className="flex h-full w-full flex-col rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-4 md:px-6 py-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span
                 data-testid="report-id"
-                className="text-base font-bold text-[var(--color-primary)]"
+                className="text-base md:text-lg font-extrabold text-[var(--color-primary)]"
               >
                 {report.id}
               </span>
@@ -437,15 +452,51 @@ export function A02Panel({
           </Button>
         </div>
 
+        {/* Visual 4-Step Officer Workflow Bar */}
+        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg)]/60 px-4 md:px-6 py-3">
+          <div className="grid grid-cols-4 gap-2">
+            {workflowStages.map((stage) => {
+              const isDone = officerStageIndex > stage.step || officerStageIndex === 4;
+              const isCurrent = officerStageIndex === stage.step && officerStageIndex < 4;
+              return (
+                <div key={stage.step} className="flex flex-col items-center text-center">
+                  <div
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold transition-colors ${
+                      isDone
+                        ? 'bg-emerald-600 text-white'
+                        : isCurrent
+                          ? 'bg-[var(--color-primary)] text-white ring-4 ring-[var(--color-primary-soft)]'
+                          : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {stage.step}
+                  </div>
+                  <span
+                    className={`mt-1 text-[11px] font-bold leading-tight ${
+                      isCurrent
+                        ? 'text-[var(--color-primary)]'
+                        : isDone
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-[var(--color-text-muted)]'
+                    }`}
+                  >
+                    {stage.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Toast */}
         {toast && (
-          <div className="px-5 pt-3">
+          <div className="px-4 md:px-6 pt-3">
             <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
           </div>
         )}
 
         {/* Tabs */}
-        <div className="px-5 pt-3">
+        <div className="px-4 md:px-6 pt-3">
           <Tabs
             tabs={[
               { id: 'chi_tiet', label: 'Chi tiết' },
@@ -457,496 +508,513 @@ export function A02Panel({
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-5">
           {activeTab === 'chi_tiet' ? (
             <>
               {/* Banner đã gộp */}
               {report.status === 'da_gop' && report.mergedInto && (
-                <div className="flex items-center justify-between gap-2 rounded-card border border-purple-200 bg-purple-50 p-3 text-sm text-purple-950">
+                <div className="flex items-center justify-between gap-2 rounded-card border border-purple-200 bg-purple-50 p-3 text-sm text-purple-950 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200">
                   <div className="flex items-center gap-2">
-                    <GitMerge className="h-4 w-4 text-purple-600 shrink-0" />
+                    <GitMerge className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
                     <span>
                       Hồ sơ đã được gộp vào <strong>#{report.mergedInto}</strong>
                     </span>
                   </div>
                   <Link
                     to={`/can-bo/${report.mergedInto}`}
-                    className="text-xs font-semibold text-purple-700 underline"
+                    className="text-xs font-semibold text-purple-700 dark:text-purple-300 underline"
                   >
                     Mở hồ sơ chính
                   </Link>
                 </div>
               )}
 
-              {/* Gallery ảnh (AC-A02-1) */}
-              <div className="space-y-2">
-                <div className="relative aspect-video w-full overflow-hidden rounded-card border border-slate-200 bg-slate-100">
-                  {currentPhoto ? (
-                    <img
-                      src={currentPhoto}
-                      alt={`Ảnh hiện trường ${safePhotoIdx + 1}`}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-text-sub">
-                      Không có ảnh đính kèm
-                    </div>
-                  )}
-
-                  {photos.length > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)
-                        }
-                        aria-label="Ảnh trước"
-                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
-                        aria-label="Ảnh sau"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                      <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-medium text-white">
-                        {safePhotoIdx + 1} / {photos.length}
-                      </span>
-                    </>
-                  )}
-                </div>
-
-                {photos.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {photos.map((src, idx) => (
-                      <button
-                        key={`${src}-${idx}`}
-                        type="button"
-                        onClick={() => setPhotoIndex(idx)}
-                        aria-label={`Xem ảnh ${idx + 1}`}
-                        className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${
-                          idx === safePhotoIdx ? 'border-primary' : 'border-transparent opacity-70'
-                        }`}
-                      >
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                <div className="lg:col-span-7 space-y-4">
+                  {/* Gallery ảnh (AC-A02-1) */}
+                  <div className="space-y-2">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+                      {currentPhoto ? (
                         <img
-                          src={src}
-                          alt={`Thumbnail ${idx + 1}`}
+                          src={currentPhoto}
+                          alt={`Ảnh hiện trường ${safePhotoIdx + 1}`}
                           loading="lazy"
                           className="h-full w-full object-cover"
                         />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Bản đồ nhỏ (AC-A02-1) */}
-              <div className="h-44 w-full overflow-hidden rounded-card border border-slate-200">
-                <MapView
-                  center={[report.lat, report.lng]}
-                  zoom={16}
-                  markers={[
-                    {
-                      id: report.id,
-                      lat: report.lat,
-                      lng: report.lng,
-                      category: report.category,
-                      status: report.status,
-                    },
-                  ]}
-                />
-              </div>
-
-              {/* Thông tin cơ bản & Riêng tư (AC-A02-1) */}
-              <div className="space-y-2.5 rounded-card border border-slate-200 bg-slate-50 p-3.5 text-sm">
-                <div className="flex items-start gap-2">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <div>
-                    <div className="font-medium text-text-main">{report.address}</div>
-                    {report.locationNote && (
-                      <div className="text-xs text-text-sub mt-0.5">{report.locationNote}</div>
-                    )}
-                  </div>
-                </div>
-
-                {(report.title || report.description) && (
-                  <div className="flex items-start gap-2">
-                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-text-sub" />
-                    <div className="space-y-1">
-                      {report.title && (
-                        <div className="font-bold text-text-main">{report.title}</div>
-                      )}
-                      {report.description && <p className="text-text-main">{report.description}</p>}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200 text-xs text-text-sub">
-                  <div className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5" />
-                    {report.anonymous ? (
-                      <span className="font-medium text-slate-700">
-                        {report.subscribedLater ? 'Ẩn danh · đã đăng ký nhận tin' : 'Ẩn danh'}
-                      </span>
-                    ) : (
-                      <span className="font-medium text-slate-800">
-                        {maskPhone(report.reporterPhone) || 'Chưa có SĐT'}
-                      </span>
-                    )}
-                    {report.onBehalf && (
-                      <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">
-                        Gửi hộ
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1.5 font-medium text-slate-700">
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{followerCount} người cùng báo</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-xs text-text-sub">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>Gửi lúc: {formatDateTime(report.createdAt)}</span>
-                </div>
-              </div>
-
-              {/* Trường phân loại & giao xử lý (AC-A02-2) */}
-              <div className="space-y-3 rounded-card border border-slate-200 p-3.5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-text-main">Phân loại & Hạn xử lý</h2>
-                  {report.status !== 'moi' && (
-                    <Button variant="ghost" size="sm" onClick={handleSaveMetadata}>
-                      Lưu thay đổi
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label
-                      htmlFor="a02-category"
-                      className="mb-1 block text-xs font-medium text-text-sub"
-                    >
-                      Loại sự cố
-                    </label>
-                    <SelectField
-                      id="a02-category"
-                      size="sm"
-                      value={category}
-                      onChange={(e) => handleCategoryChange(e.target.value as Category)}
-                    >
-                      {CATEGORIES.map((c) => {
-                        const cfg = CATEGORY_CONFIGS.find((item) => item.key === c);
-                        return (
-                          <option key={c} value={c}>
-                            {cfg?.label ?? c}
-                          </option>
-                        );
-                      })}
-                    </SelectField>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="a02-priority"
-                      className="mb-1 block text-xs font-medium text-text-sub"
-                    >
-                      Ưu tiên
-                    </label>
-                    <SelectField
-                      id="a02-priority"
-                      size="sm"
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value as Priority)}
-                    >
-                      <option value="binh_thuong">Bình thường</option>
-                      <option value="cao">Cao</option>
-                    </SelectField>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="a02-department"
-                    className="mb-1 block text-xs font-medium text-text-sub"
-                  >
-                    Bộ phận xử lý
-                  </label>
-                  <SelectField
-                    id="a02-department"
-                    size="sm"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                  >
-                    {DEPARTMENTS.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </SelectField>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="a02-due-date"
-                    className="mb-1 block text-xs font-medium text-text-sub"
-                  >
-                    Hạn xử lý
-                  </label>
-                  <input
-                    id="a02-due-date"
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full rounded-btn border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-2 text-sm text-[var(--color-text)] focus:border-primary focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Gợi ý xác minh cho hồ sơ ẩn danh ở trạng thái mới (AC-A02-10) */}
-              {report.anonymous && report.status === 'moi' && (
-                <div
-                  data-testid="anonymous-verify-hint"
-                  className="flex items-start gap-2.5 rounded-card border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950"
-                >
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                  <span>
-                    <strong>Hồ sơ ẩn danh:</strong> nên giao TNV xác minh trước khi xử lý
-                  </span>
-                </div>
-              )}
-
-              {/* Nhóm nút thao tác theo trạng thái (AC-A02-3) */}
-              <div className="space-y-2.5">
-                <div className="flex flex-wrap gap-2">
-                  {canAccept && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      icon={<CheckCircle2 className="h-4 w-4" />}
-                      onClick={handleAccept}
-                    >
-                      Tiếp nhận
-                    </Button>
-                  )}
-
-                  {canAssignTnv && (
-                    <Button
-                      variant={
-                        report.anonymous && report.status === 'moi' ? 'primary' : 'secondary'
-                      }
-                      size="sm"
-                      icon={<UserCheck className="h-4 w-4" />}
-                      onClick={() => setShowTnvModal(true)}
-                    >
-                      Giao TNV xác minh
-                    </Button>
-                  )}
-
-                  {canAssignDept && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      icon={<Wrench className="h-4 w-4" />}
-                      onClick={handleAssignDepartment}
-                    >
-                      Giao xử lý
-                    </Button>
-                  )}
-
-                  {canComplete && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      icon={<Camera className="h-4 w-4" />}
-                      onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
-                    >
-                      Cập nhật kết quả
-                    </Button>
-                  )}
-
-                  {canClose && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={<CheckCircle2 className="h-4 w-4" />}
-                      onClick={() => openExceptionModal('dong')}
-                    >
-                      Đóng
-                    </Button>
-                  )}
-                </div>
-
-                {/* Nút ngoại lệ (AC-A02-8) */}
-                {(canSupplement || canTransfer || canRejectVerify) && (
-                  <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
-                    {canSupplement && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        icon={<Send className="h-3.5 w-3.5" />}
-                        onClick={() => openExceptionModal('can_bo_sung')}
-                      >
-                        Yêu cầu bổ sung
-                      </Button>
-                    )}
-                    {canTransfer && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        icon={<ArrowRightLeft className="h-3.5 w-3.5" />}
-                        onClick={() => openExceptionModal('chuyen_co_quan')}
-                      >
-                        Chuyển cơ quan khác
-                      </Button>
-                    )}
-                    {canRejectVerify && (
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        icon={<XCircle className="h-3.5 w-3.5" />}
-                        onClick={() => openExceptionModal('khong_xac_nhan')}
-                      >
-                        Không xác nhận được
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Khối Kết quả xác minh của TNV (AC-A02-5) */}
-              {completedTask?.result && (
-                <div
-                  data-testid="tnv-verification-result"
-                  className="space-y-2.5 rounded-card border border-blue-200 bg-blue-50/60 p-3.5 text-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-blue-950">
-                      {completedTask.type === 'nghiem_thu'
-                        ? 'Kết quả nghiệm thu TNV'
-                        : 'Kết quả xác minh'}
-                    </h3>
-                    <span className="text-xs text-blue-700">
-                      {completedTask.assignee || 'Tình nguyện viên'} ·{' '}
-                      {formatDateTime(completedTask.result.at)}
-                    </span>
-                  </div>
-
-                  {completedTask.result.photo && (
-                    <img
-                      src={completedTask.result.photo}
-                      alt="Ảnh xác minh của TNV"
-                      loading="lazy"
-                      className="h-36 w-full rounded-btn object-cover border border-blue-200"
-                    />
-                  )}
-
-                  <div className="space-y-1 text-xs text-slate-800">
-                    <div>
-                      <strong>1. Hiện trạng:</strong>{' '}
-                      {completedTask.result.exists === 'co'
-                        ? 'Có sự cố'
-                        : completedTask.result.exists === 'khong'
-                          ? 'Không có sự cố'
-                          : 'Không tìm thấy vị trí'}
-                    </div>
-                    {completedTask.result.severity && (
-                      <div>
-                        <strong>2. Mức độ:</strong>{' '}
-                        {completedTask.result.severity === 'nguy_hiem'
-                          ? 'Nguy hiểm'
-                          : completedTask.result.severity === 'trung_binh'
-                            ? 'Trung bình'
-                            : 'Nhẹ'}
-                      </div>
-                    )}
-                    <div>
-                      <strong>3. Ghi chú TNV:</strong>{' '}
-                      {completedTask.result.note || 'Không có ghi chú thêm'}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Khối Đã gộp & Tách (AC-A02-7) */}
-              {report.mergedChildren && report.mergedChildren.length > 0 && (
-                <div className="space-y-2 rounded-card border border-purple-200 bg-purple-50/50 p-3.5">
-                  <h3 className="text-sm font-semibold text-purple-950">
-                    Hồ sơ đã gộp ({report.mergedChildren.length})
-                  </h3>
-                  <div className="space-y-1.5">
-                    {report.mergedChildren.map((childId) => (
-                      <div
-                        key={childId}
-                        className="flex items-center justify-between rounded-btn bg-[var(--color-surface)] px-3 py-2 text-xs border border-purple-200 dark:border-purple-800/60"
-                      >
-                        <span className="font-semibold text-purple-900">#{childId}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={<Split className="h-3.5 w-3.5" />}
-                          onClick={() => setSplitTargetId(childId)}
-                        >
-                          Tách
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Khối Phản ánh tương tự (AC-A02-6) */}
-              {duplicates.length > 0 && (
-                <div
-                  data-testid="similar-reports-block"
-                  className="space-y-2.5 rounded-card border border-slate-200 p-3.5"
-                >
-                  <h3 className="text-sm font-semibold text-text-main">
-                    Phản ánh tương tự ({duplicates.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {duplicates.map(({ report: dup, distanceMeters }) => (
-                      <div
-                        key={dup.id}
-                        className="flex items-center gap-3 rounded-btn border border-slate-200 bg-slate-50 p-2.5"
-                      >
-                        {dup.photos[0] && (
-                          <img
-                            src={dup.photos[0]}
-                            alt={dup.id}
-                            loading="lazy"
-                            className="h-12 w-12 shrink-0 rounded-lg object-cover"
-                          />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className="font-bold text-primary">{dup.id}</span>
-                            <span className="text-text-sub">
-                              cách {formatDistance(distanceMeters)}
-                            </span>
-                          </div>
-                          <div className="truncate text-xs text-text-main">{dup.address}</div>
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-sm text-text-sub">
+                          Không có ảnh đính kèm
                         </div>
+                      )}
+
+                      {photos.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPhotoIndex((i) => (i - 1 + photos.length) % photos.length)
+                            }
+                            aria-label="Ảnh trước"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPhotoIndex((i) => (i + 1) % photos.length)}
+                            aria-label="Ảnh sau"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                          <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-medium text-white">
+                            {safePhotoIdx + 1} / {photos.length}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {photos.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {photos.map((src, idx) => (
+                          <button
+                            key={`${src}-${idx}`}
+                            type="button"
+                            onClick={() => setPhotoIndex(idx)}
+                            aria-label={`Xem ảnh ${idx + 1}`}
+                            className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${
+                              idx === safePhotoIdx
+                                ? 'border-primary'
+                                : 'border-transparent opacity-70'
+                            }`}
+                          >
+                            <img
+                              src={src}
+                              alt={`Thumbnail ${idx + 1}`}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bản đồ nhỏ (AC-A02-1) */}
+                  <div className="h-48 md:h-56 w-full overflow-hidden rounded-card border border-[var(--color-border)]">
+                    <MapView
+                      center={[report.lat, report.lng]}
+                      zoom={16}
+                      autoLocateUser={true}
+                      showLocateButton={true}
+                      hideBuiltInLegend={true}
+                      markers={[
+                        {
+                          id: report.id,
+                          lat: report.lat,
+                          lng: report.lng,
+                          category: report.category,
+                          status: report.status,
+                        },
+                      ]}
+                    />
+                  </div>
+
+                  {/* Thông tin cơ bản & Riêng tư (AC-A02-1) */}
+                  <div className="space-y-2.5 rounded-card border border-slate-200 bg-slate-50 p-3.5 text-sm">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div>
+                        <div className="font-medium text-text-main">{report.address}</div>
+                        {report.locationNote && (
+                          <div className="text-xs text-text-sub mt-0.5">{report.locationNote}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {(report.title || report.description) && (
+                      <div className="flex items-start gap-2">
+                        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-text-sub" />
+                        <div className="space-y-1">
+                          {report.title && (
+                            <div className="font-bold text-text-main">{report.title}</div>
+                          )}
+                          {report.description && (
+                            <p className="text-text-main">{report.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[var(--color-border)] text-xs text-text-sub">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5" />
+                        {report.anonymous ? (
+                          <span className="font-medium text-[var(--color-text)]">
+                            {report.subscribedLater ? 'Ẩn danh · đã đăng ký nhận tin' : 'Ẩn danh'}
+                          </span>
+                        ) : (
+                          <span className="font-medium text-[var(--color-text)]">
+                            {maskPhone(report.reporterPhone) || 'Chưa có SĐT'}
+                          </span>
+                        )}
+                        {report.onBehalf && (
+                          <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                            Gửi hộ
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 font-medium text-[var(--color-text)]">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>{followerCount} người cùng báo</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs text-text-sub">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Gửi lúc: {formatDateTime(report.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-4">
+                  {/* Trường phân loại & giao xử lý (AC-A02-2) */}
+                  <div className="space-y-3 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-sm font-semibold text-text-main">
+                        Phân loại & Hạn xử lý
+                      </h2>
+                      {report.status !== 'moi' && (
+                        <Button variant="ghost" size="sm" onClick={handleSaveMetadata}>
+                          Lưu thay đổi
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label
+                          htmlFor="a02-category"
+                          className="mb-1 block text-xs font-medium text-text-sub"
+                        >
+                          Loại sự cố
+                        </label>
+                        <SelectField
+                          id="a02-category"
+                          size="sm"
+                          value={category}
+                          onChange={(e) => handleCategoryChange(e.target.value as Category)}
+                        >
+                          {CATEGORIES.map((c) => {
+                            const cfg = CATEGORY_CONFIGS.find((item) => item.key === c);
+                            return (
+                              <option key={c} value={c}>
+                                {cfg?.label ?? c}
+                              </option>
+                            );
+                          })}
+                        </SelectField>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="a02-priority"
+                          className="mb-1 block text-xs font-medium text-text-sub"
+                        >
+                          Ưu tiên
+                        </label>
+                        <SelectField
+                          id="a02-priority"
+                          size="sm"
+                          value={priority}
+                          onChange={(e) => setPriority(e.target.value as Priority)}
+                        >
+                          <option value="binh_thuong">Bình thường</option>
+                          <option value="cao">Cao</option>
+                        </SelectField>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="a02-department"
+                        className="mb-1 block text-xs font-medium text-text-sub"
+                      >
+                        Bộ phận xử lý
+                      </label>
+                      <SelectField
+                        id="a02-department"
+                        size="sm"
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                      >
+                        {DEPARTMENTS.map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept}
+                          </option>
+                        ))}
+                      </SelectField>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="a02-due-date"
+                        className="mb-1 block text-xs font-medium text-text-sub"
+                      >
+                        Hạn xử lý
+                      </label>
+                      <input
+                        id="a02-due-date"
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className="w-full rounded-btn border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-2 text-sm text-[var(--color-text)] focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Gợi ý xác minh cho hồ sơ ẩn danh ở trạng thái mới (AC-A02-10) */}
+                  {report.anonymous && report.status === 'moi' && (
+                    <div
+                      data-testid="anonymous-verify-hint"
+                      className="flex items-start gap-2.5 rounded-card border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                    >
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>
+                        <strong>Hồ sơ ẩn danh:</strong> nên giao TNV xác minh trước khi xử lý
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Nhóm nút thao tác theo trạng thái (AC-A02-3) */}
+                  <div className="space-y-2.5 rounded-card border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3.5">
+                    <div className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                      Thao tác điều phối
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {canAccept && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<CheckCircle2 className="h-4 w-4" />}
+                          onClick={handleAccept}
+                        >
+                          Tiếp nhận
+                        </Button>
+                      )}
+
+                      {canAssignTnv && (
+                        <Button
+                          variant={
+                            report.anonymous && report.status === 'moi' ? 'primary' : 'secondary'
+                          }
+                          size="sm"
+                          icon={<UserCheck className="h-4 w-4" />}
+                          onClick={() => setShowTnvModal(true)}
+                        >
+                          Giao TNV xác minh
+                        </Button>
+                      )}
+
+                      {canAssignDept && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<Wrench className="h-4 w-4" />}
+                          onClick={handleAssignDepartment}
+                        >
+                          Giao xử lý
+                        </Button>
+                      )}
+
+                      {canComplete && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<Camera className="h-4 w-4" />}
+                          onClick={() => navigate(`/can-bo/${report.id}/ket-qua`)}
+                        >
+                          Cập nhật kết quả
+                        </Button>
+                      )}
+
+                      {canClose && (
                         <Button
                           variant="secondary"
                           size="sm"
-                          icon={<GitMerge className="h-3.5 w-3.5" />}
-                          onClick={() => setMergeTarget(dup)}
+                          icon={<CheckCircle2 className="h-4 w-4" />}
+                          onClick={() => openExceptionModal('dong')}
                         >
-                          Gộp vào hồ sơ này
+                          Đóng
                         </Button>
+                      )}
+                    </div>
+
+                    {/* Nút ngoại lệ (AC-A02-8) */}
+                    {(canSupplement || canTransfer || canRejectVerify) && (
+                      <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                        {canSupplement && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={<Send className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('can_bo_sung')}
+                          >
+                            Yêu cầu bổ sung
+                          </Button>
+                        )}
+                        {canTransfer && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={<ArrowRightLeft className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('chuyen_co_quan')}
+                          >
+                            Chuyển cơ quan khác
+                          </Button>
+                        )}
+                        {canRejectVerify && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={<XCircle className="h-3.5 w-3.5" />}
+                            onClick={() => openExceptionModal('khong_xac_nhan')}
+                          >
+                            Không xác nhận được
+                          </Button>
+                        )}
                       </div>
-                    ))}
+                    )}
                   </div>
+
+                  {/* Khối Kết quả xác minh của TNV (AC-A02-5) */}
+                  {completedTask?.result && (
+                    <div
+                      data-testid="tnv-verification-result"
+                      className="space-y-2.5 rounded-card border border-blue-200 bg-blue-50/60 p-3.5 text-sm dark:border-blue-900/60 dark:bg-blue-950/35"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-blue-950 dark:text-blue-200">
+                          {completedTask.type === 'nghiem_thu'
+                            ? 'Kết quả nghiệm thu TNV'
+                            : 'Kết quả xác minh'}
+                        </h3>
+                        <span className="text-xs text-blue-700 dark:text-blue-300">
+                          {completedTask.assignee || 'Tình nguyện viên'} ·{' '}
+                          {formatDateTime(completedTask.result.at)}
+                        </span>
+                      </div>
+
+                      {completedTask.result.photo && (
+                        <img
+                          src={completedTask.result.photo}
+                          alt="Ảnh xác minh của TNV"
+                          loading="lazy"
+                          className="h-36 w-full rounded-btn object-cover border border-blue-200 dark:border-blue-800"
+                        />
+                      )}
+
+                      <div className="space-y-1 text-xs text-[var(--color-text)]">
+                        <div>
+                          <strong>1. Hiện trạng:</strong>{' '}
+                          {completedTask.result.exists === 'co'
+                            ? 'Có sự cố'
+                            : completedTask.result.exists === 'khong'
+                              ? 'Không có sự cố'
+                              : 'Không tìm thấy vị trí'}
+                        </div>
+                        {completedTask.result.severity && (
+                          <div>
+                            <strong>2. Mức độ:</strong>{' '}
+                            {completedTask.result.severity === 'nguy_hiem'
+                              ? 'Nguy hiểm'
+                              : completedTask.result.severity === 'trung_binh'
+                                ? 'Trung bình'
+                                : 'Nhẹ'}
+                          </div>
+                        )}
+                        <div>
+                          <strong>3. Ghi chú TNV:</strong>{' '}
+                          {completedTask.result.note || 'Không có ghi chú thêm'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Khối Đã gộp & Tách (AC-A02-7) */}
+                  {report.mergedChildren && report.mergedChildren.length > 0 && (
+                    <div className="space-y-2 rounded-card border border-purple-200 bg-purple-50/50 p-3.5">
+                      <h3 className="text-sm font-semibold text-purple-950">
+                        Hồ sơ đã gộp ({report.mergedChildren.length})
+                      </h3>
+                      <div className="space-y-1.5">
+                        {report.mergedChildren.map((childId) => (
+                          <div
+                            key={childId}
+                            className="flex items-center justify-between rounded-btn bg-[var(--color-surface)] px-3 py-2 text-xs border border-purple-200 dark:border-purple-800/60"
+                          >
+                            <span className="font-semibold text-purple-900">#{childId}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              icon={<Split className="h-3.5 w-3.5" />}
+                              onClick={() => setSplitTargetId(childId)}
+                            >
+                              Tách
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Khối Phản ánh tương tự (AC-A02-6) */}
+                  {duplicates.length > 0 && (
+                    <div
+                      data-testid="similar-reports-block"
+                      className="space-y-2.5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5"
+                    >
+                      <h3 className="text-sm font-semibold text-text-main">
+                        Phản ánh tương tự ({duplicates.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {duplicates.map(({ report: dup, distanceMeters }) => (
+                          <div
+                            key={dup.id}
+                            className="flex items-center gap-3 rounded-btn border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5"
+                          >
+                            {dup.photos[0] && (
+                              <img
+                                src={dup.photos[0]}
+                                alt={dup.id}
+                                loading="lazy"
+                                className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="font-bold text-primary">{dup.id}</span>
+                                <span className="text-text-sub">
+                                  cách {formatDistance(distanceMeters)}
+                                </span>
+                              </div>
+                              <div className="truncate text-xs text-text-main">{dup.address}</div>
+                            </div>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={<GitMerge className="h-3.5 w-3.5" />}
+                              onClick={() => setMergeTarget(dup)}
+                            >
+                              Gộp vào hồ sơ này
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </>
           ) : (
             /* Tab Lịch sử nội bộ (AC-A02-9) */
@@ -954,7 +1022,7 @@ export function A02Panel({
               {[...report.timeline].reverse().map((entry, idx) => (
                 <div
                   key={`${entry.at}-${idx}`}
-                  className="rounded-card border border-slate-200 bg-slate-50 p-3 text-sm"
+                  className="rounded-card border border-[var(--color-border)] bg-[var(--color-bg)]/60 p-3 text-sm"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-text-main">

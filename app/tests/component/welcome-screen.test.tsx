@@ -10,7 +10,7 @@ describe('WelcomeScreen', () => {
     document.documentElement.removeAttribute('data-font-scale');
   });
 
-  it('hiển thị 4 mức cỡ chữ (mặc định Thường), cho phép chọn Siêu lớn và bấm Bắt đầu vào thẳng app', () => {
+  it('hiển thị màn hình chào trước, sau khi bấm Bắt đầu mới hỏi chọn 4 mức cỡ chữ (mặc định Thường) và vào app', () => {
     let completed = false;
     render(
       <AppStoreProvider initialState={getInitialState()}>
@@ -22,7 +22,13 @@ describe('WelcomeScreen', () => {
       </AppStoreProvider>
     );
 
+    // Bước 1: Chỉ hiển thị màn hình chào, chưa hỏi cỡ chữ
     expect(screen.getByText('Trấn Biên Kết Nối')).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Chọn kích cỡ chữ' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu' }));
+
+    // Bước 2: Sau khi bấm Bắt đầu mới hiển thị chọn 4 mức cỡ chữ
     expect(screen.getByRole('radio', { name: /Thường/ })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('radio', { name: /Nhỏ/ })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Lớn/ })).toBeInTheDocument();
@@ -32,7 +38,7 @@ describe('WelcomeScreen', () => {
     expect(xlargeBtn).toHaveAttribute('aria-checked', 'true');
     expect(document.documentElement.getAttribute('data-font-scale')).toBe('xlarge');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu' }));
+    fireEvent.click(screen.getByRole('button', { name: /Hoàn tất/ }));
 
     expect(completed).toBe(true);
     expect(window.localStorage.getItem(WELCOMED_STORAGE_KEY)).toBe('1');

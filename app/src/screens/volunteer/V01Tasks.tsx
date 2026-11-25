@@ -11,7 +11,14 @@ import {
 } from 'lucide-react';
 import { VolunteerLayout } from '@/layouts/VolunteerLayout';
 import { VolunteerProfileView } from '@/screens/volunteer/VolunteerProfileView';
-import { Button, Card, EmptyState, SelectField, Tabs, Toast } from '@/components/ui';
+import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
+import { Button, Card, EmptyState, Tabs, Toast } from '@/components/ui';
+import {
+  getVolunteerSession,
+  MOCK_VOLUNTEER_ACCOUNTS,
+  setVolunteerSession,
+  VolunteerSession,
+} from '@/lib/portalSession';
 import { MapView } from '@/components/map/MapView';
 import { CATEGORY_CONFIGS, VOLUNTEERS } from '@/domain/constants';
 import { formatDistance } from '@/domain/format';
@@ -50,8 +57,11 @@ export function V01Tasks() {
   const location = useLocation();
   const { state } = useAppStore();
 
-  const [currentVolunteer, setCurrentVolunteer] = useState<string>(() =>
-    getInitialVolunteer(location.search)
+  const [volunteerSession, setLocalVolunteerSession] = useState<VolunteerSession | null>(() =>
+    getVolunteerSession()
+  );
+  const [currentVolunteer, setCurrentVolunteer] = useState<string>(
+    () => volunteerSession?.name ?? getInitialVolunteer(location.search)
   );
   const [activeTab, setActiveTab] = useState<'todo' | 'done'>('todo');
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>(WARD_CENTER);
@@ -161,9 +171,20 @@ export function V01Tasks() {
                 Bản đồ nhiệm vụ
               </h1>
             </div>
-            <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-dark">
-              {mappableTasks.length} điểm
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`hidden sm:inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                  hasGps
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    : 'bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)]'
+                }`}
+              >
+                {hasGps ? 'GPS đang bật' : 'Mặc định phường'}
+              </span>
+              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-dark">
+                {mappableTasks.length} điểm
+              </span>
+            </div>
           </header>
 
           {mappableTasks.length === 0 ? (
@@ -177,7 +198,7 @@ export function V01Tasks() {
               />
             </div>
           ) : (
-            <div className="relative flex-1 min-h-[calc(100vh-140px)]">
+            <div className="relative h-[calc(100dvh-132px)] md:h-[calc(100dvh-64px)] w-full">
               <MapView
                 center={
                   activeItem?.report
@@ -188,6 +209,13 @@ export function V01Tasks() {
                 markers={markers}
                 selectedMarkerId={activeItem?.task.id}
                 userLocation={[userCoords.lat, userCoords.lng]}
+                autoLocateUser={true}
+                showLocateButton={true}
+                locateButtonClassName="top-14 right-3"
+                onUserLocationChange={(coords) => {
+                  setUserCoords(coords);
+                  setHasGps(true);
+                }}
                 className="h-full w-full"
               />
 
@@ -292,49 +320,94 @@ export function V01Tasks() {
   // V01 · Nhiệm vụ TNV (/tnv)
   const displayedTasks = activeTab === 'todo' ? todoTasks : doneTasks;
 
+  if (!volunteerSession && location.pathname !== '/tnv/ho-so') {
+    return (
+      <VolunteerLayout>
+        <div className="p-4 md:p-6">
+          <PortalAuthFlow
+            portalLabel="Tình nguyện viên"
+            roleSummary="Nhận nhiệm vụ xác minh, chụp ảnh hiện trường thực tế và báo cáo về UBND phường."
+            accent="emerald"
+            defaultAddress="Đội TNV P. Trấn Biên"
+            addressLabel="Đội / Khu phố phụ trách"
+            addressPlaceholder="VD: Đội TNV Khu phố 3"
+            reports={state.reports}
+            mockAccounts={MOCK_VOLUNTEER_ACCOUNTS.map((a) => ({
+              name: a.name,
+              subtitle: a.area,
+              address: a.area,
+              phone: a.phone,
+            }))}
+            onAuthenticated={(record) => {
+              const next: VolunteerSession = {
+                name: record.name,
+                area: record.address || 'Đội TNV P. Trấn Biên',
+                phone: record.phone,
+              };
+              setVolunteerSession(next);
+              setLocalVolunteerSession(next);
+              handleVolunteerChange(next.name);
+            }}
+          />
+        </div>
+      </VolunteerLayout>
+    );
+  }
+
   return (
     <VolunteerLayout>
-      <div className="flex flex-col gap-4 p-4 pb-24">
+      <div className="mx-auto w-full max-w-6xl flex flex-col gap-4 p-4 md:p-6 pb-24 animate-fade-up">
         <header className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <h1
-              data-testid="screen-title"
-              className="text-[var(--fs-title)] font-bold text-[var(--color-text)]"
-            >
-              Nhiệm vụ tình nguyện viên
-            </h1>
+            <div>
+              <h1
+                data-testid="screen-title"
+                className="text-[var(--fs-title)] font-bold text-[var(--color-text)]"
+              >
+                Nhiệm vụ tình nguyện viên
+              </h1>
+              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                <UserCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-semibold text-[var(--color-text)]">{currentVolunteer}</span>
+                <span>· {volunteerSession?.area ?? 'Đội TNV P. Trấn Biên'}</span>
+              </div>
+            </div>
             <Link
               to="/tnv/ban-do"
               aria-label="Mở bản đồ nhiệm vụ"
-              className="inline-flex min-h-[36px] items-center gap-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-text)] transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
+              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-bold text-[var(--color-text)] shadow-2xs transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
             >
               <MapIcon className="h-4 w-4 text-primary" aria-hidden="true" />
               <span>Bản đồ</span>
             </Link>
           </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 shadow-xs">
-            <label
-              htmlFor="volunteer-select"
-              className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-muted)]"
-            >
-              <UserCheck className="h-4 w-4 text-primary" aria-hidden="true" />
-              <span>TNV:</span>
-            </label>
-            <SelectField
-              id="volunteer-select"
-              aria-label="Chọn tình nguyện viên"
-              value={currentVolunteer}
-              onChange={(e) => handleVolunteerChange(e.target.value)}
-              wrapperClassName="flex-1"
-              className="bg-[var(--color-bg)] font-semibold"
-            >
-              {VOLUNTEERS.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </SelectField>
+          {/* 3-Step Volunteer Workflow Guide */}
+          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center shadow-2xs">
+            <div className="flex flex-col items-center gap-1">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+                1
+              </span>
+              <span className="text-[11px] font-semibold text-[var(--color-text)] leading-tight">
+                Chọn nhiệm vụ
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+                2
+              </span>
+              <span className="text-[11px] font-semibold text-[var(--color-text)] leading-tight">
+                Kiểm tra &amp; chụp ảnh
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+                3
+              </span>
+              <span className="text-[11px] font-semibold text-[var(--color-text)] leading-tight">
+                Gửi về phường
+              </span>
+            </div>
           </div>
         </header>
 
@@ -362,7 +435,7 @@ export function V01Tasks() {
             }
           />
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
             {displayedTasks.map(({ task, report, distanceMeters }) => {
               const isVerify = task.type === 'xac_minh';
               const isOpen = task.assignee === null;
@@ -380,64 +453,66 @@ export function V01Tasks() {
                       navigate(`/tnv/${task.id}`);
                     }
                   }}
-                  className="cursor-pointer transition-all hover:border-primary/40 hover:shadow-md active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex flex-col justify-between cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        isVerify
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      }`}
-                    >
-                      {isVerify ? 'Xác minh ban đầu' : 'Nghiệm thu sau xử lý'}
-                    </span>
-
-                    {isDone ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                        Đã xong
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          isVerify
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300'
+                        }`}
+                      >
+                        {isVerify ? 'Xác minh ban đầu' : 'Nghiệm thu sau xử lý'}
                       </span>
-                    ) : isOpen ? (
-                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 border border-amber-200">
-                        Nhiệm vụ mở
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-[var(--color-surface-elevated)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-muted)]">
-                        Đã giao cho bạn
-                      </span>
-                    )}
-                  </div>
 
-                  <div className="mt-2.5 flex items-baseline justify-between gap-2">
-                    <h2 className="text-base font-bold text-[var(--color-text)]">
-                      {report?.title || getCategoryLabel(report)}
-                    </h2>
-                    <span className="text-xs font-medium text-[var(--color-text-muted)]">
-                      {task.reportId}
-                    </span>
-                  </div>
-
-                  {report?.title && (
-                    <div className="mt-0.5 text-xs font-semibold text-primary">
-                      {getCategoryLabel(report)}
+                      {isDone ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          Đã xong
+                        </span>
+                      ) : isOpen ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 border border-amber-200 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-300">
+                          Nhiệm vụ mở
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-[var(--color-surface-elevated)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-muted)]">
+                          Đã giao cho bạn
+                        </span>
+                      )}
                     </div>
-                  )}
 
-                  {report?.description && (
-                    <p className="mt-1 line-clamp-1 text-xs text-[var(--color-text-muted)]">
-                      {report.description}
-                    </p>
-                  )}
+                    <div className="mt-2.5 flex items-baseline justify-between gap-2">
+                      <h2 className="text-base font-bold text-[var(--color-text)] line-clamp-1">
+                        {report?.title || getCategoryLabel(report)}
+                      </h2>
+                      <span className="shrink-0 text-xs font-medium text-[var(--color-text-muted)]">
+                        {task.reportId}
+                      </span>
+                    </div>
 
-                  <div className="mt-1.5 flex items-start gap-1.5 text-sm text-[var(--color-text-muted)]">
-                    <MapPin
-                      className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-text-muted)]"
-                      aria-hidden="true"
-                    />
-                    <span className="line-clamp-2">
-                      {report?.address ?? 'Đang cập nhật địa chỉ'}
-                    </span>
+                    {report?.title && (
+                      <div className="mt-0.5 text-xs font-semibold text-primary">
+                        {getCategoryLabel(report)}
+                      </div>
+                    )}
+
+                    {report?.description && (
+                      <p className="mt-1 line-clamp-1 text-xs text-[var(--color-text-muted)]">
+                        {report.description}
+                      </p>
+                    )}
+
+                    <div className="mt-1.5 flex items-start gap-1.5 text-sm text-[var(--color-text-muted)]">
+                      <MapPin
+                        className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-text-muted)]"
+                        aria-hidden="true"
+                      />
+                      <span className="line-clamp-2">
+                        {report?.address ?? 'Đang cập nhật địa chỉ'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-2.5 text-xs text-[var(--color-text-muted)]">

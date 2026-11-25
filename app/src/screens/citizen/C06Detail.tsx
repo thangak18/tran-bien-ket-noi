@@ -18,6 +18,7 @@ import { BeforeAfter } from '@/components/citizen/BeforeAfter';
 import { QrShareCard } from '@/components/citizen/QrShareCard';
 import { RatingSheet } from '@/components/citizen/RatingSheet';
 import { SubscribeCard } from '@/components/citizen/SubscribeCard';
+import { PhoneOtpSheet } from '@/components/citizen/PhoneOtpSheet';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { DelayChip } from '@/components/common/DelayChip';
 import { StatusChip } from '@/components/common/StatusChip';
@@ -39,6 +40,27 @@ import {
   subscribeLater,
   unsubscribe,
 } from '@/store/citizenActions';
+
+const FOLLOWED_STORAGE_KEY = 'tbkn:followed-reports';
+
+function getFollowedIds(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(FOLLOWED_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFollowedId(reportId: string): void {
+  if (typeof window === 'undefined') return;
+  const list = getFollowedIds();
+  if (!list.includes(reportId)) {
+    window.localStorage.setItem(FOLLOWED_STORAGE_KEY, JSON.stringify([...list, reportId]));
+  }
+}
 
 const CLOSED_OR_TERMINAL_STATUSES: ReadonlyArray<Status> = [
   'dong',
@@ -152,8 +174,16 @@ export function C06Detail() {
   const [isReopenOpen, setIsReopenOpen] = useState(false);
   const [reopenNote, setReopenNote] = useState('');
   const [reopenPhoto, setReopenPhoto] = useState<string | null>(null);
+  const [isRatingAuthOpen, setIsRatingAuthOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasFollowed, setHasFollowed] = useState(false);
+  const [hasFollowed, setHasFollowed] = useState<boolean>(() => {
+    if (!id) return false;
+    const inLocal = getFollowedIds().includes(id);
+    const inFollowers = Boolean(
+      state.settings.phone && rawReport?.followers.includes(state.settings.phone)
+    );
+    return inLocal || inFollowers;
+  });
   const [toast, setToast] = useState<{
     message: string;
     type: 'info' | 'success' | 'warning' | 'error';
@@ -370,6 +400,7 @@ export function C06Detail() {
       state.settings.phone ? { phone: state.settings.phone } : { anonymous: true }
     );
     dispatch({ type: 'HYDRATE', payload: nextState });
+    saveFollowedId(rawReport.id);
     setHasFollowed(true);
     setToast({ message: 'Đã ghi nhận! Bạn cũng đang theo dõi vấn đề này.', type: 'success' });
   };
@@ -756,8 +787,8 @@ export function C06Detail() {
               )}
             </section>
 
-            {/* 2. "Vấn đề đã được giải quyết chưa?" Rating & Action Card (When Completed) */}
-            {isCompletedOrClosed && (
+            {/* 2. "Vấn đề đã được giải quyết chưa?" Rating & Action Card (Chỉ chủ phản ánh & cần đăng nhập) */}
+            {isCompletedOrClosed && isOwner && (
               <section
                 aria-label="Đánh giá kết quả xử lý"
                 className="rounded-3xl border border-[#BAE6FD] bg-[#F0F9FF] p-5 shadow-2xs space-y-3.5 dark:border-sky-800 dark:bg-sky-950/40"
@@ -766,69 +797,88 @@ export function C06Detail() {
                   Vấn đề đã được giải quyết chưa?
                 </h2>
 
-                {/* 5 Interactive Stars */}
-                <div className="flex flex-col items-center rounded-2xl bg-white/80 py-2.5 dark:bg-slate-900/60">
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => {
-                      const active = star <= inlineRating;
-                      return (
-                        <button
-                          key={star}
-                          type="button"
-                          aria-label={`Đánh giá ${star} sao`}
-                          onClick={() => setInlineRating(star)}
-                          className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
-                        >
-                          <Star
-                            className={`h-7 w-7 transition-colors ${
-                              active
-                                ? 'fill-[#F59E0B] text-[#F59E0B]'
-                                : 'fill-slate-200 text-slate-300 hover:text-amber-300 dark:fill-slate-700 dark:text-slate-600'
-                            }`}
-                          />
-                        </button>
-                      );
-                    })}
+                {!state.settings.phone ? (
+                  <div className="space-y-3 rounded-2xl bg-white/80 p-4 text-center dark:bg-slate-900/60">
+                    <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
+                      Vui lòng đăng nhập bằng số điện thoại để xác nhận kết quả và đánh giá mức độ
+                      hài lòng.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => setIsRatingAuthOpen(true)}
+                      className="w-full min-h-[var(--tap)]"
+                    >
+                      Đăng nhập để đánh giá
+                    </Button>
                   </div>
-                  <div className="mt-1 text-xs font-bold text-[#0084E8] dark:text-[#38BDF8]">
-                    {inlineRating > 0
-                      ? `${inlineRating}/5 sao · ${INLINE_RATING_LABELS[inlineRating]} (Chạm để chọn)`
-                      : 'Chạm để chọn mức độ hài lòng'}
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    {/* 5 Interactive Stars */}
+                    <div className="flex flex-col items-center rounded-2xl bg-white/80 py-2.5 dark:bg-slate-900/60">
+                      <div className="flex items-center gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const active = star <= inlineRating;
+                          return (
+                            <button
+                              key={star}
+                              type="button"
+                              aria-label={`Đánh giá ${star} sao`}
+                              onClick={() => setInlineRating(star)}
+                              className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
+                            >
+                              <Star
+                                className={`h-7 w-7 transition-colors ${
+                                  active
+                                    ? 'fill-[#F59E0B] text-[#F59E0B]'
+                                    : 'fill-slate-200 text-slate-300 hover:text-amber-300 dark:fill-slate-700 dark:text-slate-600'
+                                }`}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-1 text-xs font-bold text-[#0084E8] dark:text-[#38BDF8]">
+                        {inlineRating > 0
+                          ? `${inlineRating}/5 sao · ${INLINE_RATING_LABELS[inlineRating]} (Chạm để chọn)`
+                          : 'Chạm để chọn mức độ hài lòng'}
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => {
-                      if (isOwner && rawReport.status === 'hoan_thanh') {
-                        if (inlineRating > 0) {
-                          handleRatingSubmit({ rating: inlineRating, tags: [] });
-                        } else {
-                          setIsRatingOpen(true);
-                        }
-                      } else {
-                        setToast({
-                          message: `Cảm ơn bạn đã xác nhận đã giải quyết (${inlineRating || 5}/5 sao)!`,
-                          type: 'success',
-                        });
-                      }
-                    }}
-                    className="flex h-11 items-center justify-center rounded-xl bg-[#15803D] px-4 text-sm font-extrabold text-white shadow-2xs transition hover:bg-[#166534] disabled:opacity-50"
-                  >
-                    Đã giải quyết
-                  </button>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => {
+                          if (rawReport.status === 'hoan_thanh') {
+                            if (inlineRating > 0) {
+                              handleRatingSubmit({ rating: inlineRating, tags: [] });
+                            } else {
+                              setIsRatingOpen(true);
+                            }
+                          } else {
+                            setToast({
+                              message: `Cảm ơn bạn đã xác nhận đã giải quyết (${inlineRating || 5}/5 sao)!`,
+                              type: 'success',
+                            });
+                          }
+                        }}
+                        className="flex h-11 items-center justify-center rounded-xl bg-[#15803D] px-4 text-sm font-extrabold text-white shadow-2xs transition hover:bg-[#166534] disabled:opacity-50"
+                      >
+                        Đã giải quyết
+                      </button>
 
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => setIsReopenOpen(true)}
-                    className="flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                  >
-                    Chưa giải quyết
-                  </button>
-                </div>
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => setIsReopenOpen(true)}
+                        className="flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                      >
+                        Chưa giải quyết
+                      </button>
+                    </div>
+                  </>
+                )}
               </section>
             )}
 
@@ -878,8 +928,8 @@ export function C06Detail() {
               </section>
             )}
 
-            {/* 5. Owner Card: SubscribeCard */}
-            {isOwner && rawReport.anonymous && (
+            {/* 5. Owner Card: SubscribeCard (chỉ hiển thị khi đã đăng nhập) */}
+            {isOwner && rawReport.anonymous && Boolean(state.settings.phone) && (
               <SubscribeCard
                 reportId={rawReport.id}
                 currentPhone={subscribedPhone}
@@ -897,12 +947,19 @@ export function C06Detail() {
         onClose={() => setIsShareOpen(false)}
         title={`Chia sẻ phản ánh #${displayReport.id}`}
       >
-        <div className="space-y-3 text-center">
-          <div className="mx-auto max-w-xs space-y-1">
-            <div className="text-sm font-extrabold text-[var(--color-text)]">
+        <div className="space-y-4 text-center">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 text-left">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-bold text-[#0084E8] dark:bg-sky-950/60 dark:text-[#38BDF8]">
+                <CategoryIcon category={displayReport.category} className="h-3 w-3" />
+                {catConfig.label}
+              </span>
+              <StatusChip status={displayReport.status} />
+            </div>
+            <div className="mt-2 text-sm font-extrabold text-[var(--color-text)] line-clamp-1">
               {displayReport.title || displayReport.description || catConfig.label}
             </div>
-            <div className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+            <div className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">
               {displayReport.address}
             </div>
           </div>
@@ -915,12 +972,23 @@ export function C06Detail() {
             copiedLabel="Đã sao chép"
           />
 
-          <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            Quét mã QR bằng camera điện thoại hoặc sao chép liên kết để chia sẻ nhanh tình trạng xử
-            lý phản ánh này.
-          </p>
+          <div className="rounded-2xl border border-sky-200/70 bg-sky-50/60 p-3 text-left text-xs text-slate-700 dark:border-sky-900/60 dark:bg-sky-950/35 dark:text-slate-300 space-y-1">
+            <div className="font-bold text-[var(--color-text)]">Hướng dẫn quét nhanh</div>
+            <p>1. Mở Camera hoặc nút Quét QR trong ứng dụng Trấn Biên Kết Nối.</p>
+            <p>2. Đưa mã QR vào khung hình để mở ngay trang theo dõi tiến độ.</p>
+          </div>
         </div>
       </Modal>
+
+      <PhoneOtpSheet
+        isOpen={isRatingAuthOpen}
+        onClose={() => setIsRatingAuthOpen(false)}
+        onVerified={(phone) => {
+          dispatch({ type: 'SET_SETTINGS', payload: { phone } });
+          setIsRatingAuthOpen(false);
+          setToast({ message: 'Đăng nhập thành công! Bạn có thể đánh giá ngay.', type: 'success' });
+        }}
+      />
 
       {/* Modal phóng to ảnh (AC-C06-4) */}
       <Modal
@@ -955,8 +1023,59 @@ export function C06Detail() {
         title="Điều gì chưa ổn?"
       >
         <form onSubmit={handleReopenSubmit} className="space-y-4 pt-1">
+          {/* Workflow clarity */}
+          <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 px-3.5 py-2.5 text-xs text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/35 dark:text-amber-200">
+            Phản ánh sẽ được <strong>mở lại</strong> và chuyển ngay cho cán bộ &amp; tình nguyện
+            viên kiểm tra lại hiện trường.
+          </div>
+
+          {/* Quick Reason Chips */}
           <div>
-            <label htmlFor="reopen-note" className="block text-xs font-medium text-gray-700 mb-1">
+            <div className="mb-2 text-xs font-semibold text-[var(--color-text-muted)]">
+              Chọn nhanh lý do (tuỳ chọn)
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                'Chưa khắc phục xong',
+                'Sự cố tái diễn',
+                'Xử lý chưa sạch / an toàn',
+                'Sai vị trí cần sửa',
+              ].map((reason) => {
+                const selected = reopenNote.includes(reason);
+                return (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() =>
+                      setReopenNote((prev) =>
+                        selected
+                          ? prev
+                              .replace(reason, '')
+                              .replace(/^[,\s]+|[,\s]+$/g, '')
+                              .trim()
+                          : prev.trim()
+                            ? `${prev.trim()}, ${reason}`
+                            : reason
+                      )
+                    }
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
+                      selected
+                        ? 'bg-[var(--color-primary)] text-white shadow-2xs'
+                        : 'border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="reopen-note"
+              className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]"
+            >
               Ghi chú tình trạng hiện tại (tuỳ chọn)
             </label>
             <textarea
@@ -965,12 +1084,12 @@ export function C06Detail() {
               value={reopenNote}
               onChange={(e) => setReopenNote(e.target.value)}
               placeholder="Ví dụ: Đèn vẫn tắt vào buổi tối, mặt đường còn ổ gà..."
-              className="w-full rounded-xl border border-gray-300 p-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
           </div>
 
           <div>
-            <div className="text-xs font-medium text-gray-700 mb-1.5">
+            <div className="mb-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
               Ảnh hiện trạng (tuỳ chọn)
             </div>
             {reopenPhoto ? (
@@ -978,21 +1097,21 @@ export function C06Detail() {
                 <img
                   src={reopenPhoto}
                   alt="Ảnh hiện trạng chưa ổn"
-                  className="h-24 w-24 rounded-xl object-cover border border-gray-200"
+                  className="h-28 w-28 rounded-2xl object-cover border border-[var(--color-border)]"
                 />
                 <button
                   type="button"
                   aria-label="Xoá ảnh"
                   onClick={() => setReopenPhoto(null)}
-                  className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white shadow-xs"
+                  className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-sm hover:bg-rose-700"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : (
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-gray-300 px-3.5 py-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
-                <Camera className="h-4 w-4 text-primary" />
-                <span>Chụp hoặc chọn ảnh</span>
+              <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)]/60 px-4 py-3 text-xs font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-elevated)]">
+                <Camera className="h-4 w-4 text-[var(--color-primary)]" />
+                <span>Chụp hoặc chọn ảnh hiện trạng</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1009,7 +1128,7 @@ export function C06Detail() {
             disabled={isSubmitting}
             className="w-full min-h-[var(--btn-h)]"
           >
-            {isSubmitting ? 'Đang gửi...' : 'Gửi phản hồi'}
+            {isSubmitting ? 'Đang gửi...' : 'Gửi phản hồi & Mở lại hồ sơ'}
           </Button>
         </form>
       </BottomSheet>

@@ -70,7 +70,7 @@ describe('C01Home & C05Mine', () => {
 
     expect(screen.getByRole('heading', { name: 'Hồ sơ' })).toBeInTheDocument();
     expect(screen.getByText(/Bảng thống kê phường/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Đăng nhập' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Đăng nhập' })).toBeInTheDocument();
 
     // Chọn kích cỡ chữ (Nhỏ, Thường, Lớn, Siêu lớn)
     const largeBtn = screen.getAllByRole('radio', { name: 'Lớn' })[0]!;

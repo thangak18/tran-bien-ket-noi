@@ -30,24 +30,24 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-end justify-center">
+    <div className="fixed inset-0 z-[2000] flex items-end md:items-center justify-center md:p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 transition-opacity"
+        className="fixed inset-0 bg-black/45 backdrop-blur-[2px] transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Sheet panel */}
+      {/* Sheet panel (Bottom sheet on Mobile, Centered Dialog on Tablet/PC) */}
       <div
-        className={`relative z-10 flex max-h-[90vh] w-full max-w-[430px] flex-col rounded-t-[20px] border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl animate-in slide-in-from-bottom duration-150 ${className}`}
+        className={`relative z-10 flex max-h-[90vh] w-full max-w-[460px] md:max-w-[540px] flex-col rounded-t-[24px] md:rounded-3xl border-t md:border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl animate-sheet-up ${className}`}
         role="dialog"
         aria-modal="true"
       >
-        {/* Drag handle */}
+        {/* Drag handle (Mobile only) */}
         <div
           data-testid="drag-handle"
-          className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-600"
+          className="md:hidden mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-600"
         />
 
         {/* Header */}

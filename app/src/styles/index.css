@@ -186,7 +186,8 @@ html[data-otp-open='true'] [data-testid='officer-bottom-nav'],
 html[data-otp-open='true'] [data-testid='hotline-fab'],
 html[data-otp-open='true'] [data-testid='citizen-sidebar'],
 html[data-otp-open='true'] [data-testid='volunteer-sidebar'],
-html[data-otp-open='true'] [data-testid='officer-sidebar'] {
+html[data-otp-open='true'] [data-testid='officer-sidebar'],
+html[data-otp-open='true'] [data-testid='portal-switcher-fab'] {
   display: none !important;
 }
 

@@ -1,16 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useInRouterContext, useLocation } from 'react-router-dom';
-import {
-  BarChart3,
-  Camera,
-  ChevronRight,
-  MapPin,
-  Phone,
-  Plus,
-  Shield,
-  ShieldCheck,
-  User,
-} from 'lucide-react';
+import { BarChart3, Camera, ChevronRight, MapPin, Phone, Plus, User } from 'lucide-react';
 import { HotlineModal } from '../components/common/HotlineModal';
 
 interface CitizenLayoutProps {
@@ -186,41 +176,7 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
         ))}
       </nav>
 
-      {/* 4. Role Switcher Box */}
-      <div className="mt-6 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/50">
-        <div className="px-2 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          Chuyển cổng nghiệp vụ
-        </div>
-        <div className="space-y-1">
-          <Link
-            to="/can-bo"
-            className="group flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-white hover:text-[#0084E8] hover:shadow-2xs dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-[#38BDF8]"
-          >
-            <span className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-500 shadow-2xs group-hover:text-[#0084E8] dark:bg-slate-800 dark:text-slate-400">
-                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              </span>
-              <span>Cổng Cán bộ phường</span>
-            </span>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-
-          <Link
-            to="/tnv"
-            className="group flex items-center justify-between rounded-xl px-2.5 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-white hover:text-[#0084E8] hover:shadow-2xs dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-[#38BDF8]"
-          >
-            <span className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-500 shadow-2xs group-hover:text-[#0084E8] dark:bg-slate-800 dark:text-slate-400">
-                <Shield className="h-3.5 w-3.5" aria-hidden="true" />
-              </span>
-              <span>Cổng Tình nguyện viên</span>
-            </span>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-      </div>
-
-      {/* 5. Hotline Trigger & Ward Attribution Footer */}
+      {/* 4. Hotline Trigger & Ward Attribution Footer */}
       <div className="mt-auto space-y-3 pt-4">
         <button
           type="button"

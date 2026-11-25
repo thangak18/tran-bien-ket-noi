@@ -13,6 +13,7 @@ import {
   Construction,
   ChevronLeft,
   ChevronRight,
+  QrCode,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { getCommunityFeed, toPublicCardReport } from '@/domain/privacy';
@@ -20,6 +21,7 @@ import { filterMyReports, getMyReports, MyReportFilterTab } from '@/domain/acces
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { Category } from '@/domain/types';
 import { ReportCard } from '@/components/citizen/ReportCard';
+import { QrScannerModal } from '@/components/citizen/QrScannerModal';
 import { Seek } from '@/components/citizen/Seek';
 
 type HomeSegment = 'community' | 'personal';
@@ -208,6 +210,7 @@ export function C01Home() {
   const [segment, setSegment] = useState<HomeSegment>(initialSegment);
   const [personalFilter, setPersonalFilter] = useState<MyReportFilterTab>('all');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [gridCols, setGridCols] = useState<1 | 2 | 3>(() => detectGridColumns());
   const [communityPage, setCommunityPage] = useState(1);
@@ -365,6 +368,16 @@ export function C01Home() {
                 buttonAriaLabel="Tìm kiếm phản ánh"
                 inputAriaLabel="Nhập từ khóa tìm kiếm phản ánh"
               />
+
+              <button
+                type="button"
+                onClick={() => setIsQrOpen(true)}
+                aria-label="Quét mã QR phản ánh"
+                title="Quét mã QR"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] transition-colors hover:border-[#0084E8] hover:text-[#0084E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
+              >
+                <QrCode className="h-5 w-5" />
+              </button>
 
               <button
                 type="button"
@@ -682,6 +695,8 @@ export function C01Home() {
           </div>
         )}
       </div>
+
+      <QrScannerModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />
     </div>
   );
 }

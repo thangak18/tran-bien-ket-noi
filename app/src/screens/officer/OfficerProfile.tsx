@@ -16,34 +16,28 @@ import {
 } from 'lucide-react';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { useAppStore } from '@/store/AppStore';
-import { DEFAULT_OFFICER } from '@/domain/constants';
 import { FontScale } from '@/domain/types';
 import { applyFontScale, resolveFontScale } from '@/lib/senior';
 import { applyTheme, getInitialTheme, ThemeMode } from '@/lib/theme';
+import { CitizenAccountRecord } from '@/lib/accounts';
 import {
-  CITIZEN_ADDRESS_STORAGE_KEY,
-  CITIZEN_NAME_STORAGE_KEY,
-  CitizenAccountRecord,
-  saveAccountRecord,
-} from '@/lib/accounts';
+  clearOfficerSession,
+  getOfficerSession,
+  MOCK_OFFICER_ACCOUNTS,
+  OfficerSession,
+  setOfficerSession,
+} from '@/lib/portalSession';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
 import { PortalSettingsCards } from '@/components/common/PortalSettingsCards';
 import { HotlineModal } from '@/components/common/HotlineModal';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 
-const OFFICER_SIGNED_OUT_KEY = 'tbkn:officer-signed-out';
-
 type OfficerSubView = 'main' | 'auth' | 'settings';
 
 export function OfficerProfile() {
   const { state, dispatch } = useAppStore();
   const navigate = useNavigate();
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg((prev) => (prev === msg ? null : prev)), 2600);
-  };
 
   const [subView, setSubView] = useState<OfficerSubView>('main');
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
@@ -52,27 +46,17 @@ export function OfficerProfile() {
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg((prev) => (prev === msg ? null : prev)), 2600);
+  };
 
-  const [signedOut, setSignedOut] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(OFFICER_SIGNED_OUT_KEY) === 'true' && !state.settings.phone;
-  });
-
-  const [officerName, setOfficerName] = useState<string>(() => {
-    if (typeof window === 'undefined') return DEFAULT_OFFICER;
-    return window.localStorage.getItem(CITIZEN_NAME_STORAGE_KEY)?.trim() || DEFAULT_OFFICER;
-  });
-  const [officerUnit, setOfficerUnit] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'UBND P. Trấn Biên';
-    return window.localStorage.getItem(CITIZEN_ADDRESS_STORAGE_KEY)?.trim() || 'UBND P. Trấn Biên';
-  });
-
-  const [draftName, setDraftName] = useState(officerName);
-  const [draftUnit, setDraftUnit] = useState(officerUnit);
+  const [session, setSession] = useState<OfficerSession | null>(() => getOfficerSession());
+  const [draftName, setDraftName] = useState(session?.name ?? '');
+  const [draftUnit, setDraftUnit] = useState(session?.unit ?? 'UBND P. Trấn Biên');
 
   const fontScale = resolveFontScale(state.settings);
-  const isLoggedIn = !signedOut;
-  const activePhone = state.settings.phone || '02513820000';
 
   const officerStats = useMemo(() => {
     const total = state.reports.length;
@@ -101,40 +85,40 @@ export function OfficerProfile() {
   };
 
   const handleAuthenticated = (record: CitizenAccountRecord) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(OFFICER_SIGNED_OUT_KEY);
-    }
-    setSignedOut(false);
-    setOfficerName(record.name);
-    setOfficerUnit(record.address);
-    dispatch({ type: 'SET_SETTINGS', payload: { phone: record.phone } });
+    const matched = MOCK_OFFICER_ACCOUNTS.find((a) => a.phone === record.phone);
+    const nextSession: OfficerSession = {
+      name: record.name,
+      roleTitle: matched?.roleTitle ?? 'Cán bộ tiếp nhận & điều phối',
+      unit: record.address || 'UBND P. Trấn Biên',
+      phone: record.phone,
+    };
+    setOfficerSession(nextSession);
+    setSession(nextSession);
     setSubView('main');
+    showToast(`Đã đăng nhập: ${nextSession.name}`);
   };
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(OFFICER_SIGNED_OUT_KEY, 'true');
-    }
-    setSignedOut(true);
-    dispatch({ type: 'SET_SETTINGS', payload: { phone: undefined } });
+    clearOfficerSession();
+    setSession(null);
     showToast('Đã đăng xuất tài khoản cán bộ');
   };
 
   const handleSaveProfile = () => {
+    if (!session) return;
     const cleanName = draftName.trim();
     const cleanUnit = draftUnit.trim() || 'UBND P. Trấn Biên';
     if (cleanName.length < 2) {
       showToast('Vui lòng nhập họ và tên');
       return;
     }
-    setOfficerName(cleanName);
-    setOfficerUnit(cleanUnit);
-    saveAccountRecord({
-      phone: activePhone,
+    const nextSession: OfficerSession = {
+      ...session,
       name: cleanName,
-      address: cleanUnit,
-      createdAt: new Date().toISOString(),
-    });
+      unit: cleanUnit,
+    };
+    setOfficerSession(nextSession);
+    setSession(nextSession);
     setEditOpen(false);
     showToast('Đã cập nhật hồ sơ cán bộ');
   };
@@ -152,14 +136,22 @@ export function OfficerProfile() {
             <Toast message={toastMsg} onClose={() => setToastMsg(null)} />
           </div>
         )}
+
         {subView === 'auth' && (
           <PortalAuthFlow
             portalLabel="Cán bộ phường"
+            roleSummary="Tiếp nhận phản ánh, điều phối bộ phận/TNV và cập nhật kết quả xử lý."
             accent="sky"
             defaultAddress="UBND P. Trấn Biên"
             addressLabel="Đơn vị công tác"
             addressPlaceholder="VD: UBND P. Trấn Biên"
             reports={state.reports}
+            mockAccounts={MOCK_OFFICER_ACCOUNTS.map((a) => ({
+              name: a.name,
+              subtitle: `${a.roleTitle} · ${a.unit}`,
+              address: a.unit,
+              phone: a.phone,
+            }))}
             onCancel={() => setSubView('main')}
             onAuthenticated={handleAuthenticated}
           />
@@ -206,43 +198,47 @@ export function OfficerProfile() {
                     <User className="h-7 w-7" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h1
                         data-testid="screen-title"
                         className="text-lg font-extrabold text-[var(--color-text)]"
                       >
-                        {isLoggedIn ? officerName : 'Khách (Chưa đăng nhập)'}
+                        {session ? session.name : 'Chưa đăng nhập'}
                       </h1>
-                      {isLoggedIn && (
+                      {session && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 dark:bg-sky-950/70 dark:text-sky-300">
                           <ShieldCheck className="h-3 w-3" />
-                          Cán bộ
+                          {session.roleTitle}
                         </span>
                       )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {isLoggedIn ? officerUnit : 'UBND P. Trấn Biên'}
-                      </span>
-                      {isLoggedIn && (
-                        <span className="inline-flex items-center gap-1">
-                          <Phone className="h-3.5 w-3.5" />
-                          {activePhone}
-                        </span>
+                      {session ? (
+                        <>
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {session.unit}
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Phone className="h-3.5 w-3.5" />
+                            {session.phone}
+                          </span>
+                        </>
+                      ) : (
+                        <span>Đăng nhập tài khoản cán bộ để tiếp nhận và điều phối phản ánh</span>
                       )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {isLoggedIn ? (
+                  {session ? (
                     <>
                       <button
                         type="button"
                         onClick={() => {
-                          setDraftName(officerName);
-                          setDraftUnit(officerUnit);
+                          setDraftName(session.name);
+                          setDraftUnit(session.unit);
                           setEditOpen(true);
                         }}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-xs font-bold text-[var(--color-text)] transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
@@ -272,33 +268,42 @@ export function OfficerProfile() {
                 </div>
               </div>
 
-              {/* Compact KPI Strip */}
-              <div className="mt-4 grid grid-cols-3 gap-2.5">
-                <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
-                  <div className="text-lg font-extrabold text-[var(--color-text)]">
-                    {officerStats.total}
-                  </div>
-                  <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
-                    Tổng hồ sơ
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
-                  <div className="text-lg font-extrabold text-amber-600 dark:text-amber-400">
-                    {officerStats.pending}
-                  </div>
-                  <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
-                    Đang xử lý
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
-                  <div className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {officerStats.completed}
-                  </div>
-                  <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
-                    Hoàn thành
-                  </div>
-                </div>
+              {/* Role & Duties */}
+              <div className="mt-4 rounded-2xl bg-[var(--color-bg)] px-3.5 py-2.5 text-xs text-[var(--color-text-muted)]">
+                <span className="font-bold text-[var(--color-text)]">Vai trò Cán bộ phường: </span>
+                Tiếp nhận &amp; phân loại phản ánh, điều phối bộ phận/TNV xác minh hiện trường, và
+                cập nhật kết quả hoàn thành.
               </div>
+
+              {/* Compact KPI Strip */}
+              {session && (
+                <div className="mt-3 grid grid-cols-3 gap-2.5">
+                  <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
+                    <div className="text-lg font-extrabold text-[var(--color-text)]">
+                      {officerStats.total}
+                    </div>
+                    <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
+                      Tổng hồ sơ
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
+                    <div className="text-lg font-extrabold text-yellow-500 dark:text-yellow-400">
+                      {officerStats.pending}
+                    </div>
+                    <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
+                      Đang xử lý
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-[var(--color-bg)] px-3 py-2.5 text-center">
+                    <div className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
+                      {officerStats.completed}
+                    </div>
+                    <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
+                      Hoàn thành
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action List */}
@@ -314,10 +319,10 @@ export function OfficerProfile() {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-[var(--color-text)]">
-                      Bảng thống kê xử lý
+                      Thống kê điều hành
                     </div>
                     <div className="text-xs text-[var(--color-text-muted)]">
-                      Tiến độ &amp; chất lượng toàn phường
+                      Tiến độ theo bộ phận &amp; hồ sơ quá hạn
                     </div>
                   </div>
                 </div>
@@ -353,25 +358,25 @@ export function OfficerProfile() {
       <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Cập nhật hồ sơ cán bộ">
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <label className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
               Họ và tên
             </label>
             <input
               type="text"
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3.5 py-2.5 text-sm text-[var(--color-text)] outline-none focus:border-sky-500"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <label className="mb-1.5 block text-xs font-semibold text-[var(--color-text-muted)]">
               Đơn vị công tác
             </label>
             <input
               type="text"
               value={draftUnit}
               onChange={(e) => setDraftUnit(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3.5 py-2.5 text-sm text-[var(--color-text)] outline-none focus:border-sky-500"
             />
           </div>
           <button
@@ -392,7 +397,7 @@ export function OfficerProfile() {
         onClose={() => setPrivacyOpen(false)}
         title="Quy định bảo mật nội bộ"
       >
-        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
           Thông tin phản ánh, số điện thoại công dân và nhật ký điều phối chỉ sử dụng cho mục đích
           xử lý hiện trường tại Phường Trấn Biên.
         </p>

@@ -6,14 +6,23 @@ import { Toast } from '@/components/ui/Toast';
 
 export type PortalAccent = 'sky' | 'emerald' | 'blue';
 
+export interface PortalMockAccount {
+  name: string;
+  subtitle: string;
+  address: string;
+  phone: string;
+}
+
 export interface PortalAuthFlowProps {
   portalLabel: string;
+  roleSummary?: string;
   accent?: PortalAccent;
   defaultAddress?: string;
   addressLabel?: string;
   addressPlaceholder?: string;
   reports?: Report[];
-  onCancel: () => void;
+  mockAccounts?: PortalMockAccount[];
+  onCancel?: () => void;
   onAuthenticated: (record: CitizenAccountRecord) => void;
 }
 
@@ -41,11 +50,13 @@ const ACCENT_MAP: Record<PortalAccent, { badge: string; btn: string; ring: strin
 
 export function PortalAuthFlow({
   portalLabel,
+  roleSummary,
   accent = 'sky',
   defaultAddress = 'P. Trấn Biên',
   addressLabel = 'Địa bàn / Đơn vị',
   addressPlaceholder = 'VD: Khu phố 3, P. Trấn Biên',
   reports = [],
+  mockAccounts,
   onCancel,
   onAuthenticated,
 }: PortalAuthFlowProps) {
@@ -131,18 +142,20 @@ export function PortalAuthFlow({
       )}
       <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-5 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              if (step === 'otp') setStep('phone');
-              else if (step === 'register') setStep('otp');
-              else onCancel();
-            }}
-            aria-label="Quay lại"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition-colors duration-150 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
+          {(step !== 'phone' || onCancel) && (
+            <button
+              type="button"
+              onClick={() => {
+                if (step === 'otp') setStep('phone');
+                else if (step === 'register') setStep('otp');
+                else onCancel?.();
+              }}
+              aria-label="Quay lại"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition-colors duration-150 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
           <div className="min-w-0 flex-1">
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${palette.badge}`}
@@ -155,11 +168,55 @@ export function PortalAuthFlow({
               {step === 'otp' && 'Xác thực OTP'}
               {step === 'register' && 'Hoàn tất hồ sơ'}
             </h2>
+            {step === 'phone' && roleSummary && (
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{roleSummary}</p>
+            )}
           </div>
         </div>
 
         {step === 'phone' && (
           <div className="space-y-4">
+            {mockAccounts && mockAccounts.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Chọn nhanh tài khoản demo
+                </div>
+                <div className="space-y-1.5">
+                  {mockAccounts.map((acc) => (
+                    <button
+                      key={acc.phone}
+                      type="button"
+                      onClick={() => {
+                        const record: CitizenAccountRecord = {
+                          phone: acc.phone,
+                          name: acc.name,
+                          address: acc.address,
+                          createdAt: new Date().toISOString(),
+                        };
+                        saveAccountRecord(record);
+                        onAuthenticated(record);
+                      }}
+                      className="flex w-full items-center justify-between rounded-2xl border border-slate-200/90 bg-slate-50/70 px-3.5 py-2.5 text-left transition-all duration-150 hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-slate-800"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
+                          {acc.name}
+                        </div>
+                        <div className="truncate text-xs text-slate-500 dark:text-slate-400">
+                          {acc.subtitle}
+                        </div>
+                      </div>
+                      <span className={`shrink-0 text-xs font-bold ${palette.icon}`}>
+                        Vào ngay ›
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="relative py-1 text-center text-[11px] font-medium text-slate-400">
+                  <span className="bg-white px-2 dark:bg-slate-900">hoặc đăng nhập SĐT</span>
+                </div>
+              </div>
+            )}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
                 Số điện thoại

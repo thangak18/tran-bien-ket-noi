@@ -19,6 +19,13 @@ import {
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { SelectField } from '@/components/ui';
+import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
+import {
+  getOfficerSession,
+  MOCK_OFFICER_ACCOUNTS,
+  OfficerSession,
+  setOfficerSession,
+} from '@/lib/portalSession';
 import { useAppStore } from '@/store/AppStore';
 import { createOnBehalf } from '@/store/officerActions';
 import { computeKpi } from '@/domain/kpi';
@@ -285,6 +292,9 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
                   },
                 ]}
                 onTap={handleMapTap}
+                autoLocateUser={true}
+                showLocateButton={true}
+                hideBuiltInLegend={true}
                 className="h-full w-full"
               />
             </div>
@@ -375,6 +385,9 @@ function OnBehalfModal({ isOpen, onClose, now }: OnBehalfModalProps) {
 export function A01Inbox() {
   const { state } = useAppStore();
   const navigate = useNavigate();
+  const [officerSession, setLocalOfficerSession] = useState<OfficerSession | null>(() =>
+    getOfficerSession()
+  );
 
   const now = state.settings.demoNow || DEMO_NOW;
   const currentMonth = now.slice(0, 7);
@@ -388,6 +401,7 @@ export function A01Inbox() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [isOnBehalfOpen, setIsOnBehalfOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
@@ -510,6 +524,39 @@ export function A01Inbox() {
 
   const resolvedPercentText = `${kpi.resolvedPercent.toFixed(1).replace('.', ',')}%`;
 
+  if (!officerSession) {
+    return (
+      <OfficerLayout>
+        <PortalAuthFlow
+          portalLabel="Cán bộ phường"
+          roleSummary="Tiếp nhận phản ánh, điều phối bộ phận/TNV và cập nhật kết quả xử lý."
+          accent="sky"
+          defaultAddress="UBND P. Trấn Biên"
+          addressLabel="Đơn vị công tác"
+          addressPlaceholder="VD: UBND P. Trấn Biên"
+          reports={state.reports}
+          mockAccounts={MOCK_OFFICER_ACCOUNTS.map((a) => ({
+            name: a.name,
+            subtitle: `${a.roleTitle} · ${a.unit}`,
+            address: a.unit,
+            phone: a.phone,
+          }))}
+          onAuthenticated={(record) => {
+            const matched = MOCK_OFFICER_ACCOUNTS.find((a) => a.phone === record.phone);
+            const next: OfficerSession = {
+              name: record.name,
+              roleTitle: matched?.roleTitle ?? 'Cán bộ tiếp nhận & điều phối',
+              unit: record.address || 'UBND P. Trấn Biên',
+              phone: record.phone,
+            };
+            setOfficerSession(next);
+            setLocalOfficerSession(next);
+          }}
+        />
+      </OfficerLayout>
+    );
+  }
+
   return (
     <OfficerLayout
       searchQuery={searchQuery}
@@ -552,8 +599,12 @@ export function A01Inbox() {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-emerald-700">{kpi.resolved}</span>
-            <span className="text-xs font-semibold text-emerald-700">({resolvedPercentText})</span>
+            <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+              {kpi.resolved}
+            </span>
+            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              ({resolvedPercentText})
+            </span>
           </div>
           <div className="mt-1 text-xs text-[var(--color-text-muted)]">Hoàn thành & đã đóng</div>
         </div>
@@ -578,28 +629,35 @@ export function A01Inbox() {
           <div className="mt-1 text-xs text-[var(--color-text-muted)]">Thời gian trung bình</div>
         </div>
 
-        <div className="rounded-card border border-rose-200 bg-rose-50/70 p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-semibold text-rose-800">
+        <div className="rounded-card border border-rose-200 bg-rose-50/70 p-4 shadow-xs dark:border-rose-900/60 dark:bg-rose-950/35">
+          <div className="flex items-center justify-between text-xs font-semibold text-rose-800 dark:text-rose-300">
             <span>Quá hạn</span>
-            <AlertTriangle className="h-4 w-4 text-rose-600" aria-hidden="true" />
+            <AlertTriangle
+              className="h-4 w-4 text-rose-600 dark:text-rose-400"
+              aria-hidden="true"
+            />
           </div>
-          <div className="mt-2 text-2xl font-bold text-rose-700">{kpi.overdue}</div>
-          <div className="mt-1 text-xs text-rose-700">Cần xử lý ưu tiên</div>
+          <div className="mt-2 text-2xl font-bold text-rose-700 dark:text-rose-400">
+            {kpi.overdue}
+          </div>
+          <div className="mt-1 text-xs text-rose-700 dark:text-rose-300">Cần xử lý ưu tiên</div>
         </div>
 
-        <div className="rounded-card border border-amber-200 bg-amber-50/70 p-4 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-semibold text-amber-900">
+        <div className="rounded-card border border-amber-200 bg-amber-50/70 p-4 shadow-xs dark:border-amber-900/60 dark:bg-amber-950/35">
+          <div className="flex items-center justify-between text-xs font-semibold text-amber-900 dark:text-amber-300">
             <span>Sắp đến hạn</span>
-            <Clock className="h-4 w-4 text-amber-600" aria-hidden="true" />
+            <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-amber-800">{kpi.dueSoon}</div>
-          <div className="mt-1 text-xs text-amber-800">Trong vòng 24 giờ</div>
+          <div className="mt-2 text-2xl font-bold text-amber-800 dark:text-amber-400">
+            {kpi.dueSoon}
+          </div>
+          <div className="mt-1 text-xs text-amber-800 dark:text-amber-300">Trong vòng 24 giờ</div>
         </div>
       </section>
 
       {/* Quick Tabs & Filters */}
-      <section className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-xs space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 md:p-4 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
           <Tabs
             tabs={[
               { id: 'can_xu_ly', label: 'Cần xử lý', count: tabCounts.can_xu_ly },
@@ -611,26 +669,37 @@ export function A01Inbox() {
             className="border-b-0 pb-0"
           />
 
-          {hasActiveFilters && (
-            <Button
+          <div className="flex items-center gap-2">
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              icon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
-              className="text-xs text-[var(--color-primary)]"
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-expanded={filtersOpen}
+              className="md:hidden inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-bold text-[var(--color-text)]"
             >
-              Xóa bộ lọc
-            </Button>
-          )}
+              <Filter className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden="true" />
+              <span>Bộ lọc</span>
+            </button>
+
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                icon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
+                className="text-xs text-[var(--color-primary)]"
+              >
+                Xóa bộ lọc
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-3 pt-2 border-t border-[var(--color-border)]">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-muted)] self-center mr-1">
-            <Filter className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Bộ lọc:</span>
-          </div>
-
+        <div
+          className={`${
+            filtersOpen ? 'grid' : 'hidden md:grid'
+          } grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-3 border-t border-[var(--color-border)]`}
+        >
           <div className="flex flex-col gap-1">
             <label
               htmlFor="filter-category"
@@ -734,7 +803,7 @@ export function A01Inbox() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 text-xs text-[var(--color-text)]"
+              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-semibold text-[var(--color-text)]"
             />
           </div>
 
@@ -750,7 +819,7 @@ export function A01Inbox() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 text-xs text-[var(--color-text)]"
+              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-semibold text-[var(--color-text)]"
             />
           </div>
         </div>
@@ -775,26 +844,48 @@ export function A01Inbox() {
               {filteredAndSorted.map((report) => {
                 const catCfg = CATEGORY_CONFIGS.find((c) => c.key === report.category);
                 const overdue = isOverdue(report, now);
+                const overdueDays = overdue ? getOverdueDays(report.dueAt, now) : 0;
                 return (
                   <button
                     key={report.id}
                     type="button"
                     onClick={() => navigate(`/can-bo/${report.id}`)}
-                    className={`w-full p-4 text-left transition-colors duration-150 hover:bg-[var(--color-primary-soft)]/40 ${
+                    className={`flex w-full items-start gap-3 p-3.5 text-left transition-colors duration-150 hover:bg-[var(--color-primary-soft)]/40 ${
                       overdue ? 'bg-rose-50/50 dark:bg-rose-950/30' : ''
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold text-[var(--color-primary)]">
-                        {report.id}
-                      </span>
-                      <StatusChip status={report.status} />
-                    </div>
-                    <div className="mt-1.5 text-sm font-semibold text-[var(--color-text)] line-clamp-1">
-                      {report.title || catCfg?.label || 'Phản ánh'}
-                    </div>
-                    <div className="mt-1 text-xs text-[var(--color-text-muted)] line-clamp-1">
-                      {report.address}
+                    {report.photos[0] ? (
+                      <img
+                        src={report.photos[0]}
+                        alt=""
+                        loading="lazy"
+                        className="h-12 w-12 shrink-0 rounded-xl border border-[var(--color-border)] object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)]">
+                        {CATEGORY_ICONS[report.category]}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-extrabold text-[var(--color-primary)]">
+                          {report.id} · {catCfg?.label}
+                        </span>
+                        <StatusChip status={report.status} />
+                      </div>
+                      <div className="mt-1 text-sm font-bold text-[var(--color-text)] line-clamp-1">
+                        {report.title || report.description || catCfg?.label || 'Phản ánh'}
+                      </div>
+                      <div className="mt-0.5 flex items-center justify-between gap-2 text-xs text-[var(--color-text-muted)]">
+                        <span className="truncate">{report.address}</span>
+                        {overdue ? (
+                          <span className="shrink-0 font-bold text-rose-600 dark:text-rose-400">
+                            Quá hạn {overdueDays} ngày
+                          </span>
+                        ) : report.dueAt ? (
+                          <span className="shrink-0">Hạn {formatDate(report.dueAt)}</span>
+                        ) : null}
+                      </div>
                     </div>
                   </button>
                 );
@@ -821,13 +912,13 @@ export function A01Inbox() {
                     <th scope="col" className="py-3 px-3">
                       Trạng thái
                     </th>
-                    <th scope="col" className="py-3 px-3">
+                    <th scope="col" className="hidden lg:table-cell py-3 px-3">
                       Bộ phận
                     </th>
                     <th scope="col" className="py-3 px-3">
                       Hạn
                     </th>
-                    <th scope="col" className="py-3 px-4">
+                    <th scope="col" className="hidden lg:table-cell py-3 px-4">
                       Cờ
                     </th>
                   </tr>
@@ -922,19 +1013,19 @@ export function A01Inbox() {
                           <StatusChip status={report.status} variant="officer" size="sm" />
                         </td>
 
-                        <td className="py-3 px-3 align-top max-w-[180px] text-xs text-[var(--color-text-muted)]">
+                        <td className="hidden lg:table-cell py-3 px-3 align-top max-w-[180px] text-xs text-[var(--color-text-muted)]">
                           {report.department || '–'}
                         </td>
 
                         <td className="py-3 px-3 align-top whitespace-nowrap">
                           {overdue ? (
-                            <div className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-900">
+                            <div className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-300">
                               <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                               <span>Quá hạn {overdueDays} ngày</span>
                             </div>
                           ) : dueSoon ? (
                             <div className="space-y-0.5">
-                              <div className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+                              <div className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-300">
                                 <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                                 <span>Sắp đến hạn</span>
                               </div>
@@ -949,22 +1040,22 @@ export function A01Inbox() {
                           )}
                         </td>
 
-                        <td className="py-3 px-4 align-top">
+                        <td className="hidden lg:table-cell py-3 px-4 align-top">
                           <div className="flex flex-wrap gap-1.5">
                             {isSuspectedDup && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-900">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/50 dark:text-purple-300">
                                 <Copy className="h-3 w-3" aria-hidden="true" />
                                 <span>Nghi trùng</span>
                               </span>
                             )}
                             {report.anonymous && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                                 <EyeOff className="h-3 w-3" aria-hidden="true" />
                                 <span>Ẩn danh</span>
                               </span>
                             )}
                             {report.onBehalf && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-900">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300">
                                 <UserCheck className="h-3 w-3" aria-hidden="true" />
                                 <span>Gửi hộ</span>
                               </span>

@@ -3,6 +3,7 @@ import { Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
 import { AppStoreProvider, useAppStore } from './store/AppStore';
 import { applyFontScale, resolveFontScale } from './lib/senior';
 import { applyTheme, getInitialTheme } from './lib/theme';
+import { PortalSwitcherFab } from './components/common/PortalSwitcherFab';
 import { CitizenLayout } from './layouts/CitizenLayout';
 import { C01Home } from './screens/citizen/C01Home';
 import { WelcomeScreen, WELCOMED_STORAGE_KEY } from './screens/citizen/WelcomeScreen';
@@ -59,6 +60,7 @@ export default function App() {
     <AppStoreProvider frame={frame}>
       <SeniorSync />
       <WelcomeGate />
+      <PortalSwitcherFab />
       <Routes>
         <Route
           path="/"
