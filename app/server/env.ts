@@ -27,21 +27,42 @@ const requiredString = (name: string, min = 1) =>
  * thiếu biến nào thì server dừng ngay với thông báo nêu đúng tên biến đó.
  * (SEED_STAFF_PASSWORD chỉ dùng cho script seed, không thuộc cấu hình API.)
  */
-const envSchema = z.object({
-  DATABASE_URL: requiredString('DATABASE_URL'),
-  DATABASE_URL_DIRECT: z.string().optional(),
-  CITIZEN_JWT_SECRET: requiredString('CITIZEN_JWT_SECRET', 32),
-  SUPABASE_JWT_SECRET: requiredString('SUPABASE_JWT_SECRET', 32),
-  OWNER_KEY_PEPPER: requiredString('OWNER_KEY_PEPPER', 16),
-  CRON_SECRET: requiredString('CRON_SECRET', 16),
-  SUPABASE_URL: requiredString('SUPABASE_URL').url('SUPABASE_URL phải là một URL hợp lệ'),
-  SUPABASE_ANON_KEY: requiredString('SUPABASE_ANON_KEY'),
-  SUPABASE_SERVICE_ROLE_KEY: requiredString('SUPABASE_SERVICE_ROLE_KEY'),
-  OTP_PROVIDER: z.enum(['mock', 'real']).default('mock'),
-  SMS_PROVIDER: z.enum(['mock', 'real']).default('mock'),
-  ALLOW_MOCK_OTP: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
-  DEMO_MODE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
-});
+const envSchema = z
+  .object({
+    DATABASE_URL: requiredString('DATABASE_URL'),
+    DATABASE_URL_DIRECT: z.string().optional(),
+    CITIZEN_JWT_SECRET: requiredString('CITIZEN_JWT_SECRET', 32),
+    SUPABASE_JWT_SECRET: requiredString('SUPABASE_JWT_SECRET', 32),
+    OWNER_KEY_PEPPER: requiredString('OWNER_KEY_PEPPER', 16),
+    CRON_SECRET: requiredString('CRON_SECRET', 16),
+    SUPABASE_URL: requiredString('SUPABASE_URL').url('SUPABASE_URL phải là một URL hợp lệ'),
+    SUPABASE_ANON_KEY: requiredString('SUPABASE_ANON_KEY'),
+    SUPABASE_SERVICE_ROLE_KEY: requiredString('SUPABASE_SERVICE_ROLE_KEY'),
+    OTP_PROVIDER: z.enum(['mock', 'real']).default('mock'),
+    SMS_PROVIDER: z.enum(['mock', 'real']).default('mock'),
+    ALLOW_MOCK_OTP: z
+      .preprocess((val) => val === 'true' || val === true, z.boolean())
+      .default(true),
+    DEMO_MODE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
+    AI_PROVIDER: z.enum(['mock', 'deepseek']).default('mock'),
+    DEEPSEEK_API_KEY: z.string().optional(),
+    DEEPSEEK_BASE_URL: z.string().default('https://api.deepseek.com'),
+    DEEPSEEK_MODEL: z.string().default('deepseek-flash'),
+    AI_TIMEOUT_MS: z.coerce.number().default(8000),
+    AI_DAILY_LIMIT: z.coerce.number().default(500),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.AI_PROVIDER === 'deepseek' &&
+      (!data.DEEPSEEK_API_KEY || !data.DEEPSEEK_API_KEY.trim())
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'DEEPSEEK_API_KEY là bắt buộc khi AI_PROVIDER=deepseek',
+        path: ['DEEPSEEK_API_KEY'],
+      });
+    }
+  });
 
 const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {
