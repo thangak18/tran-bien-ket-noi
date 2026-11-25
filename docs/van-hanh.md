@@ -46,7 +46,7 @@ Tài liệu hướng dẫn cài đặt, vận hành, kiểm tra chất lượng 
 - **Docker Desktop** và **Supabase CLI 2.1.1** (có sẵn trong `app/package.json`, chạy bằng `npx supabase`). Supabase local cung cấp PostgreSQL 15 + PostGIS 3 thật, Auth và Storage. Không còn lớp giả lập `cube/earthdistance`.
 - **Trình duyệt**: Chrome, Safari, Edge, Firefox hiện đại.
 
-### 2.2. Biến môi trường (`app/.env.local`)
+### 2.2. Biến môi trường (`app/.env.local` cho Supabase local, `app/.env` cho cloud)
 Sao chép từ file mẫu `app/.env.example` và cấu hình các giá trị cần thiết:
 
 ```bash
@@ -76,17 +76,31 @@ openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-48   # dùng cho CITIZEN_JWT_S
 npx supabase status -o env --workdir ..                # lấy ANON_KEY, SERVICE_ROLE_KEY, JWT_SECRET của Supabase local
 ```
 
----|:---:|---|---|
-| `DATABASE_URL` | Có | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` (Supabase local) | Chuỗi kết nối PostgreSQL (pooling) |
-| `DATABASE_URL_DIRECT` | Tùy chọn | Giống `DATABASE_URL` | Kết nối trực tiếp cho migrations |
-| `CITIZEN_JWT_SECRET` | Có | `tran-bien-citizen-jwt-secret-min-32-chars-long` | Khóa bí mật ký JWT 30 ngày cho người dân (≥ 32 ký tự) |
-| `OWNER_KEY_PEPPER` | Có | `tran-bien-ket-noi-secret-pepper-2026` | Chuỗi pepper băm secretCode |
-| `CRON_SECRET` | Có | `tran-bien-cron-secret-key-2026` | Khóa bảo vệ endpoint `/cron/*` |
-| `SUPABASE_URL` | Tùy chọn | `http://127.0.0.1:54321` | URL dự án Supabase |
-| `SUPABASE_ANON_KEY` | Tùy chọn | `local-anon-key` | Khóa công khai Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Tùy chọn | `local-service-role-key` | Khóa quản trị Supabase |
-| `DEMO_MODE` | Có | `true` | Bật chế độ chấm thi / demo (mã OTP mô phỏng 123456) |
-| `VITE_DATA_SOURCE` | Có | `local` (hoặc `api`) | Chế độ dữ liệu frontend: `local` (offline mock) hoặc `api` (kết nối DB) |
+### 2.3. Dùng Supabase cloud (`app/.env`)
+`app/.env` (không commit) được tạo từ `app/.env.example`. Các biến `SUPABASE_JWT_SECRET`, `CITIZEN_JWT_SECRET`, `OWNER_KEY_PEPPER`, `CRON_SECRET`, `SEED_STAFF_PASSWORD` đã được sinh ngẫu nhiên. Các dòng có ghi chú `<-- ĐIỀN` lấy từ Dashboard của project:
+
+| Biến | Lấy ở đâu |
+|---|---|
+| `DATABASE_URL` | Nút **Connect** → **Transaction pooler** (port 6543), thay `[YOUR-PASSWORD]`, thêm `?sslmode=require` |
+| `DATABASE_URL_DIRECT` | **Connect** → **Session pooler** (port 5432). Kết nối "Direct" `db.<ref>.supabase.co` chỉ có IPv6 |
+| `SUPABASE_URL`, `VITE_SUPABASE_URL` | `https://<PROJECT_REF>.supabase.co` |
+| `SUPABASE_ANON_KEY`, `VITE_SUPABASE_ANON_KEY` | **Project Settings → API Keys** → Publishable key (`sb_publishable_...`) hoặc khoá cũ `anon` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Cùng trang → Secret key (`sb_secret_...`) hoặc khoá cũ `service_role`. Chỉ dùng ở server/script |
+
+Mật khẩu DB có ký tự đặc biệt thì mã hoá URL (ví dụ `#` → `%23`, `@` → `%40`). `SUPABASE_JWT_SECRET` là khoá riêng của API để ký token cán bộ/TNV, không cần trùng với khoá JWT của Supabase.
+
+**Thứ tự ưu tiên:** biến có sẵn (Vercel, CI) > `app/.env.local` > `app/.env`. Nếu máy còn `app/.env.local` (Supabase local) thì giá trị trong đó thắng. Muốn chạy với cloud, đổi tên tạm file đó: `mv .env.local .env.local.supabase-local`. Đổi lại tên cũ để về local.
+
+Các bước sau khi điền xong (chạy trong `app/`):
+```bash
+npx supabase db push --db-url "$(grep '^DATABASE_URL_DIRECT=' .env | cut -d= -f2-)" --workdir ..   # áp dụng supabase/migrations (PostGIS)
+npm run seed          # tạo 4 tài khoản nhân viên mẫu trong Supabase Auth và nạp 64 hồ sơ
+npm run db:verify     # 17 kiểm tra, có PostGIS thật
+npm run dev           # giao diện chế độ API (VITE_DATA_SOURCE=api)
+```
+Vercel: khai báo các biến trên ở **Project Settings → Environment Variables** (`DATABASE_URL` dùng Transaction pooler). Không đặt tiền tố `VITE_` cho khoá secret.
+
+Cảnh báo: `npx vitest run`, `npm run demo:reset` và `npm run test:e2e:api` ghi và xoá dữ liệu trong DB đang được cấu hình. Chỉ chạy các lệnh này với project cloud dùng cho demo.
 
 ---
 

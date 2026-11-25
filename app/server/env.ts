@@ -5,16 +5,14 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Nạp .env.local nếu có. Biến đã có sẵn trong môi trường (Vercel env, CI) luôn được ưu tiên.
-try {
-  process.loadEnvFile(path.resolve(__dirname, '../.env.local'));
-} catch (_e) {
-  void _e;
-}
-try {
-  process.loadEnvFile(path.resolve(__dirname, '../../.env.local'));
-} catch (_e) {
-  void _e;
+// Nạp app/.env.local rồi app/.env (nếu có). Thứ tự ưu tiên: biến có sẵn trong môi trường
+// (Vercel env, CI) > .env.local (Supabase local) > .env (Supabase cloud). loadEnvFile không ghi đè biến đã có.
+for (const rel of ['../.env.local', '../../.env.local', '../.env', '../../.env']) {
+  try {
+    process.loadEnvFile(path.resolve(__dirname, rel));
+  } catch (_e) {
+    void _e;
+  }
 }
 
 const requiredString = (name: string, min = 1) =>

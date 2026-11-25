@@ -3,12 +3,17 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** Nạp app/.env.local nếu có. Biến đã có trong môi trường luôn được ưu tiên. */
+/**
+ * Nạp app/.env.local rồi app/.env nếu có. Ưu tiên: biến có sẵn trong môi trường > .env.local > .env
+ * (loadEnvFile không ghi đè biến đã có).
+ */
 export function loadLocalEnv(): void {
-  try {
-    process.loadEnvFile(path.resolve(__dirname, '../../.env.local'));
-  } catch (_e) {
-    void _e;
+  for (const file of ['../../.env.local', '../../.env']) {
+    try {
+      process.loadEnvFile(path.resolve(__dirname, file));
+    } catch (_e) {
+      void _e;
+    }
   }
 }
 
@@ -17,7 +22,7 @@ export function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value || value.trim() === '') {
     throw new Error(
-      `Thiếu biến môi trường ${name}. Sao chép app/.env.example thành app/.env.local rồi điền giá trị (xem docs/van-hanh.md).`
+      `Thiếu biến môi trường ${name}. Sao chép app/.env.example thành app/.env (Supabase cloud) hoặc app/.env.local (Supabase local) rồi điền giá trị (xem docs/van-hanh.md).`
     );
   }
   return value;

@@ -7,9 +7,12 @@ interface AdminUser {
 
 function adminHeaders(): Record<string, string> {
   const key = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+  // Khoá mới của Supabase (sb_secret_...) không phải JWT: chỉ gửi qua header apikey.
+  // Khoá cũ service_role (JWT, bắt đầu bằng eyJ) gửi thêm Authorization như trước.
+  const isJwt = key.startsWith('eyJ');
   return {
     apikey: key,
-    Authorization: `Bearer ${key}`,
+    ...(isJwt ? { Authorization: `Bearer ${key}` } : {}),
     'Content-Type': 'application/json',
   };
 }

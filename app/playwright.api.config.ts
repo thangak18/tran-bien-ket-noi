@@ -1,10 +1,12 @@
 import { defineConfig } from '@playwright/test';
 
-// Nạp app/.env.local (SEED_STAFF_PASSWORD, khoá Supabase local...) cho tiến trình kiểm thử.
-try {
-  process.loadEnvFile('.env.local');
-} catch (_e) {
-  void _e;
+// Nạp app/.env.local rồi app/.env (SEED_STAFF_PASSWORD, khoá Supabase...) cho tiến trình kiểm thử.
+for (const file of ['.env.local', '.env']) {
+  try {
+    process.loadEnvFile(file);
+  } catch (_e) {
+    void _e;
+  }
 }
 
 /**
