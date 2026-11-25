@@ -7,4 +7,13 @@ export const config = {
   runtime: 'nodejs',
 };
 
-export default handle(app);
+// Vercel Node runtime gọi default export theo kiểu (req, res); Hono cần Web Request/Response.
+// Export theo phương thức HTTP thì Vercel truyền Web Request và dùng Response trả về.
+const handler = handle(app);
+export const GET = handler;
+export const POST = handler;
+export const PUT = handler;
+export const PATCH = handler;
+export const DELETE = handler;
+export const OPTIONS = handler;
+export const HEAD = handler;
