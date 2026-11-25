@@ -1,17 +1,17 @@
 # Kết quả thử nghiệm AI gợi ý loại sự cố từ ảnh
 
-- **Thời gian chạy**: `2026-11-25T10:44:41.887Z`
-- **Nhà cung cấp**: `mock`
-- **Mô hình**: `N/A`
+- **Thời gian chạy**: `2026-11-25T13:10:41.711Z`
+- **Nhà cung cấp**: `deepseek`
+- **Mô hình**: `deepseek-flash`
 
 ## Bảng đối soát kết quả
 
 | Đường dẫn ảnh | Dung lượng | Nhà cung cấp | Loại gợi ý | Độ tin cậy | Lý do phân tích | Độ trễ |
 |---------------|------------|--------------|------------|------------|-----------------|--------|
-| `public/demo-photos/den_duong/1.jpg` | 31 KB | `mock` | **den_duong** | 95.0% | Phát hiện sự cố hệ thống chiếu sáng đô thị | 0ms |
-| `public/demo-photos/ngap_nuoc/1.jpg` | 34 KB | `mock` | **ngap_nuoc** | 92.0% | Phát hiện tình trạng ngập úng, nước đọng mặt đường | 0ms |
-| `public/demo-photos/rac_thai/1.jpg` | 34 KB | `mock` | **rac_thai** | 94.0% | Phát hiện điểm tập kết rác thải tự phát hoặc bừa bãi | 0ms |
-| `public/demo-photos/mat_duong/1.jpg` | 35 KB | `mock` | **mat_duong** | 93.0% | Phát hiện ổ gà, nứt vỡ hoặc sụt lún mặt đường | 0ms |
+| `public/demo-photos/den_duong/1.jpg` | 9 KB | `deepseek` | **den_duong** | 60.0% | Ảnh mờ nhưng có cột đèn và nguồn sáng mạnh bất thường, nghi đèn chiếu sáng bị chói/hỏng | 1403ms |
+| `public/demo-photos/ngap_nuoc/1.jpg` | 9 KB | `deepseek` | **khong_ro** | 90.0% | Ảnh quá mờ, không đủ chi tiết để xác định loại sự cố đô thị. | 1040ms |
+| `public/demo-photos/rac_thai/1.jpg` | 15 KB | `deepseek` | **rac_thai** | 95.0% | Thùng rác công cộng bị đầy, rác tràn ra ngoài | 984ms |
+| `public/demo-photos/mat_duong/1.jpg` | 50 KB | `deepseek` | **mat_duong** | 98.0% | Ổ gà lớn trên mặt đường nhựa, hư hỏng rõ rệt | 1191ms |
 
 ## Đánh giá
 1. **Độ chính xác**: Các loại sự cố trong bộ ảnh chuẩn (đèn đường, ngập nước, rác thải, mặt đường) được gợi ý khớp với nội dung hiện trường.

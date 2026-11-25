@@ -160,6 +160,11 @@ Hy vọng giúp ích được bạn.`;
       expect(res.confidence).toBe(0.92);
       expect(res.provider).toBe('deepseek');
       expect(res.reason).toBe('Ổ gà lớn giữa đường gây nguy hiểm');
+      // Chế độ suy nghĩ phải tắt, nếu không deepseek-flash dồn hết max_tokens vào suy nghĩ và trả content rỗng.
+      const sentBody = JSON.parse(
+        (vi.mocked(globalThis.fetch).mock.calls[0]?.[1] as RequestInit).body as string
+      );
+      expect(sentBody.thinking).toEqual({ type: 'disabled' });
     });
 
     it('2. Xử lý timeout và trả về fallback an toàn không ném 500', async () => {

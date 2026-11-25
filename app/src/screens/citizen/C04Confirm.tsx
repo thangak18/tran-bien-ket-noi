@@ -172,7 +172,9 @@ export function C04Confirm() {
   );
   const [selectedCategory, setSelectedCategory] = useState<Category>(draft.category ?? 'mat_duong');
   // AC-C02-5: gợi ý AI chỉ để tham khảo, không bao giờ tự chọn loại thay người dân.
-  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestionData | null>(null);
+  const aiPhotoKey = aiPhoto ? `${aiPhoto.length}:${aiPhoto.slice(0, 64)}` : undefined;
+  const savedAi = draft.aiPhotoKey === aiPhotoKey ? (draft.aiSuggestion ?? null) : null;
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestionData | null>(savedAi);
   const [aiLoading, setAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<boolean>(false);
   useEffect(() => {
@@ -180,6 +182,11 @@ export function C04Confirm() {
       setAiSuggestion(null);
       setAiLoading(false);
       setAiError(false);
+      return;
+    }
+    // Đã có gợi ý cho đúng ảnh này (ví dụ quay lại sau bước đăng nhập): không gọi AI lần nữa.
+    if (draft.aiPhotoKey === aiPhotoKey && draft.aiSuggestion) {
+      setAiSuggestion(draft.aiSuggestion);
       return;
     }
     let cancelled = false;
@@ -190,6 +197,7 @@ export function C04Confirm() {
         if (cancelled) return;
         setAiSuggestion(res);
         setAiLoading(false);
+        dispatch({ type: 'SET_DRAFT', payload: { aiSuggestion: res, aiPhotoKey } });
       })
       .catch(() => {
         if (cancelled) return;
@@ -200,7 +208,9 @@ export function C04Confirm() {
     return () => {
       cancelled = true;
     };
-  }, [aiPhoto, ds]);
+    // Chỉ gọi lại khi đổi ảnh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiPhotoKey, ds]);
   const [activePhotoIndex, setActivePhotoIndex] = useState<number>(0);
   const [isAddressFocused, setIsAddressFocused] = useState<boolean>(false);
   const [osmSuggestions, setOsmSuggestions] = useState<

@@ -96,6 +96,10 @@ export class DeepSeekSuggester implements CategorySuggester {
               ],
             },
           ],
+          // deepseek-flash bật chế độ suy nghĩ mặc định: token dồn hết vào reasoning_content, content rỗng
+          // (finish_reason=length). Phân loại ảnh không cần suy nghĩ dài nên tắt đi
+          // (https://api-docs.deepseek.com/guides/thinking_mode); temperature chỉ có tác dụng khi tắt.
+          thinking: { type: 'disabled' },
           max_tokens: 150,
           temperature: 0.1,
         }),

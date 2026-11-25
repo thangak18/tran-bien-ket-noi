@@ -191,4 +191,8 @@ export interface ReportDraft {
   category?: Category;
   title?: string;
   description?: string;
+  /** Gợi ý AI của ảnh đầu tiên; giữ qua bước đăng nhập để hồ sơ gửi đi vẫn kèm gợi ý (B1). */
+  aiSuggestion?: AiSuggestionData;
+  /** Khoá nhận diện ảnh đã gửi cho AI (độ dài + 64 ký tự đầu), đổi ảnh thì gọi lại AI. */
+  aiPhotoKey?: string;
 }

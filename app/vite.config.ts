@@ -80,6 +80,8 @@ export default defineConfig({
     testTimeout: 15000,
     hookTimeout: 30000,
     setupFiles: ['./tests/setup.ts'],
+    // Test giao diện luôn chạy chế độ local (mô phỏng), không phụ thuộc app/.env của máy (có thể là api/cloud).
+    env: { VITE_DATA_SOURCE: 'local' },
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['tests/e2e/**/*', 'tests/e2e-api/**/*', 'node_modules/**/*'],
   },

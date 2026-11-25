@@ -77,26 +77,24 @@ export function AiSuggestionBanner({
         data-testid="ai-suggestion-banner"
         className="flex flex-col gap-2.5 rounded-2xl border border-sky-200 bg-sky-50 px-3.5 py-3 text-sm dark:border-sky-900 dark:bg-sky-950/40"
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 text-[var(--color-text)]">
-            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#0084E8]" aria-hidden="true" />
-            <p>
-              <span className="font-semibold">AI gợi ý: </span>
-              <span className="font-extrabold text-[#0084E8]">{label}</span>
-              {suggestion?.reason && (
-                <span className="text-[var(--color-text-muted)]"> – {suggestion.reason}</span>
-              )}
-            </p>
-          </div>
+        <div className="flex items-start gap-2 text-[var(--color-text)]">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#0084E8]" aria-hidden="true" />
+          <p>
+            <span className="font-semibold">AI gợi ý: </span>
+            <span className="font-extrabold text-[#0084E8]">{label}</span>
+            {suggestion?.reason && (
+              <span className="text-[var(--color-text-muted)]"> – {suggestion.reason}</span>
+            )}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+            className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
               isDeepSeek ? 'bg-[#0084E8] text-white' : 'bg-white text-[#0084E8] dark:bg-slate-900'
             }`}
           >
             {isDeepSeek ? 'Gợi ý bởi AI – vui lòng kiểm tra lại' : 'Gợi ý mô phỏng'}
           </span>
-        </div>
-        <div className="flex justify-end">
           {isSelected ? (
             <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
               <Check className="h-3.5 w-3.5" aria-hidden="true" />

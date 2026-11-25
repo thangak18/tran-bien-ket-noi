@@ -13,6 +13,8 @@ const TNV_EMAIL = 'tnv.mai@tranbien.gov.vn';
 const TNV_NAME = 'Trần Thị Mai';
 const CITIZEN_PHONE = '0912345678';
 const MOBILE = { width: 390, height: 844 };
+// Nạp từ app/.env(.local) bởi playwright.api.config.ts; deepseek = gọi DeepSeek thật.
+const AI_IS_DEEPSEEK = process.env.AI_PROVIDER === 'deepseek';
 const DESKTOP = { width: 1440, height: 900 };
 
 function staffPassword(): string {
@@ -80,6 +82,16 @@ async function submitReport(
   await visibleButton(page, 'Tiếp tục').click();
   await page.waitForURL('**/bao-su-co/xac-nhan**');
 
+  // Bước 1: khung gợi ý AI (B1). Với DeepSeek thật, ảnh rác thải mẫu phải được nhận đúng.
+  if (AI_IS_DEEPSEEK) {
+    const banner = page.getByTestId('ai-suggestion-banner').locator('visible=true').first();
+    await expect(banner).toBeVisible({ timeout: 30_000 });
+    await expect(banner).toContainText('Rác thải');
+    await expect(banner).toContainText('Gợi ý bởi AI – vui lòng kiểm tra lại');
+    await shot(page, `${options.shotPrefix}-ai-goi-y`);
+    await banner.getByRole('button', { name: 'Dùng gợi ý' }).click();
+    await expect(banner).toContainText('Đang chọn');
+  }
   // Bước 1: loại phản ánh
   await visibleButton(page, 'Rác thải').click();
   await visibleButton(page, 'Tiếp tục chọn vị trí').click();
@@ -227,6 +239,11 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     // SĐT chỉ hiển thị dạng che
     await expect(visibleText(page, '0912 *** 678')).toBeVisible();
     await expect(page.locator('body')).not.toContainText(CITIZEN_PHONE);
+    if (AI_IS_DEEPSEEK) {
+      const ai = page.getByTestId('officer-ai-suggestion').locator('visible=true').first();
+      await expect(ai).toContainText('Rác thải');
+      await expect(ai).toContainText('DeepSeek AI');
+    }
     await shot(page, '03b-can-bo-chi-tiet-moi');
     await visibleButton(page, /^Tiếp nhận$/).click();
     await expect(page.getByText(`Đã tiếp nhận hồ sơ ${phoneReport.code}`)).toBeVisible();
