@@ -1396,28 +1396,42 @@ export function OnBehalfWizard({ isOpen, onClose, now }: OnBehalfWizardProps) {
                 </button>
               )}
 
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <div className="flex items-center gap-2 overflow-x-auto pt-2 pr-2 pb-1 no-scrollbar">
                 {photos.map((src, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActivePhotoIndex(idx)}
-                    className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 ${
-                      idx === activePhotoIndex
-                        ? 'border-[#0084E8]'
-                        : 'border-transparent opacity-80'
-                    }`}
-                  >
-                    {isVideoSource(src) ? (
-                      <video src={src} muted playsInline className="h-full w-full object-cover" />
-                    ) : (
-                      <img
-                        src={src}
-                        alt={`Ảnh ${idx + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                    )}
-                  </button>
+                  <div key={idx} className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setActivePhotoIndex(idx)}
+                      aria-label={`Xem ảnh ${idx + 1}`}
+                      className={`h-12 w-12 overflow-hidden rounded-xl border-2 ${
+                        idx === activePhotoIndex
+                          ? 'border-[#0084E8]'
+                          : 'border-transparent opacity-80'
+                      }`}
+                    >
+                      {isVideoSource(src) ? (
+                        <video src={src} muted playsInline className="h-full w-full object-cover" />
+                      ) : (
+                        <img
+                          src={src}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = photos.filter((_, i) => i !== idx);
+                        setPhotos(next);
+                        setActivePhotoIndex((prev) => Math.max(0, Math.min(prev, next.length - 1)));
+                      }}
+                      aria-label={`Xoá ảnh ${idx + 1}`}
+                      className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
                 ))}
                 {photos.length < MAX_MEDIA_ITEMS && (
                   <button

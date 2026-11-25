@@ -523,6 +523,9 @@ export function C04Confirm() {
     const nextPhotos = draft.photos.filter((_, i) => i !== index);
     dispatch({ type: 'SET_DRAFT', payload: { photos: nextPhotos } });
     setActivePhotoIndex((prev) => Math.max(0, Math.min(prev, nextPhotos.length - 1)));
+    if (nextPhotos.length === 0) {
+      navigate('/bao-su-co/anh', { state: { addingPhoto: true } });
+    }
   };
 
   const handleSelectCategory = (category: Category) => {
