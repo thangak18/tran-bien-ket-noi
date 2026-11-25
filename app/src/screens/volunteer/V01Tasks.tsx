@@ -4,13 +4,9 @@ import { ArrowLeft, CheckCircle2, ClipboardCheck, MapPin, Navigation } from 'luc
 import { VolunteerLayout } from '@/layouts/VolunteerLayout';
 import { VolunteerProfileView } from '@/screens/volunteer/VolunteerProfileView';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
+import { PortalNotificationBell } from '@/components/common/PortalNotificationBell';
 import { Button, Card, EmptyState, Tabs, Toast } from '@/components/ui';
-import {
-  getVolunteerSession,
-  MOCK_VOLUNTEER_ACCOUNTS,
-  setVolunteerSession,
-  VolunteerSession,
-} from '@/lib/portalSession';
+import { getVolunteerSession, setVolunteerSession, VolunteerSession } from '@/lib/portalSession';
 import { MapView } from '@/components/map/MapView';
 import { CATEGORY_CONFIGS, VOLUNTEERS } from '@/domain/constants';
 import { formatDistance } from '@/domain/format';
@@ -324,12 +320,6 @@ export function V01Tasks() {
             addressLabel="Đội / Khu phố phụ trách"
             addressPlaceholder="VD: Đội TNV Khu phố 3"
             reports={state.reports}
-            mockAccounts={MOCK_VOLUNTEER_ACCOUNTS.map((a) => ({
-              name: a.name,
-              subtitle: a.area,
-              address: a.area,
-              phone: a.phone,
-            }))}
             onAuthenticated={(record) => {
               const next: VolunteerSession = {
                 name: record.name,
@@ -356,7 +346,30 @@ export function V01Tasks() {
           >
             Nhiệm vụ tình nguyện viên
           </h1>
+          <PortalNotificationBell role="volunteer" volunteerName={currentVolunteer} />
         </header>
+
+        {todoTasks.length > 0 && (
+          <div
+            data-testid="tnv-new-location-alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50/90 px-4 py-3 text-xs text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <MapPin className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span className="font-bold">
+                Có {todoTasks.length} địa điểm cần xác minh tại chỗ
+                {todoTasks[0]?.report?.address ? ` · Gần nhất: ${todoTasks[0].report.address}` : ''}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/tnv/${todoTasks[0]!.task.id}`)}
+              className="shrink-0 rounded-xl bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700"
+            >
+              Xác minh ngay ›
+            </button>
+          </div>
+        )}
 
         {toastMessage && (
           <Toast type="success" message={toastMessage} onClose={() => setToastMessage(null)} />

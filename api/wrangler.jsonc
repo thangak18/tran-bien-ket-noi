@@ -1,0 +1,28 @@
+{
+  "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
+  "name": "tran-bien-ket-noi-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "vars": {
+    "ALLOWED_ORIGIN": "*",
+    "VAPID_SUBJECT": "mailto:ubnd.tranbien@dongnai.gov.vn"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tran-bien-db",
+      "database_id": "af607fd8-4a88-4a2e-8a97-ec0df5d988de",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Bật R2 trong Cloudflare Dashboard rồi mở comment bên dưới để dùng kho ảnh R2:
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MEDIA",
+  //     "bucket_name": "tran-bien-media"
+  //   }
+  // ],
+  "triggers": {
+    "crons": ["0 */2 * * *"]
+  }
+}

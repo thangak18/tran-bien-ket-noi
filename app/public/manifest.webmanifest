@@ -1,0 +1,41 @@
+{
+  "name": "Trấn Biên Kết Nối",
+  "short_name": "Trấn Biên",
+  "description": "Phản ánh hiện trường và theo dõi tiến độ xử lý minh bạch tại phường Trấn Biên, Đồng Nai.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F7FB",
+  "theme_color": "#0084E8",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Báo sự cố nhanh",
+      "short_name": "Báo sự cố",
+      "url": "/bao-su-co/anh"
+    },
+    {
+      "name": "Cổng Cán bộ",
+      "short_name": "Cán bộ",
+      "url": "/can-bo"
+    },
+    {
+      "name": "Cổng Tình nguyện viên",
+      "short_name": "TNV",
+      "url": "/tnv"
+    }
+  ]
+}

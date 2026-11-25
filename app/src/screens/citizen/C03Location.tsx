@@ -16,6 +16,7 @@ import { Button, Modal, TextField } from '@/components/ui';
 import { STREETS, WARD_CENTER, nearestStreet } from '@/data/streets';
 import { haversineMeters } from '@/domain/geo';
 import { Coordinates, getCurrentLocation } from '@/lib/geolocation';
+import { reverseGeocodeCoords } from '@/lib/geocoding';
 import { useIsDesktop } from '@/lib/useIsDesktop';
 import { useAppStore } from '@/store/AppStore';
 
@@ -96,42 +97,9 @@ export function C03Location() {
   // Reverse geocoding thật từ Nominatim OpenStreetMap (fallback mượt về nearestStreet khi offline/test)
   const reverseGeocodeOsm = useCallback(
     async (lat: number, lng: number, noteSnapshot: string) => {
-      const fallback = formatWardStreetAddress(nearestStreet(lat, lng).name);
-      if (typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom')) {
-        return;
-      }
-      if (typeof fetch !== 'function') {
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=vi`
-        );
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          address?: {
-            road?: string;
-            house_number?: string;
-            suburb?: string;
-            quarter?: string;
-          };
-          display_name?: string;
-        };
-        const road = data.address?.road;
-        const house = data.address?.house_number;
-        if (road) {
-          const formatted = house
-            ? `${house} ${road}, P. Trấn Biên`
-            : formatWardStreetAddress(road);
-          setAddress(formatted);
-          syncDraftLocation({ lat, lng }, formatted, noteSnapshot);
-        } else if (fallback) {
-          setAddress(fallback);
-        }
-      } catch {
-        // Giữ địa chỉ nearestStreet nếu mạng/Nominatim không phản hồi
-      }
+      const resolved = await reverseGeocodeCoords(lat, lng);
+      setAddress(resolved);
+      syncDraftLocation({ lat, lng }, resolved, noteSnapshot);
     },
     [syncDraftLocation]
   );

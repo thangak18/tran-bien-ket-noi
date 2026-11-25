@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppStoreProvider, getInitialState } from '@/store/AppStore';
+import mockData from '@/data/mock.json';
+import { Report, VolunteerTask } from '@/domain/types';
 import { C01Home } from '@/screens/citizen/C01Home';
 import { C05Mine } from '@/screens/citizen/C05Mine';
 import { formatRelativeTime } from '@/domain/format';
@@ -23,7 +25,11 @@ describe('C01Home & C05Mine', () => {
   });
 
   it('C01Home hiển thị header Phản ánh, tab Cộng đồng/Cá nhân (3 pill lọc) và tìm kiếm trực tiếp', () => {
-    const initial = getInitialState();
+    const initial = {
+      ...getInitialState(),
+      reports: JSON.parse(JSON.stringify(mockData.reports)) as Report[],
+      volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)) as VolunteerTask[],
+    };
     render(
       <MemoryRouter>
         <AppStoreProvider initialState={initial}>
@@ -57,7 +63,11 @@ describe('C01Home & C05Mine', () => {
   });
 
   it('C05Mine (Hồ sơ) hiển thị Bảng thống kê phường, đăng nhập SĐT, tra cứu mã và chuyển chế độ Aa Chữ lớn + Sáng/Tối', () => {
-    const initial = getInitialState();
+    const initial = {
+      ...getInitialState(),
+      reports: JSON.parse(JSON.stringify(mockData.reports)) as Report[],
+      volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)) as VolunteerTask[],
+    };
     const firstReport = initial.reports[0]!;
 
     render(

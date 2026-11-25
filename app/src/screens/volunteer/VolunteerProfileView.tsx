@@ -11,7 +11,6 @@ import {
   LogOut,
   MapPin,
   Moon,
-  RotateCcw,
   Settings,
   ShieldCheck,
   Sun,
@@ -20,7 +19,6 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { maskPhone } from '@/domain/privacy';
-import { formatDistance } from '@/domain/format';
 import { FontScale } from '@/domain/types';
 import { applyFontScale, resolveFontScale } from '@/lib/senior';
 import { applyTheme, getInitialTheme, ThemeMode } from '@/lib/theme';
@@ -28,12 +26,12 @@ import { CitizenAccountRecord } from '@/lib/accounts';
 import {
   clearVolunteerSession,
   getVolunteerSession,
-  MOCK_VOLUNTEER_ACCOUNTS,
   setVolunteerSession,
   VolunteerSession,
 } from '@/lib/portalSession';
 import { HotlineModal } from '@/components/common/HotlineModal';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
+import { useGpsSetting } from '@/lib/gpsSettings';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 
@@ -68,8 +66,6 @@ export function VolunteerProfileView({
   onVolunteerChange,
   todoCount,
   doneCount,
-  nearestMeters,
-  hasGps,
   notifEnabled,
   onToggleNotif,
 }: VolunteerProfileViewProps) {
@@ -83,6 +79,7 @@ export function VolunteerProfileView({
 
   const [subView, setSubView] = useState<VolunteerSubView>('main');
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
+  const { gpsEnabled, gpsSubtitle, toggleGps } = useGpsSetting();
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -151,11 +148,6 @@ export function VolunteerProfileView({
     showToast('Đã cập nhật hồ sơ tình nguyện viên');
   };
 
-  const handleResetDemo = () => {
-    dispatch({ type: 'RESET' });
-    showToast('Đã khôi phục dữ liệu mẫu');
-  };
-
   if (subView === 'auth') {
     return (
       <div className="mx-auto w-full max-w-lg px-4 py-6">
@@ -167,12 +159,6 @@ export function VolunteerProfileView({
           addressLabel="Đội / Khu phố phụ trách"
           addressPlaceholder="VD: Đội TNV Khu phố 3"
           reports={state.reports}
-          mockAccounts={MOCK_VOLUNTEER_ACCOUNTS.map((a) => ({
-            name: a.name,
-            subtitle: a.area,
-            address: a.area,
-            phone: a.phone,
-          }))}
           onCancel={() => setSubView('main')}
           onAuthenticated={handleAuthenticated}
         />
@@ -316,14 +302,25 @@ export function VolunteerProfileView({
               </div>
               <div>
                 <div className="text-sm font-bold text-[var(--color-text)]">Vị trí GPS</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  {hasGps ? 'Tự động định vị hiện trường' : 'Đang dùng vị trí phường'}
-                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">{gpsSubtitle}</div>
               </div>
             </div>
-            <span className="rounded-full bg-emerald-100/80 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-              {hasGps ? 'Đang bật' : 'Mặc định'}
-            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={gpsEnabled}
+              aria-label="Bật tắt vị trí GPS"
+              onClick={() => void toggleGps()}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                gpsEnabled ? 'bg-emerald-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
+                  gpsEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
           </div>
         </div>
       </div>
@@ -380,7 +377,7 @@ export function VolunteerProfileView({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => navigate('/tnv')}
@@ -398,16 +395,6 @@ export function VolunteerProfileView({
                   >
                     <div className="text-lg font-extrabold text-[#16A34A]">{doneCount}</div>
                     <div className="text-[11px] font-semibold text-slate-500">Đã xong</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/tnv/ban-do')}
-                    className="rounded-2xl border border-slate-200/80 bg-white p-2.5 text-center shadow-2xs transition hover:border-[#0084E8]/40 dark:border-slate-700 dark:bg-slate-900"
-                  >
-                    <div className="text-lg font-extrabold text-[var(--color-text)]">
-                      {nearestMeters !== null ? formatDistance(nearestMeters) : '–'}
-                    </div>
-                    <div className="text-[11px] font-semibold text-slate-500">Gần nhất</div>
                   </button>
                 </div>
               </section>
@@ -447,7 +434,7 @@ export function VolunteerProfileView({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => navigate('/tnv')}
@@ -468,18 +455,6 @@ export function VolunteerProfileView({
                     <div className="text-xl font-extrabold text-[#16A34A]">{doneCount}</div>
                     <div className="mt-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
                       Đã xong
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/tnv/ban-do')}
-                    className="rounded-2xl border border-white/90 bg-[var(--color-surface)] p-3 text-center shadow-2xs transition-all hover:-translate-y-0.5 hover:border-[#0084E8]/40 hover:shadow-sm dark:border-slate-700"
-                  >
-                    <div className="text-xl font-extrabold text-[var(--color-text)]">
-                      {nearestMeters !== null ? formatDistance(nearestMeters) : '–'}
-                    </div>
-                    <div className="mt-0.5 text-[11px] font-semibold text-[var(--color-text-muted)]">
-                      Gần nhất
                     </div>
                   </button>
                 </div>
@@ -546,7 +521,7 @@ export function VolunteerProfileView({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {/* Card 1: Giao diện */}
                 <div className="flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs dark:bg-slate-800 dark:text-amber-300">
                       {theme === 'dark' ? (
                         <Moon className="h-4 w-4" />
@@ -554,11 +529,11 @@ export function VolunteerProfileView({
                         <Sun className="h-4 w-4 text-amber-500" />
                       )}
                     </div>
-                    <div>
-                      <div className="text-sm font-bold text-[var(--color-text)]">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-bold text-[var(--color-text)]">
                         Giao diện (Sáng / Tối)
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                         {theme === 'dark' ? 'Đang bật chế độ Tối' : 'Đang bật chế độ Sáng'}
                       </div>
                     </div>
@@ -581,7 +556,71 @@ export function VolunteerProfileView({
                   </button>
                 </div>
 
-                {/* Card 2: Cỡ chữ */}
+                {/* Card 2: Thông báo đẩy */}
+                <div className="flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#0084E8] shadow-2xs dark:bg-slate-800 dark:text-[#38BDF8]">
+                      <Bell className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-bold text-[var(--color-text)]">
+                        Thông báo đẩy
+                      </div>
+                      <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                        {notifEnabled ? 'Nhận tin khi có nhiệm vụ mới' : 'Đang tạm tắt'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={notifEnabled}
+                    aria-label="Bật tắt thông báo đẩy"
+                    onClick={onToggleNotif}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                      notifEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
+                        notifEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Card 3: Vị trí GPS */}
+                <div className="sm:col-span-2 flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-2xs dark:bg-slate-800 dark:text-emerald-400">
+                      <MapPin className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-[var(--color-text)]">Vị trí GPS</div>
+                      <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                        {gpsSubtitle}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={gpsEnabled}
+                    aria-label="Bật tắt vị trí GPS"
+                    onClick={() => void toggleGps()}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                      gpsEnabled ? 'bg-emerald-600' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
+                        gpsEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Card 4: Cỡ chữ */}
                 <div className="sm:col-span-2 space-y-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#0084E8] shadow-2xs dark:bg-slate-800 dark:text-[#38BDF8]">
@@ -620,57 +659,6 @@ export function VolunteerProfileView({
                     })}
                   </div>
                 </div>
-
-                {/* Card 3: Thông báo đẩy */}
-                <div className="flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#0084E8] shadow-2xs dark:bg-slate-800 dark:text-[#38BDF8]">
-                      <Bell className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-[var(--color-text)]">
-                        Thông báo đẩy
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {notifEnabled ? 'Nhận tin khi có nhiệm vụ mới' : 'Đang tạm tắt'}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={notifEnabled}
-                    aria-label="Bật tắt thông báo đẩy"
-                    onClick={onToggleNotif}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-                      notifEnabled ? 'bg-[#0084E8]' : 'bg-slate-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform ${
-                        notifEnabled ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {/* Card 4: Vị trí GPS */}
-                <div className="flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-2xs dark:bg-slate-800 dark:text-emerald-400">
-                      <MapPin className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-[var(--color-text)]">Vị trí GPS</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {hasGps ? 'Tự động định vị hiện trường' : 'Đang dùng vị trí phường'}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-emerald-100/80 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                    {hasGps ? 'Đang bật' : 'Mặc định'}
-                  </span>
-                </div>
               </div>
             </section>
 
@@ -684,7 +672,7 @@ export function VolunteerProfileView({
                 <button
                   type="button"
                   onClick={() => setPrivacyOpen(true)}
-                  className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70"
+                  className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-800/80"
                 >
                   <div className="flex items-center gap-2.5">
                     <ShieldCheck className="h-4 w-4 text-[#0084E8]" />
@@ -696,7 +684,7 @@ export function VolunteerProfileView({
                 <button
                   type="button"
                   onClick={() => setHotlineOpen(true)}
-                  className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70"
+                  className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-800/80"
                 >
                   <div className="flex items-center gap-2.5">
                     <Headphones className="h-4 w-4 text-[#0084E8]" />
@@ -707,24 +695,10 @@ export function VolunteerProfileView({
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleResetDemo}
-                  className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900/70"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <RotateCcw className="h-4 w-4 text-[#0084E8]" />
-                    <span className="font-bold text-[var(--color-text)]">
-                      Khôi phục dữ liệu mẫu
-                    </span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </button>
-
-                <div className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900/70">
+                <div className="sm:col-span-2 flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900/70">
                   <span className="font-bold text-[var(--color-text)]">Phiên bản ứng dụng</span>
                   <span className="rounded-lg bg-slate-200/70 px-2.5 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    v1.2 Chính thức
+                    v1.0 Chính thức
                   </span>
                 </div>
               </div>
@@ -735,7 +709,7 @@ export function VolunteerProfileView({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm font-extrabold text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+                className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm font-extrabold text-rose-700 transition-colors hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/70"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Đăng xuất</span>

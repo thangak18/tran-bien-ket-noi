@@ -1,0 +1,11 @@
+{
+  "name": "tran-bien-ket-noi-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npx wrangler dev",
+    "deploy": "npx wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  }
+}

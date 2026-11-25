@@ -11,6 +11,7 @@ import {
 import { VolunteerLayout } from '@/layouts/VolunteerLayout';
 import { Button, Card, Chip, EmptyState, Toast } from '@/components/ui';
 import { MediaCaptureField, MediaItemPreview } from '@/components/common/MediaCapture';
+import { showLocalBrowserNotification } from '@/lib/webPush';
 import { MapView } from '@/components/map/MapView';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
 import { formatDateTime } from '@/domain/format';
@@ -137,6 +138,11 @@ export function V02Verify() {
     );
 
     dispatch({ type: 'HYDRATE', payload: nextState });
+    showLocalBrowserNotification(
+      '✅ TNV đã xác minh xong',
+      `Hồ sơ ${report.id} (${report.address}) đã có kết quả xác minh. Cán bộ có thể giao xử lý bước kế tiếp.`,
+      `/can-bo/${report.id}`
+    );
     navigate('/tnv', {
       state: { toast: `Đã gửi kết quả xác minh cho ${report.id}` },
     });
@@ -174,7 +180,7 @@ export function V02Verify() {
                   <span data-testid="task-id" className="font-bold text-[#0084E8]">
                     {task.id}
                   </span>{' '}
-                  · Hồ sơ {report.id} · {isInspection ? 'Nghiệm thu sau xử lý' : 'Xác minh ban đầu'}
+                  · Hồ sơ {report.id}
                 </p>
               </div>
             </div>
@@ -461,15 +467,6 @@ export function V02Verify() {
                         allowGallery={true}
                         allowVideo={true}
                         captureLabel="Chụp ảnh / Quay video tại chỗ"
-                        galleryLabel="Chọn từ máy"
-                        onAddSample={() => {
-                          const sample = `/demo-photos/${report.category}/1.jpg`;
-                          if (!mediaItems.includes(sample)) {
-                            setMediaItems((prev) => [...prev, sample].slice(0, 5));
-                            setActiveStep(3);
-                          }
-                        }}
-                        sampleLabel="Dùng ảnh mẫu (Demo)"
                       />
                       <div className="flex items-center gap-2.5 pt-2">
                         <button

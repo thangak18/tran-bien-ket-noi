@@ -1,6 +1,6 @@
-# SPEC – Trấn Biên Kết Nối (UI/UX Prototype)
+# SPEC – Trấn Biên Kết Nối (Web App & Production API)
 
-Phiên bản: 1.2 (ưu tiên tính năng bắt buộc; quy chuẩn UI theo `ui-ux-guidelines.md`) · Nguồn: `proposal_v2.1.md`  
+Phiên bản: 1.3 (cập nhật 25/11/2026 – bổ sung kiến trúc sản phẩm thực tế trên nhánh `feat/production-p3-p4-p5`; quy chuẩn UI theo `ui-ux-guidelines.md`) · Nguồn: `proposal_v2.1.md`  
 Nhãn: **[ĐỀ]** yêu cầu BTC · **[GĐ]** giả định thiết kế · **[KC]** cần kiểm chứng
 
 ---
@@ -35,20 +35,21 @@ Prototype web tương tác thể hiện trọn vòng đời một phản ánh hi
 
 | Hạng mục | Mức độ |
 |---|---|
-| 13 màn hình + trạng thái phụ + Demo Hub | Đầy đủ, tương tác được |
-| Bản đồ OpenStreetMap, GPS trình duyệt | Thật |
-| Chụp/chọn ảnh, nén ảnh phía client | Thật |
-| Lưu dữ liệu | localStorage (mock) |
-| Phân loại ảnh AI | Mô phỏng theo bộ ảnh demo – **[BONUS – HOÃN]** |
-| OTP, SMS/Zalo, tổng đài | Mô phỏng |
-| Gửi ẩn danh, máy tự nhớ phản ánh, link theo dõi + QR, đăng ký nhận tin sau | Đầy đủ |
-| Chia sẻ link | Web Share API; không hỗ trợ → sao chép link |
-| Giọng nói → chữ | Web Speech API, ẩn nếu không hỗ trợ – **[BONUS – HOÃN]** |
-| Chế độ chữ lớn | Đầy đủ – **[BONUS – HOÃN]** |
+| 4 cổng nghiệp vụ (Người dân, TNV, Cán bộ, Quản trị Admin) + tách 4 web `VITE_PORTAL_MODE` | Đầy đủ, tương tác được (hợp nhất UI/UX mới `fc4c476`: logo mới, dark theme, `OnBehalfWizard`, xuất Excel `.xlsx`, `DateInputDdMmYyyy`, `gpsSettings`) |
+| Quy trình điều phối & Thông báo 2 chiều | Khách/Ẩn danh gửi trực tiếp → Cán bộ có thể **Giao xử lý** trực tiếp hoặc tùy chọn gửi TNV xác minh khi cần; **Chuông thông báo (`PortalNotificationBell`)** có badge số & dropdown trên cả Cổng Cán bộ (`/can-bo`) và Cổng TNV (`/tnv`) |
+| Bản đồ OpenStreetMap, GPS trình duyệt & Reverse Geocoding (Nominatim) | Thật (đồng bộ 2 chiều GPS ↔ ghim ↔ ô địa chỉ) |
+| Chụp/chọn ảnh/video, nén ảnh phía client | Thật |
+| Lưu dữ liệu & Kho ảnh | Đồng bộ 2 chiều **Cloudflare D1 thật (`tran-bien-db`)** cho 4 vai trò (`reports`, `users`, `volunteer_tasks`, `report_feedbacks`, `notifications`, `sla_config`, `audit_logs`, `push_subscriptions`) + sẵn sàng **Cloudflare R2** |
+| Phân loại ảnh AI (B1) | **Gemini Vision thật** qua server proxy (`/api/ai/classify`, `gemini-flash-lite-latest` → `3.6-flash` → `3.8-flash`), tự fallback có nhãn khi offline/chưa gắn key |
+| Xác thực, phân quyền & chống spam | **JWT HS256 + RBAC 4 vai trò** ở Worker API, băm SHA-256 `secretCode`, rate limit theo IP, **Cloudflare Turnstile thật** (Site Key + Siteverify bắt buộc ở Bước 3) |
+| Thông báo, SLA & Báo cáo | **Web Push** (Service Worker + VAPID), adapter Zalo ZNS / SMS, Cron SLA mỗi 2 giờ, Audit Log, **Xuất Excel `.xlsx`**, **Xuất CSV (UTF-8 BOM)** & **In PDF** |
+| PWA & Trình duyệt nhúng | `manifest.webmanifest`, `sw.js` cache app shell + offline queue, nút cài ứng dụng, banner nhắc mở trình duyệt ngoài khi vào từ Zalo/Facebook |
+| Gửi ẩn danh/khách, máy tự nhớ phản ánh, link theo dõi + QR, đăng ký nhận tin sau | Đầy đủ |
+| Chia sẻ link, Giọng nói → chữ (B4), 4 mức cỡ chữ (B3), Phát hiện/gộp trùng (B2), Gửi hộ (B5) | Đầy đủ |
 
-### 1.3. Ngoài phạm vi
+### 1.3. Ngoài phạm vi hiện tại
 
-Backend, database, xác thực thật, gửi tin nhắn thật, AI thật, phân quyền bảo mật thật, đa ngôn ngữ, thông báo đẩy (web push).
+Tích hợp SSO VNeID chính thức của Bộ Công an, tổng đài thoại VoIP thật, đa ngôn ngữ. Các kênh có phí (Zalo ZNS / SMS gateway thật) đã có sẵn adapter ở `api/src/notifications.ts` và chỉ cần nạp secret nhà cung cấp khi đưa vào vận hành.
 
 ---
 
@@ -534,16 +535,22 @@ Lõi dùng cột "Chuẩn"; cột "Chữ lớn" thuộc B3. Quy tắc viết: `u
 | `/bao-su-co/anh` | C02 |
 | `/bao-su-co/vi-tri` | C03 |
 | `/bao-su-co/xac-nhan` | C04 |
-| `/cua-toi` | C05 |
+| `/cua-toi`, `/ho-so` | C05 (Phản ánh của tôi & Hồ sơ/Cài đặt) |
+| `/thong-bao` | C09 (Trung tâm thông báo) |
 | `/phan-anh/:id` (tùy chọn `?k=<mã bí mật>`) | C06 |
 | `/quanh-day` | C07 |
 | `/minh-bach` | C08 |
 | `/can-bo` | A01 |
+| `/can-bo/thong-ke` | Thống kê điều hành cán bộ (kèm Xuất CSV, In PDF, Bật nhắc SLA) |
+| `/can-bo/ho-so` | Hồ sơ & Cài đặt cán bộ |
 | `/can-bo/:id` | A01 + A02 |
 | `/can-bo/:id/ket-qua` | A03 |
-| `/tnv` | V01 |
+| `/tnv`, `/tnv/ho-so` | V01 (Nhiệm vụ & Hồ sơ TNV) |
+| `/tnv/ban-do` | V03 (Bản đồ nhiệm vụ TNV) |
+| `/tnv/thong-ke` | Thống kê hoạt động TNV |
 | `/tnv/:taskId` | V02 |
-| `/demo` | Demo Hub |
+| `/admin` | Cổng Quản trị hệ thống (Quản lý tài khoản 4 vai trò, Cấu hình hạn SLA, Nhật ký kiểm toán) |
+| `/api/*` (Cloudflare Worker) | `/api/health`, `/api/auth/*`, `/api/turnstile/verify`, `/api/ai/classify`, `/api/push/*`, `/api/notifications/dispatch`, `/api/sla/check`, `/api/audit`, `/api/reports`, `/api/tasks`, `/api/admin/users`, `/api/admin/sla-config`, `/api/uploads` |
 
 ---
 

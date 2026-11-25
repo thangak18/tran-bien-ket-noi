@@ -1,17 +1,31 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, BarChart3, CheckCircle2, Clock, Inbox, Wrench } from 'lucide-react';
+import {
+  AlertTriangle,
+  BarChart3,
+  BellRing,
+  CheckCircle2,
+  Clock,
+  Download,
+  Inbox,
+  Printer,
+  Wrench,
+} from 'lucide-react';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { useAppStore } from '@/store/AppStore';
 import { DEPARTMENTS } from '@/domain/constants';
 import { isDueSoon, isOverdue } from '@/domain/sorting';
 import { formatDate } from '@/domain/format';
+import { downloadReportsCsv } from '@/lib/exportReport';
+import { enableWebPushNotifications, showLocalBrowserNotification } from '@/lib/webPush';
 import { StatusChip } from '@/components/common/StatusChip';
+import { Toast } from '@/components/ui/Toast';
 
 export function OfficerStats() {
   const { state } = useAppStore();
   const navigate = useNavigate();
   const now = state.settings.demoNow;
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const reports = state.reports;
@@ -45,9 +59,39 @@ export function OfficerStats() {
     };
   }, [state.reports, now]);
 
+  const handleExportCsv = () => {
+    downloadReportsCsv(state.reports, now);
+    setToastMsg(`Đã xuất ${state.reports.length} hồ sơ ra file CSV`);
+  };
+
+  const handlePrintReport = () => {
+    window.print();
+  };
+
+  const handleEnableSlaPush = async () => {
+    const res = await enableWebPushNotifications({ role: 'officer' });
+    if (res.ok) {
+      if (stats.overdueList.length > 0) {
+        showLocalBrowserNotification(
+          'Cảnh báo SLA · Trấn Biên Kết Nối',
+          `Hiện có ${stats.overdueList.length} hồ sơ quá hạn và ${stats.dueSoonCount} hồ sơ sắp đến hạn.`,
+          '/can-bo/thong-ke'
+        );
+      }
+      setToastMsg(
+        res.mode === 'web-push'
+          ? 'Đã bật thông báo đẩy SLA (Web Push)'
+          : 'Đã bật thông báo cảnh báo SLA trên trình duyệt'
+      );
+    } else {
+      setToastMsg('Trình duyệt chưa cấp quyền thông báo');
+    }
+  };
+
   return (
     <OfficerLayout>
       <div className="space-y-5 animate-fade-up">
+        {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1
@@ -61,9 +105,35 @@ export function OfficerStats() {
               Theo dõi khối lượng tiếp nhận, tiến độ theo bộ phận và hồ sơ quá hạn
             </p>
           </div>
-          <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-bold text-[var(--color-text)]">
-            Đúng hạn: {stats.onTimeRate}%
-          </span>
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
+            <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-bold text-[var(--color-text)]">
+              Đúng hạn: {stats.onTimeRate}%
+            </span>
+            <button
+              type="button"
+              onClick={() => void handleEnableSlaPush()}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+            >
+              <BellRing className="h-3.5 w-3.5" />
+              Bật nhắc SLA
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-bold text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Xuất CSV
+            </button>
+            <button
+              type="button"
+              onClick={handlePrintReport}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 transition-opacity"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              In báo cáo
+            </button>
+          </div>
         </div>
 
         {/* KPI Cards */}

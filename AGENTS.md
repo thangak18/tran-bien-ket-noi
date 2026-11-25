@@ -1,11 +1,12 @@
 # AGENTS.md – Luật cho agent code (Codex / Antigravity / Claude Code)
 
-## Phạm vi
+## Phạm vi (nhánh `feat/production-p3-p4-p5` – nâng cấp sản phẩm thật)
 
-- Chỉ làm **UI/UX prototype**: React frontend + dữ liệu mẫu.
-- **Không** tạo backend, database, serverless function, API route.
-- **Không** gọi dịch vụ ngoài, trừ: tile OpenStreetMap, Geolocation API, Web Speech API của trình duyệt.
-- AI, OTP, SMS/Zalo đều là **mô phỏng** và phải hiển thị nhãn "Mô phỏng" trên UI.
+- Frontend React (`app/`) + Backend mỏng Cloudflare Worker (`api/`) cho Phần 3–4–5:
+  - **Phần 3:** Xác thực phiên & phân quyền RBAC (`citizen`, `officer`, `volunteer`), hash `secretCode`, Cloudflare Turnstile siteverify & rate limit chống spam.
+  - **Phần 4:** Web Push Notification (VAPID + Service Worker), adapter Zalo ZNS / SMS (chạy dry-run khi chưa điền secret), Cron SLA cảnh báo quá hạn, Audit log bất biến và xuất báo cáo CSV / In PDF.
+  - **Phần 5:** AI nhận diện ảnh thật qua Gemini Vision proxy trên server (`/api/ai/classify`, không lộ API key ở frontend) và PWA (manifest, Service Worker, cài đặt ứng dụng, hàng đợi offline).
+- Các tích hợp có secret (`GEMINI_API_KEY`, `TURNSTILE_SECRET_KEY`, `VAPID_*`, `ZALO_OA_ACCESS_TOKEN`, `JWT_SECRET`) tự động fallback an toàn khi chạy local chưa điền secret và vẫn giữ nguyên nhãn minh bạch khi ở chế độ fallback/mô phỏng.
 
 ## Ưu tiên
 

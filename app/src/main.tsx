@@ -2,7 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { registerPwaServiceWorker } from './lib/pwa';
 import './styles/index.css';
+
+registerPwaServiceWorker();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {

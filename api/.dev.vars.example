@@ -1,0 +1,11 @@
+# Sao chép thành .dev.vars khi chạy `wrangler dev` (không commit file .dev.vars)
+JWT_SECRET=thay-bang-chuoi-bi-mat-it-nhat-32-ky-tu
+TURNSTILE_SECRET_KEY=
+GEMINI_API_KEY=
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+ZALO_OA_ACCESS_TOKEN=
+ZALO_ZNS_TEMPLATE_ID=
+SMS_WEBHOOK_URL=
+SMS_API_KEY=
+ALLOWED_ORIGIN=http://localhost:5173

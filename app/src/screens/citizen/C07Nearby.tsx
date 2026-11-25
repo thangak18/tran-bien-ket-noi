@@ -374,7 +374,7 @@ export function C07Nearby() {
                     type="button"
                     onClick={resetFilters}
                     title="Xoá bộ lọc"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                   </button>
@@ -395,7 +395,7 @@ export function C07Nearby() {
                       className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
                         active
                           ? 'border-[#0084E8] bg-[#0084E8] text-white shadow-2xs'
-                          : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                          : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
                       <CategoryIcon
@@ -514,7 +514,7 @@ export function C07Nearby() {
           <button
             type="button"
             onClick={() => setShowLegendModal(true)}
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-[var(--color-surface)] px-4 py-2 text-xs font-extrabold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100"
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-[var(--color-surface)] px-4 py-2 text-xs font-extrabold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
           >
             <Info className="h-4 w-4 text-[#1D6AE5] dark:text-[#38BDF8]" strokeWidth={2.25} />
             <span>Chú giải</span>

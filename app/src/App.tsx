@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
 import { AppStoreProvider, useAppStore } from './store/AppStore';
 import { applyFontScale, resolveFontScale } from './lib/senior';
 import { applyTheme, getInitialTheme } from './lib/theme';
+import { getDefaultPortalPath, getPortalMode, isPortalEnabled } from './lib/portalMode';
 import { PortalSwitcherFab } from './components/common/PortalSwitcherFab';
+import { PwaStatusBanner } from './components/common/PwaStatusBanner';
+import { InAppBrowserBanner } from './components/common/InAppBrowserBanner';
+import { AdminDashboard } from './screens/admin/AdminDashboard';
 import { CitizenLayout } from './layouts/CitizenLayout';
 import { C01Home } from './screens/citizen/C01Home';
 import { WelcomeScreen, WELCOMED_STORAGE_KEY } from './screens/citizen/WelcomeScreen';
@@ -53,6 +57,12 @@ function WelcomeGate() {
 export default function App() {
   const [searchParams] = useSearchParams();
   const frame = searchParams.get('frame') ?? undefined;
+  const portalMode = getPortalMode();
+  const citizenEnabled = isPortalEnabled('citizen', portalMode);
+  const officerEnabled = isPortalEnabled('officer', portalMode);
+  const volunteerEnabled = isPortalEnabled('volunteer', portalMode);
+  const adminEnabled = isPortalEnabled('admin', portalMode);
+  const fallbackPath = getDefaultPortalPath(portalMode);
 
   useEffect(() => {
     applyTheme(getInitialTheme());
@@ -61,87 +71,114 @@ export default function App() {
   return (
     <AppStoreProvider frame={frame}>
       <SeniorSync />
-      <WelcomeGate />
-      <PortalSwitcherFab />
+      {citizenEnabled && <WelcomeGate />}
+      <PwaStatusBanner />
+      <InAppBrowserBanner />
+      {portalMode === 'all' && <PortalSwitcherFab />}
       <Routes>
-        <Route
-          path="/"
-          element={
-            <CitizenLayout>
-              <C01Home />
-            </CitizenLayout>
-          }
-        />
-        <Route
-          path="/tim-kiem"
-          element={
-            <CitizenLayout>
-              <C01Home />
-            </CitizenLayout>
-          }
-        />
-        <Route path="/bao-su-co/anh" element={<C02Photo />} />
-        <Route path="/bao-su-co/vi-tri" element={<C03Location />} />
-        <Route
-          path="/bao-su-co/xac-nhan"
-          element={
-            <CitizenLayout>
-              <C04Confirm />
-            </CitizenLayout>
-          }
-        />
-        <Route
-          path="/cua-toi"
-          element={
-            <CitizenLayout>
-              <C05Mine />
-            </CitizenLayout>
-          }
-        />
-        <Route
-          path="/ho-so"
-          element={
-            <CitizenLayout>
-              <C05Mine />
-            </CitizenLayout>
-          }
-        />
-        <Route
-          path="/thong-bao"
-          element={
-            <CitizenLayout>
-              <C09Notifications />
-            </CitizenLayout>
-          }
-        />
-        <Route path="/phan-anh/:id" element={<C06Detail />} />
-        <Route
-          path="/quanh-day"
-          element={
-            <CitizenLayout>
-              <C07Nearby />
-            </CitizenLayout>
-          }
-        />
-        <Route
-          path="/minh-bach"
-          element={
-            <CitizenLayout>
-              <C08Transparency />
-            </CitizenLayout>
-          }
-        />
-        <Route path="/can-bo" element={<A01Inbox />} />
-        <Route path="/can-bo/thong-ke" element={<OfficerStats />} />
-        <Route path="/can-bo/ho-so" element={<OfficerProfile />} />
-        <Route path="/can-bo/:id" element={<A02Panel />} />
-        <Route path="/can-bo/:id/ket-qua" element={<A03Result />} />
-        <Route path="/tnv" element={<V01Tasks />} />
-        <Route path="/tnv/ban-do" element={<V03Map />} />
-        <Route path="/tnv/ho-so" element={<V01Tasks />} />
-        <Route path="/tnv/thong-ke" element={<VolunteerStats />} />
-        <Route path="/tnv/:taskId" element={<V02Verify />} />
+        {citizenEnabled && (
+          <>
+            <Route
+              path="/"
+              element={
+                <CitizenLayout>
+                  <C01Home />
+                </CitizenLayout>
+              }
+            />
+            <Route
+              path="/tim-kiem"
+              element={
+                <CitizenLayout>
+                  <C01Home />
+                </CitizenLayout>
+              }
+            />
+            <Route path="/bao-su-co/anh" element={<C02Photo />} />
+            <Route path="/bao-su-co/vi-tri" element={<C03Location />} />
+            <Route
+              path="/bao-su-co/xac-nhan"
+              element={
+                <CitizenLayout>
+                  <C04Confirm />
+                </CitizenLayout>
+              }
+            />
+            <Route
+              path="/cua-toi"
+              element={
+                <CitizenLayout>
+                  <C05Mine />
+                </CitizenLayout>
+              }
+            />
+            <Route
+              path="/ho-so"
+              element={
+                <CitizenLayout>
+                  <C05Mine />
+                </CitizenLayout>
+              }
+            />
+            <Route
+              path="/thong-bao"
+              element={
+                <CitizenLayout>
+                  <C09Notifications />
+                </CitizenLayout>
+              }
+            />
+            <Route path="/phan-anh/:id" element={<C06Detail />} />
+            <Route
+              path="/quanh-day"
+              element={
+                <CitizenLayout>
+                  <C07Nearby />
+                </CitizenLayout>
+              }
+            />
+            <Route
+              path="/minh-bach"
+              element={
+                <CitizenLayout>
+                  <C08Transparency />
+                </CitizenLayout>
+              }
+            />
+          </>
+        )}
+        {officerEnabled && (
+          <>
+            <Route path="/can-bo" element={<A01Inbox />} />
+            <Route path="/can-bo/thong-ke" element={<OfficerStats />} />
+            <Route path="/can-bo/ho-so" element={<OfficerProfile />} />
+            <Route path="/can-bo/:id" element={<A02Panel />} />
+            <Route path="/can-bo/:id/ket-qua" element={<A03Result />} />
+          </>
+        )}
+        {volunteerEnabled && (
+          <>
+            <Route path="/tnv" element={<V01Tasks />} />
+            <Route path="/tnv/ban-do" element={<V03Map />} />
+            <Route path="/tnv/ho-so" element={<V01Tasks />} />
+            <Route path="/tnv/thong-ke" element={<VolunteerStats />} />
+            <Route path="/tnv/:taskId" element={<V02Verify />} />
+          </>
+        )}
+        {adminEnabled && <Route path="/admin" element={<AdminDashboard />} />}
         {import.meta.env.DEV && <Route path="/dev/ui" element={<DevUiGallery />} />}
+        <Route
+          path="*"
+          element={
+            portalMode === 'all' ? (
+              <CitizenLayout>
+                <C01Home />
+              </CitizenLayout>
+            ) : (
+              <Navigate to={fallbackPath} replace />
+            )
+          }
+        />
       </Routes>
     </AppStoreProvider>
   );

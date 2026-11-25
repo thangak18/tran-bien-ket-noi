@@ -68,34 +68,34 @@ Quy chuẩn từng component: `ui-ux-guidelines.md` mục 5.
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
 | [x] (24/11) | T-040 | C01 Trang chủ: thẻ kêu gọi, "Phản ánh của bạn" (trượt ngang), "Quanh đây", dải số liệu | T-005, T-015, T-032, T-037 | AC-C01-1, 3, 5, 6, 7 | CT-040 |
-| [ ] | T-041 | Draft gửi phản ánh trong store (lưu/khôi phục, hỏi khi ✕) | T-021 | AC-C02-7 | UT-041 |
-| [ ] | T-042 | C02 Chụp ảnh (ô chụp lớn, mẹo, xem trước, dải ảnh, chụp lại) | T-033, T-035, T-041 | AC-C02 (trừ AC-C02-5) | CT-042 |
-| [ ] | T-043 | C03 Vị trí (ảnh trên + sheet; GPS, ngoài phường, từ chối, nhập địa chỉ, chạm bản đồ, LocationRow) | T-034, T-035, T-041 | AC-C03 (trừ AC-C03-7) | CT-043 |
-| [ ] | T-044 | C04 Loại & xác nhận (ảnh trên + sheet, 4 CategoryTile, LocationRow → C03, mô tả) | T-037, T-041 | AC-C04-1, 2, 13 | CT-044 |
-| [ ] | T-045 | C04 Gửi có SĐT: OTP, màn thành công, mất mạng | T-036, T-021 | AC-C04-5, 6, 9 | CT-045 |
-| [ ] | T-045b | C04 Gửi ẩn danh: link, sheet cảnh báo, màn thành công ẩn danh, quota | T-039, T-045 | AC-C04-10 → 12 | CT-045b |
-| [ ] | T-047 | C05 Phản ánh của tôi (danh sách máy này + SĐT, tab trạng thái có số đếm, ReportCard, lưu link, đăng nhập/tra cứu, trống, thông báo) | T-031, T-037, T-038, T-039, T-021 | AC-C05 | CT-047 |
-| [ ] | T-048 | C06 Chi tiết (thứ tự khối, LatestUpdate, Timeline dọc, Trước/Sau, đánh giá, chưa giải quyết, gộp, bổ sung) | T-032, T-037, T-039b, T-021 | AC-C06-1, 3 → 8, 12 | CT-048 |
-| [ ] | T-048b | C06 quyền chủ hồ sơ qua link `?k=`, đăng ký/huỷ nhận tin, link sai, nút Lưu | T-048, T-039 | AC-C06-9 → 11 | CT-048b, E2E-07 |
-| [ ] | T-049 | C07 Bản đồ quanh tôi (marker, chú giải, chip lọc, thẻ nổi, Bản đồ/Danh sách, FAB vẫn hiện) | T-034, T-016, T-037 | AC-C07 | CT-049a |
-| [ ] | T-049b | C08 Kết quả của phường (KPI, biểu đồ, thẻ Trước → Sau) | T-015, T-016, T-037 | AC-C08 | CT-049b |
+| [x] (25/11) | T-041 | Draft gửi phản ánh trong store (lưu/khôi phục, hỏi khi ✕) | T-021 | AC-C02-7 | UT-041 |
+| [x] (25/11) | T-042 | C02 Chụp ảnh (ô chụp lớn, mẹo, xem trước, dải ảnh, chụp lại) | T-033, T-035, T-041 | AC-C02 (trừ AC-C02-5) | CT-042 |
+| [x] (25/11) | T-043 | C03 Vị trí (ảnh trên + sheet; GPS đồng bộ reverse-geocoding Nominatim, ngoài phường, từ chối, nhập địa chỉ, chạm bản đồ) | T-034, T-035, T-041 | AC-C03 (trừ AC-C03-7) | CT-043 |
+| [x] (25/11) | T-044 | C04 Loại & xác nhận (ảnh trên + sheet, 4 CategoryTile, vị trí đồng bộ GPS/bản đồ, mô tả + giọng nói) | T-037, T-041 | AC-C04-1, 2, 13 | CT-044 |
+| [x] (25/11) | T-045 | C04 Gửi có SĐT: OTP, màn thành công, mất mạng | T-036, T-021 | AC-C04-5, 6, 9 | CT-045 |
+| [x] (25/11) | T-045b | C04 Gửi ẩn danh: link, sheet cảnh báo, màn thành công ẩn danh, quota | T-039, T-045 | AC-C04-10 → 12 | CT-045b |
+| [x] (25/11) | T-047 | C05 Phản ánh của tôi (danh sách máy này + SĐT, tab trạng thái có số đếm, ReportCard, lưu link, đăng nhập/tra cứu, trống, thông báo) | T-031, T-037, T-038, T-039, T-021 | AC-C05 | CT-047 |
+| [x] (25/11) | T-048 | C06 Chi tiết (thứ tự khối, LatestUpdate, Timeline dọc, Trước/Sau, đánh giá, chưa giải quyết, gộp, bổ sung) | T-032, T-037, T-039b, T-021 | AC-C06-1, 3 → 8, 12 | CT-048 |
+| [x] (25/11) | T-048b | C06 quyền chủ hồ sơ qua link `?k=`, đăng ký/huỷ nhận tin, link sai, nút Lưu | T-048, T-039 | AC-C06-9 → 11 | CT-048b, E2E-07 |
+| [x] (25/11) | T-049 | C07 Bản đồ quanh tôi (marker, chú giải, chip lọc, thẻ nổi, Bản đồ/Danh sách, FAB vẫn hiện) | T-034, T-016, T-037 | AC-C07 | CT-049a |
+| [x] (25/11) | T-049b | C08 Kết quả của phường (KPI, biểu đồ, thẻ Trước → Sau) | T-015, T-016, T-037 | AC-C08 | CT-049b |
 
 ## P5 – Cán bộ
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-050 | A01 Hộp tiếp nhận: KPI, bảng, sắp xếp, cờ Ẩn danh, lọc (gồm Nguồn), tab, tìm kiếm | T-014, T-015, T-031 | AC-A01-1 → 4, 6, 7, 9 | CT-050 |
-| [ ] | T-051 | A02 Panel: thông tin, trường phân loại, nút theo trạng thái, giao TNV, kết quả xác minh, lý do ngoại lệ, lịch sử, gợi ý xác minh hồ sơ ẩn danh | T-022, T-050 | AC-A02-1 → 5, 8 → 10 | CT-051 |
-| [ ] | T-053 | A03 Cập nhật kết quả + xem trước | T-022, T-037 | AC-A03 | CT-053 |
+| [x] (25/11) | T-050 | A01 Hộp tiếp nhận: KPI, bảng, sắp xếp, cờ Ẩn danh, lọc (gồm Nguồn), tab, tìm kiếm | T-014, T-015, T-031 | AC-A01-1 → 4, 6, 7, 9 | CT-050 |
+| [x] (25/11) | T-051 | A02 Panel: thông tin, trường phân loại, nút theo trạng thái, giao TNV, kết quả xác minh, lý do ngoại lệ, lịch sử, gợi ý xác minh hồ sơ ẩn danh | T-022, T-050 | AC-A02-1 → 5, 8 → 10 | CT-051 |
+| [x] (25/11) | T-053 | A03 Cập nhật kết quả + xem trước | T-022, T-037 | AC-A03 | CT-053 |
 | [ ] | T-056 | Điều hướng bàn phím dashboard | T-051 | spec 7.3 | CT-056 |
 
 ## P6 – Tình nguyện viên
 
 | | ID | Task | Phụ thuộc | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-060 | V01 Danh sách nhiệm vụ | T-022, T-031 | AC-V01 | CT-060 |
-| [ ] | T-061 | V02 Xác minh tại chỗ | T-034, T-035, T-022 | AC-V02 | CT-061 |
-| [ ] | T-062 | Nối nhiệm vụ nghiệm thu từ "Chưa giải quyết" (C06) → V01 → A02 | T-048, T-060, T-061 | spec 3.3 | E2E-05 |
+| [x] (25/11) | T-060 | V01 Danh sách nhiệm vụ | T-022, T-031 | AC-V01 | CT-060 |
+| [x] (25/11) | T-061 | V02 Xác minh tại chỗ | T-034, T-035, T-022 | AC-V02 | CT-061 |
+| [x] (25/11) | T-062 | Nối nhiệm vụ nghiệm thu từ "Chưa giải quyết" (C06) → V01 → A02 | T-048, T-060, T-061 | spec 3.3 | E2E-05 |
 
 ## P7 – Demo Hub
 
@@ -113,29 +113,37 @@ Quy chuẩn từng component: `ui-ux-guidelines.md` mục 5.
 | [ ] | T-080 | Rà soát đủ trạng thái phụ | P4–P6 | proposal 7 | MT-ST |
 | [ ] | T-081 | Accessibility: axe trên mọi route, tương phản, focus, aria | P4–P7 | spec 7.3 | A11Y-001 → 006 |
 | [ ] | T-081b | Rà soát UI theo `ui-ux-guidelines.md` (khoảnh khắc người dùng, vùng ngón cái, ngôn ngữ) | P4–P7 | guidelines 1, 5, 6 | MT-UI |
-| [ ] | T-082 | Bộ ảnh demo thật + ảnh after | – | spec 5.4 | DV-013 |
+| [x] (25/11) | T-082 | Bộ ảnh demo thật + ảnh after | – | spec 5.4 | DV-013 |
 | [ ] | T-083 | Deploy Vercel + kiểm tra HTTPS | T-006 | plan 8 | MT-DEV |
-| [ ] | T-084 | Phát hiện trình duyệt nhúng (Zalo/Facebook) + banner "Mở bằng trình duyệt" | T-083 | plan 8 | MT-DEV |
+| [x] (25/11) | T-084 | Phát hiện trình duyệt nhúng (Zalo/Facebook) + banner "Mở bằng trình duyệt" (`InAppBrowserBanner`) | T-083 | plan 8 | `production-p3-p4-p5.test.ts` |
 | [ ] | T-085 | Test thiết bị thật | T-083 | – | MT-DEV |
 | [ ] | T-087 | Quay video demo dự phòng | T-085 | proposal 15 | – |
 
+## P9 – Nâng cấp sản phẩm thật (nhánh `feat/production-p3-p4-p5`)
+
+| | ID | Hạng mục | Chi tiết đã triển khai | Kiểm chứng |
+|---|---|---|---|---|
+| [x] (25/11) | T-P3 | Bảo mật, RBAC & Turnstile | Cloudflare Worker `api/src/security.ts` (JWT HS256, RBAC `requireRole`, SHA-256 `secretCode`, rate limit IP, Turnstile Siteverify) + `TurnstileWidget` & `apiClient` | `production-p3-p4-p5.test.ts` |
+| [x] (25/11) | T-P4 | Web Push, SLA & Xuất báo cáo | `api/src/notifications.ts` (Push subscribe, Zalo ZNS/SMS adapter, Cron SLA, Audit log) + `webPush.ts` + `exportReport.ts` (CSV UTF-8 BOM, In PDF trên `OfficerStats`) | `production-p3-p4-p5.test.ts` |
+| [x] (25/11) | T-P5 | AI Vision thật & PWA | `api/src/aiVision.ts` (Gemini Flash Lite / 3.6 / 3.8 Flash proxy) + `AiCategoryBanner` tự phân tích ảnh + PWA (`manifest.webmanifest`, `sw.js`, `PwaStatusBanner`, offline queue) | `production-p3-p4-p5.test.ts` + live HTTP 200 |
+| [x] (25/11) | T-P12 | Nền tảng D1/R2 & tối ưu bundle | `api/migrations/0001_init.sql`, `api/src/reportsDb.ts` (`/api/reports`, `/api/uploads`), tách vendor chunks `vite.config.ts`, đồng bộ GPS ↔ Nominatim `geocoding.ts` | `npm run verify` + `npm run build` |
+| [x] (25/11) | T-P13 | Database D1 4 vai trò, Admin & Tách 4 web | `api/migrations/0002_roles_and_tasks.sql` (local + remote `tran-bien-db`), `api/src/rolesDb.ts`, `AdminDashboard.tsx` (`/admin`), `portalMode.ts` (`VITE_PORTAL_MODE`), deploy Cloudflare Worker HTTPS | `npm run verify` + `wrangler deploy` |
+| [x] (25/11) | T-P14 | Đồng bộ 2 chiều D1 & Chuông thông báo Cán bộ / TNV | Đồng bộ 2 chiều `AppStore.tsx` ↔ D1 (upsert `PATCH /api/reports/:id` + `POST /api/tasks`), gửi Khách/Ẩn danh trực tiếp Bước 3, Cán bộ giao xử lý trực tiếp (TNV xác minh tùy chọn) + `PortalNotificationBell` trên `/can-bo` và `/tnv` | `officer-tnv-flow.test.tsx` + `npm run verify` |
+| [x] (25/11) | T-P15 | Hợp nhất bản UI/UX mới (`fc4c476`) | Cập nhật 40 file UI/UX mới (logo mới, dark theme, `OnBehalfWizard`, xuất Excel `.xlsx`, `DateInputDdMmYyyy`, `gpsSettings`, làm sạch dữ liệu demo `tbkn:v2`) giữ nguyên 100% tính năng sản phẩm thật | `npm run verify` (40/40 test files) + `npm run build` |
+
 ---
 
-## Backlog Bonus – CHƯA LÀM
-
-Chỉ mở khi P0–P8 xong. Thứ tự gợi ý: B3 → B2 → B1 (đều là điểm cộng của đề) → B4 → B5.
+## Backlog Bonus
 
 | | ID | Bonus | Task | Spec | Test |
 |---|---|---|---|---|---|
-| [ ] | T-B3-1 | B3 Chữ lớn | Class `.senior` đổi giá trị biến CSS; nút "Aa Chữ lớn" ở C01, ghi nhớ | AC-C01-2, spec 7.2 | BT-B3-1 |
-| [ ] | T-B3-2 | B3 Chữ lớn | Biến thể C03 "Tôi đang đứng ở chỗ bị hư"; bảng từ ngữ 7.4 cột Chữ lớn; rà soát C01–C06 | AC-C03-7, spec 7.4 | MT-SR |
-| [ ] | T-B2-1 | B2 Trùng | `domain/duplicates.ts` `findDuplicates` | spec 3.5 | BT-B2-1 |
-| [ ] | T-B2-2 | B2 Trùng | C04 hộp nghi trùng + "Tôi cũng gặp" (có SĐT / ẩn danh) + cờ `suspectedDuplicateOf`; nút "Tôi cũng gặp" ở C06 | AC-C04-3, 7, 8, AC-C06-8 | BT-B2-2, BT-E2E-02 |
-| [ ] | T-B2-3 | B2 Trùng | A01 cờ Nghi trùng + cột Người cùng báo; A02 khối Phản ánh tương tự, gộp, tách | AC-A01-5, AC-A02-6, 7 | BT-B2-3, BT-E2E-04 |
-| [ ] | T-B1-1 | B1 AI | `lib/aiMock.ts` + `manifest.json` ảnh demo; gợi ý ở C02, huy hiệu "Gợi ý" ở C04 | AC-C02-5, AC-C04-1 | BT-B1-1 |
-| [ ] | T-B4-1 | B4 Giọng nói | `lib/speech.ts` + nút micro ở C04 | AC-C04-2 | BT-B4-1 |
-| [ ] | T-B5-1 | B5 Gửi hộ | Modal "Tạo phản ánh hộ" ở A01 + cờ Gửi hộ; modal tổng đài C01 | AC-A01-8, AC-C01-4 | BT-B5-1 |
-| [ ] | T-B0-1 | – | Thử nghiệm nhanh 5 người | proposal 10 | UX-001 → 004 |
+| [x] (25/11) | T-B3-1 | B3 Chữ lớn | 4 mức cỡ chữ (Nhỏ / Thường / Lớn / Rất lớn) đồng bộ toàn cổng & màn hình chào | AC-C01-2, spec 7.2 | `senior-mode.test.tsx` |
+| [x] (25/11) | T-B2-1 | B2 Trùng | `domain/duplicates.ts` `findDuplicates` | spec 3.5 | `duplicates.test.ts` |
+| [x] (25/11) | T-B2-2 | B2 Trùng | C04 modal đối chiếu nghi trùng + "Tôi cũng gặp" | AC-C04-3, 7, 8, AC-C06-8 | `C04Confirm.tsx` |
+| [x] (25/11) | T-B2-3 | B2 Trùng | A01 cờ Nghi trùng + A02 gộp/tách hồ sơ | AC-A01-5, AC-A02-6, 7 | `officer-actions.test.ts` |
+| [x] (25/11) | T-B1-1 | B1 AI | `AiCategoryBanner` gọi `/api/ai/classify` (Gemini Vision thật + fallback dự phòng) | AC-C04-1 | `production-p3-p4-p5.test.ts` |
+| [x] (25/11) | T-B4-1 | B4 Giọng nói | Web Speech API `vi-VN` tích hợp trực tiếp ở Bước 3 `C04Confirm.tsx` | AC-C04-2 | `C04Confirm.tsx` |
+| [x] (25/11) | T-B5-1 | B5 Gửi hộ | Tạo phản ánh hộ ở A01 + cờ Gửi hộ; modal tổng đài | AC-A01-8, AC-C01-4 | `officer-actions.test.ts` |
 
 ---
 

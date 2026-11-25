@@ -19,8 +19,8 @@
 
 **Cuộc thi:** Đồng Nai Hackathon 2026  
 **Đề bài:** Đề 2 – Phản ánh hiện trường (Chính quyền số – Đô thị thông minh)  
-**Phạm vi:** UX/UI Design & Interactive Prototype  
-**Phiên bản:** v2.1 – bổ sung chế độ gửi ẩn danh và theo dõi không cần số điện thoại
+**Phạm vi:** Web Application (Frontend PWA + Cloudflare Workers API)  
+**Phiên bản:** v2.2 (25/11/2026) – cập nhật kiến trúc sản phẩm thực tế: Cloudflare Workers API, Gemini Vision thật, Turnstile, Web Push, SLA/CSV, PWA & nền tảng D1/R2
 
 ---
 
@@ -457,54 +457,28 @@ Nhóm sẽ thử với 5 người (ít nhất 2 người trên 60 tuổi) theo 3
 
 | Thành phần | Lựa chọn | Lý do |
 |---|---|---|
-| UI | React + Vite + Tailwind CSS | Nhanh, dễ tạo 2 bố cục mobile/desktop |
-| Điều hướng | React Router | Mỗi màn hình có URL riêng để demo và chụp màn hình |
-| Bản đồ | React Leaflet + OpenStreetMap | Miễn phí, đủ cho demo |
-| Biểu đồ | Recharts (chỉ 1–2 biểu đồ cột) | Có thể thay bằng thanh CSS nếu cần nhẹ |
-| Icon | Lucide | Bộ icon đồng nhất |
-| Dữ liệu | Mock JSON + store dùng chung (Context) + localStorage | Không cần backend; Demo Hub đồng bộ hai phía trong cùng trình duyệt |
-| Khoảng cách | Haversine | Kiểm tra trùng, bán kính "quanh tôi" |
-| AI (tùy chọn) | Serverless function gọi mô hình thị giác | Giữ API key phía server |
-| Triển khai | Vercel | Link công khai cho giám khảo |
+| UI & PWA | React 18 + Vite + Tailwind CSS + Service Worker (`sw.js`, `manifest.webmanifest`) | Tải nhanh (đã tách vendor chunks `react`, `leaflet`, `recharts`, `lucide`), cài được lên màn hình chính điện thoại, lưu nháp ngoại tuyến |
+| Điều hướng | React Router | URL riêng cho từng màn hình 3 cổng, có fallback 404 |
+| Bản đồ & Định vị | React Leaflet + OpenStreetMap + Geolocation API + Nominatim Reverse Geocoding | Miễn phí, đồng bộ 2 chiều tọa độ GPS ↔ ghim bản đồ ↔ địa chỉ thật |
+| Biểu đồ & Báo cáo | Recharts + Xuất CSV (UTF-8 BOM) & In báo cáo PDF | Phục vụ trực tiếp bảng minh bạch công khai và họp giao ban cán bộ |
+| Icon | Lucide | Bộ icon đồng nhất, sắc nét |
+| Backend API mỏng | **Cloudflare Workers (`api/`)** | Nhẹ, chạy cạnh người dùng, xử lý JWT/RBAC, rate limit, Turnstile Siteverify, Cron SLA, Audit Log và proxy AI không lộ key |
+| AI nhận diện ảnh | **Gemini Vision API** (`gemini-flash-lite-latest` → `3.6-flash` → `3.8-flash`) qua `/api/ai/classify` | Phân loại 4 nhóm sự cố từ ảnh thật, tự fallback có nhãn khi offline |
+| Dữ liệu & Lưu trữ ảnh | Mock JSON + `localStorage` (local) & sẵn sàng **Cloudflare D1** (`0001_init.sql`) + **Cloudflare R2** (`/api/uploads`) | Chạy tức thì không phụ thuộc hạ tầng và mở rộng sang đồng bộ đa thiết bị thật không cần đổi UI |
+| Thông báo đa kênh | Web Push (VAPID + Service Worker) + adapter Zalo ZNS / SMS | Nhắc tiến độ hồ sơ và cảnh báo SLA quá hạn |
+| Triển khai | Vercel / Cloudflare Pages (frontend) + Cloudflare Workers (API) | HTTPS bắt buộc cho GPS, Camera, PWA và Web Push |
 
-**Không làm backend** ở vòng này. Chỉ cân nhắc dịch vụ như Supabase nếu BTC yêu cầu demo trên nhiều thiết bị thật cùng lúc.
-
-**Figma:** chỉ xuất bộ màn hình tĩnh (screen board + trạng thái) bằng html.to.design nếu BTC yêu cầu file thiết kế. Prototype tương tác chính là bản web đã deploy; nhóm không dựng lại liên kết tương tác trong Figma. Bản đồ Leaflet có thể không import đúng – thay bằng ảnh chụp bản đồ trong file Figma.
-
-**Dự phòng mất mạng:** cache tile bản đồ khu vực demo khi mở trước; quay video demo đầy đủ làm phương án cuối.
+**Dự phòng mất mạng & WebView:** Service Worker cache app shell, lưu hàng đợi nháp offline, và banner `InAppBrowserBanner` nhắc mở bằng Chrome/Safari khi người dùng bấm link từ Zalo/Facebook.
 
 ---
 
 ## 12. Scope & Priority
 
-**Quyết định ngày 24/11/2026:** làm trọn Functional Requirements trước; toàn bộ Bonus Features tạm hoãn.
+**Cập nhật ngày 25/11/2026 (nhánh `feat/production-p3-p4-p5`):** Đã hoàn thành toàn bộ luồng lõi 3 cổng (P0), các tính năng điểm cộng (B1–B5) và nâng cấp kiến trúc sản phẩm thực tế (P9):
 
-### P0 – Lõi: Functional Requirements (làm trước)
-
-- C01–C08, A01–A03, V01–V02 theo quy chuẩn `docs/ui-ux-guidelines.md`.
-- Mô hình trạng thái hai lớp, câu "Cập nhật mới nhất", chip "Chậm {n} ngày" công khai, thông báo mỗi lần đổi trạng thái.
-- Gợi ý bộ phận và hạn theo loại.
-- Gửi có SĐT hoặc ẩn danh; theo dõi bằng máy tự nhớ, link/QR, tra cứu mã, đăng nhập SĐT; đăng ký nhận tin sau.
-- Luồng mở lại + nhiệm vụ nghiệm thu cho TNV.
-- Bảng minh bạch phường.
-- Dữ liệu mẫu đúng số liệu đề, trung bình 3,2 ngày.
-- Demo Hub chạy trọn một vòng đời.
-- Đầy đủ trạng thái phụ (mục 7).
-
-### P1 – Bonus (hoãn đến khi P0 chạy trọn trên bản deploy)
-
-- B1 – Gợi ý loại từ ảnh bằng AI (mô phỏng, sau đó mới tính AI thật).
-- B2 – Phát hiện & gộp phản ánh trùng, "Tôi cũng gặp", tách hồ sơ.
-- B3 – Chế độ chữ lớn cho người cao tuổi.
-- B4 – Mô tả bằng giọng nói.
-- B5 – Gửi hộ qua tổng đài.
-
-### P2 – Sau cùng
-
-- Kiểm thử nhanh với 5 người.
-- Xuất file Figma (nếu BTC yêu cầu).
-
-Lưu ý: B1–B3 là điểm cộng của đề, nên mở lại ngay khi P0 xong; thiết kế lõi đã chừa sẵn chỗ (biến CSS cho chữ lớn, vùng gợi ý ở Bước 3, trường dữ liệu cho trùng lặp).
+- **Lõi 3 cổng (đã xong):** C01–C09, A01–A03 + Thống kê/Hồ sơ cán bộ, V01–V03 + Thống kê/Hồ sơ TNV; mô hình trạng thái hai lớp, câu "Cập nhật mới nhất", chip "Chậm {n} ngày", thông báo, gửi SĐT/OTP hoặc ẩn danh (link/QR), mở lại hồ sơ + nghiệm thu TNV, dữ liệu mẫu chuẩn 64 / 47 / 3,2 ngày.
+- **Bonus B1–B5 (đã xong):** AI nhận diện ảnh thật (Gemini Vision + fallback), cảnh báo & gộp/tách trùng ("Tôi cũng gặp"), 4 mức cỡ chữ, nhập mô tả bằng giọng nói tiếng Việt, tạo phản ánh hộ & tổng đài.
+- **Nâng cấp sản phẩm thật P9 (đã xong):** Cloudflare Worker API HTTPS (`tran-bien-ket-noi-api.tran-bien-ket-noi-api.workers.dev`), **Cloudflare D1 4 vai trò (`tran-bien-db`)** đồng bộ 2 chiều (`reports`, `users`, `volunteer_tasks`, `sla_config`, `audit_logs`), **Cổng Quản trị `/admin`** & tách 4 trang web độc lập (`VITE_PORTAL_MODE`), JWT HS256 & RBAC 4 role, **Cloudflare Turnstile thật** + rate limit IP, **thông báo 2 chiều Cán bộ ↔ TNV** (Cán bộ giao xử lý trực tiếp hoặc giao TNV xác minh tùy chọn), gửi Khách/Ẩn danh trực tiếp, Web Push + Cron SLA, Xuất Excel `.xlsx` / CSV / In PDF, PWA cài ứng dụng, đồng bộ GPS ↔ Reverse Geocoding, banner Zalo/FB WebView và hợp nhất bản UI/UX mới nhất (`fc4c476`).
 
 ---
 

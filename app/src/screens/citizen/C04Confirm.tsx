@@ -26,6 +26,7 @@ import { findDuplicates } from '@/domain/duplicates';
 import { formatDateTime, formatDistance, formatRelativeTime } from '@/domain/format';
 import { CATEGORIES, Category, Report } from '@/domain/types';
 import { getCurrentLocation } from '@/lib/geolocation';
+import { reverseGeocodeCoords } from '@/lib/geocoding';
 import { compressImage } from '@/lib/image';
 import { isVideoSource } from '@/lib/media';
 import { useAppStore } from '@/store/AppStore';
@@ -33,6 +34,9 @@ import { followReport, submitReport, subscribeLater, unsubscribe } from '@/store
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { MapView } from '@/components/map/MapView';
 import { CategoryTile } from '@/components/citizen/CategoryTile';
+import { AiCategoryBanner } from '@/components/citizen/AiCategoryBanner';
+import { TurnstileWidget } from '@/components/common/TurnstileWidget';
+import { createReportApi, verifyTurnstileApi } from '@/lib/apiClient';
 import { TrackingLinkCard } from '@/components/citizen/TrackingLinkCard';
 import { SubscribeCard } from '@/components/citizen/SubscribeCard';
 import { Button } from '@/components/ui/Button';
@@ -183,6 +187,10 @@ export function C04Confirm() {
   const [isInspectDuplicateOpen, setIsInspectDuplicateOpen] = useState<boolean>(false);
   const [inspectPhotoIndex, setInspectPhotoIndex] = useState<number>(0);
   const [offlineError, setOfflineError] = useState<boolean>(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isVerifyingSpam, setIsVerifyingSpam] = useState<boolean>(false);
+  const [gpsCoords, setGpsCoords] = useState<[number, number] | undefined>(undefined);
+  const [isLocatingGps, setIsLocatingGps] = useState<boolean>(false);
   const [pendingMode, setPendingMode] = useState<'phone' | null>(null);
 
   const [submittedAnonymousReport, setSubmittedAnonymousReport] = useState<Report | null>(null);
@@ -211,23 +219,58 @@ export function C04Confirm() {
 
   const hasAttemptedAutoGpsRef = useRef(false);
 
+  const syncLocationWithCoords = (lat: number, lng: number, isFromGps = false) => {
+    setDismissedDuplicate(false);
+    setDuplicateIndex(0);
+    if (isFromGps) {
+      setGpsCoords([lat, lng]);
+    }
+    const street = nearestStreet(lat, lng);
+    const fallbackAddr = `Đ. ${street.name}, P. Trấn Biên`;
+    dispatch({
+      type: 'SET_DRAFT',
+      payload: {
+        lat,
+        lng,
+        address: fallbackAddr,
+      },
+    });
+    void reverseGeocodeCoords(lat, lng).then((resolvedAddr) => {
+      if (resolvedAddr && resolvedAddr !== fallbackAddr) {
+        dispatch({
+          type: 'SET_DRAFT',
+          payload: { lat, lng, address: resolvedAddr },
+        });
+      }
+    });
+  };
+
   // Tự động thử lấy vị trí GPS 1 lần khi vào trang nếu chưa có vị trí
   useEffect(() => {
     if (hasAttemptedAutoGpsRef.current) return;
     hasAttemptedAutoGpsRef.current = true;
     if (hasLocation) return;
     let active = true;
-    Promise.resolve(getCurrentLocation({ timeoutMs: 4000 }))
+    Promise.resolve(getCurrentLocation({ timeoutMs: 8000 }))
       .then((coords) => {
         if (!active || !coords) return;
+        setGpsCoords([coords.lat, coords.lng]);
         const street = nearestStreet(coords.lat, coords.lng);
+        const fallbackAddr = `Đ. ${street.name}, P. Trấn Biên`;
         dispatch({
           type: 'SET_DRAFT',
           payload: {
             lat: coords.lat,
             lng: coords.lng,
-            address: `Đ. ${street.name}, P. Trấn Biên`,
+            address: fallbackAddr,
           },
+        });
+        void reverseGeocodeCoords(coords.lat, coords.lng).then((resolvedAddr) => {
+          if (!active || !resolvedAddr || resolvedAddr === fallbackAddr) return;
+          dispatch({
+            type: 'SET_DRAFT',
+            payload: { lat: coords.lat, lng: coords.lng, address: resolvedAddr },
+          });
         });
       })
       .catch(() => {
@@ -414,62 +457,25 @@ export function C04Confirm() {
   }, [draft.address, isAddressFocused]);
 
   const handleMapTapOnStep2 = (lat: number, lng: number) => {
-    setDismissedDuplicate(false);
-    setDuplicateIndex(0);
-    const street = nearestStreet(lat, lng);
-    const fallbackAddr = `Đ. ${street.name}, P. Trấn Biên`;
-    dispatch({
-      type: 'SET_DRAFT',
-      payload: {
-        lat,
-        lng,
-        address: fallbackAddr,
-      },
-    });
-    if (
-      typeof fetch === 'function' &&
-      !(typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom'))
-    ) {
-      fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=vi`
-      )
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data: { address?: { road?: string; house_number?: string } } | null) => {
-          const road = data?.address?.road;
-          if (road) {
-            const house = data?.address?.house_number;
-            const addr = house ? `${house} ${road}, P. Trấn Biên` : `${road}, P. Trấn Biên`;
-            dispatch({
-              type: 'SET_DRAFT',
-              payload: { lat, lng, address: addr },
-            });
-          }
-        })
-        .catch(() => {});
-    }
+    syncLocationWithCoords(lat, lng, false);
   };
 
   const handleRefreshGps = () => {
     setDismissedDuplicate(false);
     setDuplicateIndex(0);
-    Promise.resolve(getCurrentLocation({ timeoutMs: 4000 }))
+    setIsLocatingGps(true);
+    Promise.resolve(getCurrentLocation({ timeoutMs: 8000 }))
       .then((coords) => {
+        setIsLocatingGps(false);
         if (!coords) {
           handleSelectQuickStreet(STREETS[0]!);
           return;
         }
-        const street = nearestStreet(coords.lat, coords.lng);
-        dispatch({
-          type: 'SET_DRAFT',
-          payload: {
-            lat: coords.lat,
-            lng: coords.lng,
-            address: `Đ. ${street.name}, P. Trấn Biên`,
-          },
-        });
-        showToast('Đã cập nhật vị trí GPS hiện tại', 'success');
+        syncLocationWithCoords(coords.lat, coords.lng, true);
+        showToast('Đã đồng bộ vị trí GPS hiện tại', 'success');
       })
       .catch(() => {
+        setIsLocatingGps(false);
         const defaultStreet = STREETS[0]!;
         dispatch({
           type: 'SET_DRAFT',
@@ -479,7 +485,7 @@ export function C04Confirm() {
             address: `Đ. ${defaultStreet.name}, P. Trấn Biên`,
           },
         });
-        showToast('Đã dùng vị trí mặc định tại P. Trấn Biên', 'info');
+        showToast('Không lấy được GPS — đang dùng vị trí mặc định P. Trấn Biên', 'info');
       });
   };
 
@@ -680,6 +686,19 @@ export function C04Confirm() {
     setOfflineError(false);
     setPendingMode(null);
     dispatch({ type: 'HYDRATE', payload: nextState });
+    void createReportApi({
+      id: report.id,
+      category: report.category,
+      title: report.title,
+      description: report.description,
+      photos: report.photos,
+      lat: report.lat,
+      lng: report.lng,
+      address: report.address,
+      locationNote: report.locationNote,
+      anonymous: report.anonymous,
+      phone: verifiedPhone,
+    });
     navigate('/', {
       state: {
         submittedId: report.id,
@@ -688,24 +707,102 @@ export function C04Confirm() {
     });
   };
 
-  const handlePrimarySubmit = () => {
+  const executeAnonymousSubmit = () => {
     if (!hasLocation) {
       handleGoToLocationMap();
       return;
     }
 
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      syncDraftFields(selectedCategory, description, locationNoteInput);
+      setOfflineError(true);
+      return;
+    }
+
+    const { state: nextState, report } = submitReport(
+      state,
+      {
+        category: selectedCategory,
+        photos: draft.photos.length > 0 ? draft.photos : [FALLBACK_HERO_PHOTO],
+        lat: draft.lat!,
+        lng: draft.lng!,
+        address: draft.address!,
+        locationNote: locationNoteInput.trim() || draft.locationNote,
+        title: titleInput.trim() || draft.title?.trim() || undefined,
+        description: description.trim() || undefined,
+        anonymous: true,
+      },
+      settings.demoNow
+    );
+
+    setOfflineError(false);
+    setPendingMode(null);
+    dispatch({ type: 'HYDRATE', payload: nextState });
+    void createReportApi({
+      id: report.id,
+      category: report.category,
+      title: report.title,
+      description: report.description,
+      photos: report.photos,
+      lat: report.lat,
+      lng: report.lng,
+      address: report.address,
+      locationNote: report.locationNote,
+      anonymous: true,
+    });
+    setSubmittedAnonymousReport(report);
+  };
+
+  const verifyAntiSpamIfNeeded = async (): Promise<boolean> => {
+    const isJsdom = typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom');
+    if (isJsdom) return true;
+    if (!turnstileToken) {
+      showToast('Vui lòng tick xác minh chống spam (Turnstile) trước khi gửi', 'warning');
+      return false;
+    }
+    setIsVerifyingSpam(true);
+    try {
+      const check = await verifyTurnstileApi({ token: turnstileToken });
+      if (!check.success) {
+        showToast(
+          check.error || 'Xác minh chống spam không hợp lệ hoặc bạn gửi quá nhanh.',
+          'error'
+        );
+        return false;
+      }
+      return true;
+    } finally {
+      setIsVerifyingSpam(false);
+    }
+  };
+
+  const handlePrimarySubmit = async () => {
+    if (!hasLocation) {
+      handleGoToLocationMap();
+      return;
+    }
+
+    const passedSpam = await verifyAntiSpamIfNeeded();
+    if (!passedSpam) return;
+
     const loggedInPhone = settings.phone?.trim();
     if (!loggedInPhone) {
-      syncDraftFields(selectedCategory, description, locationNoteInput);
-      dispatch({
-        type: 'SET_DRAFT',
-        payload: { title: titleInput.trim() || undefined },
-      });
-      navigate(`/ho-so?login=1&redirect=${encodeURIComponent('/bao-su-co/xac-nhan?step=3')}`);
+      // Cho phép Khách / Ẩn danh gửi trực tiếp không bắt buộc đăng nhập
+      executeAnonymousSubmit();
       return;
     }
 
     executePhoneSubmit(loggedInPhone);
+  };
+
+  const handleAnonymousDirectSubmit = async () => {
+    if (!hasLocation) {
+      handleGoToLocationMap();
+      return;
+    }
+    const passedSpam = await verifyAntiSpamIfNeeded();
+    if (!passedSpam) return;
+    executeAnonymousSubmit();
   };
 
   const handleRetryOffline = () => {
@@ -889,7 +986,7 @@ export function C04Confirm() {
             type="button"
             onClick={handleBack}
             aria-label="Quay lại"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[var(--color-text)] transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[var(--color-text)] transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -1241,6 +1338,14 @@ export function C04Confirm() {
                   Bước 1: Chọn loại phản ánh
                 </h2>
 
+                <div className="mb-3">
+                  <AiCategoryBanner
+                    photoUrl={heroPhoto}
+                    selectedCategory={selectedCategory}
+                    onApplyCategory={handleSelectCategory}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3">
                   {CATEGORIES.map((cat) => (
                     <CategoryTile
@@ -1277,10 +1382,13 @@ export function C04Confirm() {
                 <button
                   type="button"
                   onClick={handleRefreshGps}
-                  className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 py-3 text-sm font-extrabold text-[#0084E8] shadow-2xs transition hover:bg-[#E0F2FE] dark:border-sky-800 dark:bg-sky-950/50 dark:text-[#38BDF8]"
+                  disabled={isLocatingGps}
+                  className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 py-3 text-sm font-extrabold text-[#0084E8] shadow-2xs transition hover:bg-[#E0F2FE] disabled:opacity-60 dark:border-sky-800 dark:bg-sky-950/50 dark:text-[#38BDF8]"
                 >
-                  <LocateFixed className="h-4 w-4" />
-                  <span>Lấy vị trí hiện tại (GPS)</span>
+                  <LocateFixed className={`h-4 w-4 ${isLocatingGps ? 'animate-spin' : ''}`} />
+                  <span>
+                    {isLocatingGps ? 'Đang lấy vị trí GPS…' : 'Lấy vị trí hiện tại (GPS)'}
+                  </span>
                 </button>
 
                 {/* 2. Interactive Map with "Chạm bản đồ để dời ghim" & "© OpenStreetMap contributors" */}
@@ -1288,6 +1396,7 @@ export function C04Confirm() {
                   <MapView
                     center={[draft.lat ?? WARD_CENTER.lat, draft.lng ?? WARD_CENTER.lng]}
                     zoom={17}
+                    userLocation={gpsCoords}
                     markers={[
                       {
                         id: 'confirm-pin',
@@ -1299,6 +1408,10 @@ export function C04Confirm() {
                       },
                     ]}
                     onTap={handleMapTapOnStep2}
+                    onUserLocationChange={(coords) => {
+                      syncLocationWithCoords(coords.lat, coords.lng, true);
+                      showToast('Đã đồng bộ vị trí GPS hiện tại', 'success');
+                    }}
                     hideBuiltInLegend={true}
                   />
 
@@ -1766,15 +1879,48 @@ export function C04Confirm() {
 
               {/* Step 3 Footer: Full-width "Gửi phản ánh" matching Figma Image 5 + subtle back link */}
               <div className="space-y-2.5 pt-1">
+                <TurnstileWidget onTokenChange={setTurnstileToken} />
                 {hasLocation ? (
-                  <button
-                    type="button"
-                    onClick={handlePrimarySubmit}
-                    className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0084E8] px-5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition-all hover:bg-[#006EC4] active:scale-[0.99]"
-                  >
-                    <Send className="h-4 w-4" />
-                    <span>Gửi phản ánh</span>
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      disabled={isVerifyingSpam}
+                      onClick={() => void handlePrimarySubmit()}
+                      className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0084E8] px-5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(0,132,232,0.28)] transition-all hover:bg-[#006EC4] active:scale-[0.99] disabled:opacity-60"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span>
+                        {isVerifyingSpam
+                          ? 'Đang xác minh chống spam…'
+                          : settings.phone?.trim()
+                            ? 'Gửi phản ánh'
+                            : 'Gửi phản ánh (Khách / Ẩn danh)'}
+                      </span>
+                    </button>
+                    {settings.phone?.trim() ? (
+                      <button
+                        type="button"
+                        disabled={isVerifyingSpam}
+                        onClick={() => void handleAnonymousDirectSubmit()}
+                        className="flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                      >
+                        Hoặc gửi ẩn danh (không kèm SĐT)
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          syncDraftFields(selectedCategory, description, locationNoteInput);
+                          navigate(
+                            `/ho-so?login=1&redirect=${encodeURIComponent('/bao-su-co/xac-nhan?step=3')}`
+                          );
+                        }}
+                        className="flex h-9 w-full items-center justify-center rounded-xl text-xs font-semibold text-[#0084E8] hover:underline dark:text-[#38BDF8]"
+                      >
+                        Đăng nhập SĐT để nhận thông báo tự động
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <button
                     type="button"

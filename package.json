@@ -10,6 +10,8 @@
     "test": "npm --prefix app run test",
     "test:e2e": "npm --prefix app run test:e2e",
     "lint": "npm --prefix app run lint",
-    "verify": "npm --prefix app run verify"
+    "verify": "npm --prefix app run verify",
+    "api:dev": "npm --prefix api run dev",
+    "api:deploy": "npm --prefix api run deploy"
   }
 }

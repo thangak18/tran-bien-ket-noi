@@ -2,16 +2,10 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Lock, MapPin, Phone, ShieldCheck, User } from 'lucide-react';
 import { Report } from '@/domain/types';
 import { CitizenAccountRecord, findAccountByPhone, saveAccountRecord } from '@/lib/accounts';
+import { ApiRole, requestOtpApi, verifyOtpApi } from '@/lib/apiClient';
 import { Toast } from '@/components/ui/Toast';
 
 export type PortalAccent = 'sky' | 'emerald' | 'blue';
-
-export interface PortalMockAccount {
-  name: string;
-  subtitle: string;
-  address: string;
-  phone: string;
-}
 
 export interface PortalAuthFlowProps {
   portalLabel: string;
@@ -21,7 +15,6 @@ export interface PortalAuthFlowProps {
   addressLabel?: string;
   addressPlaceholder?: string;
   reports?: Report[];
-  mockAccounts?: PortalMockAccount[];
   onCancel?: () => void;
   onAuthenticated: (record: CitizenAccountRecord) => void;
 }
@@ -56,7 +49,6 @@ export function PortalAuthFlow({
   addressLabel = 'Địa bàn / Đơn vị',
   addressPlaceholder = 'VD: Khu phố 3, P. Trấn Biên',
   reports = [],
-  mockAccounts,
   onCancel,
   onAuthenticated,
 }: PortalAuthFlowProps) {
@@ -85,6 +77,14 @@ export function PortalAuthFlow({
     };
   }, [step]);
 
+  const inferredRole: ApiRole = /admin|quản trị/i.test(portalLabel)
+    ? 'admin'
+    : accent === 'blue'
+      ? 'officer'
+      : accent === 'emerald'
+        ? 'volunteer'
+        : 'citizen';
+
   const handleSendOtp = () => {
     const clean = phoneInput.replace(/\D/g, '');
     if (clean.length < 9 || clean.length > 11) {
@@ -93,6 +93,7 @@ export function PortalAuthFlow({
     }
     setOtpInput('');
     setStep('otp');
+    void requestOtpApi(clean, inferredRole);
     showToast('Mã OTP demo: 123456');
   };
 
@@ -102,8 +103,16 @@ export function PortalAuthFlow({
       return;
     }
     const cleanPhone = phoneInput.replace(/\D/g, '');
+    const cleanOtp = otpInput.replace(/\D/g, '');
     const existing = findAccountByPhone(cleanPhone, reports);
     if (existing) {
+      void verifyOtpApi({
+        phone: cleanPhone,
+        otp: cleanOtp,
+        name: existing.name,
+        role: inferredRole,
+        unit: existing.address,
+      });
       saveAccountRecord(existing);
       showToast('Đăng nhập thành công');
       onAuthenticated(existing);
@@ -116,6 +125,7 @@ export function PortalAuthFlow({
 
   const handleCompleteRegister = () => {
     const cleanPhone = phoneInput.replace(/\D/g, '');
+    const cleanOtp = otpInput.replace(/\D/g, '') || '123456';
     const trimmedName = regName.trim();
     const trimmedAddress = regAddress.trim() || defaultAddress;
     if (trimmedName.length < 2) {
@@ -128,6 +138,13 @@ export function PortalAuthFlow({
       address: trimmedAddress,
       createdAt: new Date().toISOString(),
     };
+    void verifyOtpApi({
+      phone: cleanPhone,
+      otp: cleanOtp,
+      name: trimmedName,
+      role: inferredRole,
+      unit: trimmedAddress,
+    });
     saveAccountRecord(record);
     showToast('Tạo tài khoản thành công');
     onAuthenticated(record);
@@ -176,47 +193,6 @@ export function PortalAuthFlow({
 
         {step === 'phone' && (
           <div className="space-y-4">
-            {mockAccounts && mockAccounts.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Chọn nhanh tài khoản demo
-                </div>
-                <div className="space-y-1.5">
-                  {mockAccounts.map((acc) => (
-                    <button
-                      key={acc.phone}
-                      type="button"
-                      onClick={() => {
-                        const record: CitizenAccountRecord = {
-                          phone: acc.phone,
-                          name: acc.name,
-                          address: acc.address,
-                          createdAt: new Date().toISOString(),
-                        };
-                        saveAccountRecord(record);
-                        onAuthenticated(record);
-                      }}
-                      className="flex w-full items-center justify-between rounded-2xl border border-slate-200/90 bg-slate-50/70 px-3.5 py-2.5 text-left transition-all duration-150 hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-sky-700 dark:hover:bg-slate-800"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
-                          {acc.name}
-                        </div>
-                        <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-                          {acc.subtitle}
-                        </div>
-                      </div>
-                      <span className={`shrink-0 text-xs font-bold ${palette.icon}`}>
-                        Vào ngay ›
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <div className="relative py-1 text-center text-[11px] font-medium text-slate-400">
-                  <span className="bg-white px-2 dark:bg-slate-900">hoặc đăng nhập SĐT</span>
-                </div>
-              </div>
-            )}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">
                 Số điện thoại

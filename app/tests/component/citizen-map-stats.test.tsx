@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppStoreProvider, getInitialState } from '@/store/AppStore';
+import mockData from '@/data/mock.json';
+import { Report, VolunteerTask } from '@/domain/types';
 import { C07Nearby } from '@/screens/citizen/C07Nearby';
 import { C08Transparency } from '@/screens/citizen/C08Transparency';
 
@@ -15,8 +17,16 @@ beforeAll(() => {
   }
 });
 
+function getTestInitialState() {
+  return {
+    ...getInitialState(),
+    reports: JSON.parse(JSON.stringify(mockData.reports)) as Report[],
+    volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)) as VolunteerTask[],
+  };
+}
+
 function renderWithStore(ui: React.ReactElement) {
-  const initialState = getInitialState();
+  const initialState = getTestInitialState();
   return render(
     <MemoryRouter>
       <AppStoreProvider initialState={initialState}>{ui}</AppStoreProvider>
@@ -40,7 +50,7 @@ describe('C07Nearby – Bản đồ quanh tôi', () => {
   });
 
   it('loại bỏ hồ sơ da_gop và không hiển thị số điện thoại', () => {
-    const initialState = getInitialState();
+    const initialState = getTestInitialState();
     const mergedReport = initialState.reports.find((r) => r.status === 'da_gop');
     render(
       <MemoryRouter>
@@ -91,7 +101,9 @@ describe('C08Transparency – Bảng thống kê phường', () => {
 
     expect(screen.getByText('Vừa xử lý xong')).toBeInTheDocument();
     expect(screen.getAllByText('Trước')).toHaveLength(6);
-    expect(screen.getByText('Số liệu tháng 11/2026 · Dữ liệu mẫu cuộc thi')).toBeInTheDocument();
+    expect(
+      screen.getByText('Số liệu tổng hợp · Cổng thông tin Phường Trấn Biên')
+    ).toBeInTheDocument();
     expect(screen.queryByText(/0909/)).not.toBeInTheDocument();
   });
 });

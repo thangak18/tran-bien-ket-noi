@@ -10,13 +10,19 @@ import {
   supplementReport,
 } from '@/store/citizenActions';
 import { getInitialState, AppState } from '@/store/AppStore';
+import mockData from '@/data/mock.json';
+import { Report, VolunteerTask } from '@/domain/types';
 
 describe('UT-021 – Actions người dân (spec 3.3, 3.4a, 3.4b, AC-C04/5/6)', () => {
   let state: AppState;
   const now = '2026-11-24T09:00:00+07:00';
 
   beforeEach(() => {
-    state = getInitialState();
+    state = {
+      ...getInitialState(),
+      reports: JSON.parse(JSON.stringify(mockData.reports)) as Report[],
+      volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)) as VolunteerTask[],
+    };
   });
 
   it('1. submitReport -> id TB-0065, status moi, followers = [phone], 1 timeline, 1 notification, secretCode 4 số, deviceReports thêm', () => {

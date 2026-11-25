@@ -14,13 +14,19 @@ import {
   getCategoryConfig,
 } from '@/store/officerActions';
 import { getInitialState, AppState } from '@/store/AppStore';
+import mockData from '@/data/mock.json';
+import { Report, VolunteerTask } from '@/domain/types';
 
 describe('UT-022 – Actions cán bộ và tình nguyện viên (spec 3.3, AC-A02, AC-A03, AC-V02)', () => {
   let state: AppState;
   const now = '2026-11-24T09:00:00+07:00';
 
   beforeEach(() => {
-    state = getInitialState();
+    state = {
+      ...getInitialState(),
+      reports: JSON.parse(JSON.stringify(mockData.reports)) as Report[],
+      volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)) as VolunteerTask[],
+    };
   });
 
   it('1. accept set department + dueAt mặc định = createdAt + hạn loại', () => {

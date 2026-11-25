@@ -177,9 +177,10 @@ Nhóm dùng các công cụ AI sau làm trợ lý trong quá trình làm prototy
 - Không thay thế việc xác minh tại hiện trường.
 - Không xử lý số điện thoại hoặc dữ liệu cá nhân thật.
 
-### Về tính năng "gợi ý loại sự cố từ ảnh"
+### Về tính năng "gợi ý loại sự cố từ ảnh" & nâng cấp sản phẩm thật (nhánh `feat/production-p3-p4-p5`)
 
-Prototype **chưa dùng AI thật** để nhận diện ảnh. Màn gửi phản ánh chỉ có băng gợi ý mang nhãn **"Gợi ý mô phỏng"**, và người dân luôn có thể tự đổi lựa chọn. Nhận diện ảnh thật là hướng phát triển sau.
+- **AI nhận diện ảnh thật qua máy chủ proxy (`/api/ai/classify`):** Khi kết nối backend Cloudflare Worker và cấu hình `GEMINI_API_KEY`, hệ thống phân tích ảnh hiện trường bằng **Gemini Vision** (nhãn `AI Gemini`), đồng thời người dân luôn có quyền tự đổi lựa chọn. Khi chạy ngoại tuyến hoặc chưa cấu hình key, hệ thống tự chuyển sang chế độ **Gợi ý dự phòng** có nhãn minh bạch.
+- **Bảo mật, Database 4 vai trò & Luồng linh hoạt:** Đã triển khai backend Cloudflare Worker HTTPS (`tran-bien-ket-noi-api.tran-bien-ket-noi-api.workers.dev`) cùng **Cloudflare D1 (`tran-bien-db`)** đồng bộ 2 chiều cho **4 vai trò** (Người dân, Tình nguyện viên, Cán bộ, Quản trị Admin `/admin`), hỗ trợ tách 4 trang web độc lập qua `VITE_PORTAL_MODE`. Người dân (Khách/Ẩn danh hoặc SĐT) gửi phản ánh qua xác minh chống spam **Cloudflare Turnstile thật** → Cán bộ có thể **Giao xử lý trực tiếp** hoặc gửi TNV xác minh khi cần kèm thông báo 2 chiều Cán bộ ↔ TNV, xuất báo cáo **Excel `.xlsx` / CSV / In PDF**, PWA cài ứng dụng và đồng bộ **GPS ↔ Reverse Geocoding**.
 
 ---
 

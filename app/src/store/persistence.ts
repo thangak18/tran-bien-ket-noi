@@ -1,8 +1,7 @@
 import { AppAction, AppState, getInitialState } from './AppStore';
 import { Settings } from '../domain/types';
-import mockData from '../data/mock.json';
 
-export const DEFAULT_STORAGE_KEY = 'tbkn:v1';
+export const DEFAULT_STORAGE_KEY = 'tbkn:v2';
 export const SETTINGS_STORAGE_KEY_PREFIX = 'tbkn:settings:';
 
 /**
@@ -180,8 +179,8 @@ export function resetStorage(storageKey: string = DEFAULT_STORAGE_KEY): AppState
   }
 
   const freshState: AppState = {
-    reports: JSON.parse(JSON.stringify(mockData.reports)),
-    volunteerTasks: JSON.parse(JSON.stringify(mockData.volunteerTasks)),
+    reports: [],
+    volunteerTasks: [],
     notifications: [],
     settings: {
       seniorMode: false,

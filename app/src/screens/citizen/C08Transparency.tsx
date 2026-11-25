@@ -107,7 +107,7 @@ export function C08Transparency({
               type="button"
               onClick={handleBack}
               aria-label="Quay lại"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-800 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:bg-slate-800 dark:text-slate-100"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-800 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
             >
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -267,16 +267,41 @@ export function C08Transparency({
                     data={chartData}
                     margin={{ top: 4, right: 28, left: 4, bottom: 4 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <CartesianGrid
+                      stroke="var(--color-border)"
+                      strokeDasharray="3 3"
+                      horizontal={false}
+                    />
+                    <XAxis
+                      type="number"
+                      allowDecimals={false}
+                      stroke="var(--color-border)"
+                      tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
+                    />
                     <YAxis
                       type="category"
                       dataKey="name"
                       width={86}
-                      tick={{ fontSize: 12, fill: '#64748b' }}
+                      stroke="var(--color-border)"
+                      tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
                     />
-                    <Tooltip />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(148, 163, 184, 0.14)' }}
+                      contentStyle={{
+                        backgroundColor: 'var(--color-surface)',
+                        borderColor: 'var(--color-border)',
+                        borderRadius: '14px',
+                        color: 'var(--color-text)',
+                        boxShadow: '0 10px 25px rgba(15, 23, 42, 0.18)',
+                      }}
+                      labelStyle={{
+                        color: 'var(--color-text)',
+                        fontWeight: 700,
+                        marginBottom: '4px',
+                      }}
+                      itemStyle={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px', color: 'var(--color-text-muted)' }} />
                     <Bar dataKey="resolved" name="Đã xử lý" stackId="total" fill="#10b981">
                       <LabelList
                         dataKey="resolved"
@@ -297,7 +322,7 @@ export function C08Transparency({
                       <LabelList
                         dataKey="open"
                         position="right"
-                        fill="#64748b"
+                        fill="var(--color-text-muted)"
                         fontSize={11}
                         fontWeight={600}
                         formatter={(val: number) => (val > 0 ? val : '')}
@@ -313,16 +338,41 @@ export function C08Transparency({
                   data={chartData}
                   margin={{ top: 4, right: 28, left: 4, bottom: 4 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <CartesianGrid
+                    stroke="var(--color-border)"
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                  />
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    stroke="var(--color-border)"
+                    tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
+                  />
                   <YAxis
                     type="category"
                     dataKey="name"
                     width={86}
-                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    stroke="var(--color-border)"
+                    tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }}
                   />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(148, 163, 184, 0.14)' }}
+                    contentStyle={{
+                      backgroundColor: 'var(--color-surface)',
+                      borderColor: 'var(--color-border)',
+                      borderRadius: '14px',
+                      color: 'var(--color-text)',
+                      boxShadow: '0 10px 25px rgba(15, 23, 42, 0.18)',
+                    }}
+                    labelStyle={{
+                      color: 'var(--color-text)',
+                      fontWeight: 700,
+                      marginBottom: '4px',
+                    }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 600 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px', color: 'var(--color-text-muted)' }} />
                   <Bar dataKey="resolved" name="Đã xử lý" stackId="total" fill="#10b981" />
                   <Bar
                     dataKey="open"
@@ -442,7 +492,7 @@ export function C08Transparency({
         {/* Chú thích nguồn */}
         <footer className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 py-3 text-xs text-slate-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-slate-200">
           <p className="font-bold text-[var(--color-text)]">
-            Số liệu tháng 11/2026 · Dữ liệu mẫu cuộc thi
+            Số liệu tổng hợp · Cổng thông tin Phường Trấn Biên
           </p>
           {avgRating !== null && (
             <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
