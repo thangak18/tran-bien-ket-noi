@@ -13,7 +13,7 @@ export function AuthEvents() {
   useEffect(() => {
     const onUnauthorized = () => {
       const path = location.pathname;
-      if (path.startsWith('/can-bo') || path.startsWith('/tnv')) {
+      if (path.startsWith('/can-bo') || path.startsWith('/tnv') || path.startsWith('/quan-tri')) {
         navigate(`/dang-nhap?redirect=${encodeURIComponent(path)}`, { replace: true });
       }
     };

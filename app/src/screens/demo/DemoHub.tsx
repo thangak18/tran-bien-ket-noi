@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Home, Shield, Users, BarChart3, Palette, ExternalLink } from 'lucide-react';
+import { Home, Shield, Users, BarChart3, Palette, ExternalLink, Settings } from 'lucide-react';
 
 export function DemoHub() {
   const navigate = useNavigate();
@@ -40,6 +40,12 @@ export function DemoHub() {
       desc: 'Xác minh hiện trường và hỗ trợ nghiệm thu cộng đồng',
       path: '/tnv',
       icon: <Users className="h-5 w-5 text-teal-600" />,
+    },
+    {
+      title: 'Cổng quản trị',
+      desc: 'Quản lý tài khoản, bộ phận, cấu hình và nhật ký',
+      path: '/quan-tri',
+      icon: <Settings className="h-5 w-5 text-primary" />,
     },
     {
       title: 'Thư viện UI / Component Gallery',

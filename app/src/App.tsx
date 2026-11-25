@@ -25,6 +25,14 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthEvents } from './components/auth/AuthEvents';
 import { DemoHub } from './screens/demo/DemoHub';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
+import { AdminLayout } from './layouts/AdminLayout';
+import { AdminOverview } from './screens/admin/AdminOverview';
+import {
+  AdminAuditPage,
+  AdminCategorySettingsPage,
+  AdminDepartmentsPage,
+  AdminStaffPage,
+} from './screens/admin/AdminManagement';
 
 /** Đồng bộ lớp CSS chữ lớn với cài đặt đã lưu (kể cả sau khi tải lại trang) */
 function SeniorSync() {
@@ -166,6 +174,20 @@ export default function App() {
         <Route path="/dang-nhap" element={<LoginScreen />} />
         <Route path="/khong-co-quyen" element={<ForbiddenScreen />} />
         <Route path="/demo" element={<DemoHub />} />
+        <Route
+          path="/quan-tri"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminOverview />} />
+          <Route path="tai-khoan" element={<AdminStaffPage />} />
+          <Route path="bo-phan" element={<AdminDepartmentsPage />} />
+          <Route path="cau-hinh" element={<AdminCategorySettingsPage />} />
+          <Route path="nhat-ky" element={<AdminAuditPage />} />
+        </Route>
         {import.meta.env.DEV && <Route path="/dev/ui" element={<DevUiGallery />} />}
       </Routes>
     </AppStoreProvider>
