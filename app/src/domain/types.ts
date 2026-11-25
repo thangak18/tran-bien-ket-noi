@@ -91,6 +91,15 @@ export interface Report {
   followerCount?: number;
   /** Chỉ có khi dữ liệu đến từ API: số phiên bản để phát hiện xung đột cập nhật (409). */
   version?: number;
+  /** Gợi ý loại sự cố từ AI (B1: deepseek hoặc mock). */
+  aiSuggestion?: AiSuggestionData | null;
+}
+
+export interface AiSuggestionData {
+  category: Category | null;
+  confidence: number;
+  provider: 'deepseek' | 'mock';
+  reason?: string;
 }
 
 /**

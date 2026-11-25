@@ -108,6 +108,12 @@ export const reports = pgTable(
     resultNote: text('result_note'),
     version: integer('version').notNull().default(1),
     isSeed: boolean('is_seed').notNull().default(false),
+    aiSuggestion: jsonb('ai_suggestion').$type<{
+      category: string | null;
+      confidence: number;
+      provider: 'deepseek' | 'mock';
+      reason?: string;
+    } | null>(),
   },
   (table) => [
     index('reports_status_due_idx').on(table.status, table.dueAt),
