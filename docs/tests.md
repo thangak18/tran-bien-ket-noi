@@ -615,3 +615,15 @@ Các ID dưới đây ngoài danh sách yêu cầu ban đầu, thêm để mỗi
 ### 19.7. Bất biến dữ liệu không đổi sau FR-08
 
 Giữ nguyên `DV-001 → DV-016` và `DB-007 → DB-016`: 64 hồ sơ (18/15/21/10), 47 đã xử lý, 17 chưa hoàn tất, trung bình 3,2 ngày (sai số ≤ 0,005), đúng 6 hồ sơ `anonymous` trong đó 1 `subscribedLater`, `reporter_phone` rỗng ở cả 6, mọi hồ sơ có `secret_code_hash`. Hồ sơ tạo bởi AUTH-CIT-002 (từ `TB-0065`) không làm sai các kiểm tra này (`is_seed`).
+
+## 20. Phiên theo cổng và demo (spec v3.1)
+| ID | File | Kiểm tra | Kết quả mong đợi |
+|---|---|---|---|
+| SESSION-001 | `tests/unit/session.test.ts` | Có token người dân và token nhân viên, gọi `clearStaffSession()` rồi `clearCitizenSession()` | Mỗi hàm chỉ xoá khoá của phiên mình |
+| SESSION-002 | `tests/unit/session.test.ts` | Chế độ API, `settings.phone` còn nhưng không có token người dân | Store xoá `settings.phone` |
+| SESSION-003 | `tests/unit/session.test.ts` | API `/citizen/*` trả 401 khi đang giữ cả hai phiên | Chỉ mất token người dân, phát sự kiện yêu cầu đăng nhập người dân |
+| SESSION-004 | `tests/unit/session.test.ts` | Giữ cả hai token, gọi `/citizen/me/reports` và `/officer/reports` | Header `Authorization` đúng loại token cho từng đường dẫn |
+| DB-GUARD-002 | `tests/unit/sql-json-guard.test.ts` | Đọc cấu hình `server/db/client.ts` | Có `prepare: false`, `idle_timeout`, `max_lifetime`; `max` = 1 khi chạy trên Vercel |
+| ROLE-001 | `tests/component/spec-v3-fr08.test.tsx` | Render App ở chế độ API | Có nút "Chuyển cổng nghiệp vụ" với 4 cổng |
+| E2E-DEMO-01 | `tests/e2e-api/demo-role-switch.spec.ts` | Một trình duyệt: người dân đăng nhập OTP và gửi → đăng nhập cán bộ → TNV → quay lại người dân gửi tiếp | Lần gửi thứ hai 201, không phải đăng nhập lại; cán bộ/TNV vào đúng cổng |
+
