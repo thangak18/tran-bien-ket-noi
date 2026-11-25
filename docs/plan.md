@@ -234,6 +234,7 @@ Nguyên tắc:
 5. **Giao dịch cho mọi chuyển trạng thái** (spec 12.1); `version` cho xung đột.
 6. **`now` là tham số** (Clock), test không phụ thuộc giờ máy.
 7. **Tách biến môi trường theo môi trường**: `development`, `preview`, `production`; không khoá bí mật trong repo (AGENTS.md).
+8. **Dịch vụ AI thật (DeepSeek Vision)**: Tích hợp mô hình `deepseek-flash` qua endpoint OpenAI-compatible `POST /chat/completions`, dùng native `fetch` và `zod` có sẵn (không thêm SDK ngoài), xử lý an toàn với `AbortController` timeout (8s), rate limit theo IP và hạn ngạch toàn hệ thống (500 lượt/ngày). Nhận data URL base64 trực tiếp từ client để có kết quả phân tích tức thì mà không phụ thuộc việc upload ảnh lên storage trước. Hỗ trợ fallback mô phỏng (`MockSuggester`) khi ngoại tuyến hoặc không có API key. AI chỉ đóng vai trò gợi ý, không tự động chọn và không chặn người dân.
 
 ## 11. Thư viện bổ sung (ghi lý do theo AGENTS.md)
 

@@ -491,3 +491,30 @@ Các test này gọi `app.request` trên DB PostGIS thật và Supabase Auth th�
 | OFF-009 | `officer-flow.test.ts` | Người dân/không token/TNV gọi endpoint cán bộ | 403 / 401 / 403 |
 | OFF-010 | `officer-flow.test.ts` | Cron | Chỉ nhận `Authorization: Bearer <CRON_SECRET>`; header cũ `X-Cron-Secret` bị 401 |
 | PG-001…005 | `tests/api/postgis-dwithin.test.ts` | Tìm trùng bằng `ST_DWithin` | Xem mục 12 |
+
+---
+
+## 17. Kiểm thử AI Gợi ý Loại Sự cố (B1 - DeepSeek Vision)
+
+### 17.1. Unit tests (`tests/unit/ai-suggester.test.ts`)
+- **AI-UNIT-001**: Parse câu trả lời JSON có văn bản thừa trước/sau (ví dụ markdown code block ```json ... ``` hoặc lời chào) trích xuất đúng category, confidence, reason.
+- **AI-UNIT-002**: Model trả category lạ / ngoài 4 loại hoặc "khong_ro" → chuẩn hoá về `category: null`.
+- **AI-UNIT-003**: Confidence ngoài khoảng 0..1 (ví dụ <0 hoặc >1 hoặc NaN) → chuẩn hoá về null/0.
+- **AI-UNIT-004**: Timeout (AbortController) sau 8s → trả `{ category: null, reason: 'Quá thời gian phản hồi...' }`, không throw exception.
+- **AI-UNIT-005**: Lỗi HTTP (400, 401, 429, 500) hoặc refusal do kiểm duyệt nội dung → trả `{ category: null, reason: '...' }`, không ném 500.
+
+### 17.2. API integration tests (`tests/api/ai-suggest.test.ts`)
+- **AI-API-001**: Gửi ảnh > 1.5 MB → 422 `INVALID_IMAGE`.
+- **AI-API-002**: Sai magic bytes (không phải JPEG, PNG, WebP) → 422 `INVALID_IMAGE`.
+- **AI-API-003**: Rate limit 10 lượt / 10 phút / IP-thiết bị → lần thứ 11 trả 429 `TOO_MANY_ATTEMPTS`.
+- **AI-API-004**: Hạn ngạch toàn hệ thống `AI_DAILY_LIMIT` vượt quá → trả `{ category: null, reason: 'Tạm hết lượt gợi ý hôm nay' }` mà không gọi fetch DeepSeek.
+- **AI-API-005**: Khi cấu hình `AI_PROVIDER=mock` → dùng MockSuggester phân tích ảnh demo/path, không gọi DeepSeek API.
+- **AI-API-006**: Phản hồi API không chứa API key, raw prompt hay raw response từ model.
+
+### 17.3. Frontend tests (`tests/component/ai-suggestion.test.tsx`)
+- **AI-FE-001**: Màn hình C04 hiển thị băng "Đang phân tích ảnh..." khi vừa nạp ảnh, sau đó hiện "AI gợi ý: <Tên> - <Lý do>" khi confidence ≥ 0.5.
+- **AI-FE-002**: Bấm nút "Dùng gợi ý" chọn đúng loại CategoryTile tương ứng; người dùng không bấm thì không tự ý chọn thay.
+- **AI-FE-003**: Bỏ hoàn toàn số giả "(94%)". Nhãn hiển thị chính xác theo provider: "Gợi ý bởi AI – vui lòng kiểm tra lại" (`deepseek`) hoặc "Gợi ý mô phỏng" (`mock`).
+- **AI-FE-004**: Lỗi AI hoặc confidence < 0.5 hiển thị "Không nhận ra loại sự cố, bạn chọn giúp nhé" và không chặn nút gửi phản ánh.
+- **AI-FE-005**: Dưới ô ảnh hiển thị cam kết quyền riêng tư: "Ảnh được gửi tới dịch vụ AI (DeepSeek) để gợi ý loại sự cố".
+- **AI-FE-006**: Màn hình A02 hiển thị dòng thông tin nếu hồ sơ có trường `aiSuggestion`.

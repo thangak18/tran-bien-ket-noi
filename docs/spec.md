@@ -13,7 +13,7 @@ Nhãn: **[ĐỀ]** yêu cầu BTC · **[GĐ]** giả định thiết kế · **[
 
 | Mã | Bonus | Nguồn | AC / mục liên quan |
 |---|---|---|---|
-| B1 | Gợi ý loại từ ảnh bằng AI | [ĐỀ] điểm cộng | AC-C02-5, phần "Gợi ý" của AC-C04-1 |
+| B1 | Gợi ý loại từ ảnh bằng AI | [ĐỀ] điểm cộng | AC-C02-5, phần "Gợi ý" của AC-C04-1, mục 10.1, 10.3 |
 | B2 | Phát hiện & gộp phản ánh trùng, "Tôi cũng gặp" | [ĐỀ] điểm cộng | 3.5, AC-C04-3, 7, 8, AC-C06-8 (nút Tôi cũng gặp), AC-A01-5, AC-A02-6, 7 |
 | B3 | Chế độ chữ lớn | [ĐỀ] điểm cộng | 7.2 (cột Chữ lớn), 7.4 (cột Chữ lớn), AC-C01-2, AC-C03-7 |
 | B4 | Mô tả bằng giọng nói | Mở rộng của nhóm | Phần micro của AC-C04-2 |
@@ -48,9 +48,9 @@ Prototype web tương tác thể hiện trọn vòng đời một phản ánh hi
 
 ### 1.3. Ngoài phạm vi
 
-*(Áp dụng cho giai đoạn 1. Sang giai đoạn 2 backend, database, xác thực, phân quyền thật **nằm trong phạm vi** – xem mục 10; vẫn ngoài phạm vi: gửi SMS/Zalo thật, AI thật, đa ngôn ngữ, web push – xem 10.3.)*
+*(Áp dụng cho giai đoạn 1. Sang giai đoạn 2 backend, database, xác thực, phân quyền thật, và **AI gợi ý loại sự cố bằng DeepSeek** **nằm trong phạm vi** – xem mục 10; vẫn ngoài phạm vi: gửi SMS/Zalo thật qua telco, đa ngôn ngữ, web push – xem 10.3.)*
 
-Backend, database, xác thực thật, gửi tin nhắn thật, AI thật, phân quyền bảo mật thật, đa ngôn ngữ, thông báo đẩy (web push).
+Backend, database, xác thực thật, gửi tin nhắn thật qua telco, phân quyền bảo mật thật, đa ngôn ngữ, thông báo đẩy (web push).
 
 ---
 
@@ -335,7 +335,7 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 - AC-C02-4: "Tiếp tục" chỉ bật khi có ≥ 1 ảnh.
 - AC-C02-6: Ảnh lỗi định dạng hoặc > 15MB trước nén → thông báo bằng lời + cách khắc phục.
 - AC-C02-7: Bấm "✕" khi đã có dữ liệu → hỏi "Lưu nháp để gửi sau?" [Lưu nháp] [Bỏ]; nháp khôi phục khi bấm lại "Báo sự cố".
-- AC-C02-5: **[BONUS – HOÃN – B1]** Gợi ý loại bằng AI mô phỏng theo manifest.
+- AC-C02-5: **[B1 – AI thật DeepSeek]** Sau khi người dân chụp hoặc chọn ảnh, hệ thống gọi dịch vụ AI ngầm để gợi ý loại sự cố từ ảnh. Gợi ý chỉ mang tính tham khảo, người dân luôn là người quyết định cuối cùng, không bao giờ tự chọn thay người dân và không chặn luồng gửi phản ánh.
 
 ### C03 – Bước 2: Vị trí
 
@@ -352,7 +352,14 @@ Quy ước ID tiêu chí: `AC-<màn>-<số>`.
 ### C04 – Bước 3: Loại, xác nhận, gửi
 
 - AC-C04-13: Bố cục: ảnh 120px phía trên; sheet gồm tiêu đề "Đây là chuyện gì?", lưới 4 CategoryTile, LocationRow (nút "Đổi" → C03), ô mô tả; nút chính "Gửi cho phường"; link phụ "Gửi không để lại số điện thoại" ngay dưới.
-- AC-C04-1: 4 CategoryTile lưới 2×2, ≥ 96px, icon + nhãn; chọn → viền 2px primary + ✓ + `aria-pressed`. "Gửi cho phường" chỉ bật khi đã chọn loại. Không có lựa chọn mức ưu tiên. *(Phần huy hiệu "Gợi ý": [BONUS – HOÃN – B1].)*
+- AC-C04-1: 4 CategoryTile lưới 2×2, ≥ 96px, icon + nhãn; chọn → viền 2px primary + ✓ + `aria-pressed`. "Gửi cho phường" chỉ bật khi đã chọn loại. Không có lựa chọn mức ưu tiên.
+  - **[B1 – AI gợi ý DeepSeek]**: Băng gợi ý hiển thị trên lưới 4 loại (trên desktop nằm đầu cột form phải):
+    * Trạng thái đang phân tích: icon ✨ + "Đang phân tích ảnh...".
+    * Có kết quả (confidence ≥ 0,5): "AI gợi ý: <Tên Loại> – <Lý do>" + nút "Dùng gợi ý" (người dùng bấm mới chọn loại đó, không tự động chọn thay, không ghi đè nếu đã chọn loại khác trừ khi bấm nút).
+    * Không nhận diện được hoặc confidence < 0,5 hoặc lỗi: "Không nhận ra loại sự cố, bạn chọn giúp nhé" (nhẹ nhàng, không báo lỗi đỏ, không chặn việc gửi).
+    * Bỏ hoàn toàn số giả "(94%)".
+    * Nhãn nguồn: nhà cung cấp `deepseek` → "Gợi ý bởi AI – vui lòng kiểm tra lại"; `mock` → "Gợi ý mô phỏng".
+    * Dưới ô ảnh có dòng cam kết quyền riêng tư: "Ảnh được gửi tới dịch vụ AI (DeepSeek) để gợi ý loại sự cố".
 - AC-C04-2: Mô tả tùy chọn ≤ 300 ký tự, placeholder "Ví dụ: ổ gà sâu, xe máy dễ té". *(Nút micro: [BONUS – HOÃN – B4].)*
 - AC-C04-5: Bấm "Gửi cho phường" khi chưa có SĐT → bottom sheet nhập SĐT (10 số, bắt đầu bằng 0) với dòng "Số điện thoại chỉ dùng để báo tin cho bạn, không bao giờ hiển thị công khai." → OTP; mã đúng `123456` (gợi ý "Mã demo: 123456 · Mô phỏng"). Đã xác thực → bỏ qua.
 - AC-C04-6: Thành công → màn thành công theo wireframe: ✅, "Phường đã nhận phản ánh", mã `TB-xxxx` ≥ 32px, đoạn "Tiếp theo: cán bộ phường sẽ xem và tiếp nhận, thường trong ngày làm việc. Bạn sẽ nhận tin nhắn khi có cập nhật.", nút "Theo dõi phản ánh" → C06, link "Về trang chủ". Cặp `{id, secretCode}` thêm vào `deviceReports`.
@@ -572,7 +579,7 @@ Nhãn bổ sung: **[ĐĐ]** đề xuất thiết kế chờ chủ dự án duy�
 |---|---|
 | Stack | Supabase (PostgreSQL + PostGIS + Auth + Storage) · Vercel Functions (TypeScript) · Drizzle ORM |
 | OTP/SMS/Zalo | **Vẫn mô phỏng** (mã `123456`, nhãn "Mô phỏng"); thiết kế sẵn điểm cắm để thay bằng nhà cung cấp thật sau (10.3) |
-| AI nhận diện ảnh (B1) | **Vẫn mô phỏng** theo manifest ảnh demo |
+| AI nhận diện ảnh (B1) | **AI thật dùng DeepSeek Vision API** (model `deepseek-flash`, OpenAI-compatible) với fallback mô phỏng khi chưa có key hoặc ngoại tuyến |
 | Trang quản trị | **Không làm** (25/11, đổi quyết định): tài khoản cán bộ/TNV, bộ phận, hạn xử lý quản lý bằng script (mục 14) |
 
 ### 10.2. Trong phạm vi
