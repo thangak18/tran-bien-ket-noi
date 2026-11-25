@@ -177,6 +177,7 @@ officerRoutes.get('/reports', async (c) => {
     resultPhotos: photosByKind(photoRows, r.id as string, 'after'),
     resultNote: r.result_note || undefined,
     version: r.version,
+    aiSuggestion: (r.ai_suggestion as Record<string, unknown> | null) || undefined,
   }));
 
   return c.json({ items, total: items.length });
@@ -631,6 +632,7 @@ officerRoutes.get('/reports/:code', async (c) => {
             at: report.feedback_at,
           }
         : undefined,
+    aiSuggestion: (report.ai_suggestion as Record<string, unknown> | null) || undefined,
   });
 });
 

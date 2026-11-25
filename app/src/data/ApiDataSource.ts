@@ -10,7 +10,7 @@ import {
   CreateOnBehalfInput,
   CreateOnBehalfResult,
 } from './DataSource';
-import { Category, Report, Status, VolunteerTask } from '../domain/types';
+import { AiSuggestionData, Category, Report, Status, VolunteerTask } from '../domain/types';
 import { SubmitReportPayload } from '../store/citizenActions';
 import {
   ApiError,
@@ -85,6 +85,11 @@ export function mapApiReport(raw: Json): Report {
       note: str(t.note),
     })),
     version: typeof raw.version === 'number' ? raw.version : undefined,
+    aiSuggestion: raw.aiSuggestion
+      ? (raw.aiSuggestion as Report['aiSuggestion'])
+      : raw.ai_suggestion
+        ? (raw.ai_suggestion as Report['aiSuggestion'])
+        : null,
   };
 }
 
@@ -440,5 +445,12 @@ export class ApiDataSource implements DataSource {
 
   async uploadPhoto(file: Blob | File, filename?: string): Promise<string> {
     return uploadPhotoWithSign(file, filename);
+  }
+
+  async suggestCategory(image: string): Promise<AiSuggestionData> {
+    return apiFetch<AiSuggestionData>('/ai/suggest-category', {
+      method: 'POST',
+      body: JSON.stringify({ image }),
+    });
   }
 }

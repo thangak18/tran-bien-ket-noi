@@ -15,7 +15,7 @@ import { useDataSource } from '@/data/useDataSource';
 import { useAction } from '@/data/useAction';
 import { isApiMode } from '@/data';
 import { ActionError } from '@/components/common/ActionError';
-import { Category } from '@/domain/types';
+import { AiSuggestionData, Category } from '@/domain/types';
 import { PhoneOtpSheet } from '@/components/citizen/PhoneOtpSheet';
 import { nearestStreet } from '@/data/streets';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -53,6 +53,41 @@ export function C04Confirm() {
   const [phone, setPhone] = useState<string>(state.settings.phone || '');
   const [isOtpOpen, setIsOtpOpen] = useState<boolean>(false);
   const [otpTargetPhone, setOtpTargetPhone] = useState<string>('');
+
+  // AI gợi ý loại sự cố từ ảnh
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestionData | null>(null);
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!primaryPhoto) {
+      setAiSuggestion(null);
+      setAiLoading(false);
+      setAiError(false);
+      return;
+    }
+
+    let cancelled = false;
+    setAiLoading(true);
+    setAiError(false);
+
+    ds.suggestCategory(primaryPhoto)
+      .then((res) => {
+        if (cancelled) return;
+        setAiSuggestion(res);
+        setAiLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAiError(true);
+        setAiLoading(false);
+        setAiSuggestion(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [primaryPhoto, ds]);
 
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +161,7 @@ export function C04Confirm() {
       description: description.trim() || undefined,
       phone: !isAnon && submitPhone ? submitPhone : undefined,
       anonymous: isAnon,
+      aiSuggestion: aiSuggestion ?? undefined,
     };
 
     // Lỗi (mất mạng, 4xx/5xx) được báo ngay trên màn hình và giữ nguyên bản nháp để thử lại;
@@ -187,6 +223,99 @@ export function C04Confirm() {
 
   const hasLocation = Boolean(lat && address);
   const hasCategory = Boolean(category);
+
+  const renderAiBanner = () => {
+    if (aiLoading) {
+      return (
+        <div
+          data-testid="ai-suggestion-loading"
+          className="rounded-xl border border-blue-200 bg-blue-50/80 p-2.5 flex items-center gap-2 text-xs text-blue-800 animate-pulse"
+        >
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white font-bold shrink-0">
+            ✨
+          </span>
+          <span className="font-medium">Đang phân tích ảnh...</span>
+        </div>
+      );
+    }
+
+    if (aiError || (aiSuggestion && (!aiSuggestion.category || aiSuggestion.confidence < 0.5))) {
+      return (
+        <div
+          data-testid="ai-suggestion-unrecognized"
+          className="rounded-xl border border-amber-200 bg-amber-50/90 p-2.5 flex items-center justify-between text-xs text-amber-900"
+        >
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] text-white font-bold shrink-0">
+              ℹ️
+            </span>
+            <span className="font-medium">Không nhận ra loại sự cố, bạn chọn giúp nhé</span>
+          </div>
+          <span className="text-[10px] text-amber-700 bg-amber-100/80 rounded px-1.5 py-0.5 font-medium">
+            Tùy chọn
+          </span>
+        </div>
+      );
+    }
+
+    if (aiSuggestion && aiSuggestion.category && aiSuggestion.confidence >= 0.5) {
+      const suggestedItem = CATEGORY_ITEMS.find((c) => c.key === aiSuggestion.category);
+      const label = suggestedItem?.label || aiSuggestion.category;
+      const isSelected = category === aiSuggestion.category;
+      const isDeepSeek = aiSuggestion.provider === 'deepseek';
+
+      return (
+        <div
+          data-testid="ai-suggestion-banner"
+          className="rounded-xl border border-blue-200 bg-blue-50/90 p-2.5 flex flex-col gap-2 text-xs"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white font-bold shrink-0 mt-0.5">
+                ✨
+              </span>
+              <div>
+                <div className="font-semibold text-blue-950">
+                  AI gợi ý: <span className="text-primary font-bold">{label}</span>
+                  {aiSuggestion.reason && (
+                    <span className="text-gray-600 font-normal"> – {aiSuggestion.reason}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <span
+              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                isDeepSeek ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'
+              }`}
+            >
+              {isDeepSeek ? 'Gợi ý bởi AI – vui lòng kiểm tra lại' : 'Gợi ý mô phỏng'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-blue-100/60">
+            <span className="text-[10px] text-gray-500 italic">
+              Ảnh được gửi tới dịch vụ AI (DeepSeek) để gợi ý loại sự cố
+            </span>
+            {!isSelected ? (
+              <button
+                type="button"
+                onClick={() => setCategory(aiSuggestion.category!)}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-blue-700 transition-colors shadow-2xs shrink-0 ml-2"
+              >
+                Dùng gợi ý
+              </button>
+            ) : (
+              <span className="text-[11px] font-medium text-emerald-700 flex items-center gap-1 shrink-0 ml-2">
+                ✓ Đang chọn
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-[#F5F7FB] flex flex-col justify-between font-sans">
@@ -272,6 +401,11 @@ export function C04Confirm() {
               </button>
             )}
           </div>
+
+          {/* Ghi chú bảo mật AI */}
+          <p className="mt-1.5 text-[11px] text-gray-400">
+            Ảnh được gửi tới dịch vụ AI (DeepSeek) để gợi ý loại sự cố
+          </p>
         </div>
 
         {/* Sheet trắng bo góc trên */}
@@ -291,24 +425,7 @@ export function C04Confirm() {
             </div>
 
             {/* B1 AI gợi ý: Băng nằm trong sheet, ngay trên lưới 4 loại */}
-            <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-2.5 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white font-bold">
-                  ✨
-                </span>
-                <span className="font-semibold text-blue-950">
-                  AI gợi ý:{' '}
-                  <span className="text-primary font-bold">
-                    {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
-                      'Mặt đường'}
-                  </span>{' '}
-                  (94%)
-                </span>
-              </div>
-              <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                Mô phỏng
-              </span>
-            </div>
+            {renderAiBanner()}
 
             {/* 2. Loại phản ánh (Lưới 2x2 tile) */}
             <div>
@@ -577,6 +694,11 @@ export function C04Confirm() {
                       </button>
                     )}
                   </div>
+
+                  {/* Ghi chú bảo mật AI */}
+                  <p className="mt-1.5 text-[11px] text-gray-500">
+                    Ảnh được gửi tới dịch vụ AI (DeepSeek) để gợi ý loại sự cố
+                  </p>
                 </div>
               )}
             </div>
@@ -606,24 +728,7 @@ export function C04Confirm() {
                 </div>
 
                 {/* B1 AI gợi ý: Băng nằm đầu cột form phải (dưới thanh bước ①②③) */}
-                <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-2.5 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white font-bold">
-                      ✨
-                    </span>
-                    <span className="font-semibold text-blue-950">
-                      AI gợi ý:{' '}
-                      <span className="text-primary font-bold">
-                        {CATEGORY_ITEMS.find((c) => c.key === (category || 'mat_duong'))?.label ||
-                          'Mặt đường'}
-                      </span>{' '}
-                      (94%)
-                    </span>
-                  </div>
-                  <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                    Mô phỏng
-                  </span>
-                </div>
+                {renderAiBanner()}
 
                 {/* 2. Loại sự cố 2x2 */}
                 <div>

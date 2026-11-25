@@ -10,7 +10,7 @@ import {
   CreateOnBehalfInput,
   CreateOnBehalfResult,
 } from './DataSource';
-import { Category, Report, VolunteerTask } from '../domain/types';
+import { AiSuggestionData, CATEGORIES, Category, Report, VolunteerTask } from '../domain/types';
 import { VOLUNTEERS } from '../domain/constants';
 import {
   SubmitReportPayload,
@@ -408,5 +408,38 @@ export class LocalDataSource implements DataSource {
       return URL.createObjectURL(file);
     }
     return '/demo-photos/placeholder.jpg';
+  }
+
+  async suggestCategory(image: string): Promise<AiSuggestionData> {
+    const match = image.match(/\/demo-photos\/([a-z_]+)\//);
+    if (match && match[1] && (CATEGORIES as readonly string[]).includes(match[1])) {
+      const cat = match[1] as Category;
+      const reasons: Record<Category, string> = {
+        den_duong: 'Phát hiện bóng đèn chiếu sáng hoặc trụ đèn công cộng',
+        ngap_nuoc: 'Phát hiện vũng nước ngập diện rộng trên bề mặt đường',
+        rac_thai: 'Phát hiện rác thải sinh hoạt tập kết bừa bãi',
+        mat_duong: 'Phát hiện ổ gà hoặc nứt vỡ sụt lún mặt đường',
+      };
+      return {
+        category: cat,
+        confidence: 0.92,
+        provider: 'mock',
+        reason: reasons[cat] || 'Gợi ý từ ảnh',
+      };
+    }
+    if (image.includes('unrecognized') || image.includes('khong_ro')) {
+      return {
+        category: null,
+        confidence: 0.2,
+        provider: 'mock',
+        reason: 'Không nhận diện được loại sự cố đô thị rõ ràng',
+      };
+    }
+    return {
+      category: 'mat_duong',
+      confidence: 0.88,
+      provider: 'mock',
+      reason: 'Gợi ý mô phỏng từ ảnh chụp mặt đường',
+    };
   }
 }

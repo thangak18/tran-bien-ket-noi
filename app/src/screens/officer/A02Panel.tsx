@@ -278,6 +278,33 @@ export function A02Panel() {
               <span className="font-semibold text-gray-800">Người gửi: </span>
               <span>{report.anonymous ? 'Ẩn danh' : report.reporterPhone || 'Công dân'}</span>
             </div>
+
+            {report.aiSuggestion && (
+              <div className="mt-2.5 rounded-xl border border-blue-200 bg-blue-50/70 p-2.5 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-blue-950">
+                    AI gợi ý:{' '}
+                    <span className="font-bold text-blue-800">
+                      {report.aiSuggestion.category
+                        ? CATEGORY_CONFIGS.find((c) => c.key === report.aiSuggestion?.category)
+                            ?.label || report.aiSuggestion.category
+                        : 'Không nhận diện được'}
+                    </span>{' '}
+                    <span className="text-gray-600 font-normal">
+                      (người dân chọn: {categoryConfig.label})
+                    </span>
+                  </div>
+                  <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                    {report.aiSuggestion.provider === 'deepseek' ? 'DeepSeek AI' : 'Mô phỏng'}
+                  </span>
+                </div>
+                {report.aiSuggestion.reason && (
+                  <div className="mt-1 text-[11px] text-gray-500 italic">
+                    Lý do: {report.aiSuggestion.reason}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
