@@ -138,6 +138,8 @@ export function getAuthToken(): string | null {
 export function setCitizenToken(token: string) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('tb_citizen_token', token);
+    // Store tải lại hồ sơ và thông báo của người dân vừa đăng nhập.
+    window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT));
   }
 }
 

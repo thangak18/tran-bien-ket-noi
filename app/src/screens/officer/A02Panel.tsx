@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   X,
@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   Send,
   FileText,
-  ArrowRightLeft,
   XCircle,
   Camera,
 } from 'lucide-react';
@@ -33,7 +32,7 @@ import { ActionError } from '@/components/common/ActionError';
 import { canTransition } from '@/domain/status';
 import { CATEGORY_CONFIGS, DEPARTMENTS, VOLUNTEERS, officerLabel } from '@/domain/constants';
 import { CATEGORIES, Category, Priority, Report } from '@/domain/types';
-import { maskPhone } from '@/domain/privacy';
+import { MediaItemPreview } from '@/components/common/MediaCapture';
 import { findDuplicates } from '@/domain/duplicates';
 import { formatDateTime, formatDistance } from '@/domain/format';
 import { isOverdue } from '@/domain/sorting';
@@ -43,7 +42,6 @@ import { MapView } from '@/components/map/MapView';
 import { Button } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
 import { Modal } from '@/components/ui/Modal';
-import { TextField } from '@/components/ui/TextField';
 import { Toast } from '@/components/ui/Toast';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -53,7 +51,7 @@ export interface A02PanelProps {
   embedded?: boolean;
 }
 
-type ExceptionMode = 'can_bo_sung' | 'chuyen_co_quan' | 'khong_xac_nhan' | 'dong' | null;
+type ExceptionMode = 'can_bo_sung' | 'khong_xac_nhan' | 'dong' | null;
 
 function toDateInputValue(iso?: string): string {
   if (!iso) return '';
@@ -117,7 +115,6 @@ export function A02Panel({
 
   const [exceptionMode, setExceptionMode] = useState<ExceptionMode>(null);
   const [exceptionReason, setExceptionReason] = useState('');
-  const [targetAgency, setTargetAgency] = useState('');
 
   const [mergeTarget, setMergeTarget] = useState<Report | null>(null);
   const [splitTargetId, setSplitTargetId] = useState<string | null>(null);
@@ -303,7 +300,6 @@ export function A02Panel({
   const openExceptionModal = (mode: Exclude<ExceptionMode, null>) => {
     setExceptionMode(mode);
     setExceptionReason('');
-    setTargetAgency('');
     action.clearError();
   };
   const handleConfirmException = async () => {
@@ -316,17 +312,6 @@ export function A02Panel({
       ok = await act(
         () => ds.officerRequestSupplement(report.id, { reason: trimmedReason, version }),
         'Đã gửi yêu cầu bổ sung thông tin'
-      );
-    } else if (exceptionMode === 'chuyen_co_quan') {
-      if (!targetAgency.trim()) return;
-      ok = await act(
-        () =>
-          ds.officerTransferAgency(report.id, {
-            agency: targetAgency.trim(),
-            reason: trimmedReason,
-            version,
-          }),
-        `Đã chuyển hồ sơ tới ${targetAgency.trim()}`
       );
     } else if (exceptionMode === 'dong') {
       ok = await act(
@@ -399,13 +384,11 @@ export function A02Panel({
     const canComplete =
       canTransition(report.status, 'hoan_thanh', 'CB') || report.status === 'mo_lai';
     const canSupplement = canTransition(report.status, 'can_bo_sung', 'CB');
-    const canTransfer = canTransition(report.status, 'chuyen_co_quan', 'CB');
     const canClose = canTransition(report.status, 'dong', 'CB');
     const canRejectVerify = canTransition(report.status, 'khong_xac_nhan', 'CB');
 
     const exceptionTitleMap: Record<Exclude<ExceptionMode, null>, string> = {
       can_bo_sung: 'Yêu cầu người dân bổ sung thông tin',
-      chuyen_co_quan: 'Chuyển cơ quan chuyên môn khác',
       khong_xac_nhan: 'Xác nhận không phát hiện sự cố',
       dong: 'Đóng hồ sơ phản ánh',
     };
@@ -428,72 +411,55 @@ export function A02Panel({
     return (
       <aside
         data-testid="a02-panel"
-        className="flex h-full w-full flex-col rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm overflow-hidden"
+        className="flex h-full w-full flex-col bg-[#F4F8FC] dark:bg-[var(--color-bg)]"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-4 md:px-6 py-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                data-testid="report-id"
-                className="text-base md:text-lg font-extrabold text-[var(--color-primary)]"
-              >
-                {report.id}
-              </span>
-              <StatusChip status={report.status} variant="officer" size="sm" />
-              {overdue && <DelayChip report={report} now={now} />}
-            </div>
-            <h1
-              data-testid="screen-title"
-              className="mt-1 text-sm font-semibold text-[var(--color-text)]"
-            >
-              Chi tiết & Giao xử lý
-            </h1>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            aria-label="Đóng panel (Esc)"
-            title="Đóng (Esc)"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Visual 4-Step Officer Workflow Bar */}
-        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg)]/60 px-4 md:px-6 py-3">
-          <div className="grid grid-cols-4 gap-2">
-            {workflowStages.map((stage) => {
-              const isDone = officerStageIndex > stage.step || officerStageIndex === 4;
-              const isCurrent = officerStageIndex === stage.step && officerStageIndex < 4;
-              return (
-                <div key={stage.step} className="flex flex-col items-center text-center">
-                  <div
-                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold transition-colors ${
-                      isDone
-                        ? 'bg-emerald-600 text-white'
-                        : isCurrent
-                          ? 'bg-[var(--color-primary)] text-white ring-4 ring-[var(--color-primary-soft)]'
-                          : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
-                    }`}
-                  >
-                    {stage.step}
-                  </div>
+        {/* Clean Full-Width Header matching C04Confirm */}
+        <div className="border-b border-slate-200/80 bg-[var(--color-surface)] px-4 md:px-6 py-3.5 dark:border-slate-800">
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              {!embedded && (
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  aria-label="Quay lại hộp tiếp nhận"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-slate-50 text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className={`mt-1 text-[11px] font-bold leading-tight ${
-                      isCurrent
-                        ? 'text-[var(--color-primary)]'
-                        : isDone
-                          ? 'text-emerald-700 dark:text-emerald-400'
-                          : 'text-[var(--color-text-muted)]'
-                    }`}
+                    data-testid="report-id"
+                    className="text-base sm:text-lg font-extrabold text-[#0084E8]"
                   >
-                    {stage.label}
+                    {report.id}
                   </span>
+                  <StatusChip status={report.status} variant="officer" size="sm" />
+                  {overdue && <DelayChip report={report} now={now} />}
                 </div>
-              );
-            })}
+                <h1
+                  data-testid="screen-title"
+                  className="mt-0.5 text-xs sm:text-sm font-semibold text-[var(--color-text-muted)]"
+                >
+                  Chi tiết &amp; Giao xử lý
+                </h1>
+              </div>
+            </div>
+
+            {embedded && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClose}
+                  aria-label="Đóng panel (Esc)"
+                  title="Đóng (Esc)"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -504,30 +470,29 @@ export function A02Panel({
         )}
         {/* Toast */}
         {toast && (
-          <div className="px-4 md:px-6 pt-3">
+          <div className="mx-auto w-full max-w-7xl px-4 md:px-6 pt-3">
             <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="px-4 md:px-6 pt-3">
-          <Tabs
-            tabs={[
-              { id: 'chi_tiet', label: 'Chi tiết' },
-              { id: 'lich_su', label: 'Lịch sử', count: report.timeline.length },
-            ]}
-            activeTab={activeTab}
-            onChange={(id) => setActiveTab(id as 'chi_tiet' | 'lich_su')}
-          />
-        </div>
+        {/* Main 12-Col Body matching C04Confirm */}
+        <div className="mx-auto w-full max-w-7xl flex-1 px-4 md:px-6 py-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <Tabs
+              tabs={[
+                { id: 'chi_tiet', label: 'Chi tiết' },
+                { id: 'lich_su', label: 'Lịch sử', count: report.timeline.length },
+              ]}
+              activeTab={activeTab}
+              onChange={(id) => setActiveTab(id as 'chi_tiet' | 'lich_su')}
+            />
+          </div>
 
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-5">
           {activeTab === 'chi_tiet' ? (
             <>
               {/* Banner đã gộp */}
               {report.status === 'da_gop' && report.mergedInto && (
-                <div className="flex items-center justify-between gap-2 rounded-card border border-purple-200 bg-purple-50 p-3 text-sm text-purple-950 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200">
+                <div className="flex items-center justify-between gap-2 rounded-2xl border border-purple-200 bg-purple-50 p-3 text-sm text-purple-950 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200">
                   <div className="flex items-center gap-2">
                     <GitMerge className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
                     <span>
@@ -543,17 +508,16 @@ export function A02Panel({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                <div className="lg:col-span-7 space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="lg:col-span-5 rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 sm:p-5 shadow-sm space-y-4 dark:border-slate-800">
                   {/* Gallery ảnh (AC-A02-1) */}
                   <div className="space-y-2">
-                    <div className="relative aspect-video w-full overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-slate-950">
                       {currentPhoto ? (
-                        <img
+                        <MediaItemPreview
                           src={currentPhoto}
                           alt={`Ảnh hiện trường ${safePhotoIdx + 1}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-sm text-text-sub">
@@ -605,7 +569,6 @@ export function A02Panel({
                             <img
                               src={src}
                               alt={`Thumbnail ${idx + 1}`}
-                              loading="lazy"
                               className="h-full w-full object-cover"
                             />
                           </button>
@@ -668,8 +631,8 @@ export function A02Panel({
                             {report.subscribedLater ? 'Ẩn danh · đã đăng ký nhận tin' : 'Ẩn danh'}
                           </span>
                         ) : (
-                          <span className="font-medium text-[var(--color-text)]">
-                            {maskPhone(report.reporterPhone) || 'Chưa có SĐT'}
+                          <span className="font-semibold text-[var(--color-text)] tabular-nums">
+                            {report.reporterPhone || 'Chưa có SĐT'}
                           </span>
                         )}
                         {report.onBehalf && (
@@ -691,9 +654,42 @@ export function A02Panel({
                     </div>
                   </div>
                 </div>
-                <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-4">
+                <div className="lg:col-span-7 lg:sticky lg:top-4 rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-sm space-y-5 dark:border-slate-800">
+                  {/* 4-Step Officer Pill Bar matching C04Confirm */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-2xl border border-slate-200/80 bg-[#F8FAFC] p-1.5 dark:border-slate-800 dark:bg-slate-900/60">
+                    {workflowStages.map((stage) => {
+                      const isDone = officerStageIndex > stage.step || officerStageIndex === 4;
+                      const isCurrent = officerStageIndex === stage.step && officerStageIndex < 4;
+                      return (
+                        <div
+                          key={stage.step}
+                          className={`flex items-center justify-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold transition-all ${
+                            isCurrent
+                              ? 'bg-[#0084E8] text-white shadow-sm'
+                              : isDone
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold ${
+                              isCurrent
+                                ? 'bg-white text-[#0084E8]'
+                                : isDone
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-200'
+                            }`}
+                          >
+                            {stage.step}
+                          </span>
+                          <span className="truncate">{stage.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
                   {/* Trường phân loại & giao xử lý (AC-A02-2) */}
-                  <div className="space-y-3 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5">
+                  <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-[#F8FAFC] p-4 dark:border-slate-800 dark:bg-slate-900/50">
                     <div className="flex items-center justify-between">
                       <h2 className="text-sm font-semibold text-text-main">
                         Phân loại & Hạn xử lý
@@ -865,7 +861,7 @@ export function A02Panel({
                     </div>
 
                     {/* Nút ngoại lệ (AC-A02-8) */}
-                    {(canSupplement || canTransfer || canRejectVerify) && (
+                    {(canSupplement || canRejectVerify) && (
                       <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
                         {canSupplement && (
                           <Button
@@ -875,16 +871,6 @@ export function A02Panel({
                             onClick={() => openExceptionModal('can_bo_sung')}
                           >
                             Yêu cầu bổ sung
-                          </Button>
-                        )}
-                        {canTransfer && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            icon={<ArrowRightLeft className="h-3.5 w-3.5" />}
-                            onClick={() => openExceptionModal('chuyen_co_quan')}
-                          >
-                            Chuyển cơ quan khác
                           </Button>
                         )}
                         {canRejectVerify && (
@@ -923,7 +909,6 @@ export function A02Panel({
                         <img
                           src={completedTask.result.photo}
                           alt="Ảnh xác minh của TNV"
-                          loading="lazy"
                           className="h-36 w-full rounded-btn object-cover border border-blue-200 dark:border-blue-800"
                         />
                       )}
@@ -1001,7 +986,6 @@ export function A02Panel({
                               <img
                                 src={dup.photos[0]}
                                 alt={dup.id}
-                                loading="lazy"
                                 className="h-12 w-12 shrink-0 rounded-lg object-cover"
                               />
                             )}
@@ -1123,10 +1107,7 @@ export function A02Panel({
               <Button
                 variant={exceptionMode === 'khong_xac_nhan' ? 'danger' : 'primary'}
                 size="sm"
-                disabled={
-                  exceptionReason.trim().length < 10 ||
-                  (exceptionMode === 'chuyen_co_quan' && !targetAgency.trim())
-                }
+                disabled={exceptionReason.trim().length < 10}
                 onClick={handleConfirmException}
               >
                 Xác nhận
@@ -1141,15 +1122,6 @@ export function A02Panel({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>Người gửi sẽ chỉ thấy yêu cầu khi tự mở hồ sơ</span>
               </div>
-            )}
-
-            {exceptionMode === 'chuyen_co_quan' && (
-              <TextField
-                label="Cơ quan tiếp nhận"
-                placeholder="VD: Công ty Điện lực Đồng Nai"
-                value={targetAgency}
-                onChange={(e) => setTargetAgency(e.target.value)}
-              />
             )}
 
             <div>
@@ -1251,33 +1223,7 @@ export function A02Panel({
 
   return (
     <OfficerLayout>
-      <div className="flex flex-1 min-h-0 gap-4">
-        <div className="hidden lg:flex flex-1 flex-col justify-between rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-          <div>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<ArrowLeft className="h-4 w-4" />}
-              onClick={handleClose}
-            >
-              Quay lại hộp tiếp nhận
-            </Button>
-            <div className="mt-6 space-y-2">
-              <h2 className="text-base font-semibold text-[var(--color-text)]">
-                Đang xem chi tiết hồ sơ {report?.id ?? targetId}
-              </h2>
-              <p className="text-sm text-[var(--color-text-muted)]">
-                Nhấn phím{' '}
-                <kbd className="rounded border border-[var(--color-border)] px-1.5 py-0.5 text-xs">
-                  Esc
-                </kbd>{' '}
-                hoặc nút đóng ở góc phải để quay lại danh sách hộp tiếp nhận.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="w-full lg:w-[480px] shrink-0">{renderPanelContent()}</div>
-      </div>
+      <div className="w-full">{renderPanelContent()}</div>
     </OfficerLayout>
   );
 }

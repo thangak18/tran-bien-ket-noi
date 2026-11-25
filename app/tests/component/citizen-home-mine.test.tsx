@@ -83,14 +83,6 @@ describe('C01Home & C05Mine', () => {
     fireEvent.click(themeSwitch);
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
 
-    // Tra cứu mã phản ánh (Dropdown box bung ra khi bấm vào)
-    expect(screen.queryByLabelText('Mã phản ánh')).not.toBeInTheDocument();
-    const lookupToggle = screen.getByRole('button', { name: /Tra cứu bằng mã phản ánh/i });
-    expect(lookupToggle).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(lookupToggle);
-    expect(lookupToggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByLabelText('Mã phản ánh')).toBeInTheDocument();
-
     expect(lookupReportByCode(initial.reports, firstReport.id, firstReport.secretCode)?.id).toBe(
       firstReport.id
     );

@@ -44,17 +44,13 @@ Người dân phường Trấn Biên gặp đèn đường hỏng, ngập nướ
 
 Trấn Biên Kết Nối thiết kế lại toàn bộ vòng đời một phản ánh:
 
-1. **Gửi trong 3 bước** – chụp ảnh, ghim vị trí, chọn loại. Không cần tạo tài khoản; có thể gửi ẩn danh.
-2. **Giao đúng bộ phận** – hệ thống gợi ý bộ phận và hạn xử lý theo loại sự cố; cán bộ xác nhận.
+1. **Gửi trong 3 bước** – chụp ảnh, ghim vị trí, chọn loại.
+2. **Giao đúng bộ phận** – hệ thống gợi ý loại và hạn xử lý theo loại sự cố; cán bộ xác nhận.
 3. **Xác minh độc lập** – thanh niên tình nguyện xác minh tại chỗ khi cần, và nghiệm thu khi người dân báo "chưa giải quyết".
 4. **Công khai kết quả** – mọi người dân, không cần đăng nhập, xem được bảng minh bạch của phường và ảnh trước/sau xử lý.
-5. **Không bỏ ai lại phía sau** – chế độ chữ lớn, mô tả bằng giọng nói, tra cứu bằng số điện thoại, và kênh "gửi hộ" cho người không dùng điện thoại thông minh.
+5. **Không bỏ ai lại phía sau** – chế độ chữ lớn, mô tả bằng giọng nói, và kênh "gửi hộ" cho người không dùng điện thoại thông minh.
 
 Sản phẩm là web prototype tương tác: giao diện người dân và tình nguyện viên trên điện thoại, dashboard cán bộ trên máy tính, dùng chung một nguồn dữ liệu mẫu bám đúng số liệu đề bài.
-
-### Định vị
-
-Theo Sở Khoa học và Công nghệ, TP. Đồng Nai đang triển khai nền tảng Công dân số Đồng Nai (Dong Nai City). Trấn Biên Kết Nối **không thay thế** nền tảng này. Đây là mô hình UX đề xuất cho **quy trình vận hành cấp phường**, có thể tích hợp như một phân hệ. Phạm vi tính năng phản ánh hiện có của Dong Nai City là **[CẦN KIỂM CHỨNG]** – nhóm sẽ tự cài đặt và đối chiếu trước vòng thuyết trình.
 
 ---
 

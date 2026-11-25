@@ -1,5 +1,5 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -8,16 +8,12 @@ import {
   CheckCircle2,
   FileText,
   LocateFixed,
-  Lock,
   MapPin,
   Mic,
   MicOff,
-  Phone,
   Plus,
   Search,
   Send,
-  ShieldCheck,
-  Sparkles,
   ThumbsUp,
   Users,
   WifiOff,
@@ -25,12 +21,13 @@ import {
 } from 'lucide-react';
 import { nearestStreet, STREETS, WARD_CENTER } from '@/data/streets';
 import { CATEGORY_CONFIGS, STATUS_CONFIGS } from '@/domain/constants';
-import { canSendAnonymous, followerCount } from '@/domain/access';
+import { followerCount } from '@/domain/access';
 import { findDuplicates } from '@/domain/duplicates';
 import { formatDateTime, formatDistance, formatRelativeTime } from '@/domain/format';
 import { CATEGORIES, Category, Report } from '@/domain/types';
 import { getCurrentLocation } from '@/lib/geolocation';
 import { compressImage } from '@/lib/image';
+import { isVideoSource } from '@/lib/media';
 import { useAppStore } from '@/store/AppStore';
 import { useDataSource } from '@/data/useDataSource';
 import { useAction } from '@/data/useAction';
@@ -39,10 +36,8 @@ import { ActionError } from '@/components/common/ActionError';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { MapView } from '@/components/map/MapView';
 import { CategoryTile } from '@/components/citizen/CategoryTile';
-import { PhoneOtpSheet } from '@/components/citizen/PhoneOtpSheet';
 import { TrackingLinkCard } from '@/components/citizen/TrackingLinkCard';
 import { SubscribeCard } from '@/components/citizen/SubscribeCard';
-import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
 import { Toast, ToastType } from '@/components/ui/Toast';
 
@@ -152,19 +147,9 @@ function normalizeViText(value: string): string {
     .trim();
 }
 
-function validateVietnamesePhone(raw: string): string | null {
-  const clean = raw.replace(/\s+/g, '');
-  if (!/^\d{10}$/.test(clean)) {
-    return 'Số điện thoại gồm 10 chữ số (ví dụ: 0909000068)';
-  }
-  if (!/^(03|05|07|08|09)\d{8}$/.test(clean)) {
-    return 'Số điện thoại không hợp lệ (cần đầu số 03, 05, 07, 08, 09)';
-  }
-  return null;
-}
-
 export function C04Confirm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { state, dispatch } = useAppStore();
   const { draft, settings, reports } = state;
   const ds = useDataSource();
@@ -173,19 +158,22 @@ export function C04Confirm() {
   // Một lần gửi dùng một Idempotency-Key để nhấn nhanh nhiều lần không tạo hồ sơ trùng.
   const idempotencyKey = useRef<string>(crypto.randomUUID());
 
-  // Gợi ý loại sự cố mô phỏng từ ảnh (AC-C04-1 / B1)
-  const aiSuggestedCategory: Category = useMemo(() => {
-    if (draft.photos.length === 0) return 'mat_duong';
-    const order: Category[] = ['mat_duong', 'den_duong', 'ngap_nuoc', 'rac_thai'];
-    return order[(draft.photos.length - 1) % order.length] ?? 'mat_duong';
-  }, [draft.photos.length]);
-
-  const aiSuggestedConfig = useMemo(
-    () => CATEGORY_CONFIGS.find((c) => c.key === aiSuggestedCategory) ?? CATEGORY_CONFIGS[0]!,
-    [aiSuggestedCategory]
+  // Gợi ý loại sự cố mô phỏng từ ảnh (chỉ áp dụng cho ảnh, bỏ qua video)
+  const imageOnlyPhotos = useMemo(
+    () => draft.photos.filter((src) => !isVideoSource(src)),
+    [draft.photos]
   );
 
-  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const aiSuggestedCategory: Category = useMemo(() => {
+    if (imageOnlyPhotos.length === 0) return 'mat_duong';
+    const order: Category[] = ['mat_duong', 'den_duong', 'ngap_nuoc', 'rac_thai'];
+    return order[(imageOnlyPhotos.length - 1) % order.length] ?? 'mat_duong';
+  }, [imageOnlyPhotos.length]);
+
+  const initialStepParam = Number(searchParams.get('step'));
+  const [currentStep, setCurrentStep] = useState<WizardStep>(
+    initialStepParam === 2 || initialStepParam === 3 ? (initialStepParam as WizardStep) : 1
+  );
   const [selectedCategory, setSelectedCategory] = useState<Category>(
     draft.category ?? aiSuggestedCategory
   );
@@ -197,24 +185,18 @@ export function C04Confirm() {
   const [locationNoteInput, setLocationNoteInput] = useState<string>(draft.locationNote ?? '');
   const [titleInput, setTitleInput] = useState<string>(draft.title ?? '');
   const [description, setDescription] = useState<string>(draft.description ?? '');
-  // Để trống mặc định để người dùng tuỳ chọn nhập hoặc không nhập (không nhập -> gửi ẩn danh)
-  const [phoneInput, setPhoneInput] = useState<string>('');
-  const [phoneError, setPhoneError] = useState<string>('');
 
   const [dismissedDuplicate, setDismissedDuplicate] = useState<boolean>(false);
   const [duplicateIndex, setDuplicateIndex] = useState<number>(0);
   const [isInspectDuplicateOpen, setIsInspectDuplicateOpen] = useState<boolean>(false);
   const [inspectPhotoIndex, setInspectPhotoIndex] = useState<number>(0);
-  const [isOtpOpen, setIsOtpOpen] = useState<boolean>(false);
-  const [isQuotaExceededOpen, setIsQuotaExceededOpen] = useState<boolean>(false);
   const [offlineError, setOfflineError] = useState<boolean>(false);
-  const [pendingMode, setPendingMode] = useState<'phone' | 'anonymous' | null>(null);
+  const [pendingMode, setPendingMode] = useState<'phone' | null>(null);
 
   const [submittedAnonymousReport, setSubmittedAnonymousReport] = useState<Report | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const addPhotoInputRef = useRef<HTMLInputElement | null>(null);
-  const phoneInputElRef = useRef<HTMLInputElement | null>(null);
 
   const [isListening, setIsListening] = useState<boolean>(false);
   const [interimTranscript, setInterimTranscript] = useState<string>('');
@@ -235,8 +217,12 @@ export function C04Confirm() {
   const hasLocation =
     draft.lat !== undefined && draft.lng !== undefined && Boolean(draft.address?.trim());
 
-  // Tự động thử lấy vị trí GPS khi vào trang nếu chưa có vị trí
+  const hasAttemptedAutoGpsRef = useRef(false);
+
+  // Tự động thử lấy vị trí GPS 1 lần khi vào trang nếu chưa có vị trí
   useEffect(() => {
+    if (hasAttemptedAutoGpsRef.current) return;
+    hasAttemptedAutoGpsRef.current = true;
     if (hasLocation) return;
     let active = true;
     Promise.resolve(getCurrentLocation({ timeoutMs: 4000 }))
@@ -291,6 +277,14 @@ export function C04Confirm() {
     duplicateMatches[Math.min(duplicateIndex, Math.max(0, duplicateMatches.length - 1))] ??
     duplicateMatches[0] ??
     null;
+
+  // Chỉ cần có >= 1 hồ sơ thoả điều kiện ở Bước 2 (chọn vị trí) là tự động mở modal đối chiếu
+  useEffect(() => {
+    if (currentStep === 2 && duplicateMatches.length >= 1 && !dismissedDuplicate) {
+      setInspectPhotoIndex(0);
+      setIsInspectDuplicateOpen(true);
+    }
+  }, [currentStep, duplicateMatches.length, dismissedDuplicate, topDuplicate?.report.id]);
 
   const showToast = (message: string, type: ToastType = 'info') => {
     setToast({ message, type });
@@ -725,66 +719,24 @@ export function C04Confirm() {
     });
   };
 
-  const executeAnonymousSubmit = async () => {
-    if (!hasLocation) {
-      handleGoToLocationMap();
-      return;
-    }
-
-    if (!canSendAnonymous(settings.anonymousLog, settings.demoNow)) {
-      setIsQuotaExceededOpen(true);
-      return;
-    }
-
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      syncDraftFields(selectedCategory, description, locationNoteInput);
-      setPendingMode('anonymous');
-      setOfflineError(true);
-      return;
-    }
-
-    const res = await submitAction.run(() =>
-      ds.createReport(buildPayload(true), { idempotencyKey: idempotencyKey.current })
-    );
-    if (!res) return;
-
-    setOfflineError(false);
-    setPendingMode(null);
-    recordApiReport(res);
-    // Mã bí mật chỉ có trong phản hồi lúc tạo; hiển thị một lần ở màn hình thành công.
-    setSubmittedAnonymousReport({
-      ...res.report,
-      secretCode: res.secretCode ?? res.report.secretCode ?? '',
-    });
-  };
-
   const handlePrimarySubmit = () => {
     if (!hasLocation) {
       handleGoToLocationMap();
       return;
     }
 
-    const cleanPhone = phoneInput.replace(/\s+/g, '');
-
-    if (cleanPhone.length > 0) {
-      const err = validateVietnamesePhone(cleanPhone);
-      if (err) {
-        setPhoneError(err);
-        return;
-      }
-      setPhoneError('');
-
-      if (settings.phone === cleanPhone) {
-        executePhoneSubmit(cleanPhone);
-      } else {
-        setIsOtpOpen(true);
-      }
+    const loggedInPhone = settings.phone?.trim();
+    if (!loggedInPhone) {
+      syncDraftFields(selectedCategory, description, locationNoteInput);
+      dispatch({
+        type: 'SET_DRAFT',
+        payload: { title: titleInput.trim() || undefined },
+      });
+      navigate(`/ho-so?login=1&redirect=${encodeURIComponent('/bao-su-co/xac-nhan?step=3')}`);
       return;
     }
 
-    // Không nhập số điện thoại -> tính vào dạng ẩn danh và gửi thẳng (01d)
-    setPhoneError('');
-    executeAnonymousSubmit();
+    executePhoneSubmit(loggedInPhone);
   };
 
   const handleRetryOffline = () => {
@@ -793,13 +745,8 @@ export function C04Confirm() {
       return;
     }
     setOfflineError(false);
-    if (pendingMode === 'anonymous') {
-      executeAnonymousSubmit();
-    } else if (pendingMode === 'phone') {
-      const cleanPhone = phoneInput.replace(/\s+/g, '');
-      if (cleanPhone) {
-        executePhoneSubmit(cleanPhone);
-      }
+    if (pendingMode === 'phone' && settings.phone) {
+      executePhoneSubmit(settings.phone);
     }
   };
 
@@ -814,7 +761,7 @@ export function C04Confirm() {
 
   const handleJoinDuplicate = async () => {
     if (!topDuplicate) return;
-    const cleanPhone = phoneInput.replace(/\s+/g, '') || settings.phone;
+    const cleanPhone = settings.phone;
     const targetId = topDuplicate.report.id;
     const ok = await submitAction.run(async () => {
       await ds.followReport(targetId, cleanPhone || undefined);
@@ -993,12 +940,20 @@ export function C04Confirm() {
         <div className="lg:col-span-5 lg:sticky lg:top-6">
           {/* 1A. MOBILE ONLY (< 768px): Photo Hero with Top Controls & Bottom Thumbnail Strip */}
           <div className="relative h-[220px] w-full overflow-hidden bg-zinc-900 md:hidden">
-            <img
-              src={heroPhoto}
-              alt="Ảnh hiện trường sự cố"
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
+            {isVideoSource(heroPhoto) ? (
+              <video
+                src={heroPhoto}
+                controls
+                playsInline
+                className="h-full w-full object-contain bg-slate-950"
+              />
+            ) : (
+              <img
+                src={heroPhoto}
+                alt="Ảnh hiện trường sự cố"
+                className="h-full w-full object-cover"
+              />
+            )}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60"
@@ -1039,7 +994,6 @@ export function C04Confirm() {
                     <img
                       src={photoUrl}
                       alt={`Ảnh thu nhỏ ${idx + 1}`}
-                      loading="lazy"
                       className="h-full w-full object-cover"
                     />
                     <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-xs font-extrabold text-white">
@@ -1079,13 +1033,23 @@ export function C04Confirm() {
               {/* Photo Showcase + Thumbnails */}
               <div className="md:col-span-6 lg:w-full space-y-3">
                 <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 dark:border-slate-700">
-                  <img
-                    src={heroPhoto}
-                    alt="Ảnh hiện trường sự cố"
-                    className="h-full w-full object-cover"
-                  />
-                  <span className="absolute top-3 right-3 rounded-full bg-black/65 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
-                    Ảnh #{activePhotoIndex + 1}/{displayPhotos.length}
+                  {isVideoSource(heroPhoto) ? (
+                    <video
+                      src={heroPhoto}
+                      controls
+                      playsInline
+                      className="h-full w-full object-contain bg-slate-950"
+                    />
+                  ) : (
+                    <img
+                      src={heroPhoto}
+                      alt="Ảnh hiện trường sự cố"
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                  <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-black/65 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
+                    {isVideoSource(heroPhoto) ? 'Video' : 'Ảnh'} #{activePhotoIndex + 1}/
+                    {displayPhotos.length}
                   </span>
                 </div>
 
@@ -1292,70 +1256,6 @@ export function C04Confirm() {
              ================================================================= */}
           {currentStep === 1 && (
             <div className="space-y-5">
-              {/* AI Recognition Smart Card (Responsive across Phone, Tablet & PC) */}
-              <section
-                aria-label="Gợi ý phân loại từ AI"
-                className="relative overflow-hidden rounded-2xl border border-[#BAE6FD] bg-gradient-to-r from-[#F0F9FF] via-[#F8FCFF] to-[#E6F4FE] p-3.5 sm:p-4 shadow-2xs dark:border-sky-800/80 dark:from-sky-950/60 dark:via-slate-900 dark:to-sky-950/40"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  {/* Left: AI Icon Badge + Recognized Category & Confidence Bar */}
-                  <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0084E8] text-white shadow-[0_6px_16px_rgba(0,132,232,0.3)]">
-                      <CategoryIcon category={aiSuggestedCategory} className="h-5 w-5" />
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border border-white bg-amber-400 text-slate-950 shadow-2xs">
-                        <Sparkles className="h-2.5 w-2.5 fill-current" />
-                      </span>
-                    </div>
-
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[13px] sm:text-sm font-extrabold text-[#0369A1] dark:text-sky-200">
-                          AI nhận diện: {aiSuggestedConfig.label}
-                        </span>
-                        <span className="inline-flex items-center rounded-full bg-[#0084E8]/12 px-2 py-0.5 text-[11px] font-extrabold text-[#0084E8] dark:bg-sky-400/15 dark:text-[#38BDF8]">
-                          92% chính xác
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-slate-600 dark:text-slate-300">
-                        {selectedCategory === aiSuggestedCategory
-                          ? 'Đã tự động chọn phân loại phù hợp bên dưới · Bạn có thể đổi nếu cần'
-                          : `Bạn đang chọn "${selectedCategoryConfig.label}" khác với gợi ý ban đầu của AI`}
-                      </p>
-
-                      {/* Visual Confidence Meter on Tablet & PC */}
-                      <div className="hidden sm:flex items-center gap-2 pt-0.5 max-w-[260px]">
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-sky-200/70 dark:bg-sky-900">
-                          <div className="h-full w-[92%] rounded-full bg-[#0084E8] dark:bg-[#38BDF8]" />
-                        </div>
-                        <span className="text-[10px] font-bold text-[#0284C7] dark:text-sky-300">
-                          Độ tin cậy cao
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Action / Status Pill */}
-                  <div className="flex items-center justify-end sm:shrink-0">
-                    {selectedCategory === aiSuggestedCategory ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                        <span>Đang áp dụng</span>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleSelectCategory(aiSuggestedCategory)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#0084E8] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-[#006EC4]"
-                      >
-                        <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                        <span>Chọn theo AI</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </section>
-
               {/* Loại phản ánh (2×2 on Phone, 4 cols on Tablet, 2×2 large on PC) */}
               <section aria-labelledby="c04-category-heading">
                 <h2
@@ -1566,6 +1466,29 @@ export function C04Confirm() {
                     className="w-full rounded-2xl border border-slate-200/90 bg-[#F8FAFC] px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-slate-400 focus:border-[#0084E8] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[#0084E8]/20 dark:border-slate-700 dark:bg-slate-800/50"
                   />
                 </div>
+
+                {duplicateMatches.length >= 1 && topDuplicate && (
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-amber-300 bg-amber-50/80 px-4 py-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                      <span>
+                        Có <strong>{duplicateMatches.length}</strong> phản ánh tương tự cách đây{' '}
+                        <strong>{formatDistance(topDuplicate.distanceMeters)}</strong> chưa xử lý
+                        xong.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInspectPhotoIndex(0);
+                        setIsInspectDuplicateOpen(true);
+                      }}
+                      className="shrink-0 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700"
+                    >
+                      Đối chiếu ngay
+                    </button>
+                  </div>
+                )}
               </section>
 
               {/* Step 2 Primary CTA: "Xác nhận vị trí" -> Kiểm tra ngầm phản ánh tương tự; nếu có sẽ bật thông báo đối chiếu ngay trước mặt */}
@@ -1863,157 +1786,6 @@ export function C04Confirm() {
                     </div>
                   </div>
                 </div>
-
-                {/* CARD 2: Liên hệ nhận tin & Quyền riêng tư (Responsive 12-col layout on Tablet/PC) */}
-                <div className="space-y-3.5 rounded-2xl border border-slate-200/90 bg-[#F8FAFC] p-4 sm:p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-800/50">
-                  {/* Card 2 Header + Mode Switcher Pills */}
-                  <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-200/70 pb-3 dark:border-slate-700/70">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors ${
-                          phoneInput.trim().length > 0
-                            ? 'bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]'
-                            : 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
-                        }`}
-                      >
-                        {phoneInput.trim().length > 0 ? (
-                          <Phone className="h-4 w-4" />
-                        ) : (
-                          <Lock className="h-4 w-4" />
-                        )}
-                      </div>
-                      <h3 className="text-sm font-extrabold text-[var(--color-text)]">
-                        Liên hệ &amp; Quyền riêng tư
-                      </h3>
-                    </div>
-
-                    {/* Visual Mode Selector Pills */}
-                    <div className="inline-flex rounded-xl border border-slate-200/90 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPhoneInput('');
-                          setPhoneError('');
-                        }}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition-all ${
-                          phoneInput.trim().length === 0
-                            ? 'bg-emerald-600 text-white shadow-2xs'
-                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-300'
-                        }`}
-                      >
-                        <Lock className="h-3 w-3" />
-                        <span>Ẩn danh</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!phoneInput.trim() && settings.phone) {
-                            setPhoneInput(settings.phone);
-                          }
-                          phoneInputElRef.current?.focus();
-                        }}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition-all ${
-                          phoneInput.trim().length > 0
-                            ? 'bg-[#0084E8] text-white shadow-2xs'
-                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-300'
-                        }`}
-                      >
-                        <Phone className="h-3 w-3" />
-                        <span>Nhận SMS</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Responsive 2-column split on Tablet/PC: Phone Input (Left) + Privacy Guarantee (Right) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-stretch">
-                    {/* Left: Phone Input */}
-                    <div className="sm:col-span-7 flex flex-col justify-between space-y-2">
-                      <div>
-                        <div className="mb-1.5 flex items-center justify-between">
-                          <label
-                            htmlFor="c04-phone-input"
-                            className="text-xs font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300"
-                          >
-                            Số điện thoại nhận tin
-                          </label>
-                          {settings.phone && phoneInput.replace(/\s+/g, '') !== settings.phone && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPhoneInput(settings.phone ?? '');
-                                setPhoneError('');
-                              }}
-                              className="text-[11px] font-extrabold text-[#0084E8] hover:underline dark:text-[#38BDF8]"
-                            >
-                              Dùng SĐT đã lưu ({settings.phone})
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="relative">
-                          <Phone className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                          <input
-                            ref={phoneInputElRef}
-                            id="c04-phone-input"
-                            type="tel"
-                            inputMode="numeric"
-                            placeholder="Để trống nếu gửi ẩn danh (VD: 0909 000 068)"
-                            aria-label="Số điện thoại nhận tin (VD: 0909 000 068)"
-                            value={phoneInput}
-                            onChange={(e) => {
-                              setPhoneInput(e.target.value);
-                              if (phoneError) setPhoneError('');
-                            }}
-                            className={`w-full rounded-xl border bg-[var(--color-surface)] py-3 pr-9 pl-10 text-sm font-semibold text-[var(--color-text)] placeholder:font-normal placeholder:text-slate-400 shadow-2xs transition-colors focus:outline-none focus:ring-2 ${
-                              phoneError
-                                ? 'border-red-500 focus:ring-red-500/20'
-                                : 'border-slate-200/90 focus:border-[#0084E8] focus:ring-[#0084E8]/20 dark:border-slate-700'
-                            }`}
-                          />
-                          {phoneInput.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPhoneInput('');
-                                setPhoneError('');
-                              }}
-                              aria-label="Xoá số điện thoại để gửi ẩn danh"
-                              className="absolute top-1/2 right-2.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-
-                        {phoneError && (
-                          <p className="mt-1.5 px-1 text-xs font-semibold text-red-600">
-                            {phoneError}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right: Privacy & Anonymous Explanation Box */}
-                    <div className="sm:col-span-5 flex items-center rounded-xl border border-[#BAE6FD] bg-[#F0F9FF] p-3 text-xs leading-relaxed text-slate-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-slate-200">
-                      <div className="flex items-start gap-2.5">
-                        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0084E8] dark:text-[#38BDF8]" />
-                        <div>
-                          {phoneInput.trim().length > 0 ? (
-                            <span>
-                              SĐT <strong>được bảo mật tuyệt đối</strong>, chỉ dùng gửi SMS báo tiến
-                              độ xử lý, không hiển thị công khai.
-                            </span>
-                          ) : (
-                            <span>
-                              Để trống SĐT sẽ gửi ở chế độ <strong>Ẩn danh</strong> và cấp ngay{' '}
-                              <strong>Mã bí mật + QR</strong> để bạn tự tra cứu.
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </section>
 
               {/* Step 3 Footer: Full-width "Gửi phản ánh" matching Figma Image 5 + subtle back link */}
@@ -2274,45 +2046,6 @@ export function C04Confirm() {
           </div>
         </div>
       )}
-
-      {/* BottomSheet xác thực OTP khi có nhập SĐT */}
-      {isOtpOpen && (
-        <PhoneOtpSheet
-          isOpen={isOtpOpen}
-          onClose={() => setIsOtpOpen(false)}
-          initialPhone={phoneInput.replace(/\s+/g, '')}
-          onVerified={(verifiedPhone) => {
-            setPhoneInput(verifiedPhone);
-            setIsOtpOpen(false);
-            executePhoneSubmit(verifiedPhone);
-          }}
-        />
-      )}
-
-      {/* BottomSheet vượt hạn mức 5 hồ sơ ẩn danh/ngày */}
-      <BottomSheet
-        isOpen={isQuotaExceededOpen}
-        onClose={() => setIsQuotaExceededOpen(false)}
-        title="Đã đạt giới hạn hôm nay"
-        footer={
-          <Button
-            type="button"
-            variant="primary"
-            fullWidth
-            onClick={() => {
-              setIsQuotaExceededOpen(false);
-              setIsOtpOpen(true);
-            }}
-          >
-            Để lại số điện thoại
-          </Button>
-        }
-      >
-        <div className="flex items-start gap-3 py-2 text-sm leading-relaxed text-[var(--color-text)]">
-          <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
-          <p>Hôm nay bạn đã gửi 5 phản ánh ẩn danh. Vui lòng để lại số điện thoại để gửi tiếp.</p>
-        </div>
-      </BottomSheet>
     </div>
   );
 }

@@ -220,7 +220,13 @@ function CitizenDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void })
 function CitizenMobileChrome({ onOpenHotline }: { onOpenHotline: () => void }) {
   const { pathname } = useLocation();
 
-  if (pathname.startsWith('/bao-su-co') || pathname === '/quanh-day' || pathname === '/minh-bach') {
+  if (
+    pathname.startsWith('/bao-su-co') ||
+    pathname.startsWith('/phan-anh/') ||
+    pathname === '/thong-bao' ||
+    pathname === '/quanh-day' ||
+    pathname === '/minh-bach'
+  ) {
     return null;
   }
 
@@ -345,7 +351,8 @@ function CitizenLayoutWithLocation({ children }: { children: ReactNode }) {
 
   const isMap = pathname === '/quanh-day';
   const isPhotoStudio = pathname === '/bao-su-co/anh';
-  const isFullBleed = pathname.startsWith('/bao-su-co') || isMap;
+  const isDetail = pathname.startsWith('/phan-anh/') || pathname === '/thong-bao';
+  const isFullBleed = pathname.startsWith('/bao-su-co') || isDetail || isMap;
 
   return (
     <div className="min-h-screen theme-outer-bg flex flex-row justify-center md:justify-start">

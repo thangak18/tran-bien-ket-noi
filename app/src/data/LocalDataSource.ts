@@ -10,7 +10,7 @@ import {
   CreateOnBehalfInput,
   CreateOnBehalfResult,
 } from './DataSource';
-import { Category, Report, VolunteerTask } from '../domain/types';
+import { Category, Notification, Report, VolunteerTask } from '../domain/types';
 import { VOLUNTEERS } from '../domain/constants';
 import {
   SubmitReportPayload,
@@ -38,7 +38,7 @@ import {
   submitVerification,
 } from '../store/officerActions';
 import { computeKpi } from '../domain/kpi';
-import { hasOwnerAccess } from '../domain/access';
+import { getMyReports, hasOwnerAccess } from '../domain/access';
 import { haversineMeters } from '../domain/geo';
 import { getCurrentVolunteer } from '../lib/volunteer';
 import mockData from './mock.json';
@@ -173,6 +173,21 @@ export class LocalDataSource implements DataSource {
   async claimReport(reportId: string, phone: string): Promise<Report> {
     this.write(subscribeLater(this.read(), reportId, phone, this.now));
     return findReport(this.read(), reportId);
+  }
+
+  async getMyNotifications(): Promise<Notification[] | null> {
+    const state = this.read();
+    return state.settings.phone
+      ? state.notifications.filter((n) => n.phone === state.settings.phone)
+      : null;
+  }
+
+  async getMyReports(): Promise<Report[]> {
+    const state = this.read();
+    return getMyReports(state.reports, {
+      phone: state.settings.phone,
+      deviceReports: state.settings.deviceReports,
+    });
   }
 
   async isReportOwner(reportId: string): Promise<boolean> {

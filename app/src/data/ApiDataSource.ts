@@ -10,7 +10,7 @@ import {
   CreateOnBehalfInput,
   CreateOnBehalfResult,
 } from './DataSource';
-import { Category, Report, Status, VolunteerTask } from '../domain/types';
+import { Category, Notification, Report, Status, VolunteerTask } from '../domain/types';
 import { SubmitReportPayload } from '../store/citizenActions';
 import {
   ApiError,
@@ -215,6 +215,31 @@ export class ApiDataSource implements DataSource {
       body: JSON.stringify({ phone }),
     });
     return this.requireReport(reportId);
+  }
+
+  async getMyNotifications(): Promise<Notification[] | null> {
+    if (Object.keys(citizenAuthHeaders()).length === 0) return null;
+    const res = await apiFetch<{ items?: Json[] }>('/citizen/me/notifications', {
+      headers: citizenAuthHeaders(),
+    });
+    return (res.items ?? []).map((n) => ({
+      id: String(n.id),
+      phone: String(n.phone ?? ''),
+      reportId: String(n.report_code ?? n.report_id ?? ''),
+      message: String(n.message ?? ''),
+      createdAt: String(n.created_at ?? ''),
+      read: Boolean(n.read),
+      channel: n.channel === 'sms_mo_phong' ? 'sms_mo_phong' : 'app',
+    }));
+  }
+
+  async getMyReports(): Promise<Report[]> {
+    // Cần token người dân (sau OTP). Chưa đăng nhập thì không có hồ sơ nào gắn SĐT.
+    if (Object.keys(citizenAuthHeaders()).length === 0) return [];
+    const res = await apiFetch<{ items?: Json[] }>('/citizen/me/reports', {
+      headers: citizenAuthHeaders(),
+    });
+    return (res.items ?? []).map(mapApiReport);
   }
 
   async isReportOwner(reportId: string): Promise<boolean> {

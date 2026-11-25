@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  CheckCircle2,
-  ClipboardCheck,
-  Map as MapIcon,
-  MapPin,
-  Navigation,
-  UserCheck,
-} from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2, ClipboardCheck, MapPin, Navigation } from 'lucide-react';
 import { VolunteerLayout } from '@/layouts/VolunteerLayout';
 import { VolunteerProfileView } from '@/screens/volunteer/VolunteerProfileView';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
@@ -366,58 +358,13 @@ export function V01Tasks() {
   return (
     <VolunteerLayout>
       <div className="mx-auto w-full max-w-6xl flex flex-col gap-4 p-4 md:p-6 pb-24 animate-fade-up">
-        <header className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h1
-                data-testid="screen-title"
-                className="text-[var(--fs-title)] font-bold text-[var(--color-text)]"
-              >
-                Nhiệm vụ tình nguyện viên
-              </h1>
-              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-                <UserCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="font-semibold text-[var(--color-text)]">{currentVolunteer}</span>
-                <span>· {volunteerSession?.area ?? 'Đội TNV P. Trấn Biên'}</span>
-              </div>
-            </div>
-            <Link
-              to="/tnv/ban-do"
-              aria-label="Mở bản đồ nhiệm vụ"
-              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-bold text-[var(--color-text)] shadow-2xs transition-colors duration-150 hover:bg-[var(--color-surface-elevated)]"
-            >
-              <MapIcon className="h-4 w-4 text-primary" aria-hidden="true" />
-              <span>Bản đồ</span>
-            </Link>
-          </div>
-
-          {/* 3-Step Volunteer Workflow Guide */}
-          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center shadow-2xs">
-            <div className="flex flex-col items-center gap-1">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
-                1
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--color-text)] leading-tight">
-                Chọn nhiệm vụ
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
-                2
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--color-text)] leading-tight">
-                Kiểm tra &amp; chụp ảnh
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[11px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
-                3
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--color-text)] leading-tight">
-                Gửi về phường
-              </span>
-            </div>
-          </div>
+        <header className="flex items-center justify-between gap-2">
+          <h1
+            data-testid="screen-title"
+            className="text-[var(--fs-title)] font-bold text-[var(--color-text)]"
+          >
+            Nhiệm vụ tình nguyện viên
+          </h1>
         </header>
 
         {toastMessage && (

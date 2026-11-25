@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+﻿import React, { useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -8,15 +8,15 @@ import {
   Hourglass,
   TrendingUp,
   Users,
-  Copy,
   EyeOff,
-  UserCheck,
+  Phone,
   Filter,
   RotateCcw,
   MapPin,
   Image as ImageIcon,
 } from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { MediaCaptureField } from '@/components/common/MediaCapture';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { SelectField } from '@/components/ui';
 import { PortalAuthFlow } from '@/components/common/PortalAuthFlow';
@@ -33,7 +33,6 @@ import { useAction } from '@/data/useAction';
 import { ActionError } from '@/components/common/ActionError';
 import { computeKpi } from '@/domain/kpi';
 import { sortInbox, isOverdue, isDueSoon } from '@/domain/sorting';
-import { findDuplicates } from '@/domain/duplicates';
 import { formatDate, formatDays } from '@/domain/format';
 import { CATEGORY_CONFIGS, DEPARTMENTS, DEMO_NOW, officerLabel } from '@/domain/constants';
 import { Category, Report, Status, STATUSES } from '@/domain/types';
@@ -127,19 +126,6 @@ function OnBehalfModal({ isOpen, onClose }: OnBehalfModalProps) {
     setLng(tapLng);
     const street = nearestStreet(tapLat, tapLng);
     setAddress(`Gần đường ${street.name}`);
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).slice(0, 3);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setPhotos((prev) => [...prev, reader.result as string].slice(0, 3));
-        }
-      };
-      reader.readAsDataURL(file);
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -344,33 +330,19 @@ function OnBehalfModal({ isOpen, onClose }: OnBehalfModalProps) {
           </div>
 
           <div>
-            <label
-              htmlFor="on-behalf-photos"
-              className="mb-1 flex items-center gap-1.5 text-sm font-medium text-[var(--color-text)]"
-            >
+            <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-[var(--color-text)]">
               <ImageIcon className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden="true" />
-              <span>Ảnh đính kèm (tùy chọn, tối đa 3 ảnh)</span>
-            </label>
-            <input
-              id="on-behalf-photos"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotoUpload}
-              className="block w-full text-xs text-[var(--color-text-muted)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--color-primary-soft)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--color-primary)]"
+              <span>Ảnh / Video đính kèm (tùy chọn, tối đa 5 mục)</span>
+            </div>
+            <MediaCaptureField
+              items={photos}
+              onChange={setPhotos}
+              maxItems={5}
+              allowGallery={true}
+              allowVideo={true}
+              captureLabel="Chụp ảnh / Quay video"
+              galleryLabel="Chọn từ máy"
             />
-            {photos.length > 0 && (
-              <div className="mt-2 flex gap-2">
-                {photos.map((src, idx) => (
-                  <img
-                    key={idx}
-                    src={src}
-                    alt={`Ảnh đính kèm ${idx + 1}`}
-                    className="h-12 w-12 rounded-lg object-cover border border-gray-200"
-                  />
-                ))}
-              </div>
-            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
@@ -435,21 +407,6 @@ export function A01Inbox() {
       da_xu_ly: resolved,
     };
   }, [state.reports]);
-
-  // Tính tập hồ sơ nghi trùng để tránh gọi findDuplicates nhiều lần trong render
-  const duplicateIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const r of state.reports) {
-      if (r.suspectedDuplicateOf && r.suspectedDuplicateOf.length > 0) {
-        ids.add(r.id);
-        continue;
-      }
-      if (findDuplicates(r, state.reports, now).length > 0) {
-        ids.add(r.id);
-      }
-    }
-    return ids;
-  }, [state.reports, now]);
 
   const filteredAndSorted = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -583,9 +540,6 @@ export function A01Inbox() {
           >
             Hộp tiếp nhận cán bộ
           </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            Theo dõi, phân loại và điều phối phản ánh hiện trường theo hạn SLA
-          </p>
         </div>
       </div>
 
@@ -870,7 +824,6 @@ export function A01Inbox() {
                       <img
                         src={report.photos[0]}
                         alt=""
-                        loading="lazy"
                         className="h-12 w-12 shrink-0 rounded-xl border border-[var(--color-border)] object-cover"
                       />
                     ) : (
@@ -931,7 +884,7 @@ export function A01Inbox() {
                       Hạn
                     </th>
                     <th scope="col" className="hidden lg:table-cell py-3 px-4">
-                      Cờ
+                      Số điện thoại
                     </th>
                   </tr>
                 </thead>
@@ -943,7 +896,6 @@ export function A01Inbox() {
                     const overdueDays = overdue ? getOverdueDays(report.dueAt, now) : 0;
                     const followerCount =
                       (report.followers?.length ?? 0) + (report.anonymousFollows ?? 0);
-                    const isSuspectedDup = duplicateIds.has(report.id);
 
                     return (
                       <tr
@@ -984,7 +936,6 @@ export function A01Inbox() {
                             <img
                               src={report.photos[0]}
                               alt={`Ảnh sự cố ${report.id}`}
-                              loading="lazy"
                               className="h-12 w-12 rounded-lg object-cover border border-[var(--color-border)] bg-gray-100"
                             />
                           ) : (
@@ -1052,27 +1003,23 @@ export function A01Inbox() {
                           )}
                         </td>
 
-                        <td className="hidden lg:table-cell py-3 px-4 align-top">
-                          <div className="flex flex-wrap gap-1.5">
-                            {isSuspectedDup && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/50 dark:text-purple-300">
-                                <Copy className="h-3 w-3" aria-hidden="true" />
-                                <span>Nghi trùng</span>
-                              </span>
-                            )}
-                            {report.anonymous && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                <EyeOff className="h-3 w-3" aria-hidden="true" />
-                                <span>Ẩn danh</span>
-                              </span>
-                            )}
-                            {report.onBehalf && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300">
-                                <UserCheck className="h-3 w-3" aria-hidden="true" />
-                                <span>Gửi hộ</span>
-                              </span>
-                            )}
-                          </div>
+                        <td className="hidden lg:table-cell py-3 px-4 align-top whitespace-nowrap">
+                          {report.reporterPhone ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text)] tabular-nums">
+                              <Phone
+                                className="h-3.5 w-3.5 text-[var(--color-primary)] shrink-0"
+                                aria-hidden="true"
+                              />
+                              <span>{report.reporterPhone}</span>
+                            </span>
+                          ) : report.anonymous ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                              <EyeOff className="h-3 w-3" aria-hidden="true" />
+                              <span>Ẩn danh</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[var(--color-text-muted)]">–</span>
+                          )}
                         </td>
                       </tr>
                     );

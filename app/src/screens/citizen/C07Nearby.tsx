@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Info, RotateCcw } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
@@ -443,7 +443,6 @@ export function C07Nearby() {
                         <img
                           src={photo}
                           alt={`Ảnh ${catConfig.label}`}
-                          loading="lazy"
                           className="h-[68px] w-[76px] flex-shrink-0 rounded-xl object-cover bg-slate-200"
                         />
                         <div className="min-w-0 flex-1 space-y-1">
@@ -561,7 +560,6 @@ export function C07Nearby() {
                       <img
                         src={photo}
                         alt={`Ảnh ${catConfig.label}`}
-                        loading="lazy"
                         className="h-[72px] w-[84px] flex-shrink-0 rounded-xl object-cover bg-slate-200"
                       />
                       <div className="min-w-0 flex-1 space-y-1">

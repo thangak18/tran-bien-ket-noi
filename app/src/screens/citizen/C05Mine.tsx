@@ -1,37 +1,31 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   BarChart3,
   Bell,
-  ChevronDown,
   ChevronRight,
-  Clock,
   Edit3,
-  ExternalLink,
-  Hash,
   Headphones,
-  KeyRound,
   LogOut,
   MapPin,
   Moon,
   Phone,
-  QrCode,
-  Search,
   Settings,
   ShieldCheck,
   Smartphone,
   Sun,
   Type,
   User,
-  UserCheck,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
-import { filterMyReports, getMyReports, lookupReportByCode } from '@/domain/access';
+import { apiFetch, isApiMode, setCitizenToken } from '@/lib/api';
+import { filterMyReports } from '@/domain/access';
+import { useMyReports } from '@/data/useMyReports';
 import { computeKpi } from '@/domain/kpi';
 import { maskPhone } from '@/domain/privacy';
-import { formatDateTime, formatDays } from '@/domain/format';
-import { FontScale, Notification } from '@/domain/types';
+import { formatDays } from '@/domain/format';
+import { FontScale } from '@/domain/types';
 import { applyFontScale, FONT_SCALE_OPTIONS, resolveFontScale } from '@/lib/senior';
 import {
   CITIZEN_ADDRESS_STORAGE_KEY,
@@ -39,8 +33,6 @@ import {
   findAccountByPhone,
   saveAccountRecord,
 } from '@/lib/accounts';
-import { SmsPreview } from '@/components/citizen/SmsPreview';
-import { QrScannerModal } from '@/components/citizen/QrScannerModal';
 import { HotlineModal } from '@/components/common/HotlineModal';
 import { Button, Modal, Toast } from '@/components/ui';
 
@@ -83,6 +75,9 @@ function formatDisplayPhone(rawPhone: string): string {
 
 export function C05Mine() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTarget = searchParams.get('redirect');
+  const loginRequired = searchParams.get('login') === '1';
   const { state, dispatch } = useAppStore();
   const now = state.settings.demoNow;
 
@@ -92,25 +87,17 @@ export function C05Mine() {
   const [nameDraft, setNameDraft] = useState(citizenName);
   const [addressDraft, setAddressDraft] = useState(citizenAddress);
 
-  const [otpOpen, setOtpOpen] = useState(false);
-  const [otpStep, setOtpStep] = useState<'phone' | 'otp' | 'register'>('phone');
+  const [otpOpen, setOtpOpen] = useState(() => loginRequired && !state.settings.phone);
+  const [otpStep, setOtpStep] = useState<'phone' | 'otp'>('phone');
   const [phoneInput, setPhoneInput] = useState(state.settings.phone ?? '');
   const [phoneError, setPhoneError] = useState('');
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [otpError, setOtpError] = useState('');
-  const [registerName, setRegisterName] = useState('');
-  const [registerAddress, setRegisterAddress] = useState('');
-  const [registerError, setRegisterError] = useState('');
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  const [lookupOpen, setLookupOpen] = useState(false);
-  const [lookupCode, setLookupCode] = useState('');
-  const [lookupPin, setLookupPin] = useState('');
-  const [lookupError, setLookupError] = useState('');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [pushEnabled, setPushEnabled] = useState(true);
@@ -139,25 +126,14 @@ export function C05Mine() {
     [state.reports, currentMonth, now]
   );
 
-  const accessContext = useMemo(
-    () => ({
-      phone: state.settings.phone,
-      deviceReports: state.settings.deviceReports,
-    }),
-    [state.settings.phone, state.settings.deviceReports]
-  );
+  const [otpBusy, setOtpBusy] = useState(false);
+  const myReports = useMyReports();
 
-  const myReports = useMemo(
-    () => getMyReports(state.reports, accessContext),
-    [state.reports, accessContext]
-  );
-
-  const myNotifications = useMemo(() => {
-    const myIds = new Set(myReports.map((r) => r.id));
-    return state.notifications.filter(
-      (n) => (state.settings.phone && n.phone === state.settings.phone) || myIds.has(n.reportId)
-    );
-  }, [state.notifications, state.settings.phone, myReports]);
+  const unreadNotifCount = useMemo(() => {
+    const myPhone = state.settings.phone;
+    if (!myPhone) return 0;
+    return state.notifications.filter((n) => n.phone === myPhone && !n.read).length;
+  }, [state.notifications, state.settings.phone]);
 
   const counts = useMemo(
     () => ({
@@ -167,8 +143,6 @@ export function C05Mine() {
     }),
     [myReports]
   );
-
-  const [isQrOpen, setIsQrOpen] = useState(false);
 
   const handleSaveCitizenName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,13 +207,30 @@ export function C05Mine() {
     }
   };
 
-  const handleRequestOtpFromModal = (e: React.FormEvent) => {
+  const handleRequestOtpFromModal = async (e: React.FormEvent) => {
     e.preventDefault();
     setPhoneError('');
     const digits = phoneInput.replace(/\D/g, '');
     if (!/^(03|05|07|08|09)\d{8}$/.test(digits)) {
       setPhoneError('Vui lòng nhập số điện thoại 10 số hợp lệ (VD: 0909 000 068)');
       return;
+    }
+    if (isApiMode()) {
+      // Chế độ API: máy chủ tạo mã OTP (vẫn là mô phỏng, mã 123456).
+      setOtpBusy(true);
+      try {
+        await apiFetch('/citizen/otp/request', {
+          method: 'POST',
+          body: JSON.stringify({ phone: digits }),
+        });
+      } catch (err) {
+        setPhoneError(
+          err instanceof Error ? err.message : 'Không gửi được mã OTP. Vui lòng thử lại.'
+        );
+        return;
+      } finally {
+        setOtpBusy(false);
+      }
     }
     setOtpDigits(['', '', '', '', '', '']);
     setOtpError('');
@@ -248,7 +239,60 @@ export function C05Mine() {
     window.setTimeout(() => otpRefs.current[0]?.focus(), 50);
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  // Tự động nhận diện & dán mã OTP khi SMS về (WebOTP API + mô phỏng tự động điền)
+  useEffect(() => {
+    if (!otpOpen || otpStep !== 'otp') return;
+    let cancelled = false;
+    const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+
+    const applyDetectedOtp = (code: string) => {
+      if (cancelled) return;
+      const clean = code.replace(/\D/g, '').slice(0, 6);
+      if (clean.length === 6) {
+        setOtpDigits(clean.split(''));
+        setOtpError('');
+        setToastMsg('Đã tự động nhận diện và dán mã OTP');
+        otpRefs.current[5]?.focus();
+      }
+    };
+
+    const creds =
+      typeof navigator !== 'undefined'
+        ? (
+            navigator as Navigator & {
+              credentials?: { get?: (opts: unknown) => Promise<{ code?: string } | null> };
+            }
+          ).credentials
+        : undefined;
+
+    if (creds && typeof creds.get === 'function') {
+      creds
+        .get({
+          otp: { transport: ['sms'] },
+          signal: ac?.signal,
+        })
+        .then((res) => {
+          if (res?.code) applyDetectedOtp(res.code);
+        })
+        .catch(() => {});
+    }
+
+    const demoTimer = window.setTimeout(() => {
+      setOtpDigits((prev) => {
+        if (cancelled || prev.some((d) => d.length > 0)) return prev;
+        setToastMsg('Đã tự động nhận diện và dán mã OTP');
+        return ['1', '2', '3', '4', '5', '6'];
+      });
+    }, 650);
+
+    return () => {
+      cancelled = true;
+      ac?.abort();
+      window.clearTimeout(demoTimer);
+    };
+  }, [otpOpen, otpStep]);
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otpDigits.join('');
     if (!/^\d{6}$/.test(code)) {
@@ -260,106 +304,48 @@ export function C05Mine() {
       setOtpError('Số điện thoại không hợp lệ');
       return;
     }
-    const existing = findAccountByPhone(cleanPhone, state.reports);
-    if (existing) {
-      setCitizenName(existing.name);
-      setCitizenAddress(existing.address);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(CITIZEN_NAME_STORAGE_KEY, existing.name);
-        window.localStorage.setItem(CITIZEN_ADDRESS_STORAGE_KEY, existing.address);
+    if (isApiMode()) {
+      // Máy chủ xác minh OTP và cấp token người dân; hồ sơ gửi kèm token mới gắn với SĐT này.
+      setOtpBusy(true);
+      try {
+        const res = await apiFetch<{ token: string }>('/citizen/otp/verify', {
+          method: 'POST',
+          body: JSON.stringify({ phone: cleanPhone, code }),
+        });
+        setCitizenToken(res.token);
+      } catch (err) {
+        setOtpError(err instanceof Error ? err.message : 'Mã OTP không đúng. Vui lòng thử lại.');
+        return;
+      } finally {
+        setOtpBusy(false);
       }
-      dispatch({ type: 'SET_SETTINGS', payload: { phone: cleanPhone } });
-      setOtpOpen(false);
-      setToastMsg(`Đã đăng nhập số ${maskPhone(cleanPhone)}`);
-      return;
     }
-    setRegisterName('');
-    setRegisterAddress('');
-    setRegisterError('');
-    setOtpStep('register');
-  };
+    const existing = findAccountByPhone(cleanPhone, state.reports);
+    const resolvedName = existing?.name ?? 'Công dân Trấn Biên';
+    const resolvedAddress = existing?.address ?? 'P. Trấn Biên';
 
-  const handleCompleteRegistration = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedName = registerName.trim();
-    const trimmedAddress = registerAddress.trim();
-    if (!trimmedName) {
-      setRegisterError('Vui lòng nhập họ và tên của bạn.');
-      return;
-    }
-    if (!trimmedAddress) {
-      setRegisterError('Vui lòng nhập khu vực hoặc địa chỉ bạn đang sinh sống.');
-      return;
-    }
-    const cleanPhone = phoneInput.replace(/\D/g, '');
-    saveAccountRecord({
-      phone: cleanPhone,
-      name: trimmedName,
-      address: trimmedAddress,
-      createdAt: new Date().toISOString(),
-    });
-    setCitizenName(trimmedName);
-    setCitizenAddress(trimmedAddress);
-    dispatch({ type: 'SET_SETTINGS', payload: { phone: cleanPhone } });
-    setOtpOpen(false);
-    setToastMsg(`Chào mừng ${trimmedName}! Đăng ký thành công`);
-  };
-
-  const handleLookupCodeInput = (raw: string) => {
-    if (lookupError) setLookupError('');
-    // Nếu người dùng dán cả đường link theo dõi (VD: .../phan-anh/TB-0065?k=1234) thì tự tách mã và 4 số bí mật
-    const urlMatch = raw.match(/(TB-\d{3,6})/i);
-    const keyMatch = raw.match(/[?&]k=(\d{4})/);
-    if (urlMatch && keyMatch) {
-      setLookupCode(urlMatch[1]!.toUpperCase());
-      setLookupPin(keyMatch[1]!);
-      return;
-    }
-    setLookupCode(raw.toUpperCase());
-  };
-
-  const handleLookupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const rawCode = lookupCode.trim().toUpperCase().replace(/^#/, '');
-    // Tự động chuẩn hoá nếu người dùng chỉ nhập số (VD: "0001" hoặc "1" -> "TB-0001") hoặc "TB0001" -> "TB-0001"
-    let normalizedCode = rawCode;
-    if (/^\d{1,4}$/.test(rawCode)) {
-      normalizedCode = `TB-${rawCode.padStart(4, '0')}`;
-    } else if (/^TB\d{1,4}$/.test(rawCode)) {
-      normalizedCode = `TB-${rawCode.slice(2).padStart(4, '0')}`;
-    }
-
-    const cleanPin = lookupPin.replace(/\D/g, '').slice(0, 4);
-    if (!normalizedCode) {
-      setLookupError('Vui lòng nhập mã phản ánh (VD: TB-0001).');
-      return;
-    }
-    if (cleanPin.length !== 4) {
-      setLookupError('Vui lòng nhập đủ 4 chữ số mã bí mật hoặc 4 số cuối SĐT.');
-      return;
-    }
-
-    const found = lookupReportByCode(state.reports, normalizedCode, cleanPin);
-    if (!found) {
-      setLookupError('Không tìm thấy phản ánh khớp mã hồ sơ và 4 số xác nhận.');
-      return;
-    }
-
-    setLookupError('');
-    setLookupCode(found.id);
-    const alreadyInDevice = state.settings.deviceReports.some((d) => d.id === found.id);
-    if (!alreadyInDevice) {
-      dispatch({
-        type: 'SET_SETTINGS',
-        payload: {
-          deviceReports: [
-            { id: found.id, secretCode: found.secretCode },
-            ...state.settings.deviceReports,
-          ],
-        },
+    if (!existing) {
+      saveAccountRecord({
+        phone: cleanPhone,
+        name: resolvedName,
+        address: resolvedAddress,
+        createdAt: new Date().toISOString(),
       });
     }
-    navigate(`/phan-anh/${found.id}?k=${found.secretCode}`);
+
+    setCitizenName(resolvedName);
+    setCitizenAddress(resolvedAddress);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(CITIZEN_NAME_STORAGE_KEY, resolvedName);
+      window.localStorage.setItem(CITIZEN_ADDRESS_STORAGE_KEY, resolvedAddress);
+    }
+
+    dispatch({ type: 'SET_SETTINGS', payload: { phone: cleanPhone } });
+    setOtpOpen(false);
+    setToastMsg(`Đã đăng nhập số ${maskPhone(cleanPhone)}`);
+    if (redirectTarget && redirectTarget.startsWith('/')) {
+      navigate(redirectTarget, { replace: true });
+    }
   };
 
   const handleToggleTheme = () => {
@@ -390,6 +376,7 @@ export function C05Mine() {
   };
 
   const handleLogout = () => {
+    if (typeof window !== 'undefined') window.localStorage.removeItem('tb_citizen_token');
     dispatch({ type: 'SET_SETTINGS', payload: { phone: undefined } });
     setPhoneInput('');
     setToastMsg('Đã đăng xuất số điện thoại');
@@ -400,10 +387,10 @@ export function C05Mine() {
   const last4Phone = (phoneInput.replace(/\D/g, '') || '0000').slice(-4);
   const isLoggedIn = Boolean(state.settings.phone);
 
-  // Fullscreen / Centered OTP Verification Screen (Clean, zero "Mô phỏng" or "Mã demo", no bottom navbar)
+  // Fullscreen / Centered OTP Verification Screen (no bottom navbar); có nhãn "Mô phỏng" theo AGENTS.md
   if (otpOpen) {
     return (
-      <div className="flex min-h-[100dvh] flex-1 flex-col bg-[var(--color-bg)] px-4 sm:px-6 pt-4 pb-10">
+      <div className="fixed inset-0 z-50 flex min-h-[100dvh] flex-col overflow-y-auto bg-[var(--color-bg)] px-4 sm:px-6 pt-4 pb-10">
         <span data-testid="screen-title" className="sr-only">
           Phản ánh của tôi
         </span>
@@ -413,11 +400,6 @@ export function C05Mine() {
           <button
             type="button"
             onClick={() => {
-              if (otpStep === 'register') {
-                setOtpStep('otp');
-                setRegisterError('');
-                return;
-              }
               if (otpStep === 'otp') {
                 setOtpStep('phone');
                 setOtpError('');
@@ -453,6 +435,12 @@ export function C05Mine() {
               </p>
             </div>
 
+            {loginRequired && (
+              <div className="rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-3.5 py-2.5 text-center text-xs font-semibold text-[#0369A1] dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
+                Vui lòng đăng nhập để hoàn tất gửi phản ánh.
+              </div>
+            )}
+
             <div className="space-y-2">
               <label
                 htmlFor="change-phone-input"
@@ -478,12 +466,13 @@ export function C05Mine() {
 
             <button
               type="submit"
+              disabled={otpBusy}
               className="flex h-12 w-full items-center justify-center rounded-2xl bg-[#0084E8] px-6 text-sm font-extrabold text-white shadow-[0_8px_20px_rgba(0,132,232,0.28)] transition hover:bg-[#006EC4]"
             >
               Xác nhận
             </button>
           </form>
-        ) : otpStep === 'otp' ? (
+        ) : (
           <form
             onSubmit={handleVerifyOtp}
             className="mx-auto my-auto flex w-full max-w-md flex-col items-center rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-6 sm:p-8 text-center shadow-xl space-y-5 dark:border-slate-800"
@@ -501,6 +490,10 @@ export function C05Mine() {
                 Mã xác thực 6 chữ số đã được gửi tới số{' '}
                 <span className="font-extrabold text-[var(--color-text)]">•••• {last4Phone}</span>
               </p>
+              {/* AGENTS.md: OTP chưa tích hợp thật nên phải có nhãn "Mô phỏng" */}
+              <span className="inline-flex rounded-full bg-[#E6F3FD] px-2.5 py-0.5 text-xs font-bold text-[#0084E8]">
+                Mô phỏng · mã 123456
+              </span>
             </div>
 
             {/* 6 OTP Digit Boxes split 3 - 3 */}
@@ -516,6 +509,7 @@ export function C05Mine() {
                     }}
                     type="text"
                     inputMode="numeric"
+                    autoComplete={idx === 0 ? 'one-time-code' : undefined}
                     maxLength={6}
                     aria-label={`Mã OTP số ${idx + 1}`}
                     value={digit}
@@ -547,79 +541,10 @@ export function C05Mine() {
 
             <button
               type="submit"
+              disabled={otpBusy}
               className="flex h-[52px] w-full items-center justify-center rounded-2xl bg-[#0084E8] px-6 text-sm font-extrabold text-white shadow-[0_8px_22px_rgba(0,132,232,0.32)] transition hover:bg-[#006EC4]"
             >
-              Xác nhận &amp; Tiếp tục
-            </button>
-          </form>
-        ) : (
-          <form
-            onSubmit={handleCompleteRegistration}
-            className="mx-auto my-auto flex w-full max-w-md flex-col rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-6 sm:p-8 shadow-xl space-y-4 dark:border-slate-800"
-          >
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0084E8] text-white shadow-[0_8px_24px_rgba(0,132,232,0.3)]">
-              <User className="h-7 w-7" strokeWidth={2} aria-hidden="true" />
-            </div>
-
-            <div className="text-center space-y-1">
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--color-text)]">
-                Đăng ký hồ sơ mới
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                Số điện thoại chưa có tài khoản. Vui lòng cho biết thông tin của bạn:
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="register-name-input"
-                className="block text-xs font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300"
-              >
-                Bạn tên gì?
-              </label>
-              <input
-                id="register-name-input"
-                type="text"
-                maxLength={40}
-                value={registerName}
-                onChange={(e) => {
-                  setRegisterName(e.target.value);
-                  if (registerError) setRegisterError('');
-                }}
-                placeholder="VD: Nguyễn Văn An"
-                autoFocus
-                className="w-full rounded-2xl border border-slate-300 bg-[var(--color-surface)] px-4 py-3 text-sm font-bold text-[var(--color-text)] placeholder:font-normal placeholder:text-slate-400 focus:border-[#0084E8] focus:outline-none focus:ring-4 focus:ring-[#0084E8]/15 dark:border-slate-700"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="register-address-input"
-                className="block text-xs font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300"
-              >
-                Bạn sống ở đâu?
-              </label>
-              <input
-                id="register-address-input"
-                type="text"
-                maxLength={80}
-                value={registerAddress}
-                onChange={(e) => {
-                  setRegisterAddress(e.target.value);
-                  if (registerError) setRegisterError('');
-                }}
-                placeholder="VD: KP 2, Đường Hà Huy Giáp, P. Trấn Biên"
-                className="w-full rounded-2xl border border-slate-300 bg-[var(--color-surface)] px-4 py-3 text-sm font-bold text-[var(--color-text)] placeholder:font-normal placeholder:text-slate-400 focus:border-[#0084E8] focus:outline-none focus:ring-4 focus:ring-[#0084E8]/15 dark:border-slate-700"
-              />
-            </div>
-
-            {registerError && <p className="text-xs font-semibold text-red-600">{registerError}</p>}
-
-            <button
-              type="submit"
-              className="flex h-[52px] w-full items-center justify-center rounded-2xl bg-[#0084E8] px-6 text-sm font-extrabold text-white shadow-[0_8px_22px_rgba(0,132,232,0.32)] transition hover:bg-[#006EC4]"
-            >
-              Hoàn tất đăng ký
+              {otpBusy ? 'Đang xác thực...' : 'Xác nhận & Đăng nhập'}
             </button>
           </form>
         )}
@@ -814,6 +739,21 @@ export function C05Mine() {
               Hồ sơ
             </h1>
           </div>
+          {isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => navigate('/thong-bao')}
+              aria-label="Thông báo của tôi"
+              className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/90 bg-[var(--color-bg)] text-[var(--color-text)] shadow-2xs transition hover:border-[#0084E8]/40 hover:bg-[#E6F3FD] hover:text-[#0084E8] dark:border-slate-700 dark:hover:bg-sky-950/60 dark:hover:text-[#38BDF8]"
+            >
+              <Bell className="h-5 w-5" aria-hidden="true" />
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-extrabold text-white shadow-xs">
+                  {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </header>
 
@@ -884,22 +824,38 @@ export function C05Mine() {
               </section>
             ) : (
               <section className="overflow-hidden rounded-3xl border border-[#BAE6FD] bg-gradient-to-br from-[#F0F9FF] via-[#F8FCFF] to-white p-5 shadow-xs space-y-4 dark:border-sky-800/80 dark:from-sky-950/50 dark:via-slate-900 dark:to-slate-900">
-                <div className="flex items-center gap-3.5">
-                  <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-[#0084E8] text-base font-extrabold text-white shadow-[0_6px_16px_rgba(0,132,232,0.3)]">
-                    {getInitials(citizenName)}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-base sm:text-lg font-extrabold text-[var(--color-text)]">
-                        {citizenName}
-                      </span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#0084E8] text-xl font-extrabold text-white shadow-[0_6px_16px_rgba(0,132,232,0.3)]">
+                      {getInitials(citizenName)}
                     </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      <span>{formatDisplayPhone(state.settings.phone!)}</span>
-                      <span>·</span>
-                      <span className="truncate">{citizenAddress}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-base sm:text-lg font-extrabold text-[var(--color-text)]">
+                          {citizenName}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <span>{formatDisplayPhone(state.settings.phone!)}</span>
+                        <span>·</span>
+                        <span className="truncate">{citizenAddress}</span>
+                      </div>
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNameDraft(citizenName);
+                      setAddressDraft(citizenAddress);
+                      setIsEditingName(true);
+                    }}
+                    aria-label="Chỉnh sửa hồ sơ cá nhân"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-[#BAE6FD] bg-white/90 px-2.5 py-1.5 text-xs font-bold text-[#0084E8] shadow-2xs transition hover:bg-[#E6F3FD] dark:border-sky-800 dark:bg-slate-800 dark:text-[#38BDF8]"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Sửa</span>
+                  </button>
                 </div>
 
                 {/* 3 Interactive Report Counter Cards */}
@@ -942,188 +898,6 @@ export function C05Mine() {
               </section>
             )}
 
-            {/* 2. Tra cứu bằng mã phản ánh (Dropdown Box bung ra khi bấm vào) */}
-            <section
-              data-testid="lookup-dropdown-box"
-              className={`overflow-hidden rounded-3xl border bg-[var(--color-surface)] shadow-2xs transition-all dark:border-slate-800 ${
-                lookupOpen
-                  ? 'border-[#0084E8]/50 ring-2 ring-[#0084E8]/10'
-                  : 'border-slate-200/90 hover:border-[#0084E8]/40'
-              }`}
-            >
-              <button
-                type="button"
-                aria-expanded={lookupOpen}
-                onClick={() => setLookupOpen((prev) => !prev)}
-                className="group flex w-full items-center justify-between gap-3.5 p-4 sm:p-5 text-left transition-colors hover:bg-slate-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0084E8] dark:hover:bg-slate-800/40"
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors ${
-                      lookupOpen
-                        ? 'bg-[#0084E8] text-white shadow-[0_4px_12px_rgba(0,132,232,0.28)] dark:bg-[#38BDF8] dark:text-slate-950'
-                        : 'bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]'
-                    }`}
-                  >
-                    <Search className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="truncate text-sm sm:text-base font-extrabold text-[var(--color-text)]">
-                      Tra cứu bằng mã phản ánh
-                    </h2>
-                    <p className="mt-0.5 truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {lookupCode
-                        ? `Đang nhập mã: ${lookupCode}`
-                        : 'Bấm để mở khung nhập mã TB-xxxx và 4 số xác thực'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  {lookupOpen && (lookupCode || lookupPin) && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLookupCode('');
-                        setLookupPin('');
-                        setLookupError('');
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setLookupCode('');
-                          setLookupPin('');
-                          setLookupError('');
-                        }
-                      }}
-                      className="rounded-lg px-2 py-1 text-xs font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                    >
-                      Xoá
-                    </span>
-                  )}
-                  <span
-                    className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-200 ${
-                      lookupOpen
-                        ? 'rotate-180 bg-[#E6F3FD] text-[#0084E8] dark:bg-sky-950 dark:text-[#38BDF8]'
-                        : 'bg-slate-100 text-slate-500 group-hover:bg-[#E6F3FD] group-hover:text-[#0084E8] dark:bg-slate-800 dark:text-slate-400'
-                    }`}
-                  >
-                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                </div>
-              </button>
-
-              {lookupOpen && (
-                <form
-                  onSubmit={handleLookupSubmit}
-                  className="animate-fade-up border-t border-slate-100 px-4 pb-4 pt-4 sm:px-5 sm:pb-5 space-y-3.5 dark:border-slate-800/80"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                    {/* Col 1: Mã phản ánh (7/12 on sm+) */}
-                    <div className="sm:col-span-7 space-y-1.5">
-                      <label
-                        htmlFor="lookup-code-input"
-                        className="block text-xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400"
-                      >
-                        Mã phản ánh
-                      </label>
-                      <div className="relative">
-                        <Hash className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                          id="lookup-code-input"
-                          type="text"
-                          value={lookupCode}
-                          onChange={(e) => handleLookupCodeInput(e.target.value)}
-                          placeholder="VD: TB-0001"
-                          aria-label="Mã phản ánh"
-                          autoFocus
-                          className="h-12 w-full rounded-2xl border border-slate-200/90 bg-[#F8FAFC] pr-3.5 pl-9 font-mono text-sm font-extrabold tracking-wide text-[var(--color-text)] uppercase placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 transition focus:border-[#0084E8] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[#0084E8]/20 dark:border-slate-700 dark:bg-slate-900/70"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Col 2: Mã bí mật / 4 số cuối SĐT (5/12 on sm+) */}
-                    <div className="sm:col-span-5 space-y-1.5">
-                      <label
-                        htmlFor="lookup-pin-input"
-                        className="block text-xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400"
-                      >
-                        Mã bí mật / 4 số SĐT
-                      </label>
-                      <div className="relative">
-                        <KeyRound className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                          id="lookup-pin-input"
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={4}
-                          value={lookupPin}
-                          onChange={(e) => {
-                            setLookupPin(e.target.value.replace(/\D/g, '').slice(0, 4));
-                            if (lookupError) setLookupError('');
-                          }}
-                          placeholder="4 chữ số"
-                          aria-label="4 số cuối SĐT / mã bí mật"
-                          className="h-12 w-full rounded-2xl border border-slate-200/90 bg-[#F8FAFC] pr-3.5 pl-9 font-mono text-sm font-extrabold tracking-widest text-[var(--color-text)] placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 transition focus:border-[#0084E8] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[#0084E8]/20 dark:border-slate-700 dark:bg-slate-900/70"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {lookupError && (
-                    <div
-                      role="alert"
-                      className="rounded-xl border border-red-200 bg-red-50/80 px-3 py-2 text-xs font-semibold text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
-                    >
-                      {lookupError}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 text-sm font-extrabold text-[#0084E8] shadow-2xs transition-all hover:border-[#0084E8] hover:bg-[#0084E8] hover:text-white active:scale-[0.99] dark:border-sky-800 dark:bg-sky-950/60 dark:text-[#38BDF8] dark:hover:bg-[#0084E8] dark:hover:text-white"
-                    >
-                      <Search className="h-4 w-4" />
-                      <span>Tra cứu phản ánh</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsQrOpen(true)}
-                      aria-label="Quét mã QR phản ánh"
-                      className="flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 text-sm font-bold text-[var(--color-text)] transition-colors hover:border-[#0084E8] hover:text-[#0084E8]"
-                    >
-                      <QrCode className="h-4 w-4" />
-                      <span>Quét QR</span>
-                    </button>
-                  </div>
-
-                  {/* Quick 1-tap lookup chips for recent reports saved on this device */}
-                  {state.settings.deviceReports.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
-                      <span className="text-[11px] font-semibold text-slate-400 mr-0.5">
-                        Gần đây:
-                      </span>
-                      {state.settings.deviceReports.slice(0, 3).map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => navigate(`/phan-anh/${item.id}?k=${item.secretCode}`)}
-                          className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-1 font-mono text-[11px] font-bold text-slate-700 transition hover:border-[#0084E8] hover:bg-[#F0F9FF] hover:text-[#0084E8] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                        >
-                          <span>#{item.id}</span>
-                          <ChevronRight className="h-3 w-3 text-slate-400" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </form>
-              )}
-            </section>
-
             {/* 3. Bảng minh bạch phường Card */}
             <button
               type="button"
@@ -1155,132 +929,6 @@ export function C05Mine() {
               RIGHT COLUMN (lg:col-span-7): ACCOUNT SETTINGS, APP SETTINGS & SUPPORT
              ================================================================= */}
           <div className="lg:col-span-7 space-y-5">
-            {/* 1. TÀI KHOẢN & THÔNG BÁO (When Logged In) */}
-            {isLoggedIn && (
-              <section className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs space-y-3 dark:border-slate-800">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Quản lý tài khoản
-                  </h2>
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                    Đang hoạt động
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNameDraft(citizenName);
-                      setAddressDraft(citizenAddress);
-                      setIsEditingName(true);
-                    }}
-                    className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/80 dark:border-slate-800 dark:bg-slate-900/70"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <User className="h-4 w-4 text-[#0084E8]" />
-                      <div>
-                        <div className="font-bold text-[var(--color-text)]">Hồ sơ cá nhân</div>
-                        <div className="text-xs text-slate-500">{citizenName}</div>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenChangePhone}
-                    className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm transition hover:border-[#0084E8]/40 hover:bg-slate-100/80 dark:border-slate-800 dark:bg-slate-900/70"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Smartphone className="h-4 w-4 text-[#0084E8]" />
-                      <div>
-                        <div className="font-bold text-[var(--color-text)]">Đổi số điện thoại</div>
-                        <div className="text-xs text-slate-500">
-                          {formatDisplayPhone(state.settings.phone!)}
-                        </div>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400" />
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {/* 2. Thông báo của tôi (chỉ hiển thị khi đã đăng nhập) */}
-            {isLoggedIn && (
-              <section className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs space-y-3 dark:border-slate-800">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-[#0084E8]" />
-                    <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Thông báo của tôi
-                    </h2>
-                    {myNotifications.filter((n) => !n.read).length > 0 && (
-                      <span className="rounded-full bg-[#0084E8] px-2 py-0.5 text-[10px] font-bold text-white">
-                        {myNotifications.filter((n) => !n.read).length} mới
-                      </span>
-                    )}
-                  </div>
-                  {myNotifications.some((n) => !n.read) && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        dispatch({
-                          type: 'MARK_NOTIFICATIONS_READ',
-                          payload: { phone: state.settings.phone },
-                        })
-                      }
-                      className="text-xs font-extrabold text-[#0084E8] hover:underline dark:text-[#38BDF8]"
-                    >
-                      Đánh dấu đã đọc
-                    </button>
-                  )}
-                </div>
-
-                {myNotifications.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)]/60 p-4 text-center text-xs text-[var(--color-text-muted)]">
-                    Chưa có thông báo tiến độ nào. Khi bạn bật nhận tin báo hoặc gửi phản ánh mới,
-                    cập nhật sẽ hiện tại đây.
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {myNotifications.slice(0, 6).map((n) => (
-                      <button
-                        key={n.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedNotification(n);
-                          dispatch({
-                            type: 'MARK_NOTIFICATIONS_READ',
-                            payload: { phone: state.settings.phone },
-                          });
-                        }}
-                        className={`w-full rounded-2xl border p-3.5 text-left text-xs leading-relaxed transition-colors ${
-                          !n.read
-                            ? 'border-sky-200 bg-sky-50/60 dark:border-sky-900/60 dark:bg-sky-950/35'
-                            : 'border-[var(--color-border)] bg-[var(--color-bg)]/60 hover:bg-[var(--color-surface-elevated)]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-[var(--color-primary)]">
-                            Hồ sơ #{n.reportId}
-                          </span>
-                          <span className="flex items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
-                            <Clock className="h-3 w-3" />
-                            {formatDateTime(n.createdAt)}
-                          </span>
-                        </div>
-                        <p className="mt-1 font-medium text-[var(--color-text)] line-clamp-2">
-                          {n.message}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
-
             {/* 3A. MOBILE ONLY (< 768px): Nút gom "Cài đặt ứng dụng" để mở trang Cài đặt riêng */}
             <button
               type="button"
@@ -1485,41 +1133,6 @@ export function C05Mine() {
               </div>
             </section>
 
-            {/* 5. Chuyển vai trò trên Mobile (Trên PC đã có thanh Sidebar trái cố định) */}
-            <section
-              aria-label="Chuyển đổi giao diện vai trò"
-              className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs space-y-3 md:hidden dark:border-slate-800"
-            >
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Cổng nghiệp vụ phường Trấn Biên
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => navigate('/can-bo')}
-                  className="flex min-h-[50px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm font-bold text-[#0084E8] transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/70 dark:text-[#38BDF8]"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <ShieldCheck className="h-4 w-4" />
-                    <span>Cổng Cán bộ phường</span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/tnv')}
-                  className="flex min-h-[50px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-left text-sm font-bold text-[#0084E8] transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/70 dark:text-[#38BDF8]"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <UserCheck className="h-4 w-4" />
-                    <span>Cổng Tình nguyện viên</span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </button>
-              </div>
-            </section>
-
             {/* Đăng xuất button (single unified action when logged in) */}
             {isLoggedIn && (
               <button
@@ -1534,46 +1147,6 @@ export function C05Mine() {
           </div>
         </div>
       </div>
-
-      {/* Chi tiết thông báo Modal */}
-      <Modal
-        isOpen={!!selectedNotification}
-        onClose={() => setSelectedNotification(null)}
-        title="Chi tiết thông báo tiến độ"
-        footer={
-          selectedNotification && (
-            <div className="flex w-full gap-2">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setSelectedNotification(null)}
-              >
-                Đóng
-              </Button>
-              <Button
-                variant="primary"
-                className="flex-1"
-                icon={<ExternalLink className="h-4 w-4" />}
-                onClick={() => {
-                  const reportId = selectedNotification.reportId;
-                  setSelectedNotification(null);
-                  navigate(`/phan-anh/${reportId}`);
-                }}
-              >
-                Xem hồ sơ
-              </Button>
-            </div>
-          )
-        }
-      >
-        {selectedNotification && (
-          <SmsPreview
-            phone={selectedNotification.phone || 'Thiết bị này'}
-            message={selectedNotification.message}
-            time={formatDateTime(selectedNotification.createdAt)}
-          />
-        )}
-      </Modal>
 
       {/* Chính sách bảo mật Modal */}
       <Modal
@@ -1637,21 +1210,25 @@ export function C05Mine() {
         }
       >
         <form onSubmit={handleSaveCitizenName} className="space-y-4">
-          <div className="flex items-center gap-3.5 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] p-3.5 dark:border-sky-800 dark:bg-sky-950/40">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#0084E8] text-base font-extrabold text-white shadow-xs">
-              {getInitials(nameDraft || citizenName)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-extrabold text-[var(--color-text)]">
-                {nameDraft.trim() || citizenName}
-              </div>
-              <div className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                {state.settings.phone
+          <div className="space-y-1.5">
+            <label
+              htmlFor="citizen-phone-modal-input"
+              className="block text-xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400"
+            >
+              Số điện thoại
+            </label>
+            <input
+              id="citizen-phone-modal-input"
+              type="text"
+              readOnly
+              disabled
+              value={
+                state.settings.phone
                   ? formatDisplayPhone(state.settings.phone)
-                  : 'Chưa liên kết SĐT'}{' '}
-                · {addressDraft.trim() || citizenAddress}
-              </div>
-            </div>
+                  : 'Chưa liên kết SĐT'
+              }
+              className="h-12 w-full cursor-not-allowed rounded-2xl border border-slate-200/80 bg-slate-100/80 px-4 text-sm font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -1699,8 +1276,6 @@ export function C05Mine() {
           <Toast message={toastMsg} type="success" onClose={() => setToastMsg(null)} />
         </div>
       )}
-
-      <QrScannerModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} />
     </div>
   );
 }

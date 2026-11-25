@@ -31,6 +31,7 @@ export type AppAction =
   | { type: 'CLEAR_DRAFT' }
   | { type: 'SET_REPORTS'; payload: Report[] }
   | { type: 'SET_TASKS'; payload: VolunteerTask[] }
+  | { type: 'SET_NOTIFICATIONS'; payload: Notification[] }
   | { type: 'ADD_REPORT'; payload: { report: Report; notification?: Notification } }
   | { type: 'UPDATE_REPORT'; payload: { report: Report; notification?: Notification } }
   | { type: 'ADD_TASK'; payload: VolunteerTask }
@@ -111,6 +112,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         }),
       };
     }
+
+    case 'SET_NOTIFICATIONS':
+      return { ...state, notifications: action.payload };
 
     case 'SET_TASKS':
       return {
@@ -199,6 +203,9 @@ export async function syncApiStore(dispatch: Dispatch<AppAction>): Promise<void>
     const tasks = await dataSource.getVolunteerTasks().catch(() => []);
     dispatch({ type: 'SET_TASKS', payload: tasks });
   }
+  // Người dân đã OTP: thông báo tiến độ lưu ở máy chủ (AC-C05-5).
+  const notifications = await dataSource.getMyNotifications().catch(() => null);
+  if (notifications) dispatch({ type: 'SET_NOTIFICATIONS', payload: notifications });
 }
 
 const AppStoreContext = createContext<AppStoreContextValue | null>(null);
@@ -212,18 +219,15 @@ export function AppStoreProvider({
   initialState?: AppState;
   frame?: string;
 }) {
-  const [state, dispatch] = useReducer(
-    appReducer,
-    initialState ??
-      (() => {
-        const isTestEnv =
-          typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom');
-        if (isTestEnv) {
-          return loadPersistedState(frame, DEFAULT_STORAGE_KEY);
-        }
-        return loadPersistedState(frame, 'tbkn:live:v1', true);
-      })()
-  );
+  const [state, dispatch] = useReducer(appReducer, initialState, (init) => {
+    if (init) return init;
+    const isTestEnv =
+      typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom');
+    if (isTestEnv) {
+      return loadPersistedState(frame, DEFAULT_STORAGE_KEY);
+    }
+    return loadPersistedState(frame, 'tbkn:live:v1', true);
+  });
 
   const activeStorageKey =
     typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom')

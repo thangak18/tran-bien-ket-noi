@@ -52,10 +52,10 @@ export function findDuplicates(
       continue;
     }
 
-    // Trong vòng 14 ngày gần nhất
+    // Trong vòng 14 ngày gần nhất (không bỏ qua hồ sơ vừa tạo nếu đồng hồ thực tế > demoNow)
     const createdMs = new Date(report.createdAt).getTime();
     const ageMs = nowMs - createdMs;
-    if (ageMs < 0 || ageMs > maxAgeMs) {
+    if (ageMs > maxAgeMs) {
       continue;
     }
 

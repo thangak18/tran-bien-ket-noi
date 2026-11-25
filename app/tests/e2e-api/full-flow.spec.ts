@@ -66,16 +66,19 @@ function visibleButton(page: Page, text: string | RegExp) {
   return page.locator('button:visible', { hasText: text }).first();
 }
 
-/** Gửi phản ánh qua C02 (ảnh) → C04 (3 bước: loại, vị trí, mô tả & liên hệ); trả về phản hồi của API. */
+/**
+ * Gửi phản ánh qua C02 (ảnh) → C04 (3 bước). UI mới bắt buộc đăng nhập SĐT: lần đầu bấm "Gửi phản ánh"
+ * sẽ chuyển sang /ho-so để nhập OTP (mô phỏng), rồi quay lại bước 3 để gửi. Trả về phản hồi của API.
+ */
 async function submitReport(
   page: Page,
-  options: { phone?: string; title: string; shotPrefix: string }
+  options: { phone: string; title: string; shotPrefix: string }
 ): Promise<{ code: string; secretCode: string; ownerToken?: string }> {
   await page.goto('/bao-su-co/anh');
   await page.getByTestId('gallery-input').setInputFiles(PHOTO_BEFORE);
   await expect(page.getByRole('img').first()).toBeVisible();
   await visibleButton(page, 'Tiếp tục').click();
-  await page.waitForURL('**/bao-su-co/xac-nhan');
+  await page.waitForURL('**/bao-su-co/xac-nhan**');
 
   // Bước 1: loại phản ánh
   await visibleButton(page, 'Rác thải').click();
@@ -89,45 +92,62 @@ async function submitReport(
     await dupDialog.getByRole('button', { name: /Không phải – gửi phản ánh mới/ }).click();
   }
 
-  // Bước 3: mô tả & liên hệ
-  // API chưa lưu tiêu đề; mô tả được lưu nên dùng để nhận diện hồ sơ ở các màn sau.
+  // Bước 3: mô tả. API chưa lưu tiêu đề; mô tả được lưu nên dùng để nhận diện hồ sơ ở các màn sau.
   await page.getByLabel('Mô tả thêm').fill(options.title);
+  await shot(page, `${options.shotPrefix}-xac-nhan`);
+  await visibleButton(page, 'Gửi phản ánh').click();
+
+  // Chưa đăng nhập: chuyển sang màn đăng nhập SĐT + OTP (mô phỏng).
+  await page.waitForURL('**/ho-so?login=1**');
+  await page.locator('#change-phone-input').fill(options.phone);
+  await visibleButton(page, /^Xác nhận$/).click();
+  await expect(visibleText(page, 'Mô phỏng · mã 123456')).toBeVisible();
+  await expect(page.getByLabel('Mã OTP số 6')).toHaveValue('6'); // tự điền mã mô phỏng
+  await shot(page, `${options.shotPrefix}-otp-mo-phong`);
+  const verified = page.waitForResponse((r) => r.url().endsWith('/api/v1/citizen/otp/verify'));
+  await visibleButton(page, 'Xác nhận & Đăng nhập').click();
+  expect((await verified).status()).toBe(200);
+
+  // Quay lại bước 3 với bản nháp còn nguyên, gửi lần nữa (lần này kèm token người dân).
+  await page.waitForURL('**/bao-su-co/xac-nhan**');
+  await expect(page.getByLabel('Mô tả thêm')).toHaveValue(options.title);
   const created = page.waitForResponse(
     (r) => r.url().endsWith('/api/v1/citizen/reports') && r.request().method() === 'POST'
   );
-
-  if (options.phone) {
-    await page.getByLabel(/Số điện thoại nhận tin/).fill(options.phone);
-    await shot(page, `${options.shotPrefix}-xac-nhan`);
-    await visibleButton(page, 'Gửi phản ánh').click();
-    const sheet = page.getByRole('dialog');
-    await sheet.getByRole('button', { name: 'Tiếp tục' }).click();
-    await expect(sheet.getByText('Mô phỏng').first()).toBeVisible();
-    await shot(page, `${options.shotPrefix}-otp-mo-phong`);
-    await sheet.getByRole('button', { name: /Tự động điền mã 123456/ }).click();
-    await sheet.getByRole('button', { name: /Xác nhận & Đăng nhập/ }).click();
-  } else {
-    await shot(page, `${options.shotPrefix}-xac-nhan`);
-    await visibleButton(page, 'Gửi phản ánh').click();
-  }
+  await visibleButton(page, 'Gửi phản ánh').click();
 
   const response = await created;
   expect(response.status()).toBe(201);
+  expect(response.request().headers()['authorization']).toMatch(/^Bearer /);
   const body = (await response.json()) as { code: string; secretCode: string; ownerToken?: string };
   expect(body.code).toMatch(/^TB-\d{4}$/);
   expect(body.secretCode).toMatch(/^\d{4}$/);
 
-  if (options.phone) {
-    // Có SĐT: về trang chủ kèm thông báo đã gửi.
-    await page.waitForURL((url) => url.pathname === '/');
-    await expect(page.getByText(`Gửi phản ánh #${body.code} thành công!`)).toBeVisible();
-  } else {
-    // Ẩn danh: màn thành công hiện mã phản ánh và mã bí mật (chỉ một lần).
-    await expect(page.getByTestId('submitted-report-id')).toHaveText(body.code);
-    await expect(page.getByText(body.secretCode).first()).toBeVisible();
-  }
+  await page.waitForURL((url) => url.pathname === '/');
+  await expect(page.getByText(`Gửi phản ánh #${body.code} thành công!`)).toBeVisible();
   await shot(page, `${options.shotPrefix}-da-gui`);
   return body;
+}
+
+/** Gửi hồ sơ ẩn danh thẳng qua API (UI mới không còn đường gửi ẩn danh, nhưng API vẫn hỗ trợ). */
+async function submitAnonymousViaApi(
+  page: Page,
+  description: string
+): Promise<{ code: string; secretCode: string; ownerToken?: string }> {
+  const res = await page.request.post('/api/v1/citizen/reports', {
+    headers: { 'Idempotency-Key': `e2e-anon-${Date.now()}` },
+    data: {
+      category: 'den_duong',
+      photos: ['/demo-photos/den_duong/1.jpg'],
+      lat: 10.9512,
+      lng: 106.8231,
+      address: 'Đ. Cách Mạng Tháng Tám, P. Trấn Biên',
+      description,
+      anonymous: true,
+    },
+  });
+  expect(res.status()).toBe(201);
+  return (await res.json()) as { code: string; secretCode: string; ownerToken?: string };
 }
 
 async function publicReport(page: Page, code: string): Promise<Record<string, unknown>> {
@@ -148,7 +168,9 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     await citizenCtx?.close();
   });
 
-  test('01 Người dân gửi phản ánh có SĐT (OTP mô phỏng) và gửi ẩn danh', async ({ browser }) => {
+  test('01 Người dân đăng nhập SĐT (OTP mô phỏng) rồi gửi phản ánh; hồ sơ ẩn danh qua API', async ({
+    browser,
+  }) => {
     citizenCtx = await newCitizenContext(browser);
     citizenPage = await citizenCtx.newPage();
     phoneReport = await submitReport(citizenPage, {
@@ -159,12 +181,10 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
     // Hồ sơ có SĐT: không phát khoá chủ hồ sơ (chủ hồ sơ chứng minh bằng SĐT/OTP).
     expect(phoneReport.ownerToken).toBeUndefined();
 
+    // Hồ sơ ẩn danh (thiết bị khác, không token): API phát khoá chủ hồ sơ để thiết bị đó theo dõi.
     const anonCtx = await newCitizenContext(browser);
     const anonPage = await anonCtx.newPage();
-    anonReport = await submitReport(anonPage, {
-      title: `E2E ẩn danh ${runId}`,
-      shotPrefix: '01b-dan-an-danh',
-    });
+    anonReport = await submitAnonymousViaApi(anonPage, `E2E ẩn danh ${runId}`);
     expect(anonReport.ownerToken).toBeTruthy();
     await anonCtx.close();
 
@@ -235,9 +255,12 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
 
     await card.click();
     await page.waitForURL('**/tnv/**');
+    // Wizard 3 bước: Thực tế → Ảnh/Video → Ghi chú & Gửi
     await page.getByRole('button', { name: 'Có', exact: true }).click();
     await page.getByRole('button', { name: 'Trung bình', exact: true }).click();
-    await page.getByLabel('Chọn ảnh tại chỗ').setInputFiles(PHOTO_BEFORE);
+    await page.locator('input[type="file"][multiple]').first().setInputFiles(PHOTO_BEFORE);
+    await expect(page.getByLabel('Xoá mục 1')).toBeVisible();
+    await visibleButton(page, 'Tiếp tục ghi chú & gửi').click();
     const submit = page.getByRole('button', { name: 'Gửi kết quả xác minh' });
     await expect(submit).toBeEnabled();
     await shot(page, '04b-tnv-xac-minh');
@@ -297,6 +320,14 @@ test.describe.serial('Luồng đầy đủ ở chế độ API (Supabase local h
       .poll(async () => (await publicReport(citizenPage, phoneReport.code)).status)
       .toBe('mo_lai');
     await shot(citizenPage, '06b-dan-chua-giai-quyet-mo-lai');
+
+    // Tab "Của tôi" ở trang chủ lấy từ /citizen/me/reports bằng token người dân.
+    const mine = citizenPage.waitForResponse((r) => r.url().endsWith('/api/v1/citizen/me/reports'));
+    await citizenPage.goto('/?tab=personal');
+    expect((await mine).status()).toBe(200);
+    await expect(
+      citizenPage.getByTestId('personal-report-grid').getByText(phoneTitle).first()
+    ).toBeVisible();
   });
 
   test('07 Người không phải chủ hồ sơ không đánh giá được (403), hồ sơ ẩn danh hiện ở hộp cán bộ', async ({

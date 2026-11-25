@@ -1,4 +1,4 @@
-import { Category, Report, VolunteerTask } from '../domain/types';
+import { Category, Notification, Report, VolunteerTask } from '../domain/types';
 import { SubmitReportPayload } from '../store/citizenActions';
 
 export interface PublicKpiResult {
@@ -95,6 +95,12 @@ export interface DataSource {
 
   /** Đăng ký nhận tin / xác nhận quyền sở hữu bằng SĐT */
   claimReport(reportId: string, phone: string): Promise<Report>;
+
+  /** Thông báo tiến độ của người dân đang đăng nhập SĐT (null: chưa đăng nhập) */
+  getMyNotifications(): Promise<Notification[] | null>;
+
+  /** Hồ sơ của người dân đang đăng nhập SĐT (hoặc lưu trên thiết bị này) */
+  getMyReports(): Promise<Report[]>;
 
   /** Người xem trên thiết bị này có phải chủ hồ sơ (SĐT đã xác thực hoặc khoá chủ hồ sơ)? */
   isReportOwner(reportId: string): Promise<boolean>;

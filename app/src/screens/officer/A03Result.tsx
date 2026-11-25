@@ -1,6 +1,6 @@
-import { useEffect, useState, ChangeEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Trash2, CheckCircle2, ImagePlus, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertCircle, Upload } from 'lucide-react';
 import { OfficerLayout } from '@/layouts/OfficerLayout';
 import { useAppStore } from '@/store/AppStore';
 import { useDataSource } from '@/data/useDataSource';
@@ -8,8 +8,8 @@ import { useAction } from '@/data/useAction';
 import { isApiMode } from '@/lib/api';
 import { ActionError } from '@/components/common/ActionError';
 import { getCategoryConfig } from '@/domain/constants';
-import { compressImage } from '@/lib/image';
 import { BeforeAfter } from '@/components/citizen/BeforeAfter';
+import { MediaCaptureField } from '@/components/common/MediaCapture';
 import { StatusChip } from '@/components/common/StatusChip';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -52,8 +52,6 @@ export function A03Result() {
   const [completedDate, setCompletedDate] = useState<string>(
     toDateInputValue(report?.completedAt ?? state.settings.demoNow)
   );
-  const [isUploading, setIsUploading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   if (!report) {
@@ -82,48 +80,12 @@ export function A03Result() {
 
   const completedAtIso = `${completedDate}T09:00:00+07:00`;
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = '';
-    if (files.length === 0) return;
-
-    setErrorMsg(null);
-    const remainingSlots = 3 - afterPhotos.length;
-    if (remainingSlots <= 0) {
-      setErrorMsg('Tối đa 3 ảnh kết quả sau xử lý.');
-      return;
-    }
-
-    const toProcess = files.slice(0, remainingSlots);
-    setIsUploading(true);
-    try {
-      const compressed: string[] = [];
-      for (const file of toProcess) {
-        if (file.size > 15 * 1024 * 1024) {
-          throw new Error(`Ảnh "${file.name}" vượt quá 15 MB.`);
-        }
-        const res = await compressImage(file, 1280, 0.7);
-        compressed.push(res.dataUrl);
-      }
-      setAfterPhotos((prev) => [...prev, ...compressed].slice(0, 3));
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Không thể xử lý ảnh đã chọn.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleAddSamplePhoto = () => {
-    if (afterPhotos.length >= 3) return;
+    if (afterPhotos.length >= 5) return;
     const samplePath = `/demo-photos/after/${report.category}.jpg`;
     if (!afterPhotos.includes(samplePath)) {
-      setAfterPhotos((prev) => [...prev, samplePath].slice(0, 3));
-      setErrorMsg(null);
+      setAfterPhotos((prev) => [...prev, samplePath].slice(0, 5));
     }
-  };
-
-  const handleRemovePhoto = (index: number) => {
-    setAfterPhotos((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleConfirm = async () => {
@@ -212,68 +174,23 @@ export function A03Result() {
           <Card className="space-y-4">
             <h2 className="text-base font-semibold text-text-main">Thông tin hoàn thành</h2>
 
-            {/* Ảnh sau xử lý (1-3) */}
+            {/* Ảnh / Video sau xử lý (1-5) */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-text-main">
-                  Ảnh sau xử lý ({afterPhotos.length}/3) <span className="text-red-600">*</span>
-                </label>
-                {afterPhotos.length < 3 && (
-                  <button
-                    type="button"
-                    onClick={handleAddSamplePhoto}
-                    className="text-xs font-medium text-primary hover:underline"
-                  >
-                    + Dùng ảnh mẫu
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2.5">
-                {afterPhotos.map((src, idx) => (
-                  <div
-                    key={`${src}-${idx}`}
-                    className="group relative aspect-square overflow-hidden rounded-btn border border-slate-200 bg-slate-100"
-                  >
-                    <img
-                      src={src}
-                      alt={`Ảnh sau xử lý ${idx + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhoto(idx)}
-                      aria-label={`Xoá ảnh ${idx + 1}`}
-                      className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white hover:bg-red-600"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-
-                {afterPhotos.length < 3 && (
-                  <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-btn border-2 border-dashed border-slate-300 bg-slate-50 p-2 text-center text-xs text-text-sub hover:border-primary hover:bg-primary/5">
-                    {isUploading ? (
-                      <span>Đang nén...</span>
-                    ) : (
-                      <>
-                        <ImagePlus className="mb-1 h-6 w-6 text-primary" />
-                        <span>Chọn ảnh</span>
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      disabled={isUploading}
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-
-              {errorMsg && <p className="text-xs font-medium text-red-600">{errorMsg}</p>}
+              <label className="block text-sm font-medium text-text-main">
+                Ảnh / Video sau xử lý ({afterPhotos.length}/5){' '}
+                <span className="text-red-600">*</span>
+              </label>
+              <MediaCaptureField
+                items={afterPhotos}
+                onChange={setAfterPhotos}
+                maxItems={5}
+                allowGallery={true}
+                allowVideo={true}
+                captureLabel="Chụp ảnh / Quay video tại chỗ"
+                galleryLabel="Chọn từ máy"
+                onAddSample={handleAddSamplePhoto}
+                sampleLabel="+ Dùng ảnh mẫu"
+              />
             </div>
 
             {/* Mô tả công việc (>= 10 ký tự) */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Report, Status } from '@/domain/types';
 import { CATEGORY_CONFIGS, STATUS_CONFIGS } from '@/domain/constants';
 import { WARD_CENTER } from '@/data/streets';
@@ -93,7 +93,6 @@ export const ReportCard: React.FC<ReportCardProps> = ({
             <img
               src={photo}
               alt={`Ảnh phản ánh ${report.id}`}
-              loading="lazy"
               onError={() => setImgError(true)}
               className="h-full w-full object-cover"
             />

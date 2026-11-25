@@ -27,6 +27,9 @@ function NotchedDockBackground() {
 
 function VolunteerDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void }) {
   const { pathname } = useLocation();
+  if (pathname === '/tnv/ban-do') {
+    return null;
+  }
   const isMapActive = pathname === '/tnv/ban-do';
   const isProfileActive = pathname === '/tnv/ho-so';
   const isTasksActive =
@@ -155,10 +158,18 @@ function VolunteerDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void 
   );
 }
 
+function isVerifyDetailPath(pathname: string): boolean {
+  return pathname.startsWith('/tnv/') && pathname !== '/tnv/ban-do' && pathname !== '/tnv/ho-so';
+}
+
 function VolunteerMobileChrome({ onOpenHotline }: { onOpenHotline: () => void }) {
   const { pathname } = useLocation();
 
-  if (pathname.startsWith('/bao-su-co')) {
+  if (
+    pathname.startsWith('/bao-su-co') ||
+    pathname === '/tnv/ban-do' ||
+    isVerifyDetailPath(pathname)
+  ) {
     return null;
   }
 
@@ -241,16 +252,55 @@ export function VolunteerLayout({ children }: VolunteerLayoutProps) {
   const inRouter = useInRouterContext();
   const [hotlineOpen, setHotlineOpen] = useState(false);
 
-  return (
+  return inRouter ? (
+    <VolunteerLayoutWithLocation hotlineOpen={hotlineOpen} setHotlineOpen={setHotlineOpen}>
+      {children}
+    </VolunteerLayoutWithLocation>
+  ) : (
     <div className="min-h-screen theme-outer-bg flex flex-row justify-center md:justify-start">
-      {inRouter && <VolunteerDesktopSidebar onOpenHotline={() => setHotlineOpen(true)} />}
-
       <div
         data-testid="volunteer-layout-container"
         className="w-full max-w-[430px] md:max-w-none flex-1 min-w-0 min-h-screen theme-surface shadow-sm relative flex flex-col"
       >
         <main className="flex-1 flex flex-col pb-28 md:pb-8">{children}</main>
-        {inRouter && <VolunteerMobileChrome onOpenHotline={() => setHotlineOpen(true)} />}
+      </div>
+    </div>
+  );
+}
+
+function VolunteerLayoutWithLocation({
+  children,
+  hotlineOpen,
+  setHotlineOpen,
+}: {
+  children: ReactNode;
+  hotlineOpen: boolean;
+  setHotlineOpen: (open: boolean) => void;
+}) {
+  const { pathname } = useLocation();
+  const isMap = pathname === '/tnv/ban-do';
+  const hideBottomChrome = isVerifyDetailPath(pathname) || isMap;
+
+  return (
+    <div className="min-h-screen theme-outer-bg flex flex-row justify-center md:justify-start">
+      <VolunteerDesktopSidebar onOpenHotline={() => setHotlineOpen(true)} />
+
+      <div
+        data-testid="volunteer-layout-container"
+        className={`w-full ${
+          isMap
+            ? 'max-w-none h-[100dvh] overflow-hidden'
+            : 'max-w-[430px] md:max-w-none flex-1 min-w-0 min-h-screen'
+        } theme-surface shadow-sm relative flex flex-col`}
+      >
+        <main
+          className={`flex-1 flex flex-col ${
+            isMap ? '' : hideBottomChrome ? 'pb-6' : 'pb-28 md:pb-8'
+          }`}
+        >
+          {children}
+        </main>
+        <VolunteerMobileChrome onOpenHotline={() => setHotlineOpen(true)} />
       </div>
 
       {/* Unified Hotline Modal */}

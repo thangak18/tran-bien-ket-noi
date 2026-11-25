@@ -4,13 +4,11 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRightLeft,
-  Camera,
   Check,
   CheckCircle2,
   GitMerge,
   Share2,
   Star,
-  X,
   ZoomIn,
 } from 'lucide-react';
 import { CitizenLayout } from '@/layouts/CitizenLayout';
@@ -21,6 +19,7 @@ import { SubscribeCard } from '@/components/citizen/SubscribeCard';
 import { PhoneOtpSheet } from '@/components/citizen/PhoneOtpSheet';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { DelayChip } from '@/components/common/DelayChip';
+import { MediaCaptureField, MediaItemPreview } from '@/components/common/MediaCapture';
 import { StatusChip } from '@/components/common/StatusChip';
 import { BottomSheet, Button, EmptyState, Modal, Toast } from '@/components/ui';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
@@ -30,7 +29,7 @@ import { formatLatestUpdate } from '@/domain/latestUpdate';
 import { toPublicReport } from '@/domain/privacy';
 import { publicTimeline } from '@/domain/status';
 import { Report, Status, TimelineEntry } from '@/domain/types';
-import { compressImage } from '@/lib/image';
+import { isVideoSource } from '@/lib/media';
 import { buildTrackingUrl } from '@/lib/share';
 import { useAppStore } from '@/store/AppStore';
 import { useDataSource } from '@/data/useDataSource';
@@ -171,7 +170,7 @@ export function C06Detail() {
   const [isRatingOpen, setIsRatingOpen] = useState(false);
   const [isReopenOpen, setIsReopenOpen] = useState(false);
   const [reopenNote, setReopenNote] = useState('');
-  const [reopenPhoto, setReopenPhoto] = useState<string | null>(null);
+  const [reopenMedia, setReopenMedia] = useState<string[]>([]);
   const [isRatingAuthOpen, setIsRatingAuthOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasFollowed, setHasFollowed] = useState<boolean>(() => {
@@ -368,17 +367,6 @@ export function C06Detail() {
     const fresh = await ds.getReportById(rawReport.id);
     if (fresh) dispatch({ type: 'ADD_REPORT', payload: { report: fresh } });
   };
-  const handleReopenPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const compressed = await compressImage(file, 1280, 0.7);
-      setReopenPhoto(compressed.dataUrl);
-    } catch {
-      setToast({ message: 'Không thể đọc ảnh đã chọn.', type: 'error' });
-    }
-  };
-
   const handleReopenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -395,7 +383,7 @@ export function C06Detail() {
     if (isApiMode()) dispatch({ type: 'ADD_REPORT', payload: { report: updated } });
     setIsReopenOpen(false);
     setReopenNote('');
-    setReopenPhoto(null);
+    setReopenMedia([]);
     setToast({ message: 'Phường đã nhận ý kiến và sẽ kiểm tra lại.', type: 'info' });
   };
   const handleSupplement = () => {
@@ -575,23 +563,32 @@ export function C06Detail() {
             {/* 1A. When In-Progress: Clean Hero Photo */}
             {!isCompletedOrClosed && displayReport.photos.length > 0 && (
               <section aria-label="Ảnh hiện trường" className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setZoomedPhoto({
-                      src: activePhotoSrc!,
-                      alt: `Ảnh phản ánh ${displayReport.id}`,
-                    })
-                  }
-                  className="group block w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-900 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:border-slate-700"
-                >
-                  <img
-                    src={activePhotoSrc}
-                    alt={`Ảnh phản ánh ${displayReport.id}`}
-                    loading="lazy"
-                    className="h-[200px] sm:h-[260px] lg:h-[300px] w-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.015]"
-                  />
-                </button>
+                {activePhotoSrc && isVideoSource(activePhotoSrc) ? (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-950 shadow-2xs dark:border-slate-700">
+                    <MediaItemPreview
+                      src={activePhotoSrc}
+                      alt={`Video phản ánh ${displayReport.id}`}
+                      className="h-[200px] sm:h-[260px] lg:h-[300px] w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomedPhoto({
+                        src: activePhotoSrc!,
+                        alt: `Ảnh phản ánh ${displayReport.id}`,
+                      })
+                    }
+                    className="group block w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-900 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:border-slate-700"
+                  >
+                    <img
+                      src={activePhotoSrc}
+                      alt={`Ảnh phản ánh ${displayReport.id}`}
+                      className="h-[200px] sm:h-[260px] lg:h-[300px] w-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.015]"
+                    />
+                  </button>
+                )}
 
                 {displayReport.photos.length > 1 && (
                   <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
@@ -608,12 +605,21 @@ export function C06Detail() {
                               : 'border-slate-200 opacity-70 hover:opacity-100 dark:border-slate-700'
                           }`}
                         >
-                          <img
-                            src={photo}
-                            alt={`Ảnh hiện trường ${idx + 1}`}
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                          />
+                          {isVideoSource(photo) ? (
+                            <video
+                              src={photo}
+                              muted
+                              playsInline
+                              preload="metadata"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <img
+                              src={photo}
+                              alt={`Ảnh hiện trường ${idx + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+                          )}
                         </button>
                       );
                     })}
@@ -828,8 +834,8 @@ export function C06Detail() {
               )}
             </section>
 
-            {/* 2. "Vấn đề đã được giải quyết chưa?" Rating & Action Card (Chỉ chủ phản ánh & cần đăng nhập) */}
-            {isCompletedOrClosed && isOwner && (
+            {/* 2. "Vấn đề đã được giải quyết chưa?" Rating & Action Card (Chỉ chủ phản ánh & cần đăng nhập, ẩn sau khi đã xác nhận) */}
+            {rawReport.status === 'hoan_thanh' && !rawReport.feedback && isOwner && (
               <section
                 aria-label="Đánh giá kết quả xử lý"
                 className="rounded-3xl border border-[#BAE6FD] bg-[#F0F9FF] p-5 shadow-2xs space-y-3.5 dark:border-sky-800 dark:bg-sky-950/40"
@@ -1131,36 +1137,16 @@ export function C06Detail() {
 
           <div>
             <div className="mb-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
-              Ảnh hiện trạng (tuỳ chọn)
+              Ảnh / Video hiện trạng (chụp trực tiếp bằng camera, tuỳ chọn)
             </div>
-            {reopenPhoto ? (
-              <div className="relative inline-block">
-                <img
-                  src={reopenPhoto}
-                  alt="Ảnh hiện trạng chưa ổn"
-                  className="h-28 w-28 rounded-2xl object-cover border border-[var(--color-border)]"
-                />
-                <button
-                  type="button"
-                  aria-label="Xoá ảnh"
-                  onClick={() => setReopenPhoto(null)}
-                  className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-sm hover:bg-rose-700"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)]/60 px-4 py-3 text-xs font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-elevated)]">
-                <Camera className="h-4 w-4 text-[var(--color-primary)]" />
-                <span>Chụp hoặc chọn ảnh hiện trạng</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleReopenPhotoChange}
-                  className="sr-only"
-                />
-              </label>
-            )}
+            <MediaCaptureField
+              items={reopenMedia}
+              onChange={setReopenMedia}
+              maxItems={5}
+              allowGallery={false}
+              allowVideo={true}
+              captureLabel="Mở camera chụp ảnh / quay video"
+            />
           </div>
 
           <Button
