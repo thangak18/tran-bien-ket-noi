@@ -1,13 +1,6 @@
-import {
-  LayoutDashboard,
-  LogOut,
-  Settings2,
-  Shield,
-  Users,
-  Building2,
-  ClipboardList,
-} from 'lucide-react';
+import { LayoutDashboard, LogOut, Settings2, Users, Building2, ClipboardList } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { MockLabel } from '../components/common/MockLabel';
 import { clearSession, isApiMode } from '../lib/api';
 
 const links = [
@@ -20,29 +13,11 @@ const links = [
 
 export function AdminLayout() {
   const navigate = useNavigate();
+  const apiMode = isApiMode();
 
-  if (!isApiMode()) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] px-4">
-        <section className="w-full max-w-lg rounded-xl border border-blue-100 bg-white p-8 text-center shadow-sm">
-          <Shield className="mx-auto mb-4 h-10 w-10 text-primary" aria-hidden="true" />
-          <h1 className="text-xl font-bold text-gray-900">Cần chế độ API</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Trang quản trị cần kết nối API. Hãy chạy ứng dụng với <code>VITE_DATA_SOURCE=api</code>.
-          </p>
-          <button
-            type="button"
-            className="mt-6 font-semibold text-primary hover:underline"
-            onClick={() => navigate('/')}
-          >
-            Quay lại trang chủ
-          </button>
-        </section>
-      </main>
-    );
-  }
-
-  const displayName = localStorage.getItem('tbkn_user_name') || 'Quản trị viên';
+  const displayName =
+    (typeof window !== 'undefined' && localStorage.getItem('tbkn_user_name')) ||
+    'Quản trị viên Phường';
 
   const navigation = (
     <nav className="flex w-max gap-1 lg:w-full lg:flex-col" aria-label="Điều hướng quản trị">
@@ -72,7 +47,10 @@ export function AdminLayout() {
             TB
           </div>
           <div>
-            <p className="text-sm font-bold leading-tight text-gray-900">Trấn Biên Kết Nối</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold leading-tight text-gray-900">Trấn Biên Kết Nối</p>
+              {!apiMode && <MockLabel />}
+            </div>
             <p className="text-xs font-medium text-gray-500">Cổng quản trị</p>
           </div>
         </div>
@@ -80,18 +58,20 @@ export function AdminLayout() {
           <span className="hidden max-w-48 truncate text-sm font-semibold text-gray-700 sm:block">
             {displayName}
           </span>
-          <button
-            type="button"
-            aria-label="Đăng xuất"
-            onClick={() => {
-              clearSession();
-              navigate('/dang-nhap', { replace: true });
-            }}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-gray-600 hover:bg-gray-100"
-          >
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Đăng xuất</span>
-          </button>
+          {apiMode && (
+            <button
+              type="button"
+              aria-label="Đăng xuất"
+              onClick={() => {
+                clearSession();
+                navigate('/dang-nhap', { replace: true });
+              }}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
+          )}
         </div>
       </header>
 

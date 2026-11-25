@@ -39,6 +39,14 @@ export function saveState(
     return;
   }
 
+  const timerKey = `${storageKey}:${frame}`;
+  const existingTimer = debounceTimers.get(timerKey);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    debounceTimers.delete(timerKey);
+    pendingSaves.delete(timerKey);
+  }
+
   try {
     const sharedData = {
       reports: state.reports,
@@ -71,6 +79,26 @@ export function saveState(
 
 // Bộ đệm timer cho debounced save
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const pendingSaves = new Map<string, () => void>();
+
+/**
+ * Ghi ngay toàn bộ bản lưu đang chờ debounce (dùng trước khi tải lại / đóng trang)
+ */
+export function flushPendingSaves(): void {
+  const callbacks = Array.from(pendingSaves.values());
+  for (const timer of debounceTimers.values()) {
+    clearTimeout(timer);
+  }
+  debounceTimers.clear();
+  pendingSaves.clear();
+  for (const fn of callbacks) {
+    try {
+      fn();
+    } catch {
+      // Bỏ qua lỗi quota khi đóng trang
+    }
+  }
+}
 
 /**
  * Lưu state có debounce (mặc định 100ms)
@@ -87,10 +115,14 @@ export function saveStateDebounced(
     clearTimeout(existingTimer);
   }
 
-  const timer = setTimeout(() => {
-    saveState(state, frame, storageKey);
+  const runSave = () => {
     debounceTimers.delete(timerKey);
-  }, delayMs);
+    pendingSaves.delete(timerKey);
+    saveState(state, frame, storageKey);
+  };
+
+  pendingSaves.set(timerKey, runSave);
+  const timer = setTimeout(runSave, delayMs);
 
   debounceTimers.set(timerKey, timer);
 }
@@ -127,7 +159,45 @@ export function loadPersistedState(
     if (rawShared) {
       const parsedShared = JSON.parse(rawShared);
       if (parsedShared && Array.isArray(parsedShared.reports)) {
-        reports = parsedShared.reports;
+        const seedById = new Map(baseState.reports.map((r) => [r.id, r]));
+        const rawReports = parsedShared.reports as AppState['reports'];
+        const seedLngs = new Set(
+          rawReports.filter((r) => seedById.has(r.id)).map((r) => Number(r.lng).toFixed(3))
+        );
+        const hasColumnBug = rawReports.length >= 20 && seedLngs.size <= 4;
+
+        reports = rawReports
+          .filter((r) => {
+            const isLegacyPlaceholder =
+              typeof r.description === 'string' && r.description.includes('cần được kiểm');
+            return !(isLegacyPlaceholder && !seedById.has(r.id));
+          })
+          .map((r) => {
+            const fresh = seedById.get(r.id);
+            if (!fresh) return r;
+            const hasLegacyDesc =
+              typeof r.description === 'string' && r.description.includes('cần được kiểm');
+            const hasBrokenPhoto =
+              Array.isArray(r.photos) &&
+              r.photos.some(
+                (p) =>
+                  typeof p === 'string' &&
+                  p.startsWith('/demo-photos/') &&
+                  !/^\/demo-photos\/(den_duong|ngap_nuoc|rac_thai|mat_duong)\/[1-4]\.jpg$/.test(p)
+              );
+            if (hasColumnBug || hasLegacyDesc || hasBrokenPhoto) {
+              return {
+                ...r,
+                lat: fresh.lat,
+                lng: fresh.lng,
+                address: fresh.address,
+                description: fresh.description,
+                photos: fresh.photos,
+                resultPhotos: fresh.resultPhotos,
+              };
+            }
+            return r;
+          });
         volunteerTasks = parsedShared.volunteerTasks ?? baseState.volunteerTasks;
         notifications = parsedShared.notifications ?? [];
         draft = parsedShared.draft ?? baseState.draft;
@@ -143,8 +213,13 @@ export function loadPersistedState(
     if (rawSettings) {
       const parsedSettings = JSON.parse(rawSettings);
       if (parsedSettings && typeof parsedSettings === 'object') {
+        const validFontScales = ['small', 'normal', 'large', 'xlarge'] as const;
+        const fontScale = validFontScales.includes(parsedSettings.fontScale)
+          ? (parsedSettings.fontScale as Settings['fontScale'])
+          : undefined;
         settings = {
           seniorMode: !!parsedSettings.seniorMode,
+          ...(fontScale ? { fontScale } : {}),
           phone: parsedSettings.phone,
           demoNow: parsedSettings.demoNow ?? initial.settings.demoNow,
           deviceReports: Array.isArray(parsedSettings.deviceReports)
@@ -241,7 +316,13 @@ export function setupStorageSync(
     else if (event.key === getSettingsKey(frame) && event.newValue) {
       try {
         const parsedSettings = JSON.parse(event.newValue);
-        dispatch({ type: 'SET_SETTINGS', payload: parsedSettings });
+        dispatch({
+          type: 'SET_SETTINGS',
+          payload: {
+            ...parsedSettings,
+            phone: parsedSettings.phone,
+          },
+        });
       } catch {
         // Bỏ qua nếu parse lỗi
       }

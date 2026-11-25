@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useInRouterContext, useLocation } from 'react-router-dom';
-import { ArrowLeftRight, Check, Shield, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeftRight, Check, Settings, Shield, ShieldCheck, Users } from 'lucide-react';
 
 interface PortalItem {
-  id: 'citizen' | 'officer' | 'volunteer';
+  id: 'citizen' | 'officer' | 'volunteer' | 'admin';
   label: string;
   to: string;
   icon: typeof Users;
@@ -13,17 +13,20 @@ const PORTALS: PortalItem[] = [
   { id: 'citizen', label: 'Cổng Người dân', to: '/', icon: Users },
   { id: 'officer', label: 'Cổng Cán bộ phường', to: '/can-bo', icon: ShieldCheck },
   { id: 'volunteer', label: 'Cổng Tình nguyện viên', to: '/tnv', icon: Shield },
+  { id: 'admin', label: 'Cổng Quản trị', to: '/quan-tri', icon: Settings },
 ];
 
 function PortalSwitcherFabInner({ pathname, inRouter }: { pathname: string; inRouter: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const activeId: PortalItem['id'] = pathname.startsWith('/can-bo')
-    ? 'officer'
-    : pathname.startsWith('/tnv')
-      ? 'volunteer'
-      : 'citizen';
+  const activeId: PortalItem['id'] = pathname.startsWith('/quan-tri')
+    ? 'admin'
+    : pathname.startsWith('/can-bo')
+      ? 'officer'
+      : pathname.startsWith('/tnv')
+        ? 'volunteer'
+        : 'citizen';
 
   useEffect(() => {
     setOpen(false);

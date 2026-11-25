@@ -15,9 +15,11 @@ import {
   ChevronRight,
   QrCode,
   Search,
+  Bell,
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { getCommunityFeed, toPublicCardReport } from '@/domain/privacy';
+import { buildCitizenNotifications } from '@/domain/notifications';
 import { filterMyReports, MyReportFilterTab } from '@/domain/access';
 import { useMyReports } from '@/data/useMyReports';
 import { CATEGORY_CONFIGS } from '@/domain/constants';
@@ -245,6 +247,14 @@ export function C01Home() {
     }
   }, [routeState?.submittedId]);
 
+  const unreadNotifCount = useMemo(
+    () =>
+      buildCitizenNotifications(state.reports, state.notifications, state.settings.phone).filter(
+        (n) => !n.read
+      ).length,
+    [state.notifications, state.reports, state.settings.phone]
+  );
+
   const handleSelectSegment = (next: HomeSegment) => {
     setSegment(next);
     if (typeof window !== 'undefined') {
@@ -352,6 +362,23 @@ export function C01Home() {
             </h1>
 
             <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/thong-bao')}
+                aria-label={
+                  unreadNotifCount > 0 ? `Thông báo (${unreadNotifCount} chưa đọc)` : 'Thông báo'
+                }
+                title="Thông báo"
+                className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] transition-colors hover:border-[#0084E8] hover:text-[#0084E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8]"
+              >
+                <Bell className="h-5 w-5" aria-hidden="true" />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-extrabold text-white shadow-xs">
+                    {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                  </span>
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={() => setSearchOpen((prev) => !prev)}

@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { Link, useInRouterContext, useLocation } from 'react-router-dom';
 import { Inbox, BarChart3, Search, Plus, User, LogIn, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { PortalNotificationBell } from '@/components/common/PortalNotificationBell';
 import { getOfficerSession, OfficerSession, SESSION_CHANGE_EVENT } from '@/lib/portalSession';
 
 function NotchedDockBackground() {
@@ -177,6 +178,7 @@ function OfficerLayoutShell({
               item.active ? 'page' : undefined
             );
           })}
+          <PortalNotificationBell role="officer" variant="sidebar" />
         </nav>
 
         {/* 3. Officer Profile Footer */}
@@ -227,6 +229,8 @@ function OfficerLayoutShell({
                   />
                 </div>
               )}
+
+              <PortalNotificationBell role="officer" />
 
               {onOpenOnBehalf && (
                 <Button

@@ -10,7 +10,11 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
 import { formatDateTime } from '@/domain/format';
-import { Button } from '@/components/ui';
+import { buildCitizenNotifications } from '@/domain/notifications';
+import { maskPhone } from '@/domain/privacy';
+import { Notification } from '@/domain/types';
+import { SmsPreview } from '@/components/citizen/SmsPreview';
+import { Button, Modal } from '@/components/ui';
 
 export function C09Notifications() {
   const navigate = useNavigate();
@@ -18,15 +22,12 @@ export function C09Notifications() {
   const isLoggedIn = Boolean(state.settings.phone);
 
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [smsPreviewItem, setSmsPreviewItem] = useState<Notification | null>(null);
 
-  const myNotifications = useMemo(() => {
-    const myPhone = state.settings.phone;
-    if (!myPhone) return [];
-    return state.notifications
-      .filter((n) => n.phone === myPhone)
-      .slice()
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [state.notifications, state.settings.phone]);
+  const myNotifications = useMemo(
+    () => buildCitizenNotifications(state.reports, state.notifications, state.settings.phone),
+    [state.reports, state.notifications, state.settings.phone]
+  );
 
   const unreadCount = useMemo(
     () => myNotifications.filter((n) => !n.read).length,
@@ -193,7 +194,7 @@ export function C09Notifications() {
                               )}
                             </div>
                             <div className="truncate text-[11px] text-[var(--color-text-muted)]">
-                              Gửi tới {n.phone || 'Thiết bị này'}
+                              Gửi tới {n.phone ? maskPhone(n.phone) : 'Thiết bị này'}
                             </div>
                           </div>
                         </div>
@@ -214,14 +215,23 @@ export function C09Notifications() {
                         <span>{formatDateTime(n.createdAt)}</span>
                       </span>
 
-                      <button
-                        type="button"
-                        onClick={() => handleOpenReport(n.reportId)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-[#0084E8]/10 px-2.5 py-1 text-xs font-bold text-[#0084E8] transition hover:bg-[#0084E8] hover:text-white dark:text-[#38BDF8]"
-                      >
-                        <span>Xem hồ sơ</span>
-                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSmsPreviewItem(n)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-1 text-xs font-bold text-[var(--color-text)] transition hover:border-[#0084E8]/40 hover:text-[#0084E8]"
+                        >
+                          <span>Xem tin nhắn mẫu</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReport(n.reportId)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#0084E8]/10 px-2.5 py-1 text-xs font-bold text-[#0084E8] transition hover:bg-[#0084E8] hover:text-white dark:text-[#38BDF8]"
+                        >
+                          <span>Xem hồ sơ</span>
+                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   </article>
                 ))}
@@ -230,6 +240,20 @@ export function C09Notifications() {
           </>
         )}
       </main>
+
+      <Modal
+        isOpen={Boolean(smsPreviewItem)}
+        onClose={() => setSmsPreviewItem(null)}
+        title="Xem trước tin nhắn SMS"
+      >
+        {smsPreviewItem && (
+          <SmsPreview
+            phone={smsPreviewItem.phone ? maskPhone(smsPreviewItem.phone) : 'Thiết bị này'}
+            message={smsPreviewItem.message}
+            time={formatDateTime(smsPreviewItem.createdAt)}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

@@ -1,11 +1,25 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '../../src/components/auth/ProtectedRoute';
 import { ForbiddenScreen } from '../../src/screens/auth/ForbiddenScreen';
 import { AdminLayout } from '../../src/layouts/AdminLayout';
+import { AdminOverview } from '../../src/screens/admin/AdminOverview';
+import { AdminStaffPage } from '../../src/screens/admin/AdminManagement';
 import { LoginScreen } from '../../src/screens/auth/LoginScreen';
+import { PortalSwitcherFab } from '../../src/components/common/PortalSwitcherFab';
+import { AppStoreProvider } from '../../src/store/AppStore';
+
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class ResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  }
+});
 
 afterEach(() => {
   localStorage.clear();
@@ -14,14 +28,24 @@ afterEach(() => {
 });
 
 describe('ADMIN UI access', () => {
-  it('local mode explains that the admin portal requires API mode', () => {
+  it('chế độ local hiển thị cổng quản trị có nhãn Mô phỏng, tính KPI từ dữ liệu và tải được danh sách tài khoản mẫu', async () => {
     vi.stubEnv('VITE_DATA_SOURCE', 'local');
     render(
       <MemoryRouter initialEntries={['/quan-tri']}>
-        <AdminLayout />
+        <AppStoreProvider>
+          <Routes>
+            <Route path="/quan-tri" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="tai-khoan" element={<AdminStaffPage />} />
+            </Route>
+          </Routes>
+        </AppStoreProvider>
       </MemoryRouter>
     );
-    expect(screen.getByText('Cần chế độ API')).toBeInTheDocument();
+    expect(screen.getByText('Cổng quản trị')).toBeInTheDocument();
+    expect(screen.getByText('Mô phỏng')).toBeInTheDocument();
+    expect(await screen.findByText('64')).toBeInTheDocument();
+    expect(screen.getByText('47')).toBeInTheDocument();
   });
 
   it('redirects a non-admin API session to the forbidden screen', () => {
@@ -79,5 +103,18 @@ describe('ADMIN UI access', () => {
 
     expect(await screen.findByText('Admin landing')).toBeInTheDocument();
     expect(localStorage.getItem('tbkn_user_role')).toBe('admin');
+  });
+
+  it('PortalSwitcherFab có mục Cổng Quản trị dẫn tới /quan-tri và đánh dấu đang chọn khi ở /quan-tri', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <PortalSwitcherFab />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Chuyển cổng nghiệp vụ' }));
+    const adminItem = screen.getByRole('menuitem', { name: /Cổng Quản trị/ });
+    expect(adminItem).toHaveAttribute('href', '/quan-tri');
   });
 });

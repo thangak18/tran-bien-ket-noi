@@ -4,13 +4,20 @@ import {
   useContext,
   useReducer,
   useEffect,
+  useRef,
   ReactNode,
   Dispatch,
 } from 'react';
 import { Notification, Report, ReportDraft, Settings, VolunteerTask } from '../domain/types';
 import { DEMO_NOW } from '../domain/constants';
 import mockData from '../data/mock.json';
-import { loadPersistedState, saveStateDebounced, setupStorageSync } from './persistence';
+import {
+  flushPendingSaves,
+  loadPersistedState,
+  saveState,
+  saveStateDebounced,
+  setupStorageSync,
+} from './persistence';
 import { SESSION_CHANGED_EVENT } from '../lib/api';
 
 const API_MODE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATA_SOURCE === 'api';
@@ -203,9 +210,9 @@ export async function syncApiStore(dispatch: Dispatch<AppAction>): Promise<void>
     const tasks = await dataSource.getVolunteerTasks().catch(() => []);
     dispatch({ type: 'SET_TASKS', payload: tasks });
   }
-  // Người dân đã OTP: thông báo tiến độ lưu ở máy chủ (AC-C05-5).
+  // Người dân đã OTP: thông báo tiến độ lưu ở máy chủ (AC-C05-5). Chưa đăng nhập thì xoá thông báo cũ.
   const notifications = await dataSource.getMyNotifications().catch(() => null);
-  if (notifications) dispatch({ type: 'SET_NOTIFICATIONS', payload: notifications });
+  dispatch({ type: 'SET_NOTIFICATIONS', payload: notifications ?? [] });
 }
 
 const AppStoreContext = createContext<AppStoreContextValue | null>(null);
@@ -219,28 +226,44 @@ export function AppStoreProvider({
   initialState?: AppState;
   frame?: string;
 }) {
+  const isTestEnv =
+    typeof window !== 'undefined' && Boolean(window.navigator?.userAgent?.includes('jsdom'));
+  const activeStorageKey = isTestEnv
+    ? DEFAULT_STORAGE_KEY
+    : API_MODE
+      ? 'tbkn:api:v1'
+      : 'tbkn:live:v2';
+
   const [state, dispatch] = useReducer(appReducer, initialState, (init) => {
     if (init) return init;
-    const isTestEnv =
-      typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom');
-    if (isTestEnv) {
-      return loadPersistedState(frame, DEFAULT_STORAGE_KEY);
-    }
-    return loadPersistedState(frame, 'tbkn:live:v1', true);
+    return loadPersistedState(frame, activeStorageKey, !isTestEnv || API_MODE);
   });
-
-  const activeStorageKey =
-    typeof window !== 'undefined' && window.navigator?.userAgent?.includes('jsdom')
-      ? DEFAULT_STORAGE_KEY
-      : 'tbkn:live:v1';
 
   useEffect(() => {
     return setupStorageSync(dispatch, frame, activeStorageKey);
   }, [frame, activeStorageKey]);
 
+  const prevPhoneRef = useRef(state.settings.phone);
+
   useEffect(() => {
+    if (prevPhoneRef.current !== state.settings.phone) {
+      prevPhoneRef.current = state.settings.phone;
+      saveState(state, frame, activeStorageKey);
+      return;
+    }
     saveStateDebounced(state, frame, 100, activeStorageKey);
   }, [state, frame, activeStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onBeforeUnload = () => flushPendingSaves();
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onBeforeUnload);
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!API_MODE) return;
@@ -269,6 +292,10 @@ export function AppStoreProvider({
       {children}
     </AppStoreContext.Provider>
   );
+}
+
+export function useOptionalAppStore(): AppStoreContextValue | null {
+  return useContext(AppStoreContext);
 }
 
 export function useAppStore(): AppStoreContextValue {

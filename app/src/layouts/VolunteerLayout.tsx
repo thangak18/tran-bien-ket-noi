@@ -2,6 +2,8 @@ import { ReactNode, useState } from 'react';
 import { Link, useInRouterContext, useLocation } from 'react-router-dom';
 import { ChevronRight, ClipboardList, Map, Phone, User } from 'lucide-react';
 import { HotlineModal } from '../components/common/HotlineModal';
+import { PortalNotificationBell } from '../components/common/PortalNotificationBell';
+import { getVolunteerSession } from '../lib/portalSession';
 
 interface VolunteerLayoutProps {
   children: ReactNode;
@@ -117,6 +119,11 @@ function VolunteerDesktopSidebar({ onOpenHotline }: { onOpenHotline: () => void 
             )}
           </Link>
         ))}
+        <PortalNotificationBell
+          role="volunteer"
+          volunteerName={getVolunteerSession()?.name ?? null}
+          variant="sidebar"
+        />
       </nav>
 
       {/* 3. Hotline & Ward Attribution Footer */}
@@ -295,6 +302,14 @@ function VolunteerLayoutWithLocation({
             : 'max-w-[430px] md:max-w-none flex-1 min-w-0 min-h-screen'
         } theme-surface shadow-sm relative flex flex-col`}
       >
+        {!isMap && !isVerifyDetailPath(pathname) && (
+          <div className="fixed top-3 right-3 z-30 md:hidden">
+            <PortalNotificationBell
+              role="volunteer"
+              volunteerName={getVolunteerSession()?.name ?? null}
+            />
+          </div>
+        )}
         <main
           className={`flex-1 flex flex-col ${
             isMap ? '' : hideBottomChrome ? 'pb-6' : 'pb-28 md:pb-8'

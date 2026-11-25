@@ -182,4 +182,76 @@ describe('UT-023 – Persistence & Multi-frame Sync (plan 4, AC-DEMO-3/4)', () =
     expect(loadedLeft.settings.deviceReports).toEqual([{ id: 'TB-0065', secretCode: '4321' }]);
     expect(loadedRight.settings.deviceReports).toEqual([]);
   });
+
+  it('7. saveState huỷ debounce đang chờ để không ghi đè lại SĐT cũ sau khi đăng xuất', () => {
+    vi.useFakeTimers();
+
+    const loggedInState: AppState = {
+      ...state,
+      settings: { ...state.settings, phone: '0909000068' },
+    };
+    saveStateDebounced(loggedInState, 'left', 100);
+
+    const loggedOutState: AppState = {
+      ...state,
+      settings: { ...state.settings, phone: undefined },
+    };
+    saveState(loggedOutState, 'left');
+
+    // Cho timer debounce cũ (nếu chưa bị huỷ) có cơ hội chạy
+    vi.advanceTimersByTime(150);
+
+    expect(loadPersistedState('left').settings.phone).toBeUndefined();
+  });
+
+  it('8. storage event không còn phone -> xoá phone trong store (đồng bộ đăng xuất giữa các tab)', () => {
+    let dispatchedAction: AppAction | null = null;
+    const dispatch = (action: AppAction) => {
+      dispatchedAction = action;
+    };
+
+    const cleanup = setupStorageSync(dispatch, 'left');
+    const settingsWithoutPhone = {
+      seniorMode: false,
+      demoNow: '2026-11-24T09:00:00+07:00',
+      deviceReports: [],
+      anonymousLog: [],
+    };
+
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: getSettingsKey('left'),
+        newValue: JSON.stringify(settingsWithoutPhone),
+      })
+    );
+
+    const action = dispatchedAction as AppAction | null;
+    expect(action).not.toBeNull();
+    expect(action).toEqual(
+      expect.objectContaining({
+        type: 'SET_SETTINGS',
+        payload: expect.objectContaining({ phone: undefined }),
+      })
+    );
+    if (action && action.type === 'SET_SETTINGS') {
+      expect('phone' in action.payload).toBe(true);
+    }
+
+    cleanup();
+  });
+
+  it('9. loadPersistedState khôi phục đúng fontScale (small/xlarge) sau khi tải lại trang', () => {
+    const customState: AppState = {
+      ...state,
+      settings: {
+        ...state.settings,
+        fontScale: 'xlarge',
+        seniorMode: true,
+      },
+    };
+    saveState(customState, 'left');
+    const reloaded = loadPersistedState('left');
+    expect(reloaded.settings.fontScale).toBe('xlarge');
+    expect(reloaded.settings.seniorMode).toBe(true);
+  });
 });

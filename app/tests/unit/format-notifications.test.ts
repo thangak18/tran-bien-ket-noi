@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { formatDays, formatDistance, formatDate } from '@/domain/format';
-import { buildNotification, shouldNotifyOnTransition } from '@/domain/notifications';
+import {
+  buildCitizenNotifications,
+  buildNotification,
+  buildOfficerNotifications,
+  buildVolunteerNotifications,
+  shouldNotifyOnTransition,
+} from '@/domain/notifications';
 import { haversineMeters } from '@/domain/geo';
+import { DEMO_NOW } from '@/domain/constants';
+import { getInitialState } from '@/store/AppStore';
 
 describe('UT-017 – Format & notifications (spec 3.4, 7.6)', () => {
   it('1. formatDays(3.2) = "3,2 ngày"; formatDistance(950) = "950 m"; formatDistance(1250) = "1,3 km"', () => {
@@ -76,5 +84,46 @@ describe('UT-017 – Format & notifications (spec 3.4, 7.6)', () => {
     const d = haversineMeters(10.95, 106.82, 10.9504, 106.82);
     expect(d).toBeGreaterThanOrEqual(43.5);
     expect(d).toBeLessThanOrEqual(45.5);
+  });
+
+  it('6. buildOfficerNotifications sinh thông báo phản ánh mới, quá hạn, mở lại và kết quả TNV', () => {
+    const state = getInitialState();
+    const list = buildOfficerNotifications(state.reports, state.volunteerTasks, DEMO_NOW);
+
+    expect(list.some((item) => item.kind === 'new_report')).toBe(true);
+    expect(list.some((item) => item.kind === 'overdue')).toBe(true);
+    expect(list.some((item) => item.kind === 'reopened')).toBe(true);
+    expect(list.every((item) => item.to.startsWith('/can-bo/'))).toBe(true);
+  });
+
+  it('7. buildVolunteerNotifications sinh thông báo chỉ thị cán bộ và tuyệt đối không lộ SĐT người dân', () => {
+    const state = getInitialState();
+    const list = buildVolunteerNotifications(
+      state.reports,
+      state.volunteerTasks,
+      'Lê Thảo Vy',
+      DEMO_NOW
+    );
+
+    expect(list.length).toBeGreaterThan(0);
+    expect(list.every((item) => item.to.startsWith('/tnv/'))).toBe(true);
+    const serialized = JSON.stringify(list);
+    expect(serialized).not.toMatch(/0\d{9}/);
+  });
+
+  it('8. buildCitizenNotifications gộp thông báo realtime và mốc đã xử lý của SĐT đăng nhập', () => {
+    const state = getInitialState();
+    const completedReport = state.reports.find(
+      (r) => r.status === 'hoan_thanh' && r.reporterPhone
+    )!;
+    const list = buildCitizenNotifications(
+      state.reports,
+      state.notifications,
+      completedReport.reporterPhone!
+    );
+
+    expect(
+      list.some((n) => n.reportId === completedReport.id && n.message.includes('xử lý xong'))
+    ).toBe(true);
   });
 });

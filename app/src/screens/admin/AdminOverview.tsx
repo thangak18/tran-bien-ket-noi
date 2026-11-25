@@ -2,19 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Clock3, FileText, RefreshCw, Users } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button, Toast } from '../../components/ui';
-import { apiFetch } from '../../lib/api';
-
-interface AdminOverviewData {
-  kpi: {
-    totalReports: number;
-    resolvedReports: number;
-    averageResolutionDays: number;
-    overdueReports: number;
-  };
-  byCategory: Array<{ category: string; label: string; count: number }>;
-  byDepartment: Array<{ id: string; name: string; count: number }>;
-  accountsByRole: Array<{ role: 'can_bo' | 'tnv' | 'admin'; total: number; active: number }>;
-}
+import { apiFetch, isApiMode } from '../../lib/api';
+import { useAppStore } from '../../store/AppStore';
+import { AdminOverviewData, getLocalAdminOverview } from '../../data/localAdminStore';
 
 const roleLabels = {
   can_bo: 'Cán bộ',
@@ -81,6 +71,7 @@ function ChartPanel({
 }
 
 export function AdminOverview() {
+  const { state } = useAppStore();
   const [data, setData] = useState<AdminOverviewData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -89,7 +80,11 @@ export function AdminOverview() {
     setLoading(true);
     setError('');
     try {
-      setData(await apiFetch<AdminOverviewData>('/admin/overview'));
+      if (!isApiMode()) {
+        setData(getLocalAdminOverview(state.reports, state.settings.demoNow));
+      } else {
+        setData(await apiFetch<AdminOverviewData>('/admin/overview'));
+      }
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -99,7 +94,7 @@ export function AdminOverview() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [state.reports, state.settings.demoNow]);
 
   useEffect(() => {
     void load();

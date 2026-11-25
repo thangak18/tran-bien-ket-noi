@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export interface BottomSheetProps {
@@ -29,7 +30,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const sheet = (
     <div className="fixed inset-0 z-[2000] flex items-end md:items-center justify-center md:p-4">
       {/* Backdrop */}
       <div
@@ -51,15 +52,15 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         />
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-          <div className="font-semibold text-[var(--color-text)] text-[var(--fs-title)]">
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-3">
+          <div className="min-w-0 flex-1 font-semibold text-[var(--color-text)] text-[var(--fs-title)]">
             {title}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex h-10 w-10 shrink-0 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <X className="h-5 w-5" />
           </button>
@@ -77,4 +78,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(sheet, document.body);
+  }
+  return sheet;
 };

@@ -1,26 +1,26 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, Pencil, Plus, Search, UserRound } from 'lucide-react';
 import { Button, BottomSheet, Modal, TextField, Toast } from '../../components/ui';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, isApiMode } from '../../lib/api';
+import { useAppStore } from '../../store/AppStore';
+import {
+  AdminAuditItem as AuditItem,
+  AdminDepartmentItem as Department,
+  AdminStaffItem as StaffItem,
+  AdminStaffRole as StaffRole,
+  createLocalDepartment,
+  createLocalStaff,
+  listLocalAuditLog,
+  listLocalCategorySettings,
+  listLocalDepartments,
+  listLocalStaff,
+  resetLocalStaffPassword,
+  saveLocalCategorySettings,
+  toggleLocalStaffActive,
+  updateLocalDepartment,
+  updateLocalStaff,
+} from '../../data/localAdminStore';
 
-type StaffRole = 'can_bo' | 'tnv' | 'admin';
-type StaffItem = {
-  id: string;
-  email: string;
-  role: StaffRole;
-  displayName: string;
-  departmentId: string | null;
-  departmentName: string | null;
-  isActive: boolean;
-  createdAt: string;
-};
-type Department = {
-  id: string;
-  name: string;
-  is_active: boolean;
-  sort: number;
-  report_count: number;
-};
 type Notice = { message: string; type: 'success' | 'error' } | null;
 
 const roleLabels: Record<StaffRole, string> = {
@@ -114,6 +114,7 @@ function ErrorOrNotice({ notice, clear }: { notice: Notice; clear: () => void })
 }
 
 export function AdminStaffPage() {
+  const { state } = useAppStore();
   const [items, setItems] = useState<StaffItem[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [search, setSearch] = useState('');
@@ -135,6 +136,12 @@ export function AdminStaffPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      if (!isApiMode()) {
+        setItems(listLocalStaff({ search, role: roleFilter, status: statusFilter }));
+        setDepartments(listLocalDepartments(state.reports));
+        setNotice(null);
+        return;
+      }
       const query = new URLSearchParams();
       if (search.trim()) query.set('search', search.trim());
       if (roleFilter) query.set('role', roleFilter);
@@ -154,7 +161,7 @@ export function AdminStaffPage() {
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, search, statusFilter]);
+  }, [roleFilter, search, state.reports, statusFilter]);
 
   useEffect(() => {
     void load();
@@ -182,6 +189,30 @@ export function AdminStaffPage() {
     event.preventDefault();
     setSaving(true);
     try {
+      if (!isApiMode()) {
+        if (selected) {
+          updateLocalStaff(selected.id, {
+            displayName,
+            role,
+            departmentId: departmentId || null,
+          });
+          setNotice({ message: 'Đã cập nhật tài khoản.', type: 'success' });
+          setDialogOpen(false);
+        } else {
+          const result = createLocalStaff({
+            displayName,
+            email,
+            role,
+            departmentId: departmentId || null,
+          });
+          setDialogOpen(false);
+          setTemporaryPassword(result.temporaryPassword);
+          setCopyMessage('');
+          setPasswordDialog(true);
+        }
+        await load();
+        return;
+      }
       if (selected) {
         await apiFetch(`/admin/staff/${encodeURIComponent(selected.id)}`, {
           method: 'PATCH',
@@ -224,12 +255,16 @@ export function AdminStaffPage() {
     const action = staff.isActive ? 'khoá' : 'mở khoá';
     if (!window.confirm(`Bạn có chắc muốn ${action} tài khoản ${staff.displayName}?`)) return;
     try {
-      await apiFetch(
-        `/admin/staff/${encodeURIComponent(staff.id)}/${staff.isActive ? 'disable' : 'enable'}`,
-        {
-          method: 'POST',
-        }
-      );
+      if (!isApiMode()) {
+        toggleLocalStaffActive(staff.id, !staff.isActive);
+      } else {
+        await apiFetch(
+          `/admin/staff/${encodeURIComponent(staff.id)}/${staff.isActive ? 'disable' : 'enable'}`,
+          {
+            method: 'POST',
+          }
+        );
+      }
       setNotice({
         message: `Đã ${staff.isActive ? 'khoá' : 'mở khoá'} tài khoản.`,
         type: 'success',
@@ -247,10 +282,12 @@ export function AdminStaffPage() {
   async function resetPassword(staff: StaffItem) {
     if (!window.confirm(`Cấp lại mật khẩu cho ${staff.displayName}?`)) return;
     try {
-      const result = await apiFetch<{ temporaryPassword: string }>(
-        `/admin/staff/${encodeURIComponent(staff.id)}/reset-password`,
-        { method: 'POST' }
-      );
+      const result = !isApiMode()
+        ? resetLocalStaffPassword(staff.id)
+        : await apiFetch<{ temporaryPassword: string }>(
+            `/admin/staff/${encodeURIComponent(staff.id)}/reset-password`,
+            { method: 'POST' }
+          );
       setTemporaryPassword(result.temporaryPassword);
       setCopyMessage('');
       setPasswordDialog(true);
@@ -558,6 +595,7 @@ export function AdminStaffPage() {
 }
 
 export function AdminDepartmentsPage() {
+  const { state } = useAppStore();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<Notice>(null);
@@ -570,6 +608,11 @@ export function AdminDepartmentsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      if (!isApiMode()) {
+        setDepartments(listLocalDepartments(state.reports));
+        setNotice(null);
+        return;
+      }
       const response = await apiFetch<{ items: Department[] }>('/admin/departments');
       setDepartments(response.items);
       setNotice(null);
@@ -581,7 +624,7 @@ export function AdminDepartmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [state.reports]);
 
   useEffect(() => {
     void load();
@@ -598,7 +641,13 @@ export function AdminDepartmentsPage() {
     event.preventDefault();
     setSaving(true);
     try {
-      if (selected) {
+      if (!isApiMode()) {
+        if (selected) {
+          updateLocalDepartment(selected.id, { name, sort: Number(sort) });
+        } else {
+          createLocalDepartment({ name, sort: Number(sort) });
+        }
+      } else if (selected) {
         await apiFetch(`/admin/departments/${encodeURIComponent(selected.id)}`, {
           method: 'PATCH',
           body: JSON.stringify({ name, sort: Number(sort) }),
@@ -626,10 +675,14 @@ export function AdminDepartmentsPage() {
     const action = department.is_active ? 'ngừng hoạt động' : 'kích hoạt';
     if (!window.confirm(`Bạn có chắc muốn ${action} bộ phận “${department.name}”?`)) return;
     try {
-      await apiFetch(`/admin/departments/${encodeURIComponent(department.id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ isActive: !department.is_active }),
-      });
+      if (!isApiMode()) {
+        updateLocalDepartment(department.id, { isActive: !department.is_active });
+      } else {
+        await apiFetch(`/admin/departments/${encodeURIComponent(department.id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isActive: !department.is_active }),
+        });
+      }
       setNotice({ message: `Đã ${action} bộ phận.`, type: 'success' });
       await load();
     } catch (error) {
@@ -779,6 +832,7 @@ type CategorySetting = {
 };
 
 export function AdminCategorySettingsPage() {
+  const { state } = useAppStore();
   const [settings, setSettings] = useState<CategorySetting[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -788,6 +842,19 @@ export function AdminCategorySettingsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      if (!isApiMode()) {
+        setSettings(
+          listLocalCategorySettings().map((item) => ({
+            category: item.category,
+            label: item.label,
+            slaDays: item.sla_days,
+            defaultDepartmentId: item.default_department_id ?? '',
+          }))
+        );
+        setDepartments(listLocalDepartments(state.reports));
+        setNotice(null);
+        return;
+      }
       const [settingsResponse, departmentResponse] = await Promise.all([
         apiFetch<{
           items: Array<{
@@ -817,7 +884,7 @@ export function AdminCategorySettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [state.reports]);
 
   useEffect(() => {
     void load();
@@ -842,16 +909,19 @@ export function AdminCategorySettingsPage() {
     }
     setSaving(true);
     try {
-      await apiFetch('/admin/category-settings', {
-        method: 'PATCH',
-        body: JSON.stringify({
-          settings: settings.map((setting) => ({
-            category: setting.category,
-            slaDays: setting.slaDays,
-            defaultDepartmentId: setting.defaultDepartmentId || null,
-          })),
-        }),
-      });
+      const payload = settings.map((setting) => ({
+        category: setting.category,
+        slaDays: setting.slaDays,
+        defaultDepartmentId: setting.defaultDepartmentId || null,
+      }));
+      if (!isApiMode()) {
+        saveLocalCategorySettings(payload);
+      } else {
+        await apiFetch('/admin/category-settings', {
+          method: 'PATCH',
+          body: JSON.stringify({ settings: payload }),
+        });
+      }
       setNotice({
         message: 'Đã lưu cấu hình. Cấu hình mới áp dụng cho hồ sơ tiếp nhận sau đó.',
         type: 'success',
@@ -934,18 +1004,6 @@ export function AdminCategorySettingsPage() {
   );
 }
 
-type AuditItem = {
-  id: string;
-  actor_id: string;
-  actor_name: string;
-  actor_email: string;
-  action: string;
-  target_type: string;
-  target_id: string;
-  detail: Record<string, unknown>;
-  created_at: string;
-};
-
 const actionLabels: Record<string, string> = {
   'staff.create': 'Tạo tài khoản',
   'staff.update': 'Sửa tài khoản',
@@ -972,6 +1030,14 @@ export function AdminAuditPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      if (!isApiMode()) {
+        const auditResponse = listLocalAuditLog({ actorId, action, page, pageSize });
+        setItems(auditResponse.items);
+        setTotal(auditResponse.total);
+        setStaff(listLocalStaff());
+        setNotice(null);
+        return;
+      }
       const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (actorId) query.set('actorId', actorId);
       if (action.trim()) query.set('action', action.trim());

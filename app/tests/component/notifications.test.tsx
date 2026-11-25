@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { NotificationBell } from '@/components/citizen/NotificationBell';
+import { PortalNotificationBell } from '@/components/common/PortalNotificationBell';
 import { SmsPreview } from '@/components/citizen/SmsPreview';
 import { MockLabel } from '@/components/common/MockLabel';
+import { C09Notifications } from '@/screens/citizen/C09Notifications';
+import { AppStoreProvider, getInitialState } from '@/store/AppStore';
 import { Notification } from '@/domain/types';
 
 describe('CT-038 – NotificationBell, SmsPreview và MockLabel', () => {
@@ -82,6 +86,69 @@ describe('CT-038 – NotificationBell, SmsPreview và MockLabel', () => {
   describe('MockLabel', () => {
     it('render nhãn Mô phỏng chuẩn', () => {
       render(<MockLabel />);
+      expect(screen.getByText('Mô phỏng')).toBeInTheDocument();
+    });
+  });
+
+  describe('PortalNotificationBell (Cán bộ & Tình nguyện viên)', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('hiển thị thông báo chỉ thị cho TNV, đánh dấu đã đọc và không lộ SĐT', () => {
+      render(
+        <MemoryRouter>
+          <AppStoreProvider initialState={getInitialState()}>
+            <PortalNotificationBell role="volunteer" volunteerName="Lê Thảo Vy" />
+          </AppStoreProvider>
+        </MemoryRouter>
+      );
+
+      const btn = screen.getByRole('button', { name: /Thông báo tình nguyện viên/i });
+      fireEvent.click(btn);
+
+      expect(screen.getByText(/Chỉ thị & Nhiệm vụ TNV/i)).toBeInTheDocument();
+      expect(document.body.textContent).not.toMatch(/0\d{9}/);
+
+      const markAll = screen.getByRole('button', { name: /Đánh dấu đã đọc/i });
+      fireEvent.click(markAll);
+      expect(screen.queryByTestId('portal-notif-badge')).not.toBeInTheDocument();
+    });
+
+    it('hiển thị thông báo phản ánh mới / quá hạn cho Cán bộ phường', () => {
+      render(
+        <MemoryRouter>
+          <AppStoreProvider initialState={getInitialState()}>
+            <PortalNotificationBell role="officer" />
+          </AppStoreProvider>
+        </MemoryRouter>
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /Thông báo cán bộ/i }));
+      expect(screen.getByText(/Thông báo điều hành/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Phản ánh mới|Quá hạn|Mở lại/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('C09Notifications (Người dân)', () => {
+    it('hiển thị nút Xem tin nhắn mẫu kèm nhãn Mô phỏng (AC-C09-3)', () => {
+      const initial = getInitialState();
+      const withPhone = {
+        ...initial,
+        settings: { ...initial.settings, phone: '0909000068' },
+        notifications: [sampleNotifications[0]!],
+      };
+
+      render(
+        <MemoryRouter initialEntries={['/thong-bao']}>
+          <AppStoreProvider initialState={withPhone}>
+            <C09Notifications />
+          </AppStoreProvider>
+        </MemoryRouter>
+      );
+
+      const smsBtn = screen.getAllByRole('button', { name: /Xem tin nhắn mẫu/i })[0]!;
+      fireEvent.click(smsBtn);
       expect(screen.getByText('Mô phỏng')).toBeInTheDocument();
     });
   });
