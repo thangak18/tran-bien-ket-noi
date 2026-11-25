@@ -18,6 +18,8 @@ export type AppAction =
   | { type: 'SET_SETTINGS'; payload: Partial<Settings> }
   | { type: 'SET_DRAFT'; payload: Partial<ReportDraft> }
   | { type: 'CLEAR_DRAFT' }
+  | { type: 'SET_REPORTS'; payload: Report[] }
+  | { type: 'SET_TASKS'; payload: VolunteerTask[] }
   | { type: 'ADD_REPORT'; payload: { report: Report; notification?: Notification } }
   | { type: 'UPDATE_REPORT'; payload: { report: Report; notification?: Notification } }
   | { type: 'ADD_TASK'; payload: VolunteerTask }
@@ -75,6 +77,18 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         draft: { photos: [] },
+      };
+
+    case 'SET_REPORTS':
+      return {
+        ...state,
+        reports: action.payload,
+      };
+
+    case 'SET_TASKS':
+      return {
+        ...state,
+        volunteerTasks: action.payload,
       };
 
     case 'ADD_REPORT': {
@@ -157,6 +171,42 @@ export function AppStoreProvider({
   useEffect(() => {
     saveStateDebounced(state, frame, 100, DEFAULT_STORAGE_KEY);
   }, [state, frame]);
+
+  useEffect(() => {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATA_SOURCE === 'api') {
+      const syncApiData = async () => {
+        try {
+          const { dataSource } = await import('../data');
+          const isOfficer = localStorage.getItem('tbkn_user_role') === 'can_bo';
+          const isVolunteer = localStorage.getItem('tbkn_user_role') === 'tnv';
+
+          let reps: Report[] = [];
+          if (isOfficer) {
+            reps = await dataSource.getOfficerReports().catch(() => dataSource.getReports());
+          } else {
+            reps = await dataSource.getReports();
+          }
+
+          if (reps && reps.length > 0) {
+            dispatch({ type: 'SET_REPORTS', payload: reps });
+          }
+
+          if (isVolunteer || isOfficer) {
+            const tasks = await dataSource.getVolunteerTasks().catch(() => []);
+            if (tasks && tasks.length > 0) {
+              dispatch({ type: 'SET_TASKS', payload: tasks });
+            }
+          }
+        } catch (err) {
+          console.error('Lỗi đồng bộ dữ liệu API vào store:', err);
+        }
+      };
+
+      syncApiData();
+      const interval = setInterval(syncApiData, 30000);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   return (
     <AppStoreContext.Provider value={{ state, dispatch }}>{children}</AppStoreContext.Provider>

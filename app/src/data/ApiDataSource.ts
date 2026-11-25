@@ -24,8 +24,8 @@ export class ApiDataSource implements DataSource {
 
     const qs = sp.toString();
     const endpoint = `/public/reports${qs ? `?${qs}` : ''}`;
-    const res = await apiFetch<{ reports: Report[] }>(endpoint);
-    return res.reports;
+    const res = await apiFetch<{ reports?: Report[]; items?: Report[] }>(endpoint);
+    return res.reports || res.items || [];
   }
 
   async getReportById(idOrCode: string): Promise<Report | null> {
@@ -126,8 +126,10 @@ export class ApiDataSource implements DataSource {
     if (params?.radiusMeters != null) sp.set('radiusMeters', String(params.radiusMeters));
 
     const qs = sp.toString();
-    const res = await apiFetch<{ tasks: VolunteerTask[] }>(`/volunteer/tasks${qs ? `?${qs}` : ''}`);
-    return res.tasks;
+    const res = await apiFetch<{ tasks?: VolunteerTask[]; items?: VolunteerTask[] }>(
+      `/volunteer/tasks${qs ? `?${qs}` : ''}`
+    );
+    return res.tasks || res.items || [];
   }
 
   async getVolunteerTaskById(taskId: string): Promise<VolunteerTask | null> {
@@ -170,8 +172,10 @@ export class ApiDataSource implements DataSource {
     if (params?.overdueOnly) sp.set('overdueOnly', 'true');
 
     const qs = sp.toString();
-    const res = await apiFetch<{ reports: Report[] }>(`/officer/reports${qs ? `?${qs}` : ''}`);
-    return res.reports;
+    const res = await apiFetch<{ reports?: Report[]; items?: Report[] }>(
+      `/officer/reports${qs ? `?${qs}` : ''}`
+    );
+    return res.reports || res.items || [];
   }
 
   async officerAcceptReport(

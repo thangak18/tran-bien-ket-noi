@@ -21,6 +21,7 @@ import { V01Tasks } from './screens/volunteer/V01Tasks';
 import { V02Verify } from './screens/volunteer/V02Verify';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import { ForbiddenScreen } from './screens/auth/ForbiddenScreen';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DemoHub } from './screens/demo/DemoHub';
 import { DevUiGallery } from './screens/dev/DevUiGallery';
 
@@ -120,11 +121,46 @@ export default function App() {
             </CitizenLayout>
           }
         />
-        <Route path="/can-bo" element={<A01Inbox />} />
-        <Route path="/can-bo/:id" element={<A02Panel />} />
-        <Route path="/can-bo/:id/ket-qua" element={<A03Result />} />
-        <Route path="/tnv" element={<V01Tasks />} />
-        <Route path="/tnv/:taskId" element={<V02Verify />} />
+        <Route
+          path="/can-bo"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <A01Inbox />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/can-bo/:id"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <A02Panel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/can-bo/:id/ket-qua"
+          element={
+            <ProtectedRoute allowedRoles={['can_bo']}>
+              <A03Result />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tnv"
+          element={
+            <ProtectedRoute allowedRoles={['tnv', 'can_bo']}>
+              <V01Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tnv/:taskId"
+          element={
+            <ProtectedRoute allowedRoles={['tnv', 'can_bo']}>
+              <V02Verify />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/dang-nhap" element={<LoginScreen />} />
         <Route path="/khong-co-quyen" element={<ForbiddenScreen />} />
         <Route path="/demo" element={<DemoHub />} />

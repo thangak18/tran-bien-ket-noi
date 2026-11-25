@@ -157,7 +157,7 @@ export interface Settings {
   seniorMode: boolean;
   phone?: string;
   demoNow: string; // ISO
-  deviceReports: { id: string; secretCode: string }[];
+  deviceReports: { id: string; secretCode: string; code?: string; ownerToken?: string }[];
   anonymousLog: string[]; // ISO
 }
 

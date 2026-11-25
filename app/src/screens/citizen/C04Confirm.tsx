@@ -106,7 +106,7 @@ export function C04Confirm() {
     }
   };
 
-  const executeSubmit = (submitPhone: string, isAnon: boolean) => {
+  const executeSubmit = async (submitPhone: string, isAnon: boolean) => {
     if (!category || !lat || !lng || !address) return;
 
     const payload = {
@@ -119,6 +119,41 @@ export function C04Confirm() {
       phone: !isAnon && submitPhone ? submitPhone : undefined,
       anonymous: isAnon,
     };
+
+    if (import.meta.env.VITE_DATA_SOURCE === 'api') {
+      try {
+        const { dataSource } = await import('@/data');
+        const res = await dataSource.createReport(payload);
+        const existingDeviceReports = state.settings.deviceReports || [];
+        const newDeviceReports = [
+          ...existingDeviceReports,
+          {
+            id: res.report.id,
+            secretCode: res.secretCode || '',
+            code: res.report.id,
+            ownerToken: res.ownerToken || '',
+          },
+        ];
+        dispatch({ type: 'SET_SETTINGS', payload: { deviceReports: newDeviceReports } });
+        dispatch({ type: 'ADD_REPORT', payload: { report: res.report } });
+        dispatch({ type: 'CLEAR_DRAFT' });
+
+        navigate('/?tab=ca-nhan', {
+          replace: true,
+          state: {
+            justSubmitted: {
+              reportId: res.report.id,
+              secretCode: res.secretCode,
+              ownerToken: res.ownerToken,
+              anonymous: isAnon,
+            },
+          },
+        });
+        return;
+      } catch (err) {
+        console.error('Lỗi khi gửi phản ánh lên API:', err);
+      }
+    }
 
     const res = submitReport(state, payload, state.settings.demoNow);
     dispatch({ type: 'HYDRATE', payload: res.state });

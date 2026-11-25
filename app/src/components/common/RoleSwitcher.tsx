@@ -19,6 +19,10 @@ export function RoleSwitcher() {
   const { pathname } = useLocation();
   const current = ROLES.find((r) => r.match(pathname));
 
+  if (import.meta.env.VITE_DATA_SOURCE === 'api') {
+    return null;
+  }
+
   return (
     <div
       className="fixed bottom-24 right-3 z-[1500] lg:bottom-5 lg:right-5"

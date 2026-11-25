@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Phone, Mail, Lock, ArrowRight, UserCheck, CheckCircle2 } from 'lucide-react';
+import { apiFetch } from '../../lib/api';
 
 export function LoginScreen() {
   const [searchParams] = useSearchParams();
@@ -21,12 +22,45 @@ export function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStaffLogin = (e?: React.FormEvent) => {
+  const isApiMode = import.meta.env.VITE_DATA_SOURCE === 'api';
+
+  const handleStaffLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Mock/Demo authentication for Staff
+    if (isApiMode) {
+      try {
+        const res = await apiFetch<{
+          token: string;
+          user: { id: string; role: 'can_bo' | 'tnv'; displayName: string; email: string };
+        }>('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password, role: staffRole }),
+        });
+
+        localStorage.setItem('tb_staff_token', res.token);
+        localStorage.setItem('tbkn_auth_token', res.token);
+        localStorage.setItem('tbkn_user_role', res.user.role);
+        localStorage.setItem('tbkn_user_name', res.user.displayName);
+
+        setLoading(false);
+        if (redirectUrl) {
+          navigate(redirectUrl);
+        } else {
+          navigate(res.user.role === 'can_bo' ? '/can-bo' : '/tnv');
+        }
+      } catch (err: unknown) {
+        setLoading(false);
+        setError(
+          (err as { message?: string })?.message ||
+            'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.'
+        );
+      }
+      return;
+    }
+
+    // Mock/Demo authentication for Staff in local mode
     setTimeout(() => {
       const isOfficer = staffRole === 'can_bo';
       const token = isOfficer ? 'mock_can_bo' : 'mock_tnv';
@@ -45,7 +79,7 @@ export function LoginScreen() {
     }, 400);
   };
 
-  const handleSendOtp = (e?: React.FormEvent) => {
+  const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!/^0[0-9]{9}$/.test(phone)) {
       setError('Số điện thoại phải gồm 10 chữ số, bắt đầu bằng số 0');
@@ -53,6 +87,25 @@ export function LoginScreen() {
     }
     setLoading(true);
     setError(null);
+
+    if (isApiMode) {
+      try {
+        await apiFetch('/citizen/otp/request', {
+          method: 'POST',
+          body: JSON.stringify({ phone }),
+        });
+        setOtpSent(true);
+        setOtp('123456');
+        setLoading(false);
+      } catch (err: unknown) {
+        setLoading(false);
+        setError(
+          (err as { message?: string })?.message || 'Không thể gửi mã OTP. Vui lòng thử lại sau.'
+        );
+      }
+      return;
+    }
+
     setTimeout(() => {
       setOtpSent(true);
       setOtp('123456'); // Gợi ý sẵn OTP mô phỏng
@@ -60,14 +113,37 @@ export function LoginScreen() {
     }, 400);
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (isApiMode) {
+      try {
+        const res = await apiFetch<{ token: string; phone: string }>('/citizen/otp/verify', {
+          method: 'POST',
+          body: JSON.stringify({ phone, code: otp }),
+        });
+        localStorage.setItem('tb_citizen_token', res.token);
+        localStorage.setItem('tbkn_auth_token', res.token);
+        localStorage.setItem('tbkn_user_role', 'citizen');
+        localStorage.setItem('tbkn_user_phone', phone);
+        setLoading(false);
+        navigate(redirectUrl || '/cua-toi');
+      } catch (err: unknown) {
+        setLoading(false);
+        setError(
+          (err as { message?: string })?.message || 'Mã OTP không chính xác hoặc đã hết hạn.'
+        );
+      }
+      return;
+    }
+
     if (otp !== '123456') {
+      setLoading(false);
       setError('Mã OTP không chính xác. Mã mô phỏng là: 123456');
       return;
     }
-    setLoading(true);
-    setError(null);
     setTimeout(() => {
       localStorage.setItem('tbkn_auth_token', 'citizen_mock_jwt');
       localStorage.setItem('tbkn_user_role', 'citizen');

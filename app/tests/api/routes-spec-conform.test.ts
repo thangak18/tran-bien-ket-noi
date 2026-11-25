@@ -80,6 +80,7 @@ describe('Spec 12 Route Conformance Test Suite (/api/v1)', () => {
     let createdCode: string;
     let createdSecretCode: string;
     let validOwnerToken: string;
+    const testIp = `10.99.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200)}`;
 
     it('POST /api/v1/reports tạo phản ánh mới và trả secretCode + ownerToken', async () => {
       const idempotencyKey = crypto.randomUUID();
@@ -90,7 +91,7 @@ describe('Spec 12 Route Conformance Test Suite (/api/v1)', () => {
           'Content-Type': 'application/json',
           'Idempotency-Key': idempotencyKey,
           'X-Device-Id': testDeviceId,
-          'x-forwarded-for': '127.0.0.88',
+          'x-forwarded-for': testIp,
         },
         body: JSON.stringify({
           category: 'den_duong',
@@ -115,7 +116,10 @@ describe('Spec 12 Route Conformance Test Suite (/api/v1)', () => {
     it('POST /api/v1/reports/lookup tra cứu bằng proof mã bí mật trả về ownerToken', async () => {
       const res = await app.request('/api/v1/reports/lookup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': testIp,
+        },
         body: JSON.stringify({
           code: createdCode,
           proof: createdSecretCode,

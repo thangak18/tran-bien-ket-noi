@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -52,6 +52,51 @@ export function A02Panel() {
   const [reason, setReason] = useState('');
   const [agency, setAgency] = useState('');
   const [tnv, setTnv] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const fetchReport = () => {
+    if (!id) return;
+    setLoading(true);
+    setLoadError(null);
+    import('@/data').then(({ dataSource }) => {
+      dataSource
+        .getReportById(id)
+        .then((rep) => {
+          if (rep) {
+            dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+          } else {
+            setLoadError(`Mã phản ánh ${id} không tồn tại.`);
+          }
+        })
+        .catch((err) => {
+          setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
+        })
+        .finally(() => setLoading(false));
+    });
+  };
+
+  useEffect(() => {
+    if (!report && id) {
+      setLoading(true);
+      setLoadError(null);
+      import('@/data').then(({ dataSource }) => {
+        dataSource
+          .getReportById(id)
+          .then((rep) => {
+            if (rep) {
+              dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+            } else {
+              setLoadError(`Mã phản ánh ${id} không tồn tại.`);
+            }
+          })
+          .catch((err) => {
+            setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
+          })
+          .finally(() => setLoading(false));
+      });
+    }
+  }, [id, report, dispatch]);
 
   // B2 Gộp/tách hồ sơ (spec 3.5)
   const similarReports = useMemo(() => {
@@ -63,15 +108,29 @@ export function A02Panel() {
     );
   }, [report, state.reports, state.settings.demoNow]);
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="mt-3 text-xs font-semibold text-gray-500">Đang tải hồ sơ...</p>
+      </div>
+    );
+  }
+
   if (!report) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
         <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
         <h1 className="text-lg font-bold text-gray-900">Không tìm thấy hồ sơ</h1>
-        <p className="mt-1 text-sm text-gray-500">Mã phản ánh {id} không tồn tại.</p>
-        <Button className="mt-4" onClick={() => navigate('/can-bo')}>
-          Về danh sách
-        </Button>
+        <p className="mt-1 text-sm text-gray-500">
+          {loadError || `Mã phản ánh ${id} không tồn tại.`}
+        </p>
+        <div className="mt-4 flex gap-2">
+          <Button variant="secondary" onClick={fetchReport}>
+            Thử lại
+          </Button>
+          <Button onClick={() => navigate('/can-bo')}>Về danh sách</Button>
+        </div>
       </div>
     );
   }

@@ -8,12 +8,21 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const location = useLocation();
-  const token = localStorage.getItem('tbkn_auth_token');
+  const isApi = import.meta.env.VITE_DATA_SOURCE === 'api';
+
+  // Trong chế độ local / test router mặc định không chặn route để bảo toàn hành vi prototype Giai đoạn 1 (Spec 16.1)
+  if (!isApi) {
+    return <>{children}</>;
+  }
+
+  const token =
+    localStorage.getItem('tb_staff_token') ||
+    localStorage.getItem('tb_citizen_token') ||
+    localStorage.getItem('tbkn_auth_token');
   const role = localStorage.getItem('tbkn_user_role') as 'can_bo' | 'tnv' | 'citizen' | null;
 
-  // In demo mode or if no token yet, allow access or redirect to login
+  // Nếu chưa có token hoặc chưa chọn vai trò, chuyển hướng sang trang đăng nhập
   if (!token || !role) {
-    // If accessing officer/volunteer paths, redirect to login
     return <Navigate to={`/dang-nhap?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 

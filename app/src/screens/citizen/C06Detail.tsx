@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Users, Star, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@/store/AppStore';
@@ -31,8 +31,53 @@ export function C06Detail() {
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [isRatingSheetOpen, setIsRatingSheetOpen] = useState<boolean>(false);
   const [hasMeToo, setHasMeToo] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const report = state.reports.find((r) => r.id === id);
+
+  const fetchReport = () => {
+    if (!id) return;
+    setLoading(true);
+    setLoadError(null);
+    import('@/data').then(({ dataSource }) => {
+      dataSource
+        .getReportById(id)
+        .then((rep) => {
+          if (rep) {
+            dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+          } else {
+            setLoadError(`Mã phản ánh ${id} không tồn tại.`);
+          }
+        })
+        .catch((err) => {
+          setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
+        })
+        .finally(() => setLoading(false));
+    });
+  };
+
+  useEffect(() => {
+    if (!report && id) {
+      setLoading(true);
+      setLoadError(null);
+      import('@/data').then(({ dataSource }) => {
+        dataSource
+          .getReportById(id)
+          .then((rep) => {
+            if (rep) {
+              dispatch({ type: 'ADD_REPORT', payload: { report: rep } });
+            } else {
+              setLoadError(`Mã phản ánh ${id} không tồn tại.`);
+            }
+          })
+          .catch((err) => {
+            setLoadError(err.message || 'Lỗi khi tải thông tin hồ sơ.');
+          })
+          .finally(() => setLoading(false));
+      });
+    }
+  }, [id, report, dispatch]);
 
   const handleMeToo = () => {
     if (!report || hasMeToo) return;
@@ -45,19 +90,39 @@ export function C06Detail() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="mt-3 text-xs font-semibold text-gray-500">Đang tải hồ sơ...</p>
+      </div>
+    );
+  }
+
   if (!report) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
         <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
         <h2 className="text-base font-bold text-gray-900">Không tìm thấy hồ sơ</h2>
-        <p className="mt-1 text-xs text-gray-500">Mã phản ánh {id} không tồn tại.</p>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="mt-4 rounded-btn bg-primary px-4 py-2 text-xs font-bold text-white shadow-soft"
-        >
-          Về trang chủ
-        </button>
+        <p className="mt-1 text-xs text-gray-500">
+          {loadError || `Mã phản ánh ${id} không tồn tại.`}
+        </p>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={fetchReport}
+            className="rounded-btn border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-700 shadow-sm"
+          >
+            Thử lại
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="rounded-btn bg-primary px-4 py-2 text-xs font-bold text-white shadow-soft"
+          >
+            Về trang chủ
+          </button>
+        </div>
       </div>
     );
   }
