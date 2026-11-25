@@ -1,6 +1,6 @@
 # SPEC – Trấn Biên Kết Nối (Web App & Production API)
 
-Phiên bản: 1.3 (cập nhật 25/11/2026 – bổ sung kiến trúc sản phẩm thực tế trên nhánh `feat/production-p3-p4-p5`; quy chuẩn UI theo `ui-ux-guidelines.md`) · Nguồn: `proposal_v2.1.md`  
+Phiên bản: 1.4 (cập nhật 25/11/2026 – đồng bộ FR-08 bắt buộc SĐT & quét QR, bổ sung Offline Queue, Điểm nóng tái diễn, Hồ sơ giờ tình nguyện & Check-in GPS 150m, Cổng Quản trị `/admin` nâng cấp) · Nguồn: `proposal_v2.1.md`  
 Nhãn: **[ĐỀ]** yêu cầu BTC · **[GĐ]** giả định thiết kế · **[KC]** cần kiểm chứng
 
 ---
@@ -35,16 +35,15 @@ Prototype web tương tác thể hiện trọn vòng đời một phản ánh hi
 
 | Hạng mục | Mức độ |
 |---|---|
-| 4 cổng nghiệp vụ (Người dân, TNV, Cán bộ, Quản trị Admin) + tách 4 web `VITE_PORTAL_MODE` | Đầy đủ, tương tác được (hợp nhất UI/UX mới `fc4c476`: logo mới, dark theme, `OnBehalfWizard`, xuất Excel `.xlsx`, `DateInputDdMmYyyy`, `gpsSettings`) |
-| Quy trình điều phối & Thông báo 2 chiều | Khách/Ẩn danh gửi trực tiếp → Cán bộ có thể **Giao xử lý** trực tiếp hoặc tùy chọn gửi TNV xác minh khi cần; **Chuông thông báo (`PortalNotificationBell`)** có badge số & dropdown trên cả Cổng Cán bộ (`/can-bo`) và Cổng TNV (`/tnv`) |
-| Bản đồ OpenStreetMap, GPS trình duyệt & Reverse Geocoding (Nominatim) | Thật (đồng bộ 2 chiều GPS ↔ ghim ↔ ô địa chỉ) |
+| 4 cổng nghiệp vụ (Người dân, TNV, Cán bộ, Quản trị Admin `/admin`) + tách 4 web `VITE_PORTAL_MODE` | Đầy đủ, tương tác được: Cổng Quản trị `/admin` (4 KPI, quản lý tài khoản 4 vai trò phân màu/tìm/lọc/sửa/khóa an toàn, cấu hình hạn SLA, Nhật ký kiểm toán xuất CSV), dark theme, `OnBehalfWizard`, xuất Excel `.xlsx`, CSV UTF-8 BOM & In giao ban |
+| Quy trình điều phối, SĐT & Thông báo 2 chiều (FR-08) | Bắt buộc SĐT khi gửi phản ánh (chỉ hiển thị cho CB/TNV, không bao giờ công khai); chặn bấm "Tôi cũng gặp" lặp lại (1 người/1 lần); quét mã QR & tra cứu mã rút gọn; đánh giá hài lòng & trung tâm thông báo theo tài khoản đã đăng nhập |
+| Bản đồ OpenStreetMap, GPS trình duyệt & Reverse Geocoding (Nominatim) | Thật (URL tile `https://tile.openstreetmap.org/{z}/{x}/{y}.png` không subdomain, ngưỡng báo lỗi ≥ 3 tile, đồng bộ 2 chiều GPS ↔ ghim ↔ ô địa chỉ) |
 | Chụp/chọn ảnh/video, nén ảnh phía client | Thật |
 | Lưu dữ liệu & Kho ảnh | Đồng bộ 2 chiều **Cloudflare D1 thật (`tran-bien-db`)** cho 4 vai trò (`reports`, `users`, `volunteer_tasks`, `report_feedbacks`, `notifications`, `sla_config`, `audit_logs`, `push_subscriptions`) + sẵn sàng **Cloudflare R2** |
 | Phân loại ảnh AI (B1) | **Gemini Vision thật** qua server proxy (`/api/ai/classify`, `gemini-flash-lite-latest` → `3.6-flash` → `3.8-flash`), tự fallback có nhãn khi offline/chưa gắn key |
 | Xác thực, phân quyền & chống spam | **JWT HS256 + RBAC 4 vai trò** ở Worker API, băm SHA-256 `secretCode`, rate limit theo IP, **Cloudflare Turnstile thật** (Site Key + Siteverify bắt buộc ở Bước 3) |
-| Thông báo, SLA & Báo cáo | **Web Push** (Service Worker + VAPID), adapter Zalo ZNS / SMS, Cron SLA mỗi 2 giờ, Audit Log, **Xuất Excel `.xlsx`**, **Xuất CSV (UTF-8 BOM)** & **In PDF** |
-| PWA & Trình duyệt nhúng | `manifest.webmanifest`, `sw.js` cache app shell + offline queue, nút cài ứng dụng, banner nhắc mở trình duyệt ngoài khi vào từ Zalo/Facebook |
-| Gửi ẩn danh/khách, máy tự nhớ phản ánh, link theo dõi + QR, đăng ký nhận tin sau | Đầy đủ |
+| Thông báo, SLA, Điểm nóng & Báo cáo | **Web Push** (Service Worker + VAPID), adapter Zalo ZNS / SMS, Cron SLA mỗi 2 giờ, **Điểm nóng tái diễn (30 ngày)**, Audit Log, **Xuất Excel `.xlsx`**, **Xuất CSV (UTF-8 BOM)** & **In PDF** |
+| PWA, Offline Queue & TNV nâng cao | `manifest.webmanifest`, `sw.js` cache app shell + **Offline Queue** tự đồng bộ phản ánh/xác minh khi có mạng; **Hồ sơ ghi nhận giờ tình nguyện + Xuất phiếu xác nhận PDF**; **Check-in khoảng cách GPS hiện trường (150m)** |
 | Chia sẻ link, Giọng nói → chữ (B4), 4 mức cỡ chữ (B3), Phát hiện/gộp trùng (B2), Gửi hộ (B5) | Đầy đủ |
 
 ### 1.3. Ngoài phạm vi hiện tại
@@ -55,11 +54,12 @@ Tích hợp SSO VNeID chính thức của Bộ Công an, tổng đài thoại Vo
 
 ## 2. Vai trò
 
-| Mã | Vai trò | Thiết bị | Đăng nhập trong demo |
+| Mã | Vai trò | Thiết bị | Đăng nhập |
 |---|---|---|---|
-| ND | Người dân | Mobile 390px | Không bắt buộc. Gửi bằng SĐT + OTP mô phỏng (`123456`) **hoặc** ẩn danh |
-| CB | Cán bộ tiếp nhận | Desktop 1440px | Chọn vai trò ở Demo Hub, không cần mật khẩu |
-| TNV | Thanh niên tình nguyện | Mobile 390px | Chọn TNV mẫu ở Demo Hub |
+| ND | Người dân | Mobile 390px / Web | Xem bản đồ & bảng minh bạch không cần đăng nhập; **bắt buộc SĐT** khi gửi phản ánh (FR-08); đăng nhập để đánh giá hài lòng & nhận thông báo |
+| CB | Cán bộ tiếp nhận | Desktop 1440px | Đăng nhập phân quyền JWT (`officer`) |
+| TNV | Thanh niên tình nguyện | Mobile 390px | Đăng nhập phân quyền JWT (`volunteer`) |
+| ADMIN | Quản trị viên phường | Desktop 1440px | Đăng nhập phân quyền JWT (`admin`), quản lý 4 vai trò, SLA & Nhật ký kiểm toán |
 
 Tài khoản mẫu **[GĐ]**:
 - CB: "Nguyễn Văn Minh – Cán bộ tiếp nhận".
@@ -148,12 +148,19 @@ Người xem có quyền chủ hồ sơ (thấy khối đánh giá, báo chưa g
 
 Mọi hồ sơ (có SĐT hay ẩn danh) đều có `secretCode` và được lưu vào `deviceReports` khi gửi từ thiết bị đó.
 
-### 3.4b. Gửi ẩn danh [GĐ]
+### 3.4b. Quy tắc SĐT bắt buộc & Quét QR (FR-08)
 
-- Giới hạn 5 hồ sơ ẩn danh/thiết bị/ngày (đếm theo `settings.anonymousLog`); vượt giới hạn → thông báo bằng lời + gợi ý gửi có SĐT.
-- Hồ sơ ẩn danh: `anonymous: true`, `reporterPhone` rỗng.
-- "Tôi cũng gặp" ẩn danh: tăng `anonymousFollows`, không thêm vào `followers`.
-- Đăng ký nhận tin sau: SĐT xác thực OTP được thêm vào `followers` của **riêng hồ sơ đó**, `subscribedLater: true`; hồ sơ vẫn giữ `anonymous: true` với cộng đồng và cán bộ thấy nhãn "Ẩn danh · đã đăng ký nhận tin".
+- Bỏ chức năng gửi ẩn danh khi tạo phản ánh mới: người gửi bắt buộc cung cấp SĐT để CB/TNV có thể liên hệ khi không tìm thấy vị trí hoặc cần bổ sung.
+- SĐT chỉ hiển thị trong phạm vi Cổng Cán bộ và Cổng TNV, **không bao giờ hiển thị công khai** trên bài đăng, bản đồ hay bảng minh bạch.
+- Chặn bấm **"Tôi cũng gặp vấn đề này"** lặp lại: mỗi người/tài khoản chỉ được bấm tối đa 1 lần cho mỗi hồ sơ.
+- Trung tâm thông báo và khối **Đánh giá mức độ hài lòng** hiển thị cho người dùng đã đăng nhập.
+- Hỗ trợ **Quét mã QR / nhập mã rút gọn** (chấp nhận link đầy đủ, `TB-xxxx` hoặc chuỗi số rút gọn) để mở nhanh chi tiết hồ sơ.
+
+### 3.4d. Nâng cấp vận hành (25/11/2026)
+
+- **Offline Queue:** Khi mất mạng lúc gửi phản ánh hoặc gửi kết quả xác minh TNV, hệ thống tự lưu vào hàng đợi cục bộ, hiện thanh trạng thái chờ đồng bộ và tự gửi lại khi có kết nối (`online`).
+- **Điểm nóng tái diễn & Báo cáo giao ban:** Tự động gom cụm các phản ánh cùng loại trong bán kính ≤ 120m và 30 ngày gần nhất (`≥ 2` hồ sơ) thành **Điểm nóng** trên Cổng Cán bộ và Bảng minh bạch; hỗ trợ **Xuất CSV (UTF-8 BOM)**, Excel `.xlsx` và **In giao ban**.
+- **Hồ sơ giờ tình nguyện & Check-in GPS 150m:** Tính giờ tình nguyện (0,5 giờ/vụ xác minh thành công), tỷ lệ đúng hạn, cấp bậc (*TNV Mới / TNV Tích cực / TNV Nòng cốt*), xuất **Phiếu xác nhận hoạt động** kèm mã kiểm chứng; tự đo khoảng cách GPS hiện trường khi TNV mở nhiệm vụ (cảnh báo nhẹ nếu > 150m, không chặn gửi khi yếu GPS).
 
 ### 3.4c. Câu "Cập nhật mới nhất" [GĐ]
 

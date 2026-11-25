@@ -20,7 +20,7 @@
 **Cuộc thi:** Đồng Nai Hackathon 2026  
 **Đề bài:** Đề 2 – Phản ánh hiện trường (Chính quyền số – Đô thị thông minh)  
 **Phạm vi:** Web Application (Frontend PWA + Cloudflare Workers API)  
-**Phiên bản:** v2.2 (25/11/2026) – cập nhật kiến trúc sản phẩm thực tế: Cloudflare Workers API, Gemini Vision thật, Turnstile, Web Push, SLA/CSV, PWA & nền tảng D1/R2
+**Phiên bản:** v2.3 (25/11/2026) – đồng bộ quy tắc bắt buộc SĐT (FR-08), quét mã QR, Offline Queue, Điểm nóng tái diễn & báo cáo giao ban, Check-in GPS 150m & ghi nhận giờ TNV, và Cổng Quản trị `/admin` nâng cấp
 
 ---
 
@@ -504,10 +504,10 @@ Nhóm sẽ thử với 5 người (ít nhất 2 người trên 60 tuổi) theo 3
 | Phổ biến (đội nào cũng có) | Khác biệt của Trấn Biên Kết Nối |
 |---|---|
 | Gửi 3 bước, bản đồ, trạng thái, đánh giá sao | **Vòng phản hồi khép kín**: thông báo từng mốc + ảnh trước/sau + mở lại khi chưa giải quyết |
-| Cảnh báo trùng | **"Tôi cũng gặp" = cùng theo dõi**, số người cùng báo đẩy ưu tiên; cán bộ gộp/tách thật |
-| Nút chữ lớn | **Tiếp cận đa kênh**: chữ lớn + giọng nói + không cần tài khoản + gửi ẩn danh + gửi hộ qua tổng đài |
-| TNV xác minh | **TNV nghiệm thu độc lập** kết quả xử lý |
-| Dashboard thống kê | **Bảng minh bạch công khai** cho mọi người dân |
+| Cảnh báo trùng | **"Tôi cũng gặp" (chặn bấm lặp 1 người/1 lần)** = cùng theo dõi, số người cùng báo đẩy ưu tiên; cán bộ gộp/tách thật |
+| Nút chữ lớn | **Tiếp cận đa kênh**: 4 mức cỡ chữ + giọng nói tiếng Việt + quét mã QR + gửi hộ qua tổng đài + **Offline Queue** tự gửi khi có mạng |
+| TNV xác minh | **TNV nghiệm thu độc lập** + **Check-in GPS hiện trường (150m)** + **Hồ sơ ghi nhận giờ tình nguyện & xuất phiếu xác nhận** |
+| Dashboard thống kê | **Bảng minh bạch công khai** + **Điểm nóng tái diễn (30 ngày)** + **Xuất báo cáo giao ban (CSV / Excel / In PDF)** + **Cổng Quản trị `/admin`** |
 
 ---
 
@@ -532,16 +532,17 @@ Nhóm sẽ thử với 5 người (ít nhất 2 người trên 60 tuổi) theo 3
 |---|---|
 | Khác gì Dong Nai City? | Không thay thế; tập trung vòng đời cấp phường, khép kín phản hồi và tiếp cận người cao tuổi; có thể tích hợp như phân hệ. Trả lời bằng kết quả đã tự đối chiếu ứng dụng. |
 | Người không có smartphone thì sao? | Tổng đài + cán bộ tạo hộ + tra cứu bằng mã qua tin nhắn. |
-| Chống spam, báo sai thế nào? | Mặc định xác thực SĐT bằng OTP; gửi ẩn danh giới hạn số lượng mỗi thiết bị, gắn nhãn cho cán bộ và ưu tiên TNV xác minh; cán bộ duyệt ảnh trước khi công khai. |
-| Gửi ẩn danh thì làm sao biết kết quả? | Máy tự nhớ phản ánh, link theo dõi/QR, tra cứu bằng mã bí mật, xem công khai trên bản đồ; muốn nhận tin thì đăng ký SĐT cho riêng hồ sơ đó bất cứ lúc nào. |
+| Chống spam, báo sai thế nào? | Bắt buộc SĐT khi gửi (chỉ CB/TNV thấy, không công khai), chặn bấm "Tôi cũng gặp" lặp lại, Cloudflare Turnstile + rate limit theo IP, và TNV xác minh tại chỗ kèm check-in GPS 150m. |
+| Vì sao bắt buộc SĐT, bỏ gửi ẩn danh? | Để CB/TNV liên hệ trực tiếp khi không tìm thấy hiện trường hoặc cần bổ sung; SĐT không bao giờ hiển thị công khai trên bài đăng, bản đồ hay bảng minh bạch. |
 | Triển khai thật xác thực thế nào? | Hướng tích hợp VNeID; prototype dùng OTP mô phỏng. |
 | Ai chịu trách nhiệm khi gộp nhầm? | Hệ thống chỉ gợi ý; cán bộ gộp và tách được; mọi thao tác có lịch sử. |
 | AI có chạy thật không? Sai thì sao? | Nêu đúng mức đang có; AI chỉ chọn sẵn, người dùng luôn sửa; dưới ngưỡng tin cậy thì không gợi ý. |
 | Hạn xử lý lấy từ đâu? | Giả định cấu hình được, không suy từ 3,2 ngày; phường tự đặt theo quy định. |
 | Dữ liệu 3,2 ngày có khớp mock không? | Có, script kiểm tra trung bình 47 hồ sơ = 3,2 ngày. |
 | Đã thử với người dùng chưa? | Trình bày kết quả thử nghiệm sơ bộ 5 người (nếu đã làm), nói rõ quy mô nhỏ. |
-| Tình nguyện viên lấy động lực từ đâu? | Gắn với hoạt động Đoàn; ghi nhận số nhiệm vụ hoàn thành **[GIẢ ĐỊNH]**. |
-| Bảo vệ quyền riêng tư người gửi? | Không công khai tên, SĐT; có chế độ gửi ẩn danh; ảnh được duyệt; vị trí là vị trí sự cố, không phải nhà người gửi. |
+| Tình nguyện viên lấy động lực từ đâu và tránh làm ẩu thế nào? | Gắn với hoạt động Đoàn phường & điểm rèn luyện qua hồ sơ ghi nhận giờ tình nguyện (xuất phiếu xác nhận có mã kiểm chứng); khi gửi xác minh có check-in khoảng cách GPS 150m và bắt buộc ảnh hiện trường. |
+| Mất mạng ngoài hiện trường thì sao? | Hàng đợi Offline Queue tự lưu phản ánh/kết quả xác minh trên máy và tự đồng bộ ngay khi có sóng lại. |
+| Bảo vệ quyền riêng tư người gửi? | Không công khai tên, SĐT trên bài đăng/bản đồ/bảng minh bạch; SĐT chỉ hiển thị cho CB/TNV để liên hệ xử lý; vị trí công khai là vị trí sự cố, không phải nhà người gửi. |
 
 ---
 
@@ -597,4 +598,4 @@ Nhóm sẽ thử với 5 người (ít nhất 2 người trên 60 tuổi) theo 3
 - WCAG 2.2: https://www.w3.org/TR/WCAG22/
 - html.to.design: https://html.to.design/docs
 
-**End of Proposal – v2.1**
+**End of Proposal – v2.3**
