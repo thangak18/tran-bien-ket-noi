@@ -12,7 +12,7 @@ export function LoginScreen() {
 
   // Staff login state
   const [email, setEmail] = useState('cb.minh@tranbien.gov.vn');
-  const [password, setPassword] = useState('TranBien@2026!');
+  const [password, setPassword] = useState('');
   const [staffRole, setStaffRole] = useState<'can_bo' | 'tnv'>('can_bo');
 
   // Citizen login state
@@ -36,7 +36,7 @@ export function LoginScreen() {
           user: { id: string; role: 'can_bo' | 'tnv'; displayName: string; email: string };
         }>('/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ email, password, role: staffRole }),
+          body: JSON.stringify({ email, password }),
         });
 
         localStorage.setItem('tb_staff_token', res.token);
@@ -277,14 +277,16 @@ export function LoginScreen() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  required={isApiMode}
+                  autoComplete="current-password"
                   className="w-full rounded-xl border border-gray-300 py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="••••••••"
                 />
               </div>
               <p className="mt-1 text-[11px] text-gray-500">
-                Mật khẩu mẫu demo:{' '}
-                <code className="font-semibold text-gray-700">TranBien@2026!</code>
+                {isApiMode
+                  ? 'Tài khoản demo do ban tổ chức cấp.'
+                  : 'Chế độ mô phỏng: không cần mật khẩu.'}
               </p>
             </div>
 

@@ -247,7 +247,7 @@ describe('API Contract & Security Suite', () => {
       // With secret
       const res = await app.request('/cron/sweep-overdue', {
         method: 'POST',
-        headers: { 'X-Cron-Secret': env.CRON_SECRET },
+        headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
       });
       expect(res.status).toBe(200);
       const data = await res.json();

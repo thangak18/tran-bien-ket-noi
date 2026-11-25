@@ -9,7 +9,6 @@ export const corsMiddleware = cors({
     'X-Request-Id',
     'X-Owner-Token',
     'X-Device-Id',
-    'X-Cron-Secret',
     'Idempotency-Key',
   ],
   exposeHeaders: ['X-Request-Id', 'Content-Range'],

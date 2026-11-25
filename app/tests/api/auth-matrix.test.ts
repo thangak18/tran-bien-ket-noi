@@ -1,12 +1,18 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { SignJWT } from 'jose';
 import { app } from '../../server/app';
 import { env } from '../../server/env';
 import { createCitizenToken, createStaffToken } from '../../server/middleware/auth';
 import { sqlClient } from '../../server/db/client';
+import { ensureAuthUser } from '../../scripts/lib/supabase-admin';
+import crypto from 'node:crypto';
 
 describe('L1: Auth Matrix & Privilege Escalation Prevention (Spec 13.5)', () => {
+  afterAll(async () => {
+    await sqlClient`DELETE FROM auth.users WHERE email = 'nv.bi.khoa@tranbien.gov.vn';`;
+  });
+
   it('AUTH-001: Rejects missing Authorization header with 401', async () => {
     const res = await app.request('/officer/reports');
     expect(res.status).toBe(401);
@@ -65,12 +71,12 @@ describe('L1: Auth Matrix & Privilege Escalation Prevention (Spec 13.5)', () => 
     expect(res.status).toBe(401);
   });
 
-  it('AUTH-006: Rejects citizen token calling officer endpoint with 401', async () => {
+  it('AUTH-006: Citizen token calling officer endpoint is rejected with 403 (AUTHZ-004)', async () => {
     const citizenToken = await createCitizenToken('0901234567');
     const res = await app.request('/officer/reports', {
       headers: { Authorization: `Bearer ${citizenToken}` },
     });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
   });
 
   it('AUTH-007: Volunteer calling officer endpoint is rejected with 403 (FORBIDDEN)', async () => {
@@ -84,12 +90,18 @@ describe('L1: Auth Matrix & Privilege Escalation Prevention (Spec 13.5)', () => 
     expect(body.error?.message).toContain('không có quyền');
   });
 
-  it('AUTH-008: Disabled staff calling endpoint is rejected with 403 (INACTIVE_STAFF)', async () => {
+  it('AUTH-008: Disabled staff calling endpoint is rejected with 403 (ACCOUNT_DISABLED)', async () => {
     // Create or disable a test staff
     const disabledStaffId = '99999999-9999-9999-9999-999999999999';
+    // staff_profiles.user_id tham chiếu auth.users (Spec 11) nên phải có user Supabase Auth thật.
+    await ensureAuthUser({
+      id: disabledStaffId,
+      email: 'nv.bi.khoa@tranbien.gov.vn',
+      password: `Kh${crypto.randomUUID()}!1`,
+    });
     await sqlClient`
-      INSERT INTO staff_profiles (user_id, role, display_name, department_id, is_active)
-      VALUES (${disabledStaffId}, 'can_bo', 'Nhan Vien Bi Khoa', 'kinh_te', false)
+      INSERT INTO staff_profiles (user_id, email, role, display_name, department_id, is_active)
+      VALUES (${disabledStaffId}, 'nv.bi.khoa@tranbien.gov.vn', 'can_bo', 'Nhan Vien Bi Khoa', 'kinh_te', false)
       ON CONFLICT (user_id) DO UPDATE SET is_active = false;
     `;
 

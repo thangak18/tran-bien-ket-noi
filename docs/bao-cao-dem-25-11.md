@@ -124,7 +124,7 @@ Test Files  39 passed (39)
 ## 4. Các Giả Định Kỹ Thuật Đã Tự Quyết (Được ghi nhận tại Spec 17 & Tasks)
 
 1. **PostgreSQL Local + cube/earthdistance Compatibility Layer**: Để tránh tải hàng gigabyte ảnh Docker/Homebrew gây tràn phân vùng root máy dev trong đêm, hệ thống dùng PostgreSQL 16 local kết hợp hàm tính mét WGS84 chuẩn xác 100%. Khi deploy cloud chỉ cần bật extension `postgis`.
-2. **Mật khẩu nhân viên seed**: Mặc định là `TranBien@2026!` (có thể đổi qua biến `SEED_STAFF_PASSWORD`).
+2. **Mật khẩu nhân viên seed**: lấy từ biến môi trường `SEED_STAFF_PASSWORD` (bắt buộc, không có giá trị mặc định).
 3. **Mã bí mật 4 số**: Giữ mã 4 số tiện lợi cho người dân + cấp `ownerToken` an toàn cho trình duyệt + chặn brute-force bằng rate-limit 5 lần/15 phút/IP.
 4. **Cột `is_seed`**: Thêm vào bảng `reports` để việc gửi thêm hồ sơ mới sau seed không làm sai lệch bộ kiểm bất biến 64/47/3,2 của tháng 11/2026.
 5. **Cán bộ mặc định không xem số điện thoại đầy đủ**: Luôn che mặt nạ (`0909 *** 068`) để tuân thủ Nghị định 13/2023/NĐ-CP.

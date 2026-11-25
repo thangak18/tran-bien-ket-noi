@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import postgres from 'postgres';
 import { loadLocalEnv, databaseUrl } from './lib/env';
-import { ensureAuthUser } from './lib/supabase-admin';
+import { createAuthUser, deleteAuthUser } from './lib/supabase-admin';
 
 loadLocalEnv();
 
@@ -42,14 +42,17 @@ async function createStaff(
   }
   // Mật khẩu sinh ngẫu nhiên, chỉ in ra một lần. Không lưu vào code hay git.
   const password = `${crypto.randomBytes(9).toString('base64url')}Aa1!`;
-  const userId = await ensureAuthUser({ email, password });
-  await sql`
-    INSERT INTO staff_profiles (user_id, email, role, display_name, department_id, is_active)
-    VALUES (${userId}, ${email.toLowerCase()}, ${role}, ${displayName}, ${departmentId || null}, true)
-    ON CONFLICT (user_id) DO UPDATE SET
-      email = EXCLUDED.email, role = EXCLUDED.role,
-      display_name = EXCLUDED.display_name, department_id = EXCLUDED.department_id;
-  `;
+  const userId = await createAuthUser({ email, password });
+  try {
+    await sql`
+      INSERT INTO staff_profiles (user_id, email, role, display_name, department_id, is_active)
+      VALUES (${userId}, ${email.toLowerCase()}, ${role}, ${displayName}, ${departmentId || null}, true);
+    `;
+  } catch (err) {
+    // Auth và staff_profiles cùng thành công hoặc cùng huỷ (AC-OPS-1).
+    await deleteAuthUser(userId);
+    throw err;
+  }
   console.log(`✅ Đã tạo nhân viên "${displayName}" (${role}), email ${email}, ID: ${userId}`);
   console.log(`   Mật khẩu (chỉ hiển thị một lần): ${password}`);
 }

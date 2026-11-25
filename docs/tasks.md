@@ -233,7 +233,7 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 | Giả định | Vì sao chọn | Cách đổi lại nếu chủ dự án yêu cầu khác |
 |---|---|---|
 | **1. Chạy Supabase Local qua Docker dev** | Tiết kiệm chi phí, không cần tạo tài khoản cloud trong đêm, an toàn tuyệt đối, chạy nhanh không phụ thuộc mạng | Điền URL và khoá của Supabase Cloud vào `app/.env.local` |
-| **2. Mật khẩu tài khoản nhân viên seed: `TranBien@2026!`** | Cần mật khẩu ban đầu đáp ứng tiêu chuẩn Supabase (≥ 8 ký tự, có hoa, thường, số, ký tự đặc biệt) để seed và test tự động | Chạy `npm run staff:reset-password` hoặc đổi giá trị biến `SEED_STAFF_PASSWORD` |
+| **2. Mật khẩu tài khoản nhân viên seed lấy từ biến môi trường `SEED_STAFF_PASSWORD`** | Không lưu mật khẩu trong code hay git; seed bắt buộc có biến này (thiếu thì báo lỗi rõ). `staff:create` sinh mật khẩu ngẫu nhiên và in ra một lần | Đổi giá trị `SEED_STAFF_PASSWORD` rồi chạy lại `npm run seed` |
 | **3. Khóa bí mật JWT & Pepper sinh ngẫu nhiên 32-byte** | Đảm bảo an toàn mật mã theo tiêu chuẩn HMAC-SHA256 khi chưa có cấu hình production chính thức | Thay chuỗi bí mật mới vào biến `CITIZEN_JWT_SECRET` và `OWNER_KEY_PEPPER` trong `.env.local` |
 | **4. Dùng bảng `access_attempts` và `anonymous_submissions` trong PostgreSQL để rate-limit** | Không cần cài đặt Redis cồng kềnh, hoạt động nhất quán trong cùng cơ sở dữ liệu quan hệ | Chuyển sang Upstash Redis nếu tải tăng cao ở giai đoạn sau |
 | **5. Dùng chung trực tiếp `src/domain/` cho cả Client và Server** | Giữ tính nhất quán logic nghiệp vụ một nguồn (SSOT), tránh trùng lặp code theo quy định của AGENTS.md | Đóng gói thành `packages/domain` nếu Vercel build gặp khó khăn về bundle path |

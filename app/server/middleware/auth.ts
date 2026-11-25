@@ -50,12 +50,19 @@ export async function verifyStaffToken(token: string): Promise<{ sub: string; ro
   try {
     const { payload } = await jwtVerify(token, staffSecretKey);
     if (!payload.sub || typeof payload.sub !== 'string') {
-      throw new AppError('UNAUTHORIZED', 'Mã xác thực nhân viên không hợp lệ', 401);
+      throw new AppError('INVALID_TOKEN', 'Mã xác thực nhân viên không hợp lệ', 401);
     }
     return { sub: payload.sub, role: payload.role as string | undefined };
   } catch (err) {
     if (err instanceof AppError) throw err;
-    throw new AppError('UNAUTHORIZED', 'Mã xác thực nhân viên không hợp lệ hoặc đã hết hạn', 401);
+    if ((err as { code?: string })?.code === 'ERR_JWT_EXPIRED') {
+      throw new AppError(
+        'TOKEN_EXPIRED',
+        'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+        401
+      );
+    }
+    throw new AppError('INVALID_TOKEN', 'Mã xác thực nhân viên không hợp lệ', 401);
   }
 }
 
@@ -110,7 +117,22 @@ export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
     const token = authHeader.slice(7);
 
     // Xác thực mã hóa nghiêm ngặt: không chấp nhận UUID thô, không chấp nhận mock token
-    const { sub: staffUserId } = await verifyStaffToken(token);
+    let staffUserId: string;
+    try {
+      ({ sub: staffUserId } = await verifyStaffToken(token));
+    } catch (err) {
+      // Token hợp lệ của người dân nhưng gọi endpoint nhân viên: đã đăng nhập, sai quyền -> 403 (AUTHZ-004).
+      if (err instanceof AppError && err.code === 'INVALID_TOKEN') {
+        const isCitizen = await verifyCitizenToken(token).then(
+          () => true,
+          () => false
+        );
+        if (isCitizen) {
+          throw new AppError('FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này', 403);
+        }
+      }
+      throw err;
+    }
 
     // Tra cứu staff_profiles trong DB
     const [profile] = await sqlClient`
@@ -120,12 +142,13 @@ export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
       LIMIT 1;
     `;
 
+    // Không có hồ sơ nhân viên hoặc đã bị khoá: cùng mã ACCOUNT_DISABLED (Spec 13.2 mục 3).
     if (!profile) {
-      throw new AppError('FORBIDDEN', 'Tài khoản nhân viên không tồn tại trong hệ thống', 403);
+      throw new AppError('ACCOUNT_DISABLED', 'Tài khoản không có quyền truy cập hệ thống', 403);
     }
 
     if (!profile.is_active) {
-      throw new AppError('INACTIVE_STAFF', 'Tài khoản nhân viên đã bị vô hiệu hóa', 403);
+      throw new AppError('ACCOUNT_DISABLED', 'Tài khoản nhân viên đã bị vô hiệu hóa', 403);
     }
 
     if (allowedRoles && !allowedRoles.includes(profile.role)) {
@@ -144,12 +167,20 @@ export function requireStaffAuth(allowedRoles?: ('can_bo' | 'tnv')[]) {
   });
 }
 
+function safeEqual(a: string, b: string): boolean {
+  const ha = crypto.createHash('sha256').update(a).digest();
+  const hb = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
+
 /**
- * Middleware kiểm tra Cron Secret
+ * Middleware kiểm tra Cron Secret: `Authorization: Bearer <CRON_SECRET>`.
+ * Đây cũng là header mà Vercel Cron tự gửi khi dự án có biến CRON_SECRET.
  */
 export const requireCronSecret = createMiddleware(async (c, next) => {
-  const secret = c.req.header('X-Cron-Secret');
-  if (!secret || secret !== env.CRON_SECRET) {
+  const authHeader = c.req.header('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token || !safeEqual(token, env.CRON_SECRET)) {
     throw new AppError('UNAUTHORIZED', 'Mã bảo mật cron không hợp lệ', 401);
   }
   await next();

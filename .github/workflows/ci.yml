@@ -11,21 +11,6 @@ jobs:
     name: Lint, Typecheck, Test, Verify & Build
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgrespassword
-          POSTGRES_DB: tranbien
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,34 +34,50 @@ jobs:
         working-directory: ./app
         run: npx tsc --noEmit
 
-      - name: Run Migrations & Seed Database
+      # Supabase local (Docker) cung cấp PostgreSQL + PostGIS thật, Auth và Storage.
+      - name: Start Supabase local
         working-directory: ./app
-        env:
-          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/tranbien
-          DATABASE_URL_DIRECT: postgresql://postgres:postgrespassword@localhost:5432/tranbien
-          CITIZEN_JWT_SECRET: tran-bien-ci-jwt-secret-at-least-32-chars-long
-          OWNER_KEY_PEPPER: tran-bien-ci-owner-pepper
-          CRON_SECRET: tran-bien-ci-cron-secret
-          DEMO_MODE: 'true'
+        run: npx supabase start --workdir ..
+
+      # Khoá của Supabase local và mọi secret khác được sinh ngẫu nhiên lúc chạy, không lưu trong repo.
+      - name: Prepare environment
+        working-directory: ./app
         run: |
-          npx drizzle-kit push
-          npm run seed
+          STATUS="$(npx supabase status -o env --workdir ..)"
+          value() { echo "$STATUS" | grep "^$1=" | head -1 | cut -d= -f2- | tr -d '"'; }
+          rnd() { openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-48; }
+          for secret in "$(value ANON_KEY)" "$(value SERVICE_ROLE_KEY)" "$(value JWT_SECRET)"; do
+            echo "::add-mask::$secret"
+          done
+          CITIZEN_JWT_SECRET="$(rnd)"; OWNER_KEY_PEPPER="$(rnd)"; CRON_SECRET="$(rnd)"
+          SEED_STAFF_PASSWORD="Ci$(rnd)!1"
+          for secret in "$CITIZEN_JWT_SECRET" "$OWNER_KEY_PEPPER" "$CRON_SECRET" "$SEED_STAFF_PASSWORD"; do
+            echo "::add-mask::$secret"
+          done
+          {
+            echo "DATABASE_URL=$(value DB_URL)"
+            echo "DATABASE_URL_DIRECT=$(value DB_URL)"
+            echo "SUPABASE_URL=$(value API_URL)"
+            echo "SUPABASE_ANON_KEY=$(value ANON_KEY)"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(value SERVICE_ROLE_KEY)"
+            echo "SUPABASE_JWT_SECRET=$(value JWT_SECRET)"
+            echo "CITIZEN_JWT_SECRET=$CITIZEN_JWT_SECRET"
+            echo "OWNER_KEY_PEPPER=$OWNER_KEY_PEPPER"
+            echo "CRON_SECRET=$CRON_SECRET"
+            echo "SEED_STAFF_PASSWORD=$SEED_STAFF_PASSWORD"
+            echo "DEMO_MODE=true"
+          } >> "$GITHUB_ENV"
+
+      - name: Seed Database
+        working-directory: ./app
+        run: npm run seed
 
       - name: Run Database Invariant Verification (db:verify)
         working-directory: ./app
-        env:
-          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/tranbien
-          DATABASE_URL_DIRECT: postgresql://postgres:postgrespassword@localhost:5432/tranbien
         run: npm run db:verify
 
-      - name: Run Unit & Component Tests
+      - name: Run Unit, Component & API Tests
         working-directory: ./app
-        env:
-          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/tranbien
-          CITIZEN_JWT_SECRET: tran-bien-ci-jwt-secret-at-least-32-chars-long
-          OWNER_KEY_PEPPER: tran-bien-ci-owner-pepper
-          CRON_SECRET: tran-bien-ci-cron-secret
-          DEMO_MODE: 'true'
         run: npm run test
 
       - name: Run Mock Data Verification (mock:verify)

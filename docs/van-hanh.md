@@ -54,9 +54,29 @@ cd app
 cp .env.example .env.local
 ```
 
-Chi tiết các biến:
-| Tên biến | Bắt buộc | Mặc định (Local) | Mô tả |
-|---|:---:|---|---|
+Chi tiết các biến (không có giá trị mặc định cho khoá, secret, pepper hay chuỗi kết nối; thiếu biến nào API dừng và báo đúng tên biến đó):
+| Tên biến | Bắt buộc | Mô tả |
+|---|:---:|---|
+| `DATABASE_URL` | Có | Chuỗi kết nối PostgreSQL. Supabase local: `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| `DATABASE_URL_DIRECT` | Tùy chọn | Kết nối trực tiếp cho script (seed, db:verify); thiếu thì dùng `DATABASE_URL` |
+| `SUPABASE_URL` | Có | URL Supabase. Local: `http://127.0.0.1:54321` |
+| `SUPABASE_ANON_KEY` | Có | Khoá công khai, dùng để xác thực mật khẩu cán bộ/TNV qua Supabase Auth |
+| `SUPABASE_SERVICE_ROLE_KEY` | Có | Khoá quản trị, chỉ dùng ở server và script (tạo tài khoản nhân viên) |
+| `SUPABASE_JWT_SECRET` | Có (≥ 32 ký tự) | Khoá ký token cán bộ/TNV |
+| `CITIZEN_JWT_SECRET` | Có (≥ 32 ký tự) | Khoá ký JWT 30 ngày cho người dân |
+| `OWNER_KEY_PEPPER` | Có (≥ 16 ký tự) | Pepper băm `secretCode` và `ownerToken` |
+| `CRON_SECRET` | Có (≥ 16 ký tự) | Khoá bảo vệ `/cron/*`, gửi bằng `Authorization: Bearer <CRON_SECRET>` |
+| `SEED_STAFF_PASSWORD` | Chỉ khi seed | Mật khẩu ban đầu của 4 tài khoản nhân viên mẫu |
+| `DEMO_MODE` | Có | `true` cho phép `demo:reset` / `demo:clock` và OTP mô phỏng `123456` |
+| `VITE_DATA_SOURCE` | Có | `local` (offline, mô phỏng) hoặc `api` (kết nối API + DB) |
+
+Sinh giá trị cho máy local (không commit `app/.env.local`):
+```bash
+openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-48   # dùng cho CITIZEN_JWT_SECRET, OWNER_KEY_PEPPER, CRON_SECRET
+npx supabase status -o env --workdir ..                # lấy ANON_KEY, SERVICE_ROLE_KEY, JWT_SECRET của Supabase local
+```
+
+---|:---:|---|---|
 | `DATABASE_URL` | Có | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` (Supabase local) | Chuỗi kết nối PostgreSQL (pooling) |
 | `DATABASE_URL_DIRECT` | Tùy chọn | Giống `DATABASE_URL` | Kết nối trực tiếp cho migrations |
 | `CITIZEN_JWT_SECRET` | Có | `tran-bien-citizen-jwt-secret-min-32-chars-long` | Khóa bí mật ký JWT 30 ngày cho người dân (≥ 32 ký tự) |
@@ -198,7 +218,7 @@ Hệ thống cung cấp 2 endpoint bảo trì chạy qua Vercel Crons hoặc cô
 
 ```bash
 curl -X POST http://localhost:5173/api/cron/sweep-overdue \
-  -H "Authorization: Bearer tran-bien-cron-secret-key-2026"
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ### 6.2. Dọn dẹp ảnh mồ côi (`/api/cron/cleanup-pending-uploads`)
