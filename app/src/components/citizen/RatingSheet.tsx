@@ -65,8 +65,12 @@ export const RatingSheet: React.FC<RatingSheetProps> = ({
       onClose={onClose}
       title={
         <div>
-          <div className="text-base font-bold text-gray-900">Bạn thấy kết quả thế nào?</div>
-          <div className="text-xs font-normal text-gray-500 mt-0.5">Chưa đến 30 giây</div>
+          <div className="text-base font-bold text-[var(--color-text)]">
+            Bạn thấy kết quả thế nào?
+          </div>
+          <div className="text-xs font-normal text-[var(--color-text-muted)] mt-0.5">
+            Chưa đến 30 giây
+          </div>
         </div>
       }
     >
@@ -88,14 +92,14 @@ export const RatingSheet: React.FC<RatingSheetProps> = ({
                     className={`h-8 w-8 transition-colors ${
                       active
                         ? 'fill-amber-400 text-amber-500'
-                        : 'text-gray-300 hover:text-amber-300'
+                        : 'text-slate-300 dark:text-slate-600 hover:text-amber-300'
                     }`}
                   />
                 </button>
               );
             })}
           </div>
-          <div className="mt-2 text-sm font-semibold text-gray-800 min-h-[20px]">
+          <div className="mt-2 text-sm font-semibold text-[var(--color-text)] min-h-[20px]">
             {rating > 0 ? RATING_LABELS[rating] : ' '}
           </div>
         </div>
@@ -103,7 +107,7 @@ export const RatingSheet: React.FC<RatingSheetProps> = ({
         {/* Danh sách chip theo số sao */}
         {rating > 0 && availableTags.length > 0 && (
           <div>
-            <div className="text-xs font-medium text-gray-700 mb-2">
+            <div className="text-xs font-medium text-[var(--color-text-muted)] mb-2">
               {rating >= 4 ? 'Điều gì làm bạn hài lòng?' : 'Điểm nào chưa hài lòng?'}
             </div>
             <div className="flex flex-wrap gap-2">
@@ -117,7 +121,7 @@ export const RatingSheet: React.FC<RatingSheetProps> = ({
                     className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors min-h-[36px] ${
                       isSelected
                         ? 'bg-primary text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-[var(--color-surface-elevated)] text-[var(--color-text)] hover:opacity-85'
                     }`}
                   >
                     {tag}
@@ -133,7 +137,7 @@ export const RatingSheet: React.FC<RatingSheetProps> = ({
           <div>
             <label
               htmlFor="feedback-comment"
-              className="block text-xs font-medium text-gray-700 mb-1"
+              className="block text-xs font-medium text-[var(--color-text-muted)] mb-1"
             >
               Phường có thể làm tốt hơn điều gì? (không bắt buộc)
             </label>
@@ -143,7 +147,7 @@ export const RatingSheet: React.FC<RatingSheetProps> = ({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Ý kiến góp ý để phường phục vụ tốt hơn..."
-              className="w-full rounded-xl border border-gray-300 p-2.5 text-xs text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
         )}

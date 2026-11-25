@@ -82,27 +82,40 @@ export const TrackingLinkCard: React.FC<TrackingLinkCardProps> = ({
           type="button"
           onClick={() => setShowSecret(!showSecret)}
           aria-label={showSecret ? 'Ẩn mã' : 'Hiện'}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-white hover:text-gray-900"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
         >
           {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
 
       <div className="mt-4 flex justify-center">
-        {qrDataUrl ? (
-          <img
-            src={qrDataUrl}
-            alt="Mã QR theo dõi phản ánh"
-            className="h-36 w-36 rounded-xl border border-blue-100 bg-white p-1 shadow-xs"
-          />
-        ) : (
-          <div className="flex h-36 w-36 items-center justify-center rounded-xl bg-white text-xs text-gray-400">
-            Đang tải QR...
+        <div className="u478 is-in !min-h-0 !w-auto !p-2">
+          <div className="u478-q !m-0 !h-36 !w-36 p-1.5">
+            {qrDataUrl ? (
+              <img
+                src={qrDataUrl}
+                alt="Mã QR theo dõi phản ánh"
+                className="h-full w-full rounded-xl object-contain"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-xl bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]">
+                Đang tải QR...
+              </div>
+            )}
+            <span className="u478-br" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="u478-sc" aria-hidden="true">
+              <i />
+            </span>
           </div>
-        )}
+        </div>
       </div>
 
-      <p className="mt-3 text-xs text-gray-600 leading-relaxed">
+      <p className="mt-3 text-xs text-[var(--color-text-muted)] leading-relaxed">
         Máy này sẽ tự nhớ phản ánh của bạn. Đổi máy thì mở link đã lưu.
       </p>
 

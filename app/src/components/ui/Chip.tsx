@@ -25,8 +25,8 @@ export const Chip: React.FC<ChipProps> = ({
       onClick={onClick}
       className={`inline-flex min-h-[var(--tap)] items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         selected
-          ? 'border-2 border-primary bg-primary-50 text-primary-dark font-semibold shadow-xs'
-          : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+          ? 'border-2 border-primary bg-[var(--color-primary-soft)] text-[var(--color-primary)] font-semibold shadow-xs'
+          : 'border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
     >
       {icon && <span className="inline-flex items-center text-current">{icon}</span>}

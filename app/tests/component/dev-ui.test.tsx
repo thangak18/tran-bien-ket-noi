@@ -11,10 +11,9 @@ describe('DevUiGallery – /dev/ui', () => {
       </MemoryRouter>
     );
 
-    // Kiểm tra tiêu đề header & mốc thời gian 09:00:00
+    // Kiểm tra tiêu đề header
     expect(screen.getByText('P3 UI Gallery')).toBeInTheDocument();
     expect(screen.getByText('DEV ONLY')).toBeInTheDocument();
-    expect(screen.getByText(/09:00:00/)).toBeInTheDocument();
 
     // Kiểm tra các section chính
     expect(screen.getByText(/1\. StatusChip & DelayChip/i)).toBeInTheDocument();

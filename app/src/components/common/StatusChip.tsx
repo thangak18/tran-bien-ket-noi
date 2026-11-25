@@ -34,28 +34,14 @@ const ICONS: Record<string, React.ReactNode> = {
   XCircle: <XCircle className="h-3.5 w-3.5" />,
 };
 
-// Định dạng: nền nhạt chữ đậm cùng tông, có icon (Chờ tiếp nhận xám, Đã tiếp nhận xanh dương, Đang xử lý cam, Đã xử lý xanh lá)
-const STATUS_STYLES: Partial<Record<Status, string>> = {
-  moi: 'border-gray-200 bg-gray-100 text-gray-700',
-  da_tiep_nhan: 'border-blue-200 bg-[#EFF4FF] text-[#1D4ED8]',
-  da_giao: 'border-orange-200 bg-orange-50 text-orange-700',
-  cho_xac_minh: 'border-amber-200 bg-amber-50 text-amber-800',
-  mo_lai: 'border-orange-200 bg-orange-50 text-orange-700',
-  can_bo_sung: 'border-amber-200 bg-amber-50 text-amber-800',
-  hoan_thanh: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  dong: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  da_gop: 'border-purple-200 bg-purple-50 text-purple-800',
-  khong_xac_nhan: 'border-red-200 bg-red-50 text-red-800',
-};
-
 const COLOR_STYLES: Record<string, string> = {
-  gray: 'border-gray-200 bg-gray-100 text-gray-700',
-  blue: 'border-blue-200 bg-[#EFF4FF] text-[#1D4ED8]',
-  orange: 'border-orange-200 bg-orange-50 text-orange-700',
-  green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  gray: 'border-gray-200 bg-gray-100 text-gray-800',
+  blue: 'border-blue-200 bg-blue-50 text-blue-900',
+  orange: 'border-amber-200 bg-amber-50 text-amber-900',
+  green: 'border-emerald-200 bg-emerald-50 text-emerald-900',
   yellow: 'border-yellow-200 bg-yellow-50 text-yellow-950',
-  purple: 'border-purple-200 bg-purple-50 text-purple-800',
-  red: 'border-red-200 bg-red-50 text-red-800',
+  purple: 'border-purple-200 bg-purple-50 text-purple-900',
+  red: 'border-rose-200 bg-rose-50 text-rose-900',
 };
 
 export const StatusChip: React.FC<StatusChipProps> = ({
@@ -65,24 +51,20 @@ export const StatusChip: React.FC<StatusChipProps> = ({
   size = 'md',
 }) => {
   const config = STATUS_CONFIGS[status] || STATUS_CONFIGS.moi;
-  let label = variant === 'officer' ? config.officerLabel : config.publicLabel;
-  // Chip trạng thái chỉ hiện nhãn ngắn: cho_xac_minh -> chip "Đã tiếp nhận"
-  if (status === 'cho_xac_minh' && variant === 'public') {
-    label = 'Đã tiếp nhận';
-  }
+  const label = variant === 'officer' ? config.officerLabel : config.publicLabel;
   const icon = ICONS[config.icon] || <Send className="h-3.5 w-3.5" />;
-  const colorClass = STATUS_STYLES[status] || COLOR_STYLES[config.color] || COLOR_STYLES.gray;
+  const colorClass = COLOR_STYLES[config.color] || COLOR_STYLES.gray;
 
-  const sizeClass = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs';
+  const sizeClass = size === 'sm' ? 'px-2 py-0.5 text-[11px] leading-tight' : 'px-2.5 py-1 text-xs';
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold select-none whitespace-nowrap ${colorClass} ${sizeClass} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold select-none ${colorClass} ${sizeClass} ${className}`}
     >
       <span className="inline-flex items-center flex-shrink-0" aria-hidden="true">
         {icon}
       </span>
-      <span className="whitespace-nowrap">{label}</span>
+      <span>{label}</span>
     </span>
   );
 };

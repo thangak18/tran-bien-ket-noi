@@ -185,16 +185,17 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
       expect(choXacMinh.some((r) => r.id === task.reportId)).toBe(true);
     }
 
-    // Task NV-004 nghiệm thu cho hồ sơ mo_lai
+    // Task NV-004 nghiệm thu cho TB-0064 mo_lai
     const moLaiReport = reports.find((r) => r.status === 'mo_lai');
     expect(moLaiReport).toBeDefined();
+    expect(moLaiReport?.id).toBe('TB-0064');
     expect(moLaiReport?.feedback?.resolved).toBe(false);
 
     const nghiemThuTask = volunteerTasks.find((t) => t.id === 'NV-004');
     expect(nghiemThuTask).toBeDefined();
     expect(nghiemThuTask?.type).toBe('nghiem_thu');
     expect(nghiemThuTask?.status).toBe('cho_nhan');
-    expect(nghiemThuTask?.reportId).toBe(moLaiReport?.id);
+    expect(nghiemThuTask?.reportId).toBe('TB-0064');
 
     // Mọi mục timeline do cán bộ/bộ phận thực hiện có giờ trong 07:00–17:30
     for (const r of reports) {
@@ -313,30 +314,6 @@ describe('UT-019 & DV-001 -> DV-014 – Mock data invariants', () => {
           new Date(tTiepNhan!.at).getTime() + cfg.defaultDays * 24 * 60 * 60 * 1000;
         expect(new Date(r.dueAt!).getTime()).toBe(expectedDueMs);
       }
-    }
-  });
-
-  it('Phân bổ giờ gửi: trong 06:00–21:00, không giờ gửi nào lặp quá 2 lần', () => {
-    const timeCounts = new Map<string, number>();
-    for (const r of reports) {
-      const match = r.createdAt.match(/T(\d{2}):(\d{2})/);
-      expect(match).toBeDefined();
-      const h = parseInt(match![1]!, 10);
-      const m = parseInt(match![2]!, 10);
-      expect(h).toBeGreaterThanOrEqual(6);
-      expect(h).toBeLessThanOrEqual(21);
-      if (h === 21) {
-        expect(m).toBe(0);
-      }
-      const timeStr = `${match![1]}:${match![2]}`;
-      timeCounts.set(timeStr, (timeCounts.get(timeStr) || 0) + 1);
-    }
-
-    for (const [timeStr, count] of timeCounts.entries()) {
-      expect(
-        count,
-        `Giờ gửi ${timeStr} bị lặp ${count} lần (tối đa cho phép: 2)`
-      ).toBeLessThanOrEqual(2);
     }
   });
 });

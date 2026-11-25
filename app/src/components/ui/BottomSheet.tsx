@@ -40,24 +40,26 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
       {/* Sheet panel */}
       <div
-        className={`relative z-10 flex max-h-[90vh] w-full max-w-[430px] flex-col rounded-t-[20px] bg-white shadow-xl animate-in slide-in-from-bottom duration-200 ${className}`}
+        className={`relative z-10 flex max-h-[90vh] w-full max-w-[430px] flex-col rounded-t-[20px] border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl animate-in slide-in-from-bottom duration-150 ${className}`}
         role="dialog"
         aria-modal="true"
       >
         {/* Drag handle */}
         <div
           data-testid="drag-handle"
-          className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300"
+          className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-600"
         />
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <div className="font-semibold text-gray-900 text-[var(--fs-title)]">{title}</div>
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+          <div className="font-semibold text-[var(--color-text)] text-[var(--fs-title)]">
+            {title}
+          </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex h-10 w-10 min-h-[var(--tap)] min-w-[var(--tap)] items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <X className="h-5 w-5" />
           </button>
@@ -68,7 +70,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
         {/* Sticky footer */}
         {footer && (
-          <div className="sticky bottom-0 border-t border-gray-100 bg-white p-4">{footer}</div>
+          <div className="sticky bottom-0 border-t border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            {footer}
+          </div>
         )}
       </div>
     </div>

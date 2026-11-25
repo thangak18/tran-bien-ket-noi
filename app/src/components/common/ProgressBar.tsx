@@ -37,7 +37,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       <ol role="list" className="relative flex w-full items-start justify-between">
         {/* Thanh nối ngang */}
         <div
-          className="absolute top-3.5 left-[10%] right-[10%] h-0.5 bg-gray-200 -z-0"
+          className="absolute top-3.5 left-[10%] right-[10%] h-0.5 bg-[var(--color-border)] -z-0"
           aria-hidden="true"
         />
 
@@ -61,8 +61,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                   isDone
                     ? 'bg-primary text-white shadow-xs'
                     : isCurrent
-                      ? 'bg-primary text-white ring-4 ring-primary-100 shadow-sm'
-                      : 'border-2 border-gray-300 bg-white text-gray-400'
+                      ? 'bg-primary text-white ring-4 ring-[var(--color-primary-soft)] shadow-sm'
+                      : 'border-2 border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
                 }`}
               >
                 {isDone ? <Check className="h-4 w-4" /> : step.step}
@@ -72,10 +72,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
               <div
                 className={`mt-1.5 text-xs font-medium leading-tight ${
                   isCurrent
-                    ? 'font-semibold text-primary-dark'
+                    ? 'font-semibold text-[var(--color-primary)]'
                     : isUpcoming
-                      ? 'text-gray-400'
-                      : 'text-gray-700'
+                      ? 'text-[var(--color-text-muted)]'
+                      : 'text-[var(--color-text)]'
                 }`}
               >
                 {compact ? (
@@ -95,7 +95,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
               {/* Time */}
               {shortTime && (
-                <div className="mt-0.5 text-[10px] text-gray-500 font-normal">{shortTime}</div>
+                <div className="mt-0.5 text-[10px] text-[var(--color-text-muted)] font-normal">
+                  {shortTime}
+                </div>
               )}
             </li>
           );

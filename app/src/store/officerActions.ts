@@ -737,6 +737,7 @@ export function createOnBehalf(
     lat: number;
     lng: number;
     address: string;
+    title?: string;
     description?: string;
     locationNote?: string;
     department?: string;
@@ -776,6 +777,7 @@ export function createOnBehalf(
     lng: params.lng,
     address: params.address,
     locationNote: params.locationNote,
+    title: params.title,
     description: params.description,
     createdAt: now,
     status: 'da_tiep_nhan',

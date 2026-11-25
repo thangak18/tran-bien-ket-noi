@@ -94,3 +94,26 @@ export function formatDateTime(isoString?: string | null): string {
 
   return formatter.format(date).replace(',', '');
 }
+
+/**
+ * Định dạng thời gian tương đối so với now (nhận now làm tham số, không gọi Date.now())
+ * > 30 ngày hiển thị "{n} tháng trước" (ví dụ: 31-59 ngày -> "1 tháng trước")
+ */
+export function formatRelativeTime(isoString: string, now: string): string {
+  const targetMs = new Date(isoString).getTime();
+  const nowMs = new Date(now).getTime();
+  if (isNaN(targetMs) || isNaN(nowMs)) return '';
+
+  const diffMs = Math.max(0, nowMs - targetMs);
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+  const monthMs = 30 * dayMs;
+
+  if (diffMs < minuteMs) return 'Vừa xong';
+  if (diffMs < hourMs) return `${Math.floor(diffMs / minuteMs)} phút trước`;
+  if (diffMs < dayMs) return `${Math.floor(diffMs / hourMs)} giờ trước`;
+  if (diffMs <= monthMs) return `${Math.floor(diffMs / dayMs)} ngày trước`;
+  const months = Math.max(1, Math.floor(diffMs / monthMs));
+  return `${months} tháng trước`;
+}

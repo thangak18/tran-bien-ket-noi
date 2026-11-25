@@ -133,13 +133,7 @@ describe('UT-021 – Actions người dân (spec 3.3, 3.4a, 3.4b, AC-C04/5/6)', 
   });
 
   it('3. followReport lần 3 người -> priority cao; gọi lại cùng SĐT -> không nhân đôi', () => {
-    const demoReport = state.reports.find(
-      (r) =>
-        r.category === 'mat_duong' &&
-        r.status === 'da_tiep_nhan' &&
-        (r.followers?.length ?? 0) === 2
-    )!;
-    const reportId = demoReport.id;
+    const reportId = 'TB-0008'; // Hồ sơ demo mat_duong đã có 2 followers
     const state1 = followReport(state, reportId, { phone: '0912333444' });
     const r1 = state1.reports.find((r) => r.id === reportId)!;
     expect(r1.followers).toContain('0912333444');
@@ -152,13 +146,7 @@ describe('UT-021 – Actions người dân (spec 3.3, 3.4a, 3.4b, AC-C04/5/6)', 
   });
 
   it('3b. followReport ẩn danh -> anonymousFollows + 1, followers không đổi', () => {
-    const demoReport = state.reports.find(
-      (r) =>
-        r.category === 'mat_duong' &&
-        r.status === 'da_tiep_nhan' &&
-        (r.followers?.length ?? 0) === 2
-    )!;
-    const reportId = demoReport.id;
+    const reportId = 'TB-0008';
     const initFollowers = state.reports.find((r) => r.id === reportId)!.followers.length;
     const initAnon = state.reports.find((r) => r.id === reportId)!.anonymousFollows;
 

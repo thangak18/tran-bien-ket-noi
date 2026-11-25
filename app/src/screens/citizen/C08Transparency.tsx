@@ -1,235 +1,459 @@
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, Inbox, FileText, ChevronRight } from 'lucide-react';
-import { useAppStore } from '@/store/AppStore';
-import { computeKpi } from '@/domain/kpi';
-import { CATEGORY_CONFIGS } from '@/domain/constants';
-import { formatDateShort, formatPercent, formatDecimal } from '@/domain/format';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  CalendarCheck2,
+  CheckCircle2,
+  Clock,
+  FileBarChart2,
+  Hourglass,
+  Star,
+} from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { useAppStore } from '@/store/AppStore';
+import { CATEGORY_CONFIGS } from '@/domain/constants';
+import { computeKpi } from '@/domain/kpi';
+import { toPublicReport } from '@/domain/privacy';
+import { formatDate, formatDays } from '@/domain/format';
+import { Category, PublicReport } from '@/domain/types';
 import { StatusChip } from '@/components/common/StatusChip';
-import { BeforeAfter } from '@/components/citizen/BeforeAfter';
-import { Category, Report } from '@/domain/types';
 
-export function C08Transparency() {
-  const navigate = useNavigate();
+const CATEGORY_ICONS: Record<Category, React.ReactNode> = {
+  den_duong: <CategoryIcon category="den_duong" className="h-4 w-4 text-amber-500" />,
+  ngap_nuoc: <CategoryIcon category="ngap_nuoc" className="h-4 w-4 text-[#0084E8]" />,
+  rac_thai: <CategoryIcon category="rac_thai" className="h-4 w-4 text-emerald-600" />,
+  mat_duong: <CategoryIcon category="mat_duong" className="h-4 w-4 text-orange-500" />,
+};
+
+export interface C08TransparencyProps {
+  backPath?: string;
+  reportBasePath?: string;
+}
+
+export function C08Transparency({
+  backPath = '/cua-toi',
+  reportBasePath = '/phan-anh',
+}: C08TransparencyProps = {}) {
   const { state } = useAppStore();
+  const navigate = useNavigate();
 
-  const kpi = computeKpi(state.reports, '2026-11', state.settings.demoNow);
+  const kpi = useMemo(
+    () => computeKpi(state.reports, '2026-11', state.settings.demoNow),
+    [state.reports, state.settings.demoNow]
+  );
 
-  // Lấy 6 phản ánh đã xử lý mới nhất
-  const recentCompleted: Report[] = state.reports
-    .filter((r) => r.status === 'hoan_thanh' || r.status === 'dong')
-    .sort((a, b) => {
-      const timeA = a.completedAt || a.createdAt;
-      const timeB = b.completedAt || b.createdAt;
-      return new Date(timeB).getTime() - new Date(timeA).getTime();
-    })
-    .slice(0, 6);
+  const chartData = useMemo(
+    () =>
+      CATEGORY_CONFIGS.map((cat) => ({
+        name: cat.label,
+        resolved: kpi.byCategory[cat.key].resolved,
+        open: kpi.byCategory[cat.key].open,
+      })),
+    [kpi]
+  );
+
+  const recentResolved: PublicReport[] = useMemo(() => {
+    return state.reports
+      .filter((r) => r.status === 'hoan_thanh' || r.status === 'dong')
+      .map(toPublicReport)
+      .sort((a, b) => {
+        const aTime = new Date(a.completedAt || a.createdAt).getTime();
+        const bTime = new Date(b.completedAt || b.createdAt).getTime();
+        return bTime - aTime;
+      })
+      .slice(0, 6);
+  }, [state.reports]);
+
+  const avgRating = useMemo(() => {
+    const rated = state.reports
+      .map(toPublicReport)
+      .filter((r) => typeof r.rating === 'number' && r.rating > 0);
+    if (rated.length === 0) return null;
+    const sum = rated.reduce((acc, r) => acc + (r.rating ?? 0), 0);
+    return (sum / rated.length).toFixed(1).replace('.', ',');
+  }, [state.reports]);
+
+  const resolvedPercentText = `${kpi.resolvedPercent.toFixed(1).replace('.', ',')}%`;
+  const avgDaysText = kpi.avgDays !== null ? formatDays(kpi.avgDays) : '–';
+
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(backPath);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-100 bg-white/95 px-4 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Quay lại"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+    <div className="w-full pb-8 md:pb-12">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-[var(--color-surface)] px-4 md:px-6 lg:px-8 py-3.5 dark:border-slate-800">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label="Quay lại"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-800 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084E8] dark:bg-slate-800 dark:text-slate-100"
+            >
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg sm:text-xl font-extrabold tracking-tight text-[var(--color-text)]">
+                Bảng thống kê phường
+              </h1>
+              <p
+                data-testid="screen-title"
+                className="truncate text-xs font-medium text-[var(--color-text-muted)]"
+              >
+                Bảng thống kê phường · Phường Trấn Biên
+              </p>
+            </div>
+          </div>
 
-        <h1 className="text-base font-bold text-gray-900" data-testid="screen-title">
-          Bảng minh bạch phường
-        </h1>
-
-        <div className="w-10" />
+          <span className="shrink-0 rounded-full border border-[#BAE6FD] bg-[#F0F9FF] px-3 py-1 text-xs font-extrabold text-[#0084E8] dark:border-sky-800 dark:bg-sky-950/60 dark:text-[#38BDF8]">
+            Tháng 11/2026
+          </span>
+        </div>
       </header>
 
-      <main className="mx-auto max-w-md lg:max-w-[1100px] px-4 py-4 space-y-6">
-        {/* Banner giới thiệu */}
-        <div className="rounded-3xl bg-gradient-to-br from-blue-800 to-primary-600 p-5 text-white shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary-200">
-            Minh bạch & Trách nhiệm
-          </p>
-          <h2 className="mt-1 text-lg font-bold">Kết quả xử lý phản ánh</h2>
-          <p className="mt-1 text-xs text-primary-100/90 leading-relaxed">
-            Mọi phản ánh của người dân phường Trấn Biên đều được ghi nhận, theo dõi công khai và đo
-            lường định kỳ.
-          </p>
+      <div className="mx-auto w-full max-w-6xl space-y-5 px-4 md:px-6 lg:px-8 pt-4 sm:pt-6">
+        {/* 4 thẻ KPI */}
+        <section
+          aria-label="Chỉ số xử lý tháng 11/2026"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3.5"
+        >
+          <div className="rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 shadow-2xs dark:border-slate-800">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-[var(--color-text-muted)]">
+                Tổng phản ánh
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <FileBarChart2 className="h-4 w-4" aria-hidden="true" />
+              </span>
+            </div>
+            <p className="mt-2.5 text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-text)]">
+              {kpi.total}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-emerald-200/80 bg-emerald-50/50 p-4 shadow-2xs dark:border-emerald-900/60 dark:bg-emerald-950/25">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                Đã xử lý
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              </span>
+            </div>
+            <p className="mt-2.5 text-2xl sm:text-3xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-300">
+              {kpi.resolved}{' '}
+              <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+                ({resolvedPercentText})
+              </span>
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-amber-200/80 bg-amber-50/50 p-4 shadow-2xs dark:border-amber-900/60 dark:bg-amber-950/25">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                Chưa hoàn tất
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+                <Hourglass className="h-4 w-4" aria-hidden="true" />
+              </span>
+            </div>
+            <p className="mt-2.5 text-2xl sm:text-3xl font-extrabold tracking-tight text-amber-600 dark:text-amber-300">
+              {kpi.open}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-[#BAE6FD] bg-[#F0F9FF]/70 p-4 shadow-2xs dark:border-sky-800/70 dark:bg-sky-950/30">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-[#0369A1] dark:text-[#38BDF8]">
+                Thời gian xử lý TB
+              </span>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#E0F2FE] text-[#0084E8] dark:bg-sky-900/60 dark:text-[#38BDF8]">
+                <Clock className="h-4 w-4" aria-hidden="true" />
+              </span>
+            </div>
+            <p className="mt-2.5 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0084E8] dark:text-[#38BDF8]">
+              {avgDaysText}
+            </p>
+          </div>
+        </section>
+
+        {/* Responsive 12-Col Analytics Split on Tablet/PC */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+          {/* Left (5 cols): Phân bổ theo 4 loại */}
+          <section
+            aria-label="Phân bổ theo 4 loại"
+            className="lg:col-span-5 flex flex-col rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs space-y-4 dark:border-slate-800"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-base font-extrabold text-[var(--color-text)]">
+                Phân bổ theo 4 loại
+              </h2>
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                Đã xử lý / Tổng
+              </span>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center space-y-3.5">
+              {(
+                [
+                  { key: 'rac_thai', barClass: 'bg-emerald-500' },
+                  { key: 'den_duong', barClass: 'bg-amber-500' },
+                  { key: 'ngap_nuoc', barClass: 'bg-[#0084E8]' },
+                  { key: 'mat_duong', barClass: 'bg-orange-500' },
+                ] as const
+              ).map(({ key, barClass }) => {
+                const catConfig = CATEGORY_CONFIGS.find((c) => c.key === key)!;
+                const catKpi = kpi.byCategory[key];
+                const pct =
+                  catKpi.total > 0 ? Math.round((catKpi.resolved / catKpi.total) * 100) : 0;
+                return (
+                  <div key={key} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="inline-flex items-center gap-2 text-[var(--color-text)]">
+                        {CATEGORY_ICONS[key]}
+                        <span>{catConfig.label}</span>
+                      </span>
+                      <span className="text-[var(--color-text-muted)]">
+                        <strong className="font-extrabold text-[var(--color-text)]">
+                          {catKpi.resolved}
+                        </strong>{' '}
+                        / {catKpi.total} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${barClass}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Right (7 cols): Biểu đồ cột ngang 4 loại */}
+          <section
+            aria-label="Thống kê theo loại sự cố"
+            className="lg:col-span-7 rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-5 shadow-2xs dark:border-slate-800"
+          >
+            <h2 className="text-base font-extrabold text-[var(--color-text)] mb-3">
+              Phân loại theo nhóm sự cố
+            </h2>
+            <div className="h-60 w-full">
+              {typeof ResizeObserver !== 'undefined' ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={chartData}
+                    margin={{ top: 4, right: 28, left: 4, bottom: 4 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={86}
+                      tick={{ fontSize: 12, fill: '#64748b' }}
+                    />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="resolved" name="Đã xử lý" stackId="total" fill="#10b981">
+                      <LabelList
+                        dataKey="resolved"
+                        position="center"
+                        fill="#ffffff"
+                        fontSize={11}
+                        fontWeight={600}
+                        formatter={(val: number) => (val > 0 ? val : '')}
+                      />
+                    </Bar>
+                    <Bar
+                      dataKey="open"
+                      name="Chưa hoàn tất"
+                      stackId="total"
+                      fill="#f97316"
+                      radius={[0, 6, 6, 0]}
+                    >
+                      <LabelList
+                        dataKey="open"
+                        position="right"
+                        fill="#64748b"
+                        fontSize={11}
+                        fontWeight={600}
+                        formatter={(val: number) => (val > 0 ? val : '')}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <BarChart
+                  width={340}
+                  height={240}
+                  layout="vertical"
+                  data={chartData}
+                  margin={{ top: 4, right: 28, left: 4, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={86}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                  />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="resolved" name="Đã xử lý" stackId="total" fill="#10b981" />
+                  <Bar
+                    dataKey="open"
+                    name="Chưa hoàn tất"
+                    stackId="total"
+                    fill="#f97316"
+                    radius={[0, 6, 6, 0]}
+                  />
+                </BarChart>
+              )}
+            </div>
+          </section>
         </div>
 
-        {/* 4 Thẻ KPI - 1 hàng trên desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* KPI 1: Tổng số */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-2xs">
-            <div className="flex items-center gap-2 text-gray-500">
-              <FileText className="h-4 w-4 text-blue-500" />
-              <span className="text-xs font-medium">Tổng phản ánh</span>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-2xl font-black text-gray-900">{kpi.total}</span>
-              <span className="text-xs text-gray-400">hồ sơ</span>
-            </div>
+        {/* Dòng "Vừa xử lý xong": 6 thẻ mới nhất */}
+        <section aria-label="Vừa xử lý xong" className="space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base sm:text-lg font-extrabold text-[var(--color-text)]">
+              Vừa xử lý xong
+            </h2>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-[var(--color-text-muted)] dark:bg-slate-800">
+              6 kết quả mới nhất
+            </span>
           </div>
 
-          {/* KPI 2: Đã xử lý */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-2xs">
-            <div className="flex items-center gap-2 text-gray-500">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span className="text-xs font-medium">Đã xử lý</span>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-emerald-600">{kpi.resolved}</span>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-sm">
-                {formatPercent(kpi.resolvedPercent)}
-              </span>
-            </div>
-          </div>
-
-          {/* KPI 3: Chưa hoàn tất */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-2xs">
-            <div className="flex items-center gap-2 text-gray-500">
-              <Inbox className="h-4 w-4 text-amber-500" />
-              <span className="text-xs font-medium">Chưa hoàn tất</span>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-2xl font-black text-amber-600">{kpi.open}</span>
-              <span className="text-xs text-gray-400">đang giải quyết</span>
-            </div>
-          </div>
-
-          {/* KPI 4: Thời gian trung bình */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-2xs">
-            <div className="flex items-center gap-2 text-gray-500">
-              <Clock className="h-4 w-4 text-purple-600" />
-              <span className="text-xs font-medium">Thời gian TB</span>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-2xl font-black text-purple-700">
-                {kpi.avgDays !== null ? formatDecimal(kpi.avgDays) : '3,2'}
-              </span>
-              <span className="text-xs text-gray-400">ngày / việc</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Biểu đồ phân bổ 4 loại */}
-        <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
-            <h3 className="text-sm font-bold text-gray-900">Tiến độ theo loại sự cố</h3>
-            <div className="flex items-center gap-3 text-[11px] text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Đã xong
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Chưa xong
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-3.5">
-            {CATEGORY_CONFIGS.map((config) => {
-              const catKey = config.key as Category;
-              const catData = kpi.byCategory[catKey];
-              const total = catData.total;
-              const resolved = catData.resolved;
-              const open = catData.open;
-              const percentResolved = total > 0 ? (resolved / total) * 100 : 0;
-              const percentOpen = total > 0 ? (open / total) * 100 : 0;
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            {recentResolved.map((report) => {
+              const catConfig =
+                CATEGORY_CONFIGS.find((c) => c.key === report.category) || CATEGORY_CONFIGS[0]!;
+              const beforePhoto = report.photos[0] || `/demo-photos/${report.category}/1.jpg`;
+              const afterPhoto = report.resultPhotos?.[0];
 
               return (
-                <div key={config.key} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 font-semibold text-gray-800">
-                      <CategoryIcon category={catKey} className="h-4 w-4" />
-                      <span>{config.label}</span>
+                <div
+                  key={report.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`${reportBasePath}/${report.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`${reportBasePath}/${report.id}`);
+                    }
+                  }}
+                  className="cursor-pointer rounded-3xl border border-slate-200/90 bg-[var(--color-surface)] p-4 shadow-2xs transition-all hover:-translate-y-0.5 hover:border-[#0084E8]/40 hover:shadow-md active:scale-[0.99] dark:border-slate-800"
+                >
+                  {/* Ảnh Trước -> Sau */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1 overflow-hidden rounded-2xl bg-slate-100 aspect-[4/3] dark:bg-slate-800">
+                      <img
+                        src={beforePhoto}
+                        alt={`Ảnh trước xử lý ${report.id}`}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                      <span className="absolute top-1.5 left-1.5 rounded-lg bg-black/65 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                        Trước
+                      </span>
                     </div>
-                    <div className="font-mono text-gray-500">
-                      <span className="font-bold text-emerald-600">{resolved}</span>
-                      <span className="text-gray-400"> / {total}</span>
+
+                    <ArrowRight
+                      className="h-4 w-4 shrink-0 text-[#0084E8] dark:text-[#38BDF8]"
+                      aria-hidden="true"
+                    />
+
+                    <div className="relative flex-1 overflow-hidden rounded-2xl bg-slate-100 aspect-[4/3] flex items-center justify-center dark:bg-slate-800">
+                      {afterPhoto ? (
+                        <>
+                          <img
+                            src={afterPhoto}
+                            alt={`Ảnh sau xử lý ${report.id}`}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                          <span className="absolute top-1.5 left-1.5 rounded-lg bg-emerald-700/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                            Sau
+                          </span>
+                        </>
+                      ) : (
+                        <span className="px-2 text-center text-[11px] font-medium text-[var(--color-text-muted)]">
+                          Chưa có ảnh sau xử lý
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Thanh tỷ lệ 2 màu */}
-                  <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      style={{ width: `${percentResolved}%` }}
-                      className="bg-emerald-500 transition-all duration-300"
-                    />
-                    <div
-                      style={{ width: `${percentOpen}%` }}
-                      className="bg-amber-400 transition-all duration-300"
-                    />
+                  {/* Thông tin loại + trạng thái */}
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <div className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--color-text)]">
+                      {CATEGORY_ICONS[report.category]}
+                      <span>{catConfig.label}</span>
+                    </div>
+                    <StatusChip status={report.status} size="sm" />
+                  </div>
+
+                  {/* Ngày xong + Bộ phận */}
+                  <div className="mt-2 space-y-1 text-xs font-medium text-[var(--color-text-muted)]">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarCheck2
+                        className="h-3.5 w-3.5 text-slate-400 shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span>Hoàn thành: {formatDate(report.completedAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Building2
+                        className="h-3.5 w-3.5 text-slate-400 shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">{report.department || 'Phường Trấn Biên'}</span>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-
-        {/* 6 Thẻ "Vừa xử lý xong" */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-900">
-              Vừa xử lý xong ({recentCompleted.length})
-            </h3>
-            <span className="text-xs text-gray-400">Hình ảnh đối chứng</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {recentCompleted.map((r) => (
-              <div
-                key={r.id}
-                onClick={() => navigate(`/phan-anh/${r.id}`)}
-                className="cursor-pointer rounded-3xl border border-gray-200 bg-white p-3.5 shadow-2xs hover:border-primary-300 transition-all"
-              >
-                {/* Hàng thông tin đầu thẻ */}
-                <div className="mb-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CategoryIcon category={r.category} className="h-4 w-4" />
-                    <span className="font-mono text-xs font-bold text-gray-900">{r.id}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <StatusChip status={r.status} variant="public" size="sm" />
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                  </div>
-                </div>
-
-                {/* Khối Trước/Sau */}
-                <BeforeAfter
-                  beforePhotos={r.photos}
-                  afterPhotos={r.resultPhotos}
-                  beforeTime={r.createdAt}
-                  afterTime={r.completedAt}
-                  category={r.category}
-                />
-
-                {/* Địa chỉ và đơn vị xử lý */}
-                <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2 text-xs text-gray-500">
-                  <span className="truncate max-w-[200px]">{r.address}</span>
-                  <span className="font-medium text-primary">
-                    {r.completedAt ? formatDateShort(r.completedAt) : ''}
-                  </span>
-                </div>
-                {r.department && (
-                  <div className="mt-1 text-[11px] text-gray-400">
-                    Đơn vị: <span className="text-gray-600 font-medium">{r.department}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        </section>
 
         {/* Chú thích nguồn */}
-        <div className="rounded-2xl bg-gray-100/70 p-3 text-center text-xs text-gray-500">
-          <p>Số liệu tháng 11/2026 · Dữ liệu mẫu cuộc thi</p>
-          <p className="mt-0.5 text-[11px] text-gray-400">
-            Hệ thống Trấn Biên Kết Nối cập nhật tự động
+        <footer className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] px-4 py-3 text-xs text-slate-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-slate-200">
+          <p className="font-bold text-[var(--color-text)]">
+            Số liệu tháng 11/2026 · Dữ liệu mẫu cuộc thi
           </p>
-        </div>
-      </main>
+          {avgRating !== null && (
+            <span className="inline-flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" aria-hidden="true" />
+              <span>Điểm hài lòng: {avgRating}/5</span>
+            </span>
+          )}
+        </footer>
+      </div>
     </div>
   );
 }

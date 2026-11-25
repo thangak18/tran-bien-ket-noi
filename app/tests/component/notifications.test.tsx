@@ -66,7 +66,7 @@ describe('CT-038 – NotificationBell, SmsPreview và MockLabel', () => {
       render(
         <SmsPreview
           phone="0909000068"
-          message="UBND P. Tran Bien: Phan anh TB-0010 da duoc tiep nhan. Theo doi tai: http://localhost/p/TB-0010?k=1234"
+          message="UBND P. Tran Bien: Phan anh TB-0010 da duoc tiep nhan. Theo doi tai: https://tranbien.vn/p/TB-0010?k=1234"
           time="20/11 10:02"
         />
       );
