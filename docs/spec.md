@@ -867,7 +867,7 @@ AC-OPS-1: Email trùng khi tạo nhân viên báo lỗi và không để lại A
 - AC-ADMIN-6: Bộ phận được tham chiếu bởi hồ sơ không bị xoá; có thể đánh dấu không hoạt động.
 - AC-ADMIN-7: SLA ngoài 1–30 ngày hoặc bộ phận mặc định không hợp lệ → 422; thay đổi chỉ ảnh hưởng hồ sơ tiếp nhận sau đó.
 - AC-ADMIN-8: KPI tổng quan được tính từ DB và thống kê theo loại, bộ phận, vai trò; không có số KPI hard-code.
-- AC-ADMIN-9: Quét toàn bộ response `/admin/*` không tìm thấy SĐT (`0\\d{9}`), `secretCode`, `ownerToken`, password hash hoặc service secret.
+- AC-ADMIN-9: Quét toàn bộ response `/admin/*` không tìm thấy SĐT (`0\d{9}`), `secretCode`, `ownerToken`, password hash hoặc service secret.
 - AC-ADMIN-10: Chế độ `VITE_DATA_SOURCE=local` hiển thị “Cần chế độ API” thay vì lỗi.
 
 ---

@@ -304,6 +304,7 @@ Chỉ liệt kê **tên**; giá trị đặt ở `app/.env.local` (được `.gi
 | `CRON_SECRET` | server | Khóa bí mật xác thực Vercel Cron khi gọi `/api/v1/cron/*` |
 | `VITE_DATA_SOURCE` | client | `local` (mặc định offline) \| `api` (kết nối backend Supabase) |
 | `SEED_STAFF_PASSWORD` | máy chạy seed | Mật khẩu tài khoản nhân viên mẫu khi chạy `db:seed`, không ghi vào repo |
+| `SEED_ADMIN_PASSWORD` | máy chạy seed | Mật khẩu tài khoản quản trị viên mẫu khi chạy `db:seed`, không ghi vào repo |
 
 ## 14. Môi trường và triển khai
 

@@ -43,7 +43,7 @@ export const taskTypeEnum = pgEnum('task_type', ['xac_minh', 'nghiem_thu']);
 
 export const taskStatusEnum = pgEnum('task_status', ['cho_nhan', 'dang_lam', 'xong']);
 
-export const staffRoleEnum = pgEnum('staff_role', ['can_bo', 'tnv']);
+export const staffRoleEnum = pgEnum('staff_role', ['can_bo', 'tnv', 'admin']);
 
 export const followerSourceEnum = pgEnum('follower_source', [
   'reporter',
@@ -274,3 +274,22 @@ export const appSettings = pgTable('app_settings', {
   key: text('key').primaryKey(),
   value: jsonb('value').notNull(),
 });
+
+export const adminAuditLog = pgTable(
+  'admin_audit_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    actorStaffId: uuid('actor_staff_id')
+      .notNull()
+      .references(() => staffProfiles.userId, { onDelete: 'restrict' }),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id').notNull(),
+    detail: jsonb('detail').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('admin_audit_log_actor_created_idx').on(table.actorStaffId, table.createdAt),
+    index('admin_audit_log_action_created_idx').on(table.action, table.createdAt),
+  ]
+);

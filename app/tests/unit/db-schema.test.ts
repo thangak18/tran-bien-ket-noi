@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as schema from '../../server/db/schema';
 
 describe('DB-001: Drizzle Database Schema', () => {
-  it('should define all 9 PostgreSQL enums according to Spec 11.1', () => {
+  it('should define all PostgreSQL enums according to Spec 11.1 and admin access', () => {
     expect(schema.categoryEnum).toBeDefined();
     expect(schema.reportStatusEnum).toBeDefined();
     expect(schema.priorityEnum).toBeDefined();
@@ -37,7 +37,7 @@ describe('DB-001: Drizzle Database Schema', () => {
     expect(schema.priorityEnum.enumValues).toEqual(['cao', 'binh_thuong']);
     expect(schema.taskTypeEnum.enumValues).toEqual(['xac_minh', 'nghiem_thu']);
     expect(schema.taskStatusEnum.enumValues).toEqual(['cho_nhan', 'dang_lam', 'xong']);
-    expect(schema.staffRoleEnum.enumValues).toEqual(['can_bo', 'tnv']);
+    expect(schema.staffRoleEnum.enumValues).toEqual(['can_bo', 'tnv', 'admin']);
     expect(schema.followerSourceEnum.enumValues).toEqual([
       'reporter',
       'also_me',
@@ -47,7 +47,7 @@ describe('DB-001: Drizzle Database Schema', () => {
     expect(schema.actorTypeEnum.enumValues).toEqual(['citizen', 'staff', 'system']);
   });
 
-  it('should define all 16 tables according to Spec 11.2', () => {
+  it('should define all 16 domain tables and the admin audit table', () => {
     expect(schema.departments).toBeDefined();
     expect(schema.categorySettings).toBeDefined();
     expect(schema.staffProfiles).toBeDefined();
@@ -64,6 +64,7 @@ describe('DB-001: Drizzle Database Schema', () => {
     expect(schema.accessAttempts).toBeDefined();
     expect(schema.pendingUploads).toBeDefined();
     expect(schema.appSettings).toBeDefined();
+    expect(schema.adminAuditLog).toBeDefined();
   });
 
   it('reports table should have is_seed column and all required fields', () => {
