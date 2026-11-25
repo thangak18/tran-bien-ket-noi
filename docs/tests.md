@@ -491,3 +491,27 @@ Các test này gọi `app.request` trên DB PostGIS thật và Supabase Auth th�
 | OFF-009 | `officer-flow.test.ts` | Người dân/không token/TNV gọi endpoint cán bộ | 403 / 401 / 403 |
 | OFF-010 | `officer-flow.test.ts` | Cron | Chỉ nhận `Authorization: Bearer <CRON_SECRET>`; header cũ `X-Cron-Secret` bị 401 |
 | PG-001…005 | `tests/api/postgis-dwithin.test.ts` | Tìm trùng bằng `ST_DWithin` | Xem mục 12 |
+
+## 17. Trang quản trị (ADMIN-*)
+
+| ID | File | Kiểm tra | Kết quả mong đợi |
+|---|---|---|---|
+| ADMIN-API-001 | `tests/api/admin.test.ts` | Không token gọi `/admin/overview` | 401 `UNAUTHORIZED` |
+| ADMIN-API-002 | `admin.test.ts` | Token cán bộ hoặc TNV gọi `/admin/overview` | 403 `FORBIDDEN` |
+| ADMIN-API-003 | `admin.test.ts` | Admin đang hoạt động gọi `/admin/overview` | 200, overview có đủ các chỉ số và nhóm thống kê |
+| ADMIN-API-004 | `admin.test.ts` | Admin gọi `/officer/*` và `/volunteer/*` | 403; dữ liệu nghiệp vụ không đổi |
+| ADMIN-SVC-001 | `tests/api/admin-staff.test.ts` | Tạo tài khoản với email đã tồn tại | 409; không thêm Auth user/profile |
+| ADMIN-SVC-002 | `admin-staff.test.ts` | Lỗi ghi profile hoặc audit khi tạo tài khoản | Auth user được hoàn tác; profile và audit không để lại bản ghi dở dang |
+| ADMIN-SVC-003 | `admin-staff.test.ts` | Khoá/hạ quyền cán bộ cuối cùng đang hoạt động | 409; trạng thái tài khoản không đổi |
+| ADMIN-SVC-004 | `admin-staff.test.ts` | Admin tự khoá hoặc tự hạ quyền | 409; tài khoản hiện tại vẫn admin và hoạt động |
+| ADMIN-SVC-005 | `admin-staff.test.ts` | Mỗi thao tác ghi tài khoản/bộ phận/cấu hình | Có audit log đúng actor, action, target; rollback cùng transaction khi lỗi |
+| ADMIN-API-005 | `tests/api/admin-config.test.ts` | SLA ngoài 1–30 hoặc department không tồn tại | 422; không cập nhật cấu hình |
+| ADMIN-API-006 | `admin-config.test.ts` | Vô hiệu hoá bộ phận đang được hồ sơ tham chiếu | 200, bộ phận vẫn tồn tại và hồ sơ cũ không đổi |
+| ADMIN-API-007 | `tests/api/admin-overview.test.ts` | Thay đổi seed DB rồi truy vấn overview | Các KPI, số liệu loại/bộ phận/vai trò được tính đúng từ DB |
+| ADMIN-API-008 | `tests/api/admin-audit.test.ts` | Lọc nhật ký theo actor/action, phân trang | Thứ tự mới nhất trước, lọc và metadata trang đúng |
+| ADMIN-LEAK-001 | `tests/api/admin-privacy.test.ts` | Quét mọi response `/admin/*` theo regex `0\d{9}` và từ khoá nhạy cảm | Không có SĐT, `secretCode`, `ownerToken`, hash mật khẩu hoặc service secret |
+| ADMIN-DB-001 | migration/schema tests | Chạy migration mới trên schema hiện tại | Thêm enum `admin` và bảng audit; không thay đổi/xoá schema hoặc migration cũ |
+| ADMIN-DB-002 | database policy test | Đọc `admin_audit_log` bằng anon/authenticated | Bị từ chối, không có policy đọc/ghi công khai |
+| ADMIN-UI-001 | component tests | Admin truy cập 5 route quản trị; local mode | API mode hiển thị đúng màn; local mode báo “Cần chế độ API” |
+| ADMIN-E2E-001 | `tests/e2e/admin.spec.ts` | Đăng nhập admin → tạo TNV → khoá → thử đăng nhập TNV → mở khoá → đổi SLA đèn đường | Các thao tác thành công; trong lúc khoá login báo “tài khoản bị tạm khoá” |
+| ADMIN-UI-002 | kiểm tra thủ công / screenshot | Dashboard, danh sách và modal tài khoản, cấu hình, nhật ký tại 1440px; danh sách tại 390px | Không tràn ngang; bảng desktop đầy đủ; mobile hiển thị card; ảnh lưu ở `docs/review/admin/` |

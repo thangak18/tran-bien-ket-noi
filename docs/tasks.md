@@ -225,6 +225,11 @@ Chi tiết quyết định và thứ tự: `CLAUDE.md` mục 6, `docs/spec.md` m
 |:---:|---|---|---|---|---|:---:|
 | [x] (25/11) | G2-11a | Cấu hình `vercel.json` (rewrites, cron, SPA), `.github/workflows/ci.yml` (lint, typecheck, vitest, postgres/postgis, migrate, seed, verify, build) | G2-04g, G2-07d | 12.7, 16.1 | OPS-VERCEL-001, CI-001 | 2h |
 | [x] (25/11) | G2-11b | Tài liệu vận hành `docs/van-hanh.md`, cập nhật `README.md`, `AGENTS.md`, `CLAUDE.md`, file `app/.env.example` chuẩn | G2-11a | 10, 14, 16 | DOC-001 | 1.5h |
+| [ ] | G2-11c | Cộng migration `20261125020000_admin.sql` (enum admin, audit log RLS) và cập nhật Drizzle schema; không sửa/xoá migration cũ | G2-11b | 13.1, 14.2 | ADMIN-DB-001, ADMIN-DB-002 | 1h |
+| [ ] | G2-11d | Tách `scripts/staff.ts` sang service `server/services/staffAdmin.ts`; CLI và API dùng chung logic, transaction + rollback Auth user, chống hạ quyền cuối cùng | G2-11c | 14.2, 14.3 | ADMIN-SVC-001 → 006 | 2.5h |
+| [ ] | G2-11e | Xây API `/admin/*`: tài khoản, bộ phận, cấu hình SLA, overview tính từ DB, nhật ký phân trang; Zod, audit cùng transaction, role admin | G2-11d | 13.5, 14.1–14.4 | ADMIN-API-001 → 014 | 3h |
+| [ ] | G2-11f | Bổ sung đăng nhập/route Admin, Demo Hub, giao diện tổng quan và 4 màn quản lý responsive; local mode hiện “Cần chế độ API” | G2-11e | 13.1, 13.5, 13.7, 14.1 | ADMIN-UI-001 → 010 | 3.5h |
+| [ ] | G2-11g | Hoàn thiện test API, privacy scan, Playwright luồng Admin và ảnh review 1440px/390px | G2-11e, G2-11f | 14.4 | ADMIN-E2E-001, ADMIN-LEAK-001 | 2h |
 
 ---
 
